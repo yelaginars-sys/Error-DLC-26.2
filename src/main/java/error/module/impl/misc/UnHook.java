@@ -191,7 +191,7 @@ public class UnHook extends Module {
         Minecraft mc = Minecraft.getInstance();
         error.ui.mainmenu.PanelRefractions.close(mc);
         if (mc.screen != null && !(mc.screen instanceof net.minecraft.client.gui.screens.ChatScreen)) {
-            mc.setScreen(null);
+            mc.screen = null;
         }
 
         if (mc.player != null) {
