@@ -25,12 +25,17 @@ public abstract class HudElement {
     public record Box(float x, float y, float width, float height, Object handle) {}
 
     public HudElement(String id, String name, float defaultX, float defaultY, float width, float height) {
+        this(id, name, defaultX, defaultY, width, height, false);
+    }
+
+    public HudElement(String id, String name, float defaultX, float defaultY, float width, float height, boolean defaultEnabled) {
         this.id = id;
         this.name = name;
         this.x = defaultX;
         this.y = defaultY;
         this.width = width;
         this.height = height;
+        this.enabled = defaultEnabled;
     }
 
     public abstract void draw(Render2DEvent event);

@@ -13,7 +13,7 @@ import net.minecraft.client.player.AbstractClientPlayer;
 public final class WatermarkHud extends HudElement implements IMinecraft {
 
     public WatermarkHud() {
-        super("watermark", "Watermark", 3.0F, 3.0F, 240.0F, 20.0F);
+        super("watermark", "Watermark", 6.0F, 6.0F, 240.0F, 20.0F, true);
     }
 
     public com.google.gson.JsonObject writeConfig() {
@@ -71,14 +71,12 @@ public final class WatermarkHud extends HudElement implements IMinecraft {
 
         int themeAccent = Theme.getAccentColor();
 
-        // Dynamic Theme Accent Background layers from widget.rar:
-        // 1. Subtle primary glow rect (alpha * 15)
-        Render2D.drawRoundedRect(x - 2.0F, y - 2.0F, totalWidth + 4.0F, totalHeight + 4.0F, r + 2.0F, ColorUtil.withAlpha(themeAccent, (int) (alpha * 15)));
-        // 2. Subtle primary stroke outline rect (alpha * 40)
-        Render2D.drawRoundedRect(x - 0.5F, y - 0.5F, totalWidth + 1.0F, totalHeight + 1.0F, r + 0.5F, ColorUtil.withAlpha(themeAccent, (int) (alpha * 40)));
-        // 3. Container background (soft shadow + dark translucent background)
+        // Liquid glass background with blur and specular outline
         Render2D.drawShadow(x, y, totalWidth, totalHeight, r, 6.0F, ColorUtil.rgba(0, 0, 0, (int) (140 * alpha)));
-        Render2D.drawRoundedRect(x, y, totalWidth, totalHeight, r, ColorUtil.rgba(0, 0, 0, (int) (alpha * 160)));
+        int glassFill = ColorUtil.rgba(20, 18, 28, (int) (160 * alpha));
+        Render2D.drawBlur(x, y, totalWidth, totalHeight, r, 12.0F, glassFill, alpha);
+        Render2D.drawRoundedRect(x, y, totalWidth, totalHeight, r, glassFill);
+        Render2D.drawRoundedOutline(x, y, totalWidth, totalHeight, r, 1.0F, ColorUtil.rgba(255, 255, 255, (int) (28 * alpha)));
 
         float currentX = x + padding;
         float textY = y + (totalHeight - 7.5F) / 2.0F;

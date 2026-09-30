@@ -67,7 +67,7 @@ public final class TargetHud extends HudElement implements IMinecraft {
     }
 
     public TargetHud() {
-        super("target", "Target HUD", 30.0F, 30.0F, 94.0F, 32.0F);
+        super("target", "Target HUD", 250.0F, 180.0F, 94.0F, 32.0F, true);
     }
 
     public com.google.gson.JsonObject writeConfig() {
@@ -165,11 +165,12 @@ public final class TargetHud extends HudElement implements IMinecraft {
             }
         }
 
-        // Exact Waper Background layers: Subtle accent glow -> subtle accent stroke -> blur shadow -> dark container
-        Render2D.drawRoundedRect(x - 2.0F, y - 2.0F, width + 4.0F, height + 4.0F, round + 2.0F, ColorUtil.withAlpha(themeAccent, (int) (anim * 15)));
-        Render2D.drawRoundedRect(x - 0.5F, y - 0.5F, width + 1.0F, height + 1.0F, round + 0.5F, ColorUtil.withAlpha(themeAccent, (int) (anim * 40)));
+        // Liquid glass background with blur and specular outline
         Render2D.drawShadow(x, y, width, height, round, 6.0F, ColorUtil.rgba(0, 0, 0, (int) (140 * anim)));
-        Render2D.drawRoundedRect(x, y, width, height, round, ColorUtil.rgba(0, 0, 0, (int) (160 * anim)));
+        int glassFill = ColorUtil.rgba(20, 18, 28, (int) (160 * anim));
+        Render2D.drawBlur(x, y, width, height, round, 12.0F, glassFill, anim);
+        Render2D.drawRoundedRect(x, y, width, height, round, glassFill);
+        Render2D.drawRoundedOutline(x, y, width, height, round, 1.0F, ColorUtil.rgba(255, 255, 255, (int) (28 * anim)));
 
         // Head rendering
         if (target instanceof AbstractClientPlayer clientPlayer) {

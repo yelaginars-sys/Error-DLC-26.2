@@ -48,7 +48,7 @@ public final class NotificationHud extends HudElement implements IMinecraft {
     private float settingsAnim = 0.0F;
 
     public NotificationHud() {
-        super("notifications", "Notifications", 10.0F, 220.0F, 180.0F, 24.0F);
+        super("notifications", "Notifications", 6.0F, 300.0F, 180.0F, 24.0F, true);
     }
 
     public static void notify(String title, String message, Type type) {
@@ -113,7 +113,7 @@ public final class NotificationHud extends HudElement implements IMinecraft {
         long now = System.currentTimeMillis();
         ACTIVE_NOTES.removeIf(note -> (now - note.bornAt) > note.duration + 400L);
 
-        boolean editing = isDragging() || (mc.gui != null && mc.gui.screen() instanceof net.minecraft.client.gui.screens.ChatScreen);
+        boolean editing = isDragging();
         if (ACTIVE_NOTES.isEmpty() && editing) {
             ACTIVE_NOTES.add(new Note("Это уведомление", "кликни на меня для настройки", Type.INFO, 5000L));
         }
@@ -139,15 +139,12 @@ public final class NotificationHud extends HudElement implements IMinecraft {
             float noteWidth = Math.max(160.0F, textW + 30.0F);
             float noteHeight = 20.0F;
 
-            int glowColor = ColorUtil.applyAlpha(primaryColor, (int) (alpha * 15));
-            int borderColor = ColorUtil.applyAlpha(primaryColor, (int) (alpha * 40));
-            int bgColor = ColorUtil.rgba(0, 0, 0, (int) (180 * alpha));
-
-            // Capsule Banner with blur and theme accent glow
-            Render2D.drawRoundedRect(drawX - 2.0F, currentY - 2.0F, noteWidth + 4.0F, noteHeight + 4.0F, 10.0F, glowColor);
-            Render2D.drawRoundedRect(drawX - 0.5F, currentY - 0.5F, noteWidth + 1.0F, noteHeight + 1.0F, 8.5F, borderColor);
-            Render2D.drawBlur(drawX, currentY, noteWidth, noteHeight, 8.0F, 10.0F, bgColor, alpha);
-            Render2D.drawRoundedRect(drawX, currentY, noteWidth, noteHeight, 8.0F, bgColor);
+            // Liquid glass background with blur and specular outline
+            Render2D.drawShadow(drawX, currentY, noteWidth, noteHeight, 8.0F, 6.0F, ColorUtil.rgba(0, 0, 0, (int) (140 * alpha)));
+            int glassFill = ColorUtil.rgba(20, 18, 28, (int) (160 * alpha));
+            Render2D.drawBlur(drawX, currentY, noteWidth, noteHeight, 8.0F, 12.0F, glassFill, alpha);
+            Render2D.drawRoundedRect(drawX, currentY, noteWidth, noteHeight, 8.0F, glassFill);
+            Render2D.drawRoundedOutline(drawX, currentY, noteWidth, noteHeight, 8.0F, 1.0F, ColorUtil.rgba(255, 255, 255, (int) (28 * alpha)));
 
             Fonts.drawIcon(icon, drawX + 6.0F, currentY + 5.5F, 8.0F, ColorUtil.applyAlpha(primaryColor, alpha));
             Fonts.drawString(Fonts.SF_MEDIUM, note.title, drawX + 18.0F, currentY + 5.5F, 6.5F, ColorUtil.applyAlpha(-1, alpha));

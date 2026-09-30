@@ -14,7 +14,7 @@ public final class InventoryHud extends HudElement implements IMinecraft {
     private static final float HEADER_HEIGHT = 13.0F;
 
     public InventoryHud() {
-        super("inventory", "Inventory", 60.0F, 60.0F, 110.0F, 50.0F);
+        super("inventory", "Inventory", 340.0F, 220.0F, 110.0F, 50.0F, false);
     }
 
     @Override
@@ -28,7 +28,7 @@ public final class InventoryHud extends HudElement implements IMinecraft {
                 break;
             }
         }
-        boolean editing = isDragging() || (mc.gui != null && mc.gui.screen() instanceof net.minecraft.client.gui.screens.ChatScreen);
+        boolean editing = isDragging();
 
         fadeAnim.setTarget((hasItems || editing) ? 1.0F : 0.0F);
         fadeAnim.update();
@@ -49,19 +49,16 @@ public final class InventoryHud extends HudElement implements IMinecraft {
         this.height = height;
 
         int primaryColor = Theme.getAccentColor();
-        int glowColor = ColorUtil.applyAlpha(primaryColor, (int) (alpha * 15));
-        int borderColor = ColorUtil.applyAlpha(primaryColor, (int) (alpha * 40));
-        int bgColor = ColorUtil.rgba(0, 0, 0, (int) (160 * alpha));
-        int headerBg = ColorUtil.rgba(0, 0, 0, (int) (160 * alpha));
 
-        // Background with blur and theme accent glow
-        Render2D.drawRoundedRect(drawX - 2.0F, drawY - 2.0F, width + 4.0F, height + 4.0F, radius + 2.0F, glowColor);
-        Render2D.drawRoundedRect(drawX - 0.5F, drawY - 0.5F, width + 1.0F, height + 1.0F, radius + 0.5F, borderColor);
-        Render2D.drawBlur(drawX, drawY, width, height, radius, 12.0F, bgColor, alpha);
-        Render2D.drawRoundedRect(drawX, drawY, width, height, radius, bgColor);
+        // Liquid glass background with blur and specular outline
+        Render2D.drawShadow(drawX, drawY, width, height, radius, 6.0F, ColorUtil.rgba(0, 0, 0, (int) (140 * alpha)));
+        int glassFill = ColorUtil.rgba(20, 18, 28, (int) (160 * alpha));
+        Render2D.drawBlur(drawX, drawY, width, height, radius, 12.0F, glassFill, alpha);
+        Render2D.drawRoundedRect(drawX, drawY, width, height, radius, glassFill);
+        Render2D.drawRoundedOutline(drawX, drawY, width, height, radius, 1.0F, ColorUtil.rgba(255, 255, 255, (int) (28 * alpha)));
 
         // Header
-        Render2D.drawRoundedRect(drawX, drawY, width, headerH, radius, headerBg);
+        Render2D.drawRoundedRect(drawX, drawY, width, headerH, radius, ColorUtil.rgba(255, 255, 255, (int) (10 * alpha)));
         Fonts.drawString(Fonts.SF_MEDIUM, "Inventory", drawX + 4.0F, drawY + 3.0F, 6.5F, ColorUtil.applyAlpha(primaryColor, alpha));
 
         // 9x3 Grid

@@ -15,7 +15,7 @@ public final class TotemCounterHud extends HudElement implements IMinecraft {
     private static final float HEADER_HEIGHT = 12.0F;
 
     public TotemCounterHud() {
-        super("totem_counter", "Totem Counter", 160.0F, 140.0F, 40.0F, 28.0F);
+        super("totem_counter", "Totem Counter", 280.0F, 280.0F, 40.0F, 28.0F, false);
     }
 
     private int countTotems() {
@@ -34,7 +34,7 @@ public final class TotemCounterHud extends HudElement implements IMinecraft {
     @Override
     public void draw(Render2DEvent event) {
         int totems = countTotems();
-        boolean editing = isDragging() || (mc.gui != null && mc.gui.screen() instanceof net.minecraft.client.gui.screens.ChatScreen);
+        boolean editing = isDragging();
 
         if (totems == 0 && editing) totems = 1;
 
@@ -62,19 +62,16 @@ public final class TotemCounterHud extends HudElement implements IMinecraft {
         this.height = height;
 
         int primaryColor = Theme.getAccentColor();
-        int glowColor = ColorUtil.applyAlpha(primaryColor, (int) (alpha * 15));
-        int borderColor = ColorUtil.applyAlpha(primaryColor, (int) (alpha * 40));
-        int bgColor = ColorUtil.rgba(0, 0, 0, (int) (160 * alpha));
-        int headerBg = ColorUtil.rgba(0, 0, 0, (int) (160 * alpha));
 
-        // Background with blur and theme accent glow
-        Render2D.drawRoundedRect(drawX - 2.0F, drawY - 2.0F, width + 4.0F, height + 4.0F, radius + 2.0F, glowColor);
-        Render2D.drawRoundedRect(drawX - 0.5F, drawY - 0.5F, width + 1.0F, height + 1.0F, radius + 0.5F, borderColor);
-        Render2D.drawBlur(drawX, drawY, width, height, radius, 12.0F, bgColor, alpha);
-        Render2D.drawRoundedRect(drawX, drawY, width, height, radius, bgColor);
+        // Liquid glass background with blur and specular outline
+        Render2D.drawShadow(drawX, drawY, width, height, radius, 6.0F, ColorUtil.rgba(0, 0, 0, (int) (140 * alpha)));
+        int glassFill = ColorUtil.rgba(20, 18, 28, (int) (160 * alpha));
+        Render2D.drawBlur(drawX, drawY, width, height, radius, 12.0F, glassFill, alpha);
+        Render2D.drawRoundedRect(drawX, drawY, width, height, radius, glassFill);
+        Render2D.drawRoundedOutline(drawX, drawY, width, height, radius, 1.0F, ColorUtil.rgba(255, 255, 255, (int) (28 * alpha)));
 
         // Header
-        Render2D.drawRoundedRect(drawX, drawY, width, HEADER_HEIGHT, radius, headerBg);
+        Render2D.drawRoundedRect(drawX, drawY, width, HEADER_HEIGHT, radius, ColorUtil.rgba(255, 255, 255, (int) (10 * alpha)));
         Fonts.drawString(Fonts.SF_MEDIUM, "Totem", drawX + padX, drawY + 2.5F, 6.0F, ColorUtil.applyAlpha(primaryColor, alpha));
 
         // Item Totem & Count

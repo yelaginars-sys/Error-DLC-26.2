@@ -33,7 +33,7 @@ public final class MediaPlayerHud extends HudElement implements IMinecraft {
     private long lastPoll = 0L;
 
     public MediaPlayerHud() {
-        super("media_player", "Media Player", 140.0F, 10.0F, 100.0F, 30.0F);
+        super("media_player", "Media Player", 180.0F, 6.0F, 100.0F, 30.0F, false);
     }
 
     private void poll() {
@@ -87,7 +87,7 @@ public final class MediaPlayerHud extends HudElement implements IMinecraft {
     public void draw(Render2DEvent event) {
         poll();
 
-        boolean editing = isDragging() || (mc.gui != null && mc.gui.screen() instanceof net.minecraft.client.gui.screens.ChatScreen);
+        boolean editing = isDragging();
         boolean recent = System.currentTimeMillis() - lastUpdate < 3000L;
         boolean visible = (hasMedia && (media.getPlaying() || recent)) || editing;
 
@@ -110,15 +110,13 @@ public final class MediaPlayerHud extends HudElement implements IMinecraft {
         this.height = height;
 
         int primaryColor = Theme.getAccentColor();
-        int glowColor = ColorUtil.applyAlpha(primaryColor, (int) (alpha * 15));
-        int borderColor = ColorUtil.applyAlpha(primaryColor, (int) (alpha * 40));
-        int bgColor = ColorUtil.rgba(0, 0, 0, (int) (160 * alpha));
 
-        // Background with blur and theme accent glow
-        Render2D.drawRoundedRect(drawX - 2.0F, drawY - 2.0F, width + 4.0F, height + 4.0F, radius + 2.0F, glowColor);
-        Render2D.drawRoundedRect(drawX - 0.5F, drawY - 0.5F, width + 1.0F, height + 1.0F, radius + 0.5F, borderColor);
-        Render2D.drawBlur(drawX, drawY, width, height, radius, 12.0F, bgColor, alpha);
-        Render2D.drawRoundedRect(drawX, drawY, width, height, radius, bgColor);
+        // Liquid glass background with blur and specular outline
+        Render2D.drawShadow(drawX, drawY, width, height, radius, 6.0F, ColorUtil.rgba(0, 0, 0, (int) (140 * alpha)));
+        int glassFill = ColorUtil.rgba(20, 18, 28, (int) (160 * alpha));
+        Render2D.drawBlur(drawX, drawY, width, height, radius, 12.0F, glassFill, alpha);
+        Render2D.drawRoundedRect(drawX, drawY, width, height, radius, glassFill);
+        Render2D.drawRoundedOutline(drawX, drawY, width, height, radius, 1.0F, ColorUtil.rgba(255, 255, 255, (int) (28 * alpha)));
 
         // Artwork Box
         float artX = drawX + pad;

@@ -26,7 +26,7 @@ public final class KeybindsHud extends HudElement implements IMinecraft {
     private static final float HEADER_FONT_SIZE = 7.5F;
 
     public KeybindsHud() {
-        super("keybinds", "Hotkeys", 3.0F, 120.0F, 85.0F, 26.0F);
+        super("keybinds", "Hotkeys", 6.0F, 38.0F, 85.0F, 26.0F, true);
     }
 
     public com.google.gson.JsonObject writeConfig() {
@@ -120,12 +120,12 @@ public final class KeybindsHud extends HudElement implements IMinecraft {
         this.width = maxW;
         this.height = h;
 
-        // Exact Waper Background layers
-        Render2D.drawRoundedRect(x - 2.0F, y - 2.0F, maxW + 4.0F, h + 4.0F, r + 2.0F, ColorUtil.withAlpha(themeAccent, (int) (alpha * 15)));
-        Render2D.drawRoundedRect(x - 0.5F, y - 0.5F, maxW + 1.0F, h + 1.0F, r + 0.5F, ColorUtil.withAlpha(themeAccent, (int) (alpha * 40)));
+        // Liquid glass background with blur and specular outline
         Render2D.drawShadow(x, y, maxW, h, r, 6.0F, ColorUtil.rgba(0, 0, 0, (int) (140 * alpha)));
-        Render2D.drawRoundedRect(x, y, maxW, h, r, ColorUtil.rgba(0, 0, 0, (int) (160 * alpha)));
-        Render2D.drawRoundedRect(x, y, maxW, hh, r, ColorUtil.rgba(0, 0, 0, (int) (alpha * 160)));
+        int glassFill = ColorUtil.rgba(20, 18, 28, (int) (160 * alpha));
+        Render2D.drawBlur(x, y, maxW, h, r, 12.0F, glassFill, alpha);
+        Render2D.drawRoundedRect(x, y, maxW, h, r, glassFill);
+        Render2D.drawRoundedOutline(x, y, maxW, h, r, 1.0F, ColorUtil.rgba(255, 255, 255, (int) (28 * alpha)));
 
         int hc = (int) (alpha * 255.0F);
         Fonts.drawString(Fonts.SF_MEDIUM, title, x + 6.0F, y + 4.0F, headerFs, ColorUtil.withAlpha(themeAccent, hc));

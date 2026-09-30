@@ -18,7 +18,7 @@ public final class StaffsHud extends HudElement implements IMinecraft {
     public record StaffEntry(String name, String status, int statusColor) {}
 
     public StaffsHud() {
-        super("staffs", "Staff List", 6.0F, 60.0F, 90.0F, HEADER_HEIGHT + 14.0F);
+        super("staffs", "Staff List", 6.0F, 90.0F, 90.0F, HEADER_HEIGHT + 14.0F, false);
     }
 
     public com.google.gson.JsonObject writeConfig() {
@@ -52,7 +52,7 @@ public final class StaffsHud extends HudElement implements IMinecraft {
     @Override
     public void draw(Render2DEvent event) {
         List<StaffEntry> staff = getOnlineStaff();
-        boolean editing = isDragging() || (mc.gui != null && mc.gui.screen() instanceof net.minecraft.client.gui.screens.ChatScreen);
+        boolean editing = isDragging();
 
         fadeAnim.setTarget((!staff.isEmpty() || editing) ? 1.0F : 0.0F);
         fadeAnim.update();
@@ -90,19 +90,16 @@ public final class StaffsHud extends HudElement implements IMinecraft {
         this.height = height;
 
         int primaryColor = Theme.getAccentColor();
-        int glowColor = ColorUtil.applyAlpha(primaryColor, (int) (alpha * 15));
-        int borderColor = ColorUtil.applyAlpha(primaryColor, (int) (alpha * 40));
-        int bgColor = ColorUtil.rgba(0, 0, 0, (int) (160 * alpha));
-        int headerBg = ColorUtil.rgba(0, 0, 0, (int) (160 * alpha));
 
-        // Real liquid glass blur + glow + background
-        Render2D.drawRoundedRect(drawX - 2.0F, drawY - 2.0F, width + 4.0F, height + 4.0F, radius + 2.0F, glowColor);
-        Render2D.drawRoundedRect(drawX - 0.5F, drawY - 0.5F, width + 1.0F, height + 1.0F, radius + 0.5F, borderColor);
-        Render2D.drawBlur(drawX, drawY, width, height, radius, 12.0F, bgColor, alpha);
-        Render2D.drawRoundedRect(drawX, drawY, width, height, radius, bgColor);
+        // Liquid glass background with blur and specular outline
+        Render2D.drawShadow(drawX, drawY, width, height, radius, 6.0F, ColorUtil.rgba(0, 0, 0, (int) (140 * alpha)));
+        int glassFill = ColorUtil.rgba(20, 18, 28, (int) (160 * alpha));
+        Render2D.drawBlur(drawX, drawY, width, height, radius, 12.0F, glassFill, alpha);
+        Render2D.drawRoundedRect(drawX, drawY, width, height, radius, glassFill);
+        Render2D.drawRoundedOutline(drawX, drawY, width, height, radius, 1.0F, ColorUtil.rgba(255, 255, 255, (int) (28 * alpha)));
 
         // Header
-        Render2D.drawRoundedRect(drawX, drawY, width, headerH, radius, headerBg);
+        Render2D.drawRoundedRect(drawX, drawY, width, headerH, radius, ColorUtil.rgba(255, 255, 255, (int) (10 * alpha)));
         Fonts.drawString(Fonts.SF_MEDIUM, title, drawX + padX, drawY + 4.0F, 7.5F, ColorUtil.applyAlpha(primaryColor, alpha));
 
         // Rows

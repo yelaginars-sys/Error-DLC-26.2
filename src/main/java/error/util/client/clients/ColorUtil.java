@@ -70,6 +70,10 @@ public class ColorUtil {
         return withAlpha(color, Math.round(alpha(color) * clamp01(factor)));
     }
 
+    public static int applyAlpha(int color, int alpha) {
+        return withAlpha(color, alpha);
+    }
+
     public static int applyAlpha(int color, float alpha) {
         return withAlpha(color, alpha);
     }
