@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "error",
+  "version": "${version}",
+  "name": "Error DLC",
+  "description": "Error DLC Client",
+  "authors": ["Kvass"],
+  "contact": {},
+  "license": "Error DLC",
+  "icon": "assets/error/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "main": [
+      "error.Client"
+    ]
+  },
+  "mixins": [
+    "error.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric-api": "*",
+    "minecraft": "${minecraft_version}"
+  }
+}
