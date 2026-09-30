@@ -58,16 +58,16 @@ public final class TotemCounterHud extends HudElement implements IMinecraft {
         float drawX = getX();
         float drawY = getY();
 
-        Render2D.drawShadow(event.context().pose(), drawX, drawY, width, height, 6.0F, ColorUtil.applyAlpha(SHADOW_COLOR, alpha));
-        Render2D.drawRoundedRect(event.context().pose(), drawX, drawY, width, height, 4.0F, ColorUtil.applyAlpha(BG_COLOR, alpha));
+        Render2D.drawShadow(drawX, drawY, width, height, 6.0F, ColorUtil.applyAlpha(SHADOW_COLOR, alpha));
+        Render2D.drawRoundedRect(drawX, drawY, width, height, 4.0F, ColorUtil.applyAlpha(BG_COLOR, alpha));
 
-        int primaryColor = Theme.primaryColor();
-        IconUse.SHIELD.draw(event.context().pose(), drawX + PADDING_X, drawY + 6.0F, 10.0F, ColorUtil.applyAlpha(primaryColor, alpha));
+        int primaryColor = Theme.getAccentColor();
+        Fonts.drawIcon(IconUse.FIGHT, drawX + PADDING_X, drawY + 6.0F, 10.0F, ColorUtil.applyAlpha(primaryColor, alpha));
 
         String label = "Totems:";
         String countStr = String.valueOf(totems);
 
-        Fonts.INTER_BOLD.drawText(event.context().pose(), label, drawX + PADDING_X + 13.0F, drawY + 4.5F, ColorUtil.applyAlpha(-1, alpha), 6.0F);
-        Fonts.INTER_BOLD.drawText(event.context().pose(), countStr, drawX + width - PADDING_X - Fonts.INTER_BOLD.getWidth(countStr, 7.0F), drawY + 4.0F, ColorUtil.applyAlpha(primaryColor, alpha), 7.0F);
+        Fonts.drawString(Fonts.SF_MEDIUM, label, drawX + PADDING_X + 13.0F, drawY + 4.5F, 6.0F, ColorUtil.applyAlpha(-1, alpha));
+        Fonts.drawString(Fonts.SF_MEDIUM, countStr, drawX + width - PADDING_X - Fonts.SF_MEDIUM.getWidth(countStr, 7.0F), drawY + 4.0F, 7.0F, ColorUtil.applyAlpha(primaryColor, alpha));
     }
 }
