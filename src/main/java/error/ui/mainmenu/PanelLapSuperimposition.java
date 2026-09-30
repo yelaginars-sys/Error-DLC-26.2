@@ -67,48 +67,66 @@ public final class PanelLapSuperimposition {
         float mainGuiAlpha = openProgress * (1.0F - holdProgress);
 
         if (mainGuiAlpha > 0.01F) {
-            // Fullscreen Background Spotlight Beam & Micro Dot Mesh (Matching photo 1:1)
-            int ambientBg = ColorUtil.rgba(8, 7, 12, (int) (210 * mainGuiAlpha));
+            // Subtle ambient dark backdrop (NOT solid opaque, so world is blurred behind liquid glass!)
+            int ambientBg = ColorUtil.rgba(10, 8, 16, (int) (115 * mainGuiAlpha));
             Render2D.drawRect(0, 0, screenWidth, screenHeight, ambientBg);
 
             // Top-Right Purple Spotlight Beam Accent
-            int spotlightCol = ColorUtil.rgba(195, 125, 245, (int) (65 * mainGuiAlpha));
+            int spotlightCol = ColorUtil.rgba(195, 125, 245, (int) (40 * mainGuiAlpha));
             Render2D.drawRoundedRect(screenWidth * 0.55F, -60.0F, screenWidth * 0.5F, 220.0F, 100.0F, spotlightCol);
 
-            // Glowing Neon Pink Connector Laser Cord wrapping from avatar circle
-            float avatarCenterX = x + 18.0F;
-            float avatarCenterY = y + h - 18.0F;
-            int laserCol = ColorUtil.rgba(228, 142, 216, (int) (230 * mainGuiAlpha));
-            int laserGlow = ColorUtil.rgba(228, 142, 216, (int) (90 * mainGuiAlpha));
+            float sideW = 145.0F;
+            float contentX = x + sideW + 12.0F;
+            float contentW = 380.0F;
 
-            Render2D.drawShadow(avatarCenterX - 2.0F, avatarCenterY + 10.0F, 120.0F, 3.0F, 3.0F, 6.0F, laserGlow);
-            Render2D.drawRoundedRect(avatarCenterX - 2.0F, avatarCenterY + 10.0F, 120.0F, 2.0F, 1.0F, laserCol);
-            Render2D.drawRoundedRect(avatarCenterX - 3.0F, avatarCenterY + 9.0F, 4.0F, 4.0F, 2.0F, ColorUtil.rgba(232, 163, 222, (int) (255 * mainGuiAlpha)));
+            // Glowing Neon Pink Connector Laser Cord wrapping from avatar circle around panel bottom and running under BOTH panels!
+            float avatarCenterX = x + 19.0F;
+            float avatarCenterY = y + h - 18.0F;
+            int laserCol = ColorUtil.rgba(240, 165, 225, (int) (245 * mainGuiAlpha));
+            int laserGlow = ColorUtil.rgba(225, 130, 205, (int) (110 * mainGuiAlpha));
+
+            float totalCordW = (contentX + contentW - 10.0F) - avatarCenterX;
+            // Vertical drop from avatar
+            Render2D.drawRoundedRect(avatarCenterX - 1.0F, avatarCenterY + 4.0F, 2.0F, 7.0F, 1.0F, laserCol);
+            // Long horizontal laser line under sidebar, gap, and right panel
+            Render2D.drawShadow(avatarCenterX - 1.0F, avatarCenterY + 11.0F, totalCordW, 2.5F, 1.0F, 6.0F, laserGlow);
+            Render2D.drawRoundedRect(avatarCenterX - 1.0F, avatarCenterY + 11.0F, totalCordW, 2.0F, 1.0F, laserCol);
+            // Right upward terminal hook
+            Render2D.drawRoundedRect(contentX + contentW - 11.0F, avatarCenterY + 5.0F, 2.0F, 7.0F, 1.0F, laserCol);
+            // Terminal avatar connector bead
+            Render2D.drawRoundedRect(avatarCenterX - 2.5F, avatarCenterY + 3.0F, 5.0F, 5.0F, 2.5F, ColorUtil.rgba(255, 255, 255, (int) (255 * mainGuiAlpha)));
 
             renderDescriptionAboveGui(state, centerX, y - 18.0F, mainGuiAlpha);
 
-            // 1. NARROW LEFT SIDEBAR PANEL (sideW = 145.0F, 100% 1:1 match of media_1790804005720.png)
-            float sideW = 145.0F;
-            int cardBg = ColorUtil.rgba(26, 23, 36, (int) (185 * mainGuiAlpha));
-            int shadowColor = ColorUtil.rgba(0, 0, 0, (int) (170 * mainGuiAlpha));
-            int glassBorder = ColorUtil.rgba(255, 255, 255, (int) (40 * mainGuiAlpha));
+            // 1. NARROW LEFT SIDEBAR PANEL (sideW = 145.0F, Authentic Frosted Liquid Glass)
+            int liquidGlassFill = ColorUtil.rgba(26, 20, 36, (int) (95 * mainGuiAlpha));
+            int shadowColor = ColorUtil.rgba(0, 0, 0, (int) (160 * mainGuiAlpha));
+            int glassGloss = ColorUtil.rgba(255, 255, 255, (int) (22 * mainGuiAlpha));
+            int glassBorder = ColorUtil.rgba(255, 255, 255, (int) (55 * mainGuiAlpha));
+            int glassHalo = ColorUtil.rgba(215, 140, 240, (int) (30 * mainGuiAlpha));
 
-            Render2D.drawShadow(x, y, sideW, h, 14.0F, 10.0F, shadowColor);
-            Render2D.drawRoundedRect(x, y, sideW, h, 14.0F, cardBg);
+            // Real Liquid Glass Blur + Translucent Fill + Specular Gloss + Glass Border + Glass Halo
+            Render2D.drawShadow(x, y, sideW, h, 14.0F, 12.0F, shadowColor);
+            Render2D.drawShadow(x, y, sideW, h, 14.0F, 6.0F, glassHalo);
+            Render2D.drawBlur(x, y, sideW, h, 14.0F, 22.0F, liquidGlassFill, mainGuiAlpha);
+            Render2D.drawRoundedRect(x, y, sideW, h, 14.0F, liquidGlassFill);
+            Render2D.drawRoundedRect(x, y, sideW, 16.0F, 14.0F, glassGloss);
             Render2D.drawRoundedOutline(x, y, sideW, h, 14.0F, 1.0F, glassBorder);
 
-            // Top Header Split Pills: Left [Rose v] | Right [1.21.11]
+            // Top Header Split Pills: Left [Rose v] | Right [1.21.11] (Matching media_1790804005720.png 1:1)
             float dropdownY = y + 8.0F;
             float leftPillW = sideW - 54.0F;
-            Render2D.drawRoundedRect(x + 8.0F, dropdownY, leftPillW, 19.0F, 6.0F, ColorUtil.rgba(255, 255, 255, (int) (15 * mainGuiAlpha)));
-            Render2D.drawRoundedOutline(x + 8.0F, dropdownY, leftPillW, 19.0F, 6.0F, 1.0F, ColorUtil.rgba(255, 255, 255, (int) (25 * mainGuiAlpha)));
+            int pillGlass = ColorUtil.rgba(65, 58, 80, (int) (115 * mainGuiAlpha));
+            int pillBorder = ColorUtil.rgba(255, 255, 255, (int) (25 * mainGuiAlpha));
 
+            Render2D.drawRoundedRect(x + 8.0F, dropdownY, leftPillW, 19.0F, 6.0F, pillGlass);
+            Render2D.drawRoundedOutline(x + 8.0F, dropdownY, leftPillW, 19.0F, 6.0F, 1.0F, pillBorder);
             Fonts.drawString(Fonts.SF_MEDIUM, "🌹 Rose", x + 13.0F, dropdownY + 4.5F, 8.0F, ColorUtil.rgba(255, 255, 255, (int) (240 * mainGuiAlpha)));
             Fonts.drawString(Fonts.SF_MEDIUM, "v", x + leftPillW - 2.0F, dropdownY + 5.0F, 7.0F, ColorUtil.rgba(180, 180, 200, (int) (180 * mainGuiAlpha)));
 
             float rightPillX = x + 8.0F + leftPillW + 4.0F;
-            Render2D.drawRoundedRect(rightPillX, dropdownY, 34.0F, 19.0F, 6.0F, ColorUtil.rgba(255, 255, 255, (int) (15 * mainGuiAlpha)));
-            Render2D.drawRoundedOutline(rightPillX, dropdownY, 34.0F, 19.0F, 6.0F, 1.0F, ColorUtil.rgba(255, 255, 255, (int) (25 * mainGuiAlpha)));
+            Render2D.drawRoundedRect(rightPillX, dropdownY, 34.0F, 19.0F, 6.0F, pillGlass);
+            Render2D.drawRoundedOutline(rightPillX, dropdownY, 34.0F, 19.0F, 6.0F, 1.0F, pillBorder);
             Fonts.drawString(Fonts.SF_MEDIUM, "1.21.11", rightPillX + 4.0F, dropdownY + 5.0F, 7.0F, ColorUtil.rgba(200, 200, 220, (int) (200 * mainGuiAlpha)));
 
             // Categories List
@@ -132,27 +150,28 @@ public final class PanelLapSuperimposition {
 
                 if (active) {
                     // Active button with Vertical Pink Accent Bar on Left Edge (Matching media_1790804005720.png 1:1)
-                    Render2D.drawRoundedRect(x + 8.0F, catY, sideW - 16.0F, 19.0F, 6.0F, ColorUtil.rgba(54, 46, 72, (int) (170 * mainGuiAlpha)));
-                    Render2D.drawRoundedRect(x + 8.0F, catY + 2.5F, 3.5F, 14.0F, 2.0F, laserCol);
-                    Render2D.drawShadow(x + 8.0F, catY + 2.5F, 3.5F, 14.0F, 2.0F, 4.0F, laserGlow);
+                    Render2D.drawRoundedRect(x + 8.0F, catY, sideW - 16.0F, 19.0F, 6.0F, ColorUtil.rgba(75, 68, 96, (int) (125 * mainGuiAlpha)));
+                    Render2D.drawRoundedOutline(x + 8.0F, catY, sideW - 16.0F, 19.0F, 6.0F, 1.0F, ColorUtil.rgba(255, 255, 255, (int) (25 * mainGuiAlpha)));
+                    Render2D.drawRoundedRect(x + 10.0F, catY + 3.0F, 3.0F, 13.0F, 1.5F, laserCol);
+                    Render2D.drawShadow(x + 10.0F, catY + 3.0F, 3.0F, 13.0F, 1.5F, 4.0F, laserGlow);
                 }
 
                 int col = active ? ColorUtil.rgba(255, 255, 255, 255) : ColorUtil.rgba(200, 195, 215, 180);
-                Fonts.drawIcon(getCategoryIcon(category), x + 16.0F, catY + 4.5F, 9.5F, ColorUtil.multiplyAlpha(col, mainGuiAlpha));
-                Fonts.drawString(Fonts.SF_MEDIUM, Localization.get(category.getDisplayName()), x + 30.0F, catY + 5.0F, 8.5F, ColorUtil.multiplyAlpha(col, mainGuiAlpha));
+                Fonts.drawIcon(getCategoryIcon(category), x + 18.0F, catY + 4.5F, 9.5F, ColorUtil.multiplyAlpha(col, mainGuiAlpha));
+                Fonts.drawString(Fonts.SF_MEDIUM, Localization.get(category.getDisplayName()), x + 32.0F, catY + 5.0F, 8.5F, ColorUtil.multiplyAlpha(col, mainGuiAlpha));
                 catY += 23.0F;
             }
 
             // Bottom Search Input with Pink Glowing Dot on Right Side
             float searchY = y + h - 50.0F;
-            Render2D.drawRoundedRect(x + 8.0F, searchY, sideW - 16.0F, 18.0F, 6.0F, ColorUtil.rgba(255, 255, 255, (int) (15 * mainGuiAlpha)));
-            Render2D.drawRoundedOutline(x + 8.0F, searchY, sideW - 16.0F, 18.0F, 6.0F, 1.0F, ColorUtil.rgba(255, 255, 255, (int) (25 * mainGuiAlpha)));
+            Render2D.drawRoundedRect(x + 8.0F, searchY, sideW - 16.0F, 18.0F, 6.0F, pillGlass);
+            Render2D.drawRoundedOutline(x + 8.0F, searchY, sideW - 16.0F, 18.0F, 6.0F, 1.0F, pillBorder);
             Fonts.drawString(Fonts.SF_MEDIUM, "🔍 Search", x + 14.0F, searchY + 4.5F, 7.5F, ColorUtil.rgba(180, 180, 200, (int) (160 * mainGuiAlpha)));
 
             // Pink Glowing Dot on Right Side of Search Bar
             Render2D.drawRoundedRect(x + sideW - 18.0F, searchY + 5.0F, 6.0F, 8.0F, 4.0F, laserCol);
 
-            // User Profile Footer with Circular Avatar & Glowing Ring ("Zodiac BETA")
+            // User Profile Footer with Circular Avatar & Glowing Ring ("Zodiac BETA" - No surrounding card!)
             float userY = y + h - 28.0F;
             String curUser = Minecraft.getInstance().getUser().getName();
 
@@ -165,36 +184,39 @@ public final class PanelLapSuperimposition {
             Render2D.drawRoundedOutline(x + 10.0F, userY + 1.0F, 18.0F, 18.0F, 9.0F, 1.0F, laserCol);
 
             Fonts.drawString(Fonts.SF_MEDIUM, curUser, x + 34.0F, userY + 5.0F, 8.0F, ColorUtil.rgba(255, 255, 255, (int) (240 * mainGuiAlpha)));
-            Render2D.drawRoundedRect(x + sideW - 36.0F, userY + 4.5F, 24.0F, 11.0F, 3.0F, ColorUtil.rgba(180, 120, 240, (int) (140 * mainGuiAlpha)));
+            Render2D.drawRoundedRect(x + sideW - 36.0F, userY + 4.5F, 24.0F, 11.0F, 3.0F, ColorUtil.rgba(140, 80, 180, (int) (140 * mainGuiAlpha)));
             Fonts.drawString(Fonts.SF_MEDIUM, "BETA", x + sideW - 34.0F, userY + 6.0F, 6.0F, ColorUtil.rgba(255, 255, 255, (int) (255 * mainGuiAlpha)));
 
-            // 2. EXTRA-WIDE RIGHT MAIN CONTENT PANEL (contentW = 378.0F)
-            float contentX = x + sideW + 12.0F;
-            float contentW = 378.0F;
+            // 2. EXTRA-WIDE RIGHT MAIN CONTENT PANEL (contentW = 380.0F, Authentic Frosted Liquid Glass)
 
-            Render2D.drawShadow(contentX, y, contentW, h, 14.0F, 10.0F, shadowColor);
-            Render2D.drawRoundedRect(contentX, y, contentW, h, 14.0F, cardBg);
+            // Liquid Glass Blur + Translucent Fill + Specular Gloss + Glass Border + Glass Halo
+            Render2D.drawShadow(contentX, y, contentW, h, 14.0F, 12.0F, shadowColor);
+            Render2D.drawShadow(contentX, y, contentW, h, 14.0F, 6.0F, glassHalo);
+            Render2D.drawBlur(contentX, y, contentW, h, 14.0F, 22.0F, liquidGlassFill, mainGuiAlpha);
+            Render2D.drawRoundedRect(contentX, y, contentW, h, 14.0F, liquidGlassFill);
+            Render2D.drawRoundedRect(contentX, y, contentW, 16.0F, 14.0F, glassGloss);
             Render2D.drawRoundedOutline(contentX, y, contentW, h, 14.0F, 1.0F, glassBorder);
 
             // Top Breadcrumb & Config Dropdown
             float breadY = y + 8.0F;
             Fonts.drawString(Fonts.SF_MEDIUM, "Rose  /  Categories  /  " + state.getCurrentCategory().getDisplayName(), contentX + 12.0F, breadY + 3.0F, 8.0F, ColorUtil.rgba(200, 195, 215, (int) (180 * mainGuiAlpha)));
 
-            Render2D.drawRoundedRect(contentX + contentW - 70.0F, breadY, 58.0F, 17.0F, 5.0F, ColorUtil.rgba(255, 255, 255, (int) (15 * mainGuiAlpha)));
+            Render2D.drawRoundedRect(contentX + contentW - 70.0F, breadY, 58.0F, 17.0F, 5.0F, pillGlass);
+            Render2D.drawRoundedOutline(contentX + contentW - 70.0F, breadY, 58.0F, 17.0F, 5.0F, 1.0F, pillBorder);
             Fonts.drawString(Fonts.SF_MEDIUM, "Custom v", contentX + contentW - 62.0F, breadY + 3.5F, 7.5F, ColorUtil.rgba(240, 240, 255, (int) (220 * mainGuiAlpha)));
 
             // Sub-mode Pills Bar
             float subY = y + 30.0F;
-            int activeOptionPill = ColorUtil.rgba(230, 125, 210, (int) (140 * mainGuiAlpha));
+            int activeOptionPill = ColorUtil.rgba(225, 120, 205, (int) (140 * mainGuiAlpha));
 
-            Render2D.drawRoundedRect(contentX + 12.0F, subY, 110.0F, 17.0F, 5.0F, ColorUtil.rgba(48, 40, 64, (int) (120 * mainGuiAlpha)));
+            Render2D.drawRoundedRect(contentX + 12.0F, subY, 110.0F, 17.0F, 5.0F, ColorUtil.rgba(60, 52, 78, (int) (115 * mainGuiAlpha)));
             Fonts.drawString(Fonts.SF_MEDIUM, "Коррекция движения", contentX + 16.0F, subY + 3.5F, 7.0F, ColorUtil.rgba(200, 195, 215, (int) (180 * mainGuiAlpha)));
 
             Render2D.drawRoundedRect(contentX + 128.0F, subY, 95.0F, 17.0F, 5.0F, activeOptionPill);
             Render2D.drawRoundedOutline(contentX + 128.0F, subY, 95.0F, 17.0F, 5.0F, 1.0F, ColorUtil.rgba(250, 160, 235, (int) (190 * mainGuiAlpha)));
             Fonts.drawString(Fonts.SF_MEDIUM, "Сфокусированная", contentX + 133.0F, subY + 3.5F, 7.0F, ColorUtil.rgba(255, 255, 255, (int) (255 * mainGuiAlpha)));
 
-            Render2D.drawRoundedRect(contentX + 228.0F, subY, 70.0F, 17.0F, 5.0F, ColorUtil.rgba(48, 40, 64, (int) (120 * mainGuiAlpha)));
+            Render2D.drawRoundedRect(contentX + 228.0F, subY, 70.0F, 17.0F, 5.0F, ColorUtil.rgba(60, 52, 78, (int) (115 * mainGuiAlpha)));
             Fonts.drawString(Fonts.SF_MEDIUM, "Свободная", contentX + 234.0F, subY + 3.5F, 7.0F, ColorUtil.rgba(200, 195, 215, (int) (180 * mainGuiAlpha)));
 
             renderSearchAndHintsUnderGui(state, centerX, y + h + 16.0F, mainGuiAlpha);
@@ -250,9 +272,6 @@ public final class PanelLapSuperimposition {
         float currentScroll = state.getScrollOffset();
         float currentY = startY - currentScroll;
 
-        int activeCardBg = ColorUtil.rgba(30, 25, 42, (int) (140 * alpha));
-        int inactiveCardBg = ColorUtil.rgba(22, 19, 32, (int) (110 * alpha));
-
         for (Module module : list) {
             float modX = startX;
             float modY = currentY;
@@ -278,26 +297,34 @@ public final class PanelLapSuperimposition {
                 state.setHoveredModule(module);
             }
 
-            int cardBg = module.isState() ? activeCardBg : inactiveCardBg;
+            // Pure liquid glass translucent container (NO heavy dark opaque blocks!)
+            int cardBg = hovered ? ColorUtil.rgba(255, 255, 255, (int) (14 * alpha)) : ColorUtil.rgba(255, 255, 255, (int) (6 * alpha));
+            int cardOutline = hovered ? ColorUtil.rgba(255, 255, 255, (int) (32 * alpha)) : ColorUtil.rgba(255, 255, 255, (int) (16 * alpha));
 
-            // Sub-box Card Backdrop
-            Render2D.drawRoundedRect(modX, modY, colWidth, cardHeight, 6.0F, ColorUtil.multiplyAlpha(cardBg, alpha));
-            Render2D.drawRoundedOutline(modX, modY, colWidth, cardHeight, 6.0F, 1.0F, ColorUtil.rgba(255, 255, 255, (int) (20 * alpha)));
+            Render2D.drawRoundedRect(modX, modY, colWidth, cardHeight, 7.0F, cardBg);
+            Render2D.drawRoundedOutline(modX, modY, colWidth, cardHeight, 7.0F, 1.0F, cardOutline);
 
             // Module Title
-            int textCol = module.isState() ? ColorUtil.WHITE : ColorUtil.rgba(200, 195, 215, 200);
+            int textCol = module.isState() ? ColorUtil.WHITE : ColorUtil.rgba(205, 200, 220, 200);
             Fonts.drawString(Fonts.SF_MEDIUM, module.getName(), modX + 8.0F, modY + 5.5F, 8.5F, ColorUtil.multiplyAlpha(textCol, alpha));
 
-            // Module State Toggle Pill
+            // Module State Toggle Switch Pill (Glowing Neon Pink when ON)
             float toggleW = 20.0F;
             float toggleH = 10.0F;
             float toggleX = modX + colWidth - toggleW - 8.0F;
             float toggleY = modY + 6.0F;
 
-            int toggleBg = module.isState() ? ColorUtil.rgba(225, 135, 215, (int) (200 * alpha)) : ColorUtil.rgba(45, 40, 60, (int) (140 * alpha));
-            Render2D.drawRoundedRect(toggleX, toggleY, toggleW, toggleH, 5.0F, toggleBg);
-            float knobX = module.isState() ? toggleX + toggleW - 8.0F : toggleX + 2.0F;
-            Render2D.drawRoundedRect(knobX, toggleY + 1.5F, 7.0F, 7.0F, 3.5F, ColorUtil.rgba(255, 255, 255, (int) (255 * alpha)));
+            if (module.isState()) {
+                int toggleBg = ColorUtil.rgba(235, 145, 225, (int) (240 * alpha));
+                Render2D.drawShadow(toggleX, toggleY, toggleW, toggleH, 5.0F, 4.0F, ColorUtil.rgba(230, 135, 220, (int) (110 * alpha)));
+                Render2D.drawRoundedRect(toggleX, toggleY, toggleW, toggleH, 5.0F, toggleBg);
+                Render2D.drawRoundedRect(toggleX + toggleW - 8.0F, toggleY + 1.5F, 7.0F, 7.0F, 3.5F, ColorUtil.rgba(255, 255, 255, (int) (255 * alpha)));
+            } else {
+                int toggleBg = ColorUtil.rgba(255, 255, 255, (int) (20 * alpha));
+                Render2D.drawRoundedRect(toggleX, toggleY, toggleW, toggleH, 5.0F, toggleBg);
+                Render2D.drawRoundedOutline(toggleX, toggleY, toggleW, toggleH, 5.0F, 1.0F, ColorUtil.rgba(255, 255, 255, (int) (35 * alpha)));
+                Render2D.drawRoundedRect(toggleX + 2.0F, toggleY + 1.5F, 7.0F, 7.0F, 3.5F, ColorUtil.rgba(200, 195, 215, (int) (200 * alpha)));
+            }
 
             if (module.getExpandAnim().getValue() > 0.02F) {
                 float setY = modY + 22.0F;

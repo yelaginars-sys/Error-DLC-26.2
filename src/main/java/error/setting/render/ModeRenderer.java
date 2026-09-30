@@ -90,11 +90,21 @@ public class ModeRenderer extends SettingRenderer<ModeSetting> {
 
             chipBounds.put(mode, new float[]{curX, curY, chipW, chipH});
 
-            int bg = active ? Theme.getAccentColor() : 0x351C1F2E;
-            int textCol = active ? 0xFFFFFFFF : Theme.TEXT_MUTED;
-
-            Render2D.drawRoundedRect(curX, curY, chipW, chipH, 2.5F, ColorUtil.multiplyAlpha(bg, effectiveAlpha));
-            Fonts.drawString(Fonts.SF_MEDIUM, displayMode, curX + padX, curY + 2.0F, fontSize, ColorUtil.multiplyAlpha(textCol, effectiveAlpha));
+            if (active) {
+                int activeBg = ColorUtil.rgba(235, 145, 225, (int) (125 * effectiveAlpha));
+                int activeOutline = ColorUtil.rgba(250, 180, 240, (int) (210 * effectiveAlpha));
+                int glowCol = ColorUtil.rgba(230, 135, 220, (int) (95 * effectiveAlpha));
+                Render2D.drawShadow(curX, curY, chipW, chipH, 4.0F, 4.0F, glowCol);
+                Render2D.drawRoundedRect(curX, curY, chipW, chipH, 4.0F, activeBg);
+                Render2D.drawRoundedOutline(curX, curY, chipW, chipH, 4.0F, 1.0F, activeOutline);
+            } else {
+                int inactiveBg = ColorUtil.rgba(255, 255, 255, (int) (12 * effectiveAlpha));
+                int inactiveOutline = ColorUtil.rgba(255, 255, 255, (int) (20 * effectiveAlpha));
+                Render2D.drawRoundedRect(curX, curY, chipW, chipH, 4.0F, inactiveBg);
+                Render2D.drawRoundedOutline(curX, curY, chipW, chipH, 4.0F, 1.0F, inactiveOutline);
+            }
+            int textCol = active ? 0xFFFFFFFF : ColorUtil.rgba(215, 210, 230, (int) (210 * effectiveAlpha));
+            Fonts.drawString(Fonts.SF_MEDIUM, displayMode, curX + padX, curY + 2.0F, fontSize, textCol);
 
             curX += chipW + gap;
         }

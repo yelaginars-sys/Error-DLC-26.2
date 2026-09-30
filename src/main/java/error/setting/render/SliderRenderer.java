@@ -67,15 +67,20 @@ public class SliderRenderer extends SettingRenderer<SliderSetting> {
             setting.setValue(newValue);
         }
 
-        Render2D.drawRoundedRect(barX, barY, barW, barH, 1.0F, ColorUtil.multiplyAlpha(0xFF1E202A, effectiveAlpha));
+        // Thin translucent liquid glass track
+        Render2D.drawRoundedRect(barX, barY, barW, barH, 1.0F, ColorUtil.rgba(255, 255, 255, (int) (24 * effectiveAlpha)));
 
         float fillW = barW * visualAnim.getValue();
-        Render2D.drawRoundedRect(barX, barY, fillW, barH, 1.0F, ColorUtil.multiplyAlpha(Theme.getAccentColor(), effectiveAlpha));
+        int accentCol = Theme.getAccentColor();
+        Render2D.drawShadow(barX, barY, fillW, barH, 1.0F, 4.0F, ColorUtil.multiplyAlpha(accentCol, effectiveAlpha * 0.6F));
+        Render2D.drawRoundedRect(barX, barY, fillW, barH, 1.0F, ColorUtil.multiplyAlpha(accentCol, effectiveAlpha));
 
+        // Circular luminous white thumb bead
         float thumbSize = 6.0F;
         float thumbX = barX + fillW - (thumbSize / 2.0F);
-        float thumbY = barY + (barH - thumbSize) / 2.5F;
-        Render2D.drawRoundedRect(thumbX, thumbY, thumbSize + 1, thumbSize - 1.5f, 1.5f, ColorUtil.multiplyAlpha(Theme.getAccentColor(), effectiveAlpha));
+        float thumbY = barY + (barH - thumbSize) / 2.0F;
+        Render2D.drawShadow(thumbX, thumbY, thumbSize, thumbSize, thumbSize / 2.0F, 4.0F, ColorUtil.multiplyAlpha(accentCol, effectiveAlpha * 0.8F));
+        Render2D.drawRoundedRect(thumbX, thumbY, thumbSize, thumbSize, thumbSize / 2.0F, ColorUtil.rgba(255, 255, 255, (int) (255 * effectiveAlpha)));
     }
 
     @Override
