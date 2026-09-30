@@ -244,8 +244,8 @@ public final class PanelLapSuperimposition {
         float currentScroll = state.getScrollOffset();
         float currentY = startY - currentScroll;
 
-        int activeCardBg = ColorUtil.rgba(16, 14, 24, (int) (180 * alpha));
-        int inactiveCardBg = ColorUtil.rgba(12, 10, 18, (int) (140 * alpha));
+        int activeCardBg = ColorUtil.rgba(32, 26, 44, (int) (140 * alpha));
+        int inactiveCardBg = ColorUtil.rgba(22, 18, 30, (int) (110 * alpha));
 
         for (Module module : list) {
             float modX = startX;
