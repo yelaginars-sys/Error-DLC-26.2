@@ -1,131 +1,171 @@
 package error.ui.hud.impl;
 
+import error.Client;
 import error.IMinecraft;
 import error.event.list.Render2DEvent;
 import error.module.Module;
 import error.ui.hud.HudElement;
 import error.util.client.clients.ColorUtil;
+import error.util.client.clients.Theme;
+import error.util.math.Animation;
 import error.util.render.Render2D;
 import error.util.render.font.Fonts;
-import org.lwjgl.glfw.GLFW;
+import net.minecraft.client.gui.screens.ChatScreen;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public final class KeybindsHud extends HudElement implements IMinecraft {
 
-    public static final int ACCENT_PURPLE = ColorUtil.rgba(166, 130, 255, 255);
-    private static final float HEADER_HEIGHT = 14.0F;
+    private final Animation heightAnim = new Animation(26.0F, 0.20F);
+    private final Map<Module, Animation[]> itemAnims = new LinkedHashMap<>();
+
+    private static final float HEADER_HEIGHT = 15.0F;
+    private static final float ITEM_SPACING = 11.0F;
+    private static final float RADIUS = 6.0F;
+    private static final float ITEM_FONT_SIZE = 6.0F;
+    private static final float HEADER_FONT_SIZE = 7.5F;
 
     public KeybindsHud() {
-        super("keybinds", "Hotkeys", 6.0F, 120.0F, 100.0F, HEADER_HEIGHT + 14.0F);
+        super("keybinds", "Hotkeys", 3.0F, 120.0F, 85.0F, 26.0F);
     }
 
-    private String getKeyName(int key) {
-        if (key <= 0) return "NONE";
-        String name = GLFW.glfwGetKeyName(key, 0);
-        if (name != null) return name.toUpperCase();
-        return switch (key) {
-            case GLFW.GLFW_KEY_LEFT_SHIFT, GLFW.GLFW_KEY_RIGHT_SHIFT -> "SHIFT";
-            case GLFW.GLFW_KEY_LEFT_CONTROL, GLFW.GLFW_KEY_RIGHT_CONTROL -> "CTRL";
-            case GLFW.GLFW_KEY_LEFT_ALT, GLFW.GLFW_KEY_RIGHT_ALT -> "ALT";
-            case GLFW.GLFW_KEY_TAB -> "TAB";
-            case GLFW.GLFW_KEY_CAPS_LOCK -> "CAPS";
-            default -> "K" + key;
-        };
+    public com.google.gson.JsonObject writeConfig() {
+        return new com.google.gson.JsonObject();
     }
 
-    private int getModuleKey(Module m) {
-        if (m != null && m.getBind() != null && m.getBind().isBound() && !m.getBind().getValue().isEmpty()) {
-            return m.getBind().getValue().get(0);
-        }
-        return 0;
+    public void readConfig(com.google.gson.JsonObject json) {
     }
 
     @Override
     public void draw(Render2DEvent event) {
-        List<Module> bound = new ArrayList<>();
-        if (error.Client.INSTANCE != null && error.Client.INSTANCE.moduleManager != null) {
-            for (Module m : error.Client.INSTANCE.moduleManager.getModules()) {
-                if (m.isEnabled() && getModuleKey(m) > 0) {
-                    bound.add(m);
+        List<Module> boundModules = new ArrayList<>();
+        if (Client.getInstance() != null && Client.getInstance().getModuleManager() != null) {
+            for (Module m : Client.getInstance().getModuleManager().getModules()) {
+                if (m.isEnabled() && m.getBind() != null && m.getBind().isBound()) {
+                    boundModules.add(m);
                 }
             }
         }
 
-        boolean editing = isDragging() || (mc.gui != null && mc.gui.screen() instanceof net.minecraft.client.gui.screens.ChatScreen);
-        fadeAnim.setTarget((!bound.isEmpty() || editing) ? 1.0F : 0.0F);
+        boolean editing = mc.gui != null && mc.gui.screen() instanceof ChatScreen;
+        fadeAnim.setTarget((!boundModules.isEmpty() || editing) ? 1.0F : 0.0F);
         fadeAnim.update();
-
         float alpha = fadeAnim.getValue();
-        if (alpha <= 0.01F) return;
 
-        float drawX = getX();
-        float drawY = getY();
+        if (alpha <= 0.01F && boundModules.isEmpty() && itemAnims.isEmpty()) {
+            heightAnim.setTarget(15.0F);
+            heightAnim.update();
+            return;
+        }
 
-        float padX = 4.0F;
-        float headerH = HEADER_HEIGHT;
-        float itemH = 12.0F;
-        float radius = 5.0F;
+        float x = getX();
+        float y = getY();
+        int themeAccent = Theme.getAccentColor();
 
+        float itemFs = ITEM_FONT_SIZE;
+        float headerFs = HEADER_FONT_SIZE;
+        float hh = HEADER_HEIGHT;
+        float is = ITEM_SPACING;
+        float r = RADIUS;
         String title = "Hotkeys";
-        float maxNameW = Fonts.SF_MEDIUM.getWidth(title, 6.0F);
-        float maxBindW = 0.0F;
 
-        if (bound.isEmpty() && editing) {
-            maxNameW = Math.max(maxNameW, Fonts.SF_MEDIUM.getWidth("Elytra Target", 6.0F));
-            maxBindW = Math.max(maxBindW, Fonts.SF_MEDIUM.getWidth("X", 6.0F));
-        } else {
-            for (Module m : bound) {
-                maxNameW = Math.max(maxNameW, Fonts.SF_MEDIUM.getWidth(m.getName(), 6.0F));
-                maxBindW = Math.max(maxBindW, Fonts.SF_MEDIUM.getWidth(getKeyName(getModuleKey(m)), 6.0F));
+        List<Module> toRemove = new ArrayList<>();
+        List<Module> exiting = new ArrayList<>();
+        for (Module m : itemAnims.keySet()) {
+            if (!boundModules.contains(m)) {
+                Animation[] a = itemAnims.get(m);
+                if (a[0].getTarget() != 0.0F) {
+                    a[0].setTarget(0.0F);
+                    a[1].setTarget(-5.0F);
+                }
+                a[0].update();
+                a[1].update();
+                if (a[0].getValue() <= 0.02F) toRemove.add(m);
+                else exiting.add(m);
             }
         }
+        toRemove.forEach(itemAnims::remove);
 
-        float width = Math.max(90.0F, padX * 2.0F + maxNameW + maxBindW + 18.0F);
-        int itemCount = bound.isEmpty() && editing ? 1 : bound.size();
-        float height = headerH + itemCount * itemH + 3.0F;
-
-        this.width = width;
-        this.height = height;
-
-        int primaryColor = ACCENT_PURPLE;
-        int glowColor = ColorUtil.applyAlpha(primaryColor, (int) (alpha * 15));
-        int borderColor = ColorUtil.applyAlpha(primaryColor, (int) (alpha * 40));
-        int bgColor = ColorUtil.rgba(14, 14, 18, (int) (160 * alpha));
-        int headerBg = ColorUtil.rgba(0, 0, 0, (int) (160 * alpha));
-
-        // Background (Waper Style)
-        Render2D.drawRoundedRect(drawX - 2.0F, drawY - 2.0F, width + 4.0F, height + 4.0F, radius + 2.0F, glowColor);
-        Render2D.drawRoundedRect(drawX - 0.5F, drawY - 0.5F, width + 1.0F, height + 1.0F, radius + 0.5F, borderColor);
-        Render2D.drawRoundedRect(drawX, drawY, width, height, radius, bgColor);
-
-        // Header
-        Render2D.drawRoundedRect(drawX, drawY, width, headerH, radius, headerBg);
-        Fonts.drawString(Fonts.SF_MEDIUM, title, drawX + padX, drawY + 3.5F, 6.0F, ColorUtil.applyAlpha(primaryColor, alpha));
-
-        // Rows
-        float currentY = drawY + headerH + 2.0F;
-        if (bound.isEmpty() && editing) {
-            renderKeyRow(drawX, currentY, width, "Elytra Target", "X", alpha);
-        } else {
-            for (Module m : bound) {
-                renderKeyRow(drawX, currentY, width, m.getName(), getKeyName(getModuleKey(m)), alpha);
-                currentY += itemH;
+        for (Module m : boundModules) {
+            Animation[] a = itemAnims.computeIfAbsent(m, k -> new Animation[]{new Animation(0.0F, 0.20F), new Animation(-5.0F, 0.20F)});
+            if (a[0].getTarget() != 1.0F) {
+                a[0].setTarget(1.0F);
+                a[1].setTarget(0.0F);
             }
+            a[0].update();
+            a[1].update();
         }
-    }
 
-    private void renderKeyRow(float x, float y, float width, String name, String bind, float alpha) {
-        float padX = 4.0F;
-        Fonts.drawString(Fonts.SF_MEDIUM, name, x + padX, y + 2.5F, 6.0F, ColorUtil.applyAlpha(ColorUtil.WHITE, alpha));
+        float titleW = Fonts.SF_MEDIUM.getWidth(title, headerFs);
+        float maxBindWidth = 0;
+        float maxNameWidth = 0;
+        for (Module m : boundModules) {
+            maxBindWidth = Math.max(maxBindWidth, Fonts.SF_MEDIUM.getWidth(m.getBind().getDisplayValue(), itemFs));
+            maxNameWidth = Math.max(maxNameWidth, Fonts.SF_MEDIUM.getWidth(m.getName(), itemFs));
+        }
+        for (Module m : exiting) {
+            maxBindWidth = Math.max(maxBindWidth, Fonts.SF_MEDIUM.getWidth(m.getBind().getDisplayValue(), itemFs));
+            maxNameWidth = Math.max(maxNameWidth, Fonts.SF_MEDIUM.getWidth(m.getName(), itemFs));
+        }
+        float maxW = Math.max(70.0F, maxNameWidth + maxBindWidth + 22.0F);
+        float headerTitleW = titleW + 6.0F;
+        if (headerTitleW > maxW) maxW = headerTitleW;
 
-        float bindW = Fonts.SF_MEDIUM.getWidth(bind, 5.5F) + 6.0F;
-        float bindH = 10.0F;
-        float bindX = x + width - padX - bindW;
-        float bindY = y + 1.0F;
+        int totalVisible = boundModules.size() + exiting.size();
+        float targetHeight = Math.max(hh, hh + 1.5F + totalVisible * is);
+        heightAnim.setTarget(targetHeight);
+        heightAnim.update();
+        float h = heightAnim.getValue();
 
-        Render2D.drawRoundedRect(bindX, bindY, bindW, bindH, 3.0F, ColorUtil.rgba(25, 27, 36, (int) (220 * alpha)));
-        Fonts.drawCenteredString(Fonts.SF_MEDIUM, bind, bindX + bindW / 2.0F, bindY + 2.0F, 5.5F, ColorUtil.applyAlpha(ColorUtil.rgba(200, 200, 210, 255), alpha));
+        this.width = maxW;
+        this.height = h;
+
+        // Exact Waper Background layers
+        Render2D.drawRoundedRect(x - 2.0F, y - 2.0F, maxW + 4.0F, h + 4.0F, r + 2.0F, ColorUtil.withAlpha(themeAccent, (int) (alpha * 15)));
+        Render2D.drawRoundedRect(x - 0.5F, y - 0.5F, maxW + 1.0F, h + 1.0F, r + 0.5F, ColorUtil.withAlpha(themeAccent, (int) (alpha * 40)));
+        Render2D.drawShadow(x, y, maxW, h, r, 6.0F, ColorUtil.rgba(0, 0, 0, (int) (140 * alpha)));
+        Render2D.drawRoundedRect(x, y, maxW, h, r, ColorUtil.rgba(0, 0, 0, (int) (160 * alpha)));
+        Render2D.drawRoundedRect(x, y, maxW, hh, r, ColorUtil.rgba(0, 0, 0, (int) (alpha * 160)));
+
+        int hc = (int) (alpha * 255.0F);
+        Fonts.drawString(Fonts.SF_MEDIUM, title, x + 6.0F, y + 4.0F, headerFs, ColorUtil.withAlpha(themeAccent, hc));
+
+        float base = y + hh;
+        int idx = 0;
+
+        for (Module m : exiting) {
+            Animation[] a = itemAnims.get(m);
+            float ia = alpha * a[0].getValue();
+            if (ia <= 0.01F) continue;
+            float xo = a[1].getValue();
+            int c = (int) (ia * 255.0F);
+
+            String bind = m.getBind().getDisplayValue();
+            float bw = Fonts.SF_MEDIUM.getWidth(bind, itemFs);
+            float bx = x + maxW - bw - 7.5F + xo;
+            Render2D.drawRoundedRect(bx, base + idx * is + 1.0F, bw + 6.0F, 8.0F, 2.0F, ColorUtil.rgba(0, 0, 0, (int) (ia * 60)));
+            Render2D.drawRoundedOutline(bx - 0.5F, base + idx * is + 0.5F, bw + 7.0F, 9.0F, 2.5F, 1.0F, ColorUtil.withAlpha(themeAccent, (int) (ia * 30)));
+            Fonts.drawString(Fonts.SF_MEDIUM, m.getName(), x + 3.5F + xo, base + idx * is + 3.5F, itemFs, ColorUtil.rgba(235, 235, 235, c));
+            Fonts.drawString(Fonts.SF_MEDIUM, bind, x + maxW - bw - 4.5F + xo, base + idx * is + 3.0F, 5.5F, ColorUtil.rgba(235, 235, 235, c));
+            idx++;
+        }
+
+        for (Module m : boundModules) {
+            Animation[] a = itemAnims.get(m);
+            if (a == null) continue;
+            float ia = alpha * a[0].getValue();
+            if (ia <= 0.01F) continue;
+            float xo = a[1].getValue();
+            int c = (int) (ia * 255.0F);
+
+            String bind = m.getBind().getDisplayValue();
+            float bw = Fonts.SF_MEDIUM.getWidth(bind, itemFs);
+            float bx = x + maxW - bw - 7.5F + xo;
+            Render2D.drawRoundedRect(bx, base + idx * is + 1.0F, bw + 6.0F, 8.0F, 2.0F, ColorUtil.rgba(0, 0, 0, (int) (ia * 60)));
+            Render2D.drawRoundedOutline(bx - 0.5F, base + idx * is + 0.5F, bw + 7.0F, 9.0F, 2.5F, 1.0F, ColorUtil.withAlpha(themeAccent, (int) (ia * 30)));
+            Fonts.drawString(Fonts.SF_MEDIUM, m.getName(), x + 3.5F + xo, base + idx * is + 3.5F, itemFs, ColorUtil.rgba(235, 235, 235, c));
+            Fonts.drawString(Fonts.SF_MEDIUM, bind, x + maxW - bw - 4.5F + xo, base + idx * is + 3.0F, 5.5F, ColorUtil.rgba(235, 235, 235, c));
+            idx++;
+        }
     }
 }

@@ -4,6 +4,7 @@ import error.IMinecraft;
 import error.event.list.Render2DEvent;
 import error.ui.hud.HudElement;
 import error.util.client.clients.ColorUtil;
+import error.util.client.clients.Theme;
 import error.util.render.Render2D;
 import error.util.render.font.Fonts;
 import error.util.render.font.IconUse;
@@ -68,11 +69,13 @@ public final class WatermarkHud extends HudElement implements IMinecraft {
         this.width = totalWidth;
         this.height = totalHeight;
 
-        // Exact Waper Watermark Background layers from widget.rar:
+        int themeAccent = Theme.getAccentColor();
+
+        // Dynamic Theme Accent Background layers from widget.rar:
         // 1. Subtle primary glow rect (alpha * 15)
-        Render2D.drawRoundedRect(x - 2.0F, y - 2.0F, totalWidth + 4.0F, totalHeight + 4.0F, r + 2.0F, ColorUtil.rgba(166, 130, 255, (int) (alpha * 15)));
+        Render2D.drawRoundedRect(x - 2.0F, y - 2.0F, totalWidth + 4.0F, totalHeight + 4.0F, r + 2.0F, ColorUtil.withAlpha(themeAccent, (int) (alpha * 15)));
         // 2. Subtle primary stroke outline rect (alpha * 40)
-        Render2D.drawRoundedRect(x - 0.5F, y - 0.5F, totalWidth + 1.0F, totalHeight + 1.0F, r + 0.5F, ColorUtil.rgba(166, 130, 255, (int) (alpha * 40)));
+        Render2D.drawRoundedRect(x - 0.5F, y - 0.5F, totalWidth + 1.0F, totalHeight + 1.0F, r + 0.5F, ColorUtil.withAlpha(themeAccent, (int) (alpha * 40)));
         // 3. Container background (soft shadow + dark translucent background)
         Render2D.drawShadow(x, y, totalWidth, totalHeight, r, 6.0F, ColorUtil.rgba(0, 0, 0, (int) (140 * alpha)));
         Render2D.drawRoundedRect(x, y, totalWidth, totalHeight, r, ColorUtil.rgba(0, 0, 0, (int) (alpha * 160)));
@@ -82,9 +85,9 @@ public final class WatermarkHud extends HudElement implements IMinecraft {
         float headY = y + (totalHeight - headSize) / 2.0F;
         float dotY = y + (totalHeight - 12.0F) / 2.0F - 3.5F;
 
-        // Client Name ("Waper" in primary accent purple)
+        // Client Name ("Waper" in primary theme accent)
         float clientW = Fonts.SF_MEDIUM.getWidth(clientName, fontSize);
-        Fonts.drawString(Fonts.SF_MEDIUM, clientName, currentX, textY, fontSize, ColorUtil.rgba(166, 130, 255, ta));
+        Fonts.drawString(Fonts.SF_MEDIUM, clientName, currentX, textY, fontSize, ColorUtil.withAlpha(themeAccent, ta));
         currentX += clientW;
 
         // Dot
@@ -113,7 +116,7 @@ public final class WatermarkHud extends HudElement implements IMinecraft {
 
         // Role
         String rText = " [" + role + "]";
-        int roleCol = (username.equalsIgnoreCase("zxcwashik") || username.equalsIgnoreCase("yelag")) ? ColorUtil.rgba(166, 130, 255, ta) : dotColor;
+        int roleCol = (username.equalsIgnoreCase("zxcwashik") || username.equalsIgnoreCase("yelag")) ? ColorUtil.withAlpha(themeAccent, ta) : dotColor;
         Fonts.drawString(Fonts.SF_MEDIUM, rText, currentX, textY, fontSize, roleCol);
         currentX += Fonts.SF_MEDIUM.getWidth(rText, fontSize);
 

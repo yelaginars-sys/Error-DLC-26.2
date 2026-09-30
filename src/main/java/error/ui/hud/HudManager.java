@@ -44,14 +44,6 @@ public final class HudManager implements IMinecraft {
         register(new WatermarkHud());
         register(new TargetHud());
         register(new KeybindsHud());
-        register(new PotionsHud());
-        register(new NotificationHud());
-        register(new ArmorHud());
-        register(new StaffsHud());
-        register(new TotemCounterHud());
-        register(new InventoryHud());
-        register(new MediaPlayerHud());
-        register(new CooldownsHud());
     }
 
     public static HudManager getInstance() {
