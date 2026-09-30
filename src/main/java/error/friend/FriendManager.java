@@ -5,24 +5,18 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import net.minecraft.world.entity.player.Player;
 
-import java.io.*;
-import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.prefs.Preferences;
 
-/**
- * Create by daun kvass
- */
 public class FriendManager {
     private static final FriendManager INSTANCE = new FriendManager();
     private final Set<String> friends = new HashSet<>();
-    private final File file;
+    private final Preferences prefs = Preferences.userRoot().node("ErrorDLC/friends");
     private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
     public FriendManager() {
-        File dir = new File(System.getProperty("user.home"), "error");
-        if (!dir.exists()) dir.mkdirs();
-        this.file = new File(dir, "friends.json");
+        load();
     }
 
     public static FriendManager getInstance() {
@@ -60,17 +54,19 @@ public class FriendManager {
     }
 
     public void save() {
-        try (Writer writer = new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8)) {
-            gson.toJson(friends, writer);
-        } catch (IOException e) {
+        try {
+            prefs.put("friends_json", gson.toJson(friends));
+            prefs.flush();
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
     public void load() {
-        if (!file.exists()) return;
-        try (Reader reader = new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8)) {
-            Set<String> loaded = gson.fromJson(reader, new TypeToken<Set<String>>(){}.getType());
+        try {
+            String json = prefs.get("friends_json", null);
+            if (json == null || json.isEmpty()) return;
+            Set<String> loaded = gson.fromJson(json, new TypeToken<Set<String>>(){}.getType());
             if (loaded != null) {
                 friends.clear();
                 for (String s : loaded) {

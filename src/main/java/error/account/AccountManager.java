@@ -1,32 +1,21 @@
 package error.account;
 
 import com.google.gson.*;
-import com.mojang.authlib.GameProfile;
-import com.mojang.authlib.yggdrasil.ProfileResult;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.User;
-import net.minecraft.client.gui.screens.ConnectScreen;
-import net.minecraft.client.gui.screens.TitleScreen;
-import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.multiplayer.ServerData;
-import net.minecraft.client.multiplayer.resolver.ServerAddress;
 import error.mixin.accessor.MinecraftAccessor;
+import error.util.client.persiki.ChatUtil;
 
-import java.io.*;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.prefs.Preferences;
 
-/**
- * Create by daun kvass
- */
-@Getter
 public class AccountManager {
+
     private static final AccountManager INSTANCE = new AccountManager();
     public static AccountManager getInstance() { return INSTANCE; }
 
@@ -35,15 +24,11 @@ public class AccountManager {
     @Setter
     private String activeAccount = "";
 
-    private final File accountsFile;
+    private final Preferences prefs = Preferences.userRoot().node("ErrorDLC/accounts");
     private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
     private final ScheduledExecutorService autoSaveExecutor = Executors.newSingleThreadScheduledExecutor();
 
     public AccountManager() {
-        File dir = new File(new File(System.getProperty("user.home"), "error"), "configs");
-        if (!dir.exists()) dir.mkdirs();
-        this.accountsFile = new File(dir, "accounts.json");
-
         load();
 
         autoSaveExecutor.scheduleAtFixedRate(() -> {
@@ -58,132 +43,154 @@ public class AccountManager {
     public void addAccount(String name) {
         if (name == null || name.trim().isEmpty()) return;
         name = name.trim();
-        if (!accounts.contains(name)) {
-            accounts.add(name);
-            if (activeAccount.isEmpty()) {
-                activeAccount = name;
+
+        for (String acc : accounts) {
+            if (acc.equalsIgnoreCase(name)) {
+                ChatUtil.error("Аккаунт '§c" + name + "§r' уже существует!");
+                return;
             }
-            save();
         }
+
+        accounts.add(name);
+        if (accounts.size() == 1 || activeAccount.isEmpty()) {
+            activeAccount = name;
+            applyActiveSession();
+        }
+        save();
+        ChatUtil.success("Аккаунт '§a" + name + "§r' успешно добавлен!");
     }
 
     public void removeAccount(String name) {
-        accounts.remove(name);
-        favorites.remove(name);
-        if (activeAccount.equalsIgnoreCase(name)) {
-            activeAccount = accounts.isEmpty() ? "" : accounts.get(0);
+        if (name == null) return;
+        boolean removed = accounts.removeIf(a -> a.equalsIgnoreCase(name));
+        favorites.removeIf(a -> a.equalsIgnoreCase(name));
+
+        if (removed) {
+            if (activeAccount.equalsIgnoreCase(name)) {
+                activeAccount = accounts.isEmpty() ? "" : accounts.get(0);
+                applyActiveSession();
+            }
+            save();
+            ChatUtil.success("Аккаунт '§c" + name + "§r' удален!");
+        } else {
+            ChatUtil.error("Аккаунт '§c" + name + "§r' не найден!");
+        }
+    }
+
+    public void toggleFavorite(String name) {
+        if (name == null || name.trim().isEmpty()) return;
+        final String targetName = name.trim();
+        if (isFavorite(targetName)) {
+            favorites.removeIf(a -> a.equalsIgnoreCase(targetName));
+            ChatUtil.info("Аккаунт '§7" + targetName + "§r' удален из избранного.");
+        } else {
+            favorites.add(targetName);
+            ChatUtil.success("Аккаунт '§a" + targetName + "§r' добавлен в избранное!");
         }
         save();
     }
 
     public boolean isFavorite(String name) {
-        return favorites.contains(name);
+        if (name == null) return false;
+        for (String fav : favorites) {
+            if (fav.equalsIgnoreCase(name)) return true;
+        }
+        return false;
     }
 
-    public void toggleFavorite(String name) {
-        if (favorites.contains(name)) {
-            favorites.remove(name);
-        } else {
-            favorites.add(name);
+    public void selectAccount(String name) {
+        setSession(name);
+    }
+
+    public void setSession(String name) {
+        if (name == null || name.trim().isEmpty()) return;
+
+        boolean exists = accounts.stream().anyMatch(a -> a.equalsIgnoreCase(name));
+        if (!exists) {
+            accounts.add(name.trim());
         }
+
+        this.activeAccount = name.trim();
+        applyActiveSession();
         save();
     }
 
+    public void relogin(String name) {
+        setSession(name);
+    }
+
     public List<String> getSortedAccounts() {
-        List<String> list = new ArrayList<>(accounts);
-        list.sort((a, b) -> {
-            boolean favA = favorites.contains(a);
-            boolean favB = favorites.contains(b);
-            if (favA != favB) return favA ? -1 : 1;
-            return a.compareToIgnoreCase(b);
-        });
-        return list;
-    }
-
-    public boolean setSession(String username) {
-        if (username == null || username.trim().isEmpty()) return false;
-        try {
-            Minecraft mc = Minecraft.getInstance();
-            if (mc == null) return false;
-
-            UUID uuid = UUID.nameUUIDFromBytes(("OfflinePlayer:" + username).getBytes(StandardCharsets.UTF_8));
-            User newUser = new User(username, uuid, "0", Optional.empty(), Optional.empty());
-
-            MinecraftAccessor accessor = (MinecraftAccessor) mc;
-            accessor.setUser(newUser);
-            accessor.setProfileFuture(CompletableFuture.completedFuture(
-                    new ProfileResult(new GameProfile(uuid, username))
-            ));
-
-            mc.updateTitle();
-            this.activeAccount = username;
-            save();
-            return true;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-
-
-    public void relogin(String username) {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc == null) return;
-
-        mc.execute(() -> {
-            ServerData server = mc.getCurrentServer();
-            setSession(username);
-
-            if (mc.level == null) return;
-
-            mc.disconnectFromWorld(ClientLevel.DEFAULT_QUIT_MESSAGE);
-
-            if (server != null && !server.isLan() && !server.isRealm()) {
-                ConnectScreen.startConnecting(new TitleScreen(), mc, ServerAddress.parseString(server.ip), server, false, null);
-            } else {
-                mc.gui.setScreen(new TitleScreen());
+        List<String> sorted = new ArrayList<>();
+        for (String fav : favorites) {
+            for (String acc : accounts) {
+                if (acc.equalsIgnoreCase(fav) && !sorted.contains(acc)) {
+                    sorted.add(acc);
+                }
             }
-        });
+        }
+        for (String acc : accounts) {
+            if (!sorted.contains(acc)) {
+                sorted.add(acc);
+            }
+        }
+        return sorted;
     }
 
     public void applyActiveSession() {
-        if (activeAccount == null || activeAccount.trim().isEmpty()) {
-            if (!accounts.isEmpty()) {
-                activeAccount = accounts.get(0);
-            }
-        }
-        if (activeAccount != null && !activeAccount.trim().isEmpty()) {
-            setSession(activeAccount);
+        if (activeAccount == null || activeAccount.trim().isEmpty()) return;
+
+        try {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc == null) return;
+
+            String username = activeAccount.trim();
+            UUID uuid = UUID.nameUUIDFromBytes(("OfflinePlayer:" + username).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            User newSession = new User(username, uuid, "", Optional.empty(), Optional.empty());
+
+            ((MinecraftAccessor) mc).setUser(newSession);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
+    public List<String> getAccounts() {
+        return new ArrayList<>(accounts);
+    }
+
+    public String getActiveAccount() {
+        return activeAccount;
+    }
+
     public void save() {
-        JsonObject root = new JsonObject();
-        root.addProperty("active", this.activeAccount != null ? this.activeAccount : "");
+        try {
+            JsonObject root = new JsonObject();
+            root.addProperty("active", this.activeAccount != null ? this.activeAccount : "");
 
-        JsonArray accArray = new JsonArray();
-        for (String acc : accounts) {
-            accArray.add(acc);
-        }
-        root.add("accounts", accArray);
+            JsonArray accArray = new JsonArray();
+            for (String acc : accounts) {
+                accArray.add(acc);
+            }
+            root.add("accounts", accArray);
 
-        JsonArray favArray = new JsonArray();
-        for (String fav : favorites) {
-            favArray.add(fav);
-        }
-        root.add("favorites", favArray);
+            JsonArray favArray = new JsonArray();
+            for (String fav : favorites) {
+                favArray.add(fav);
+            }
+            root.add("favorites", favArray);
 
-        try (Writer writer = new OutputStreamWriter(new FileOutputStream(accountsFile), StandardCharsets.UTF_8)) {
-            gson.toJson(root, writer);
-        } catch (IOException e) {
+            prefs.put("accounts_json", gson.toJson(root));
+            prefs.flush();
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
     public void load() {
-        if (!accountsFile.exists()) return;
-        try (Reader reader = new InputStreamReader(new FileInputStream(accountsFile), StandardCharsets.UTF_8)) {
-            JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
+        try {
+            String json = prefs.get("accounts_json", null);
+            if (json == null || json.isEmpty()) return;
+
+            JsonObject root = JsonParser.parseString(json).getAsJsonObject();
             accounts.clear();
             favorites.clear();
 

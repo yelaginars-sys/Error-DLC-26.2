@@ -48,7 +48,6 @@ public class CustomTitleScreen extends Screen {
     };
     private static int currentBgIndex = 0;
 
-    private static final File WALLPAPER_FILE = new File(new File(System.getProperty("user.home"), "error"), "wallpaper.json");
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
     private boolean accountModalOpen = false;
@@ -84,9 +83,11 @@ public class CustomTitleScreen extends Screen {
     }
 
     public static void loadWallpaper() {
-        if (!WALLPAPER_FILE.exists()) return;
-        try (Reader reader = new InputStreamReader(new FileInputStream(WALLPAPER_FILE), StandardCharsets.UTF_8)) {
-            JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
+        try {
+            java.util.prefs.Preferences prefs = java.util.prefs.Preferences.userRoot().node("ErrorDLC/title");
+            String json = prefs.get("wallpaper_json", null);
+            if (json == null || json.isEmpty()) return;
+            JsonObject root = JsonParser.parseString(json).getAsJsonObject();
             if (root.has("wallpaperIndex")) {
                 int index = root.get("wallpaperIndex").getAsInt();
                 if (index >= 0 && index < BACKGROUNDS.length) {
@@ -100,15 +101,11 @@ public class CustomTitleScreen extends Screen {
 
     public static void saveWallpaper() {
         try {
-            if (!WALLPAPER_FILE.getParentFile().exists()) {
-                WALLPAPER_FILE.getParentFile().mkdirs();
-            }
+            java.util.prefs.Preferences prefs = java.util.prefs.Preferences.userRoot().node("ErrorDLC/title");
             JsonObject root = new JsonObject();
             root.addProperty("wallpaperIndex", currentBgIndex);
-
-            try (Writer writer = new OutputStreamWriter(new FileOutputStream(WALLPAPER_FILE), StandardCharsets.UTF_8)) {
-                GSON.toJson(root, writer);
-            }
+            prefs.put("wallpaper_json", GSON.toJson(root));
+            prefs.flush();
         } catch (Exception e) {
             e.printStackTrace();
         }

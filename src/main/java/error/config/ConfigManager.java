@@ -16,24 +16,18 @@ import error.setting.impl.*;
 import error.util.client.persiki.ChatUtil;
 import error.util.client.clients.Theme;
 
-import java.awt.Desktop;
-import java.io.*;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.prefs.Preferences;
 
-/**
- * Create by daun kvass
- */
 @Getter
 public class ConfigManager {
 
-    private final File configFolder;
+    private final Preferences baseNode = Preferences.userRoot().node("ErrorDLC/configs");
     private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
     private final ScheduledExecutorService autoSaveExecutor = Executors.newSingleThreadScheduledExecutor(r -> {
         Thread thread = new Thread(r, "Config-AutoSave-Thread");
@@ -45,11 +39,6 @@ public class ConfigManager {
     private String currentConfig = "default";
 
     public ConfigManager() {
-        this.configFolder = new File(new File(System.getProperty("user.home"), "error"), "configs");
-        if (!configFolder.exists()) {
-            configFolder.mkdirs();
-        }
-
         autoSaveExecutor.scheduleAtFixedRate(() -> {
             try {
                 saveConfig(this.currentConfig, false);
@@ -73,16 +62,7 @@ public class ConfigManager {
             name = "default";
         }
 
-        if (!name.endsWith(".ww")) {
-            name += ".ww";
-        }
-
-        if (!configFolder.exists()) {
-            configFolder.mkdirs();
-        }
-
-        File targetFile = new File(configFolder, name);
-        File tempFile = new File(configFolder, name + ".tmp");
+        String cleanName = name.replace(".ww", "").replace(".json", "");
 
         try {
             JsonObject root = new JsonObject();
@@ -99,49 +79,43 @@ public class ConfigManager {
             if (Client.INSTANCE != null && Client.INSTANCE.moduleManager != null) {
                 for (Module module : Client.INSTANCE.moduleManager.getModules()) {
                     if (module == null) continue;
-
                     JsonObject moduleData = new JsonObject();
                     moduleData.addProperty("enabled", module.isEnabled());
 
-                    if (module.getBind() != null && module.getBind().getValue() != null) {
-                        JsonArray bindArray = new JsonArray();
+                    if (module.getBind() != null) {
+                        JsonArray bindsArray = new JsonArray();
                         for (int code : module.getBind().getValue()) {
-                            bindArray.add(code);
+                            bindsArray.add(code);
                         }
-                        moduleData.add("bind", bindArray);
+                        moduleData.add("bind", bindsArray);
                     }
 
                     JsonObject settingsJson = new JsonObject();
                     for (Setting<?> setting : module.getSettings()) {
-                        if (setting == null || setting instanceof HeaderSetting || setting.getName() == null) continue;
+                        if (setting == null) continue;
 
-                        try {
-                            if (setting instanceof CheckBox cb && cb.getValue() != null) {
-                                settingsJson.addProperty(cb.getName(), cb.getValue());
-                            } else if (setting instanceof SliderSetting slider && slider.getValue() != null) {
-                                settingsJson.addProperty(slider.getName(), slider.getValue());
-                            } else if (setting instanceof ModeSetting mode && mode.getValue() != null) {
-                                settingsJson.addProperty(mode.getName(), mode.getValue());
-                            } else if (setting instanceof ColorSetting color && color.getValue() != null) {
-                                settingsJson.addProperty(color.getName(), color.getValue());
-                            } else if (setting instanceof BindSetting bind && bind.getValue() != null) {
-                                JsonArray array = new JsonArray();
-                                for (int code : bind.getValue()) {
-                                    array.add(code);
-                                }
-                                settingsJson.add(bind.getName(), array);
-                            } else if (setting instanceof MultiModeSetting mm && mm.getValue() != null) {
-                                JsonArray array = new JsonArray();
-                                for (String m : mm.getValue()) {
-                                    if (m != null) array.add(m);
-                                }
-                                settingsJson.add(mm.getName(), array);
+                        if (setting instanceof CheckBox cb) {
+                            settingsJson.addProperty(cb.getName(), cb.getValue());
+                        } else if (setting instanceof SliderSetting slider) {
+                            settingsJson.addProperty(slider.getName(), slider.getValue());
+                        } else if (setting instanceof ModeSetting mode) {
+                            settingsJson.addProperty(mode.getName(), mode.getValue());
+                        } else if (setting instanceof MultiModeSetting multi) {
+                            JsonArray activeModes = new JsonArray();
+                            for (String m : multi.getValue()) {
+                                activeModes.add(m);
                             }
-                        } catch (Exception e) {
-                            System.err.println("[ConfigManager] Ошибка сохранения настройки " + setting.getName() + " в модуле " + module.getName());
+                            settingsJson.add(multi.getName(), activeModes);
+                        } else if (setting instanceof ColorSetting color) {
+                            settingsJson.addProperty(color.getName(), color.getValue());
+                        } else if (setting instanceof BindSetting bind) {
+                            JsonArray bindsArray = new JsonArray();
+                            for (int code : bind.getValue()) {
+                                bindsArray.add(code);
+                            }
+                            settingsJson.add(bind.getName(), bindsArray);
                         }
                     }
-
                     moduleData.add("settings", settingsJson);
                     modulesJson.add(module.getName(), moduleData);
                 }
@@ -149,23 +123,22 @@ public class ConfigManager {
             root.add("modules", modulesJson);
 
             JsonObject hudJson = new JsonObject();
-            if (HudManager.getInstance() != null && HudManager.getInstance().getElements() != null) {
+            if (HudManager.getInstance() != null) {
                 for (HudElement element : HudManager.getInstance().getElements()) {
                     if (element == null) continue;
-
                     JsonObject elementData = new JsonObject();
-                    elementData.addProperty("enabled", element.isEnabled());
                     elementData.addProperty("x", element.getX());
                     elementData.addProperty("y", element.getY());
+                    elementData.addProperty("enabled", element.isEnabled());
 
-                    if (element instanceof WatermarkHud wm) {
-                        elementData.add("custom", wm.writeConfig());
-                    } else if (element instanceof TargetHud th) {
-                        elementData.add("custom", th.writeConfig());
-                    } else if (element instanceof PotionsHud ph) {
-                        elementData.add("custom", ph.writeConfig());
-                    } else if (element instanceof NotificationHud nh) {
-                        elementData.add("custom", nh.writeConfig());
+                    if (element instanceof WatermarkHud watermark) {
+                        elementData.add("customConfig", watermark.writeConfig());
+                    } else if (element instanceof TargetHud targetHud) {
+                        elementData.add("customConfig", targetHud.writeConfig());
+                    } else if (element instanceof PotionsHud potionsHud) {
+                        elementData.add("customConfig", potionsHud.writeConfig());
+                    } else if (element instanceof NotificationHud notifHud) {
+                        elementData.add("customConfig", notifHud.writeConfig());
                     }
 
                     hudJson.add(element.getClass().getSimpleName(), elementData);
@@ -173,23 +146,18 @@ public class ConfigManager {
             }
             root.add("hud", hudJson);
 
-            try (Writer writer = new OutputStreamWriter(new FileOutputStream(tempFile), StandardCharsets.UTF_8)) {
-                gson.toJson(root, writer);
-                writer.flush();
-            }
+            String jsonString = gson.toJson(root);
+            Preferences configNode = baseNode.node(cleanName);
+            configNode.put("data", jsonString);
+            configNode.flush();
 
-            Files.move(tempFile.toPath(), targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-
-            this.currentConfig = name.replace(".ww", "");
+            this.currentConfig = cleanName;
 
             if (notify) {
-                ChatUtil.success("Конфигурация '" + name + "' успешно сохранена!");
+                ChatUtil.success("Конфигурация '" + cleanName + "' успешно сохранена в Реестр!");
             }
             return true;
         } catch (Exception e) {
-            if (tempFile.exists()) {
-                tempFile.delete();
-            }
             if (notify) {
                 ChatUtil.error("Не удалось сохранить конфигурацию: " + e.getMessage());
             }
@@ -204,20 +172,19 @@ public class ConfigManager {
             name = "default";
         }
 
-        if (!name.endsWith(".ww")) {
-            name += ".ww";
-        }
+        String cleanName = name.replace(".ww", "").replace(".json", "");
 
-        File file = new File(configFolder, name);
-        if (!file.exists()) {
-            if (notify) {
-                ChatUtil.error("Конфигурация '" + name + "' не найдена!");
+        try {
+            Preferences configNode = baseNode.node(cleanName);
+            String jsonString = configNode.get("data", null);
+            if (jsonString == null || jsonString.isEmpty()) {
+                if (notify) {
+                    ChatUtil.error("Конфигурация '" + cleanName + "' не найдена в Реестре!");
+                }
+                return false;
             }
-            return false;
-        }
 
-        try (Reader reader = new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8)) {
-            JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
+            JsonObject root = JsonParser.parseString(jsonString).getAsJsonObject();
 
             if (root.has("theme")) {
                 JsonObject themeJson = root.getAsJsonObject("theme");
@@ -249,47 +216,42 @@ public class ConfigManager {
                                     binds.add(be.getAsInt());
                                 }
                                 module.getBind().setValue(binds);
-                            } else if (bindElem.isJsonPrimitive()) {
-                                module.getBind().setSingle(bindElem.getAsInt());
                             }
                         }
 
                         if (moduleData.has("settings")) {
                             JsonObject settingsJson = moduleData.getAsJsonObject("settings");
                             for (Setting<?> setting : module.getSettings()) {
-                                if (setting != null && settingsJson.has(setting.getName())) {
-                                    JsonElement elem = settingsJson.get(setting.getName());
+                                if (setting == null || !settingsJson.has(setting.getName())) continue;
 
-                                    try {
-                                        if (setting instanceof CheckBox cb) {
-                                            cb.setValue(elem.getAsBoolean());
-                                        } else if (setting instanceof SliderSetting slider) {
-                                            slider.setValue(elem.getAsFloat());
-                                        } else if (setting instanceof ModeSetting mode) {
-                                            mode.setValue(elem.getAsString());
-                                        } else if (setting instanceof ColorSetting color) {
-                                            color.setValue(elem.getAsInt());
-                                        } else if (setting instanceof BindSetting bind) {
-                                            if (elem.isJsonArray()) {
-                                                List<Integer> list = new ArrayList<>();
-                                                for (JsonElement e : elem.getAsJsonArray()) {
-                                                    list.add(e.getAsInt());
-                                                }
-                                                bind.setValue(list);
-                                            } else if (elem.isJsonPrimitive()) {
-                                                bind.setSingle(elem.getAsInt());
+                                JsonElement elem = settingsJson.get(setting.getName());
+                                try {
+                                    if (setting instanceof CheckBox cb) {
+                                        cb.setValue(elem.getAsBoolean());
+                                    } else if (setting instanceof SliderSetting slider) {
+                                        slider.setValue(elem.getAsFloat());
+                                    } else if (setting instanceof ModeSetting mode) {
+                                        mode.setValue(elem.getAsString());
+                                    } else if (setting instanceof MultiModeSetting multi) {
+                                        List<String> list = new ArrayList<>();
+                                        if (elem.isJsonArray()) {
+                                            for (JsonElement me : elem.getAsJsonArray()) {
+                                                list.add(me.getAsString());
                                             }
-                                        } else if (setting instanceof MultiModeSetting mm && elem.isJsonArray()) {
-                                            List<String> list = new ArrayList<>();
-                                            for (JsonElement e : elem.getAsJsonArray()) {
-                                                list.add(e.getAsString());
-                                            }
-                                            mm.setValue(list);
                                         }
-                                    } catch (Exception e) {
-                                        System.err.println("[ConfigManager] Ошибка чтения настройки: " + setting.getName());
+                                        multi.setValue(list);
+                                    } else if (setting instanceof ColorSetting color) {
+                                        color.setValue(elem.getAsInt());
+                                    } else if (setting instanceof BindSetting bind) {
+                                        List<Integer> binds = new ArrayList<>();
+                                        if (elem.isJsonArray()) {
+                                            for (JsonElement me : elem.getAsJsonArray()) {
+                                                binds.add(me.getAsInt());
+                                            }
+                                        }
+                                        bind.setValue(binds);
                                     }
-                                }
+                                } catch (Exception ignored) {}
                             }
                         }
                     }
@@ -300,39 +262,33 @@ public class ConfigManager {
                 JsonObject hudJson = root.getAsJsonObject("hud");
                 for (HudElement element : HudManager.getInstance().getElements()) {
                     if (element == null) continue;
-                    String key = element.getClass().getSimpleName();
-                    if (hudJson.has(key)) {
-                        JsonObject elementData = hudJson.getAsJsonObject(key);
-                        if (elementData.has("enabled")) {
-                            element.setEnabled(elementData.get("enabled").getAsBoolean());
-                        }
-                        if (elementData.has("x")) {
-                            element.setX(elementData.get("x").getAsFloat());
-                        }
-                        if (elementData.has("y")) {
-                            element.setY(elementData.get("y").getAsFloat());
-                        }
+                    String className = element.getClass().getSimpleName();
+                    if (hudJson.has(className)) {
+                        JsonObject elementData = hudJson.getAsJsonObject(className);
+                        if (elementData.has("x")) element.setX(elementData.get("x").getAsFloat());
+                        if (elementData.has("y")) element.setY(elementData.get("y").getAsFloat());
+                        if (elementData.has("enabled")) element.setEnabled(elementData.get("enabled").getAsBoolean());
 
-                        if (elementData.has("custom")) {
-                            JsonObject customObj = elementData.getAsJsonObject("custom");
-                            if (element instanceof WatermarkHud wm) {
-                                wm.readConfig(customObj);
-                            } else if (element instanceof TargetHud th) {
-                                th.readConfig(customObj);
-                            } else if (element instanceof PotionsHud ph) {
-                                ph.readConfig(customObj);
-                            } else if (element instanceof NotificationHud nh) {
-                                nh.readConfig(customObj);
+                        if (elementData.has("customConfig")) {
+                            JsonObject customObj = elementData.getAsJsonObject("customConfig");
+                            if (element instanceof WatermarkHud watermark) {
+                                watermark.readConfig(customObj);
+                            } else if (element instanceof TargetHud targetHud) {
+                                targetHud.readConfig(customObj);
+                            } else if (element instanceof PotionsHud potionsHud) {
+                                potionsHud.readConfig(customObj);
+                            } else if (element instanceof NotificationHud notifHud) {
+                                notifHud.readConfig(customObj);
                             }
                         }
                     }
                 }
             }
 
-            this.currentConfig = name.replace(".ww", "");
+            this.currentConfig = cleanName;
 
             if (notify) {
-                ChatUtil.success("Конфигурация '" + name + "' успешно загружена!");
+                ChatUtil.success("Конфигурация '" + cleanName + "' успешно загружена!");
             }
             return true;
         } catch (Exception e) {
@@ -345,35 +301,26 @@ public class ConfigManager {
     }
 
     public List<String> getAvailableConfigs() {
-        List<String> list = new ArrayList<>();
-        File[] files = configFolder.listFiles((dir, name) -> name.endsWith(".ww"));
-        if (files != null) {
-            for (File file : files) {
-                list.add(file.getName().replace(".ww", ""));
-            }
+        try {
+            return Arrays.asList(baseNode.childrenNames());
+        } catch (Exception e) {
+            return new ArrayList<>();
         }
-        return list;
+    }
+
+    public void deleteConfig(String name) {
+        try {
+            String cleanName = name.replace(".ww", "").replace(".json", "");
+            baseNode.node(cleanName).removeNode();
+            baseNode.flush();
+            ChatUtil.success("Конфигурация '" + cleanName + "' удалена из Реестра.");
+        } catch (Exception e) {
+            ChatUtil.error("Не удалось удалить конфигурацию: " + e.getMessage());
+        }
     }
 
     public void openFolder() {
-        if (!configFolder.exists()) {
-            configFolder.mkdirs();
-        }
-        try {
-            if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.OPEN)) {
-                Desktop.getDesktop().open(configFolder);
-            } else {
-                String os = System.getProperty("os.name").toLowerCase();
-                if (os.contains("win")) {
-                    Runtime.getRuntime().exec(new String[]{"explorer.exe", configFolder.getAbsolutePath()});
-                } else if (os.contains("mac")) {
-                    Runtime.getRuntime().exec(new String[]{"open", configFolder.getAbsolutePath()});
-                } else {
-                    Runtime.getRuntime().exec(new String[]{"xdg-open", configFolder.getAbsolutePath()});
-                }
-            }
-        } catch (Exception e) {
-            ChatUtil.error("Не удалось открыть папку: " + e.getMessage());
-        }
+        ChatUtil.info("Конфиги сохраняются напрямую в Реестр Windows:");
+        ChatUtil.entry("Путь:", "HKEY_CURRENT_USER\\Software\\JavaSoft\\Prefs\\errordlc\\configs");
     }
 }
