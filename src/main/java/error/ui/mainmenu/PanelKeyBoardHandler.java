@@ -40,13 +40,13 @@ public final class PanelKeyBoardHandler implements IMinecraft {
         }
 
         boolean pressOrRepeat = event.getAction() == GLFW.GLFW_PRESS || event.getAction() == GLFW.GLFW_REPEAT;
-        if (pressOrRepeat && event.getKey() == GLFW.GLFW_KEY_ESCAPE) {
-            PanelRefractions.close(mc);
+        if (pressOrRepeat && PanelRefractions.handleKey(event.getKey(), event.getScanCode(), event.getModifiers())) {
             event.cancel();
             return;
         }
 
-        if (pressOrRepeat && PanelRefractions.handleKey(event.getKey(), event.getScanCode(), event.getModifiers())) {
+        if (pressOrRepeat && event.getKey() == GLFW.GLFW_KEY_ESCAPE) {
+            PanelRefractions.close(mc);
             event.cancel();
             return;
         }
@@ -85,9 +85,8 @@ public final class PanelKeyBoardHandler implements IMinecraft {
             return;
         }
 
-        if (PanelRefractions.handleMouseButton(mc, event.getButton(), event.getAction())) {
-            event.cancel();
-        }
+        PanelRefractions.handleMouseButton(mc, event.getButton(), event.getAction());
+        event.cancel();
     }
 
     @EventTarget(priority = 1000)

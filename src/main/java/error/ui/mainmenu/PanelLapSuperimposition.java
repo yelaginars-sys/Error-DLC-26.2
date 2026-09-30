@@ -176,9 +176,21 @@ public final class PanelLapSuperimposition {
 
             // Bottom Search Input with Pink Glowing Dot on Right Side
             float searchY = y + h - 50.0F;
+            int curSearchBorder = state.isSearchFocused() ? laserCol : pillBorder;
             Render2D.drawRoundedRect(x + 8.0F, searchY, sideW - 16.0F, 18.0F, 6.0F, pillGlass);
-            Render2D.drawRoundedOutline(x + 8.0F, searchY, sideW - 16.0F, 18.0F, 6.0F, 1.0F, pillBorder);
-            Fonts.drawString(Fonts.SF_MEDIUM, "🔍 Search", x + 14.0F, searchY + 4.5F, 7.5F, ColorUtil.rgba(180, 180, 200, (int) (160 * mainGuiAlpha)));
+            Render2D.drawRoundedOutline(x + 8.0F, searchY, sideW - 16.0F, 18.0F, 6.0F, 1.0F, curSearchBorder);
+
+            String searchDisplay;
+            if (state.getSearchQuery().isEmpty()) {
+                searchDisplay = state.isSearchFocused() ? "🔍 |" : "🔍 Search";
+            } else {
+                boolean cursorBlink = state.isSearchFocused() && (System.currentTimeMillis() % 1000 > 500);
+                searchDisplay = "🔍 " + state.getSearchQuery() + (cursorBlink ? "|" : "");
+            }
+            int searchTextColor = state.isSearchFocused() || !state.getSearchQuery().isEmpty()
+                    ? ColorUtil.rgba(255, 255, 255, (int) (240 * mainGuiAlpha))
+                    : ColorUtil.rgba(180, 180, 200, (int) (160 * mainGuiAlpha));
+            Fonts.drawString(Fonts.SF_MEDIUM, searchDisplay, x + 14.0F, searchY + 4.5F, 7.5F, searchTextColor);
 
             // Pink Glowing Dot on Right Side of Search Bar
             Render2D.drawRoundedRect(x + sideW - 18.0F, searchY + 5.0F, 6.0F, 8.0F, 4.0F, laserCol);
@@ -240,7 +252,7 @@ public final class PanelLapSuperimposition {
         float sideW = 145.0F;
         float contentX = x + sideW + 12.0F;
         float contentY = y + 54.0F;
-        float contentW = 378.0F;
+        float contentW = 380.0F;
         float contentH = h - 64.0F;
 
         float catProgress = state.getCategoryAnim().getValue();
@@ -376,7 +388,27 @@ public final class PanelLapSuperimposition {
     }
 
     public boolean handleMouseButton(PanelLapState state, int mouseX, int mouseY, int button, int action) {
+        if (action == GLFW.GLFW_RELEASE) {
+            dragging = false;
+            if (state.getActiveModal() != null) {
+                state.getActiveModal().mouseReleased(mouseX, mouseY, button);
+            }
+            for (Module module : Client.INSTANCE.moduleManager.getModules()) {
+                for (SettingRenderer<?> sr : module.getSettingRenderers()) {
+                    sr.mouseReleased(mouseX, mouseY, button);
+                }
+            }
+            return false;
+        }
+
         if (action != GLFW.GLFW_PRESS) return false;
+
+        // 1. Modals have top priority
+        if (state.getActiveModal() != null) {
+            if (state.getActiveModal().mouseClicked(mouseX, mouseY, button)) {
+                return true;
+            }
+        }
 
         float x = state.getPanelX();
         float y = state.getPanelY();
@@ -385,20 +417,38 @@ public final class PanelLapSuperimposition {
 
         float sideW = 145.0F;
 
-        if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
-            // Category Clicks
-            float catY = y + 44.0F;
-            for (Category category : Category.values()) {
-                if (mouseX >= x + 8.0F && mouseX <= x + sideW - 8.0F && mouseY >= catY && mouseY <= catY + 19.0F) {
+        // 2. Category Clicks (Sidebar) - Hitbox precisely aligned with render
+        float catY = y + 35.0F;
+        for (Category category : Category.values()) {
+            if (category == Category.COMBAT || category == Category.RENDER || category == Category.MISC) {
+                catY += 9.0F;
+            }
+            if (mouseX >= x + 8.0F && mouseX <= x + sideW - 8.0F && mouseY >= catY && mouseY <= catY + 19.0F) {
+                if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
                     state.switchCategory(category);
+                    state.setSearchFocused(false);
                     return true;
                 }
-                catY += 23.0F;
-                if (category == Category.COMBAT || category == Category.RENDER || category == Category.MISC) catY += 9.0F;
             }
+            catY += 23.0F;
+        }
 
-            // Panel Dragging
-            if (mouseY >= y && mouseY <= y + 30.0F && mouseX >= x && mouseX <= x + w) {
+        // 3. Search Box Click
+        float searchY = y + h - 50.0F;
+        if (mouseX >= x + 8.0F && mouseX <= x + sideW - 8.0F && mouseY >= searchY && mouseY <= searchY + 18.0F) {
+            if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+                state.setSearchFocused(true);
+                return true;
+            }
+        } else if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+            state.setSearchFocused(false);
+        }
+
+        // 4. Panel Header Dragging
+        if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+            boolean inSidebarHeader = mouseX >= x && mouseX <= x + sideW && mouseY >= y && mouseY <= y + 32.0F;
+            boolean inContentHeader = mouseX >= x + sideW + 12.0F && mouseX <= x + w && mouseY >= y && mouseY <= y + 30.0F;
+            if (inSidebarHeader || inContentHeader) {
                 dragging = true;
                 dragOffsetX = mouseX - x;
                 dragOffsetY = mouseY - y;
@@ -406,10 +456,10 @@ public final class PanelLapSuperimposition {
             }
         }
 
-        // Module Toggles & Expand Clicks
+        // 5. Module Toggles & Setting Interactions
         float contentX = x + sideW + 12.0F;
         float contentY = y + 54.0F;
-        float contentW = 378.0F;
+        float contentW = 380.0F;
         float contentH = h - 64.0F;
 
         if (mouseX >= contentX && mouseX <= contentX + contentW && mouseY >= contentY && mouseY <= contentY + contentH) {
@@ -428,11 +478,20 @@ public final class PanelLapSuperimposition {
                 float cardHeight = 22.0F + (module.getExpandAnim().getValue() * (totalSetH + 4.0F));
 
                 if (mouseY >= modY && mouseY <= modY + cardHeight) {
-                    if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
-                        module.toggle();
-                        return true;
-                    } else if (button == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
-                        module.setExpanded(!module.isExpanded());
+                    // Header click (first 22 pixels)
+                    if (mouseY <= modY + 22.0F) {
+                        if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+                            module.toggle();
+                            return true;
+                        } else if (button == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
+                            module.setExpanded(!module.isExpanded());
+                            return true;
+                        }
+                    } else if (module.getExpandAnim().getValue() > 0.05F) {
+                        // Settings area click - dispatch directly to the module's setting renderers
+                        for (SettingRenderer<?> sr : module.getSettingRenderers()) {
+                            sr.mouseClicked(mouseX, mouseY, button);
+                        }
                         return true;
                     }
                 }
@@ -441,25 +500,71 @@ public final class PanelLapSuperimposition {
             }
         }
 
-        if (action == GLFW.GLFW_RELEASE) {
-            dragging = false;
-        }
-
         return false;
     }
 
     public boolean handleKey(PanelLapState state, int key, int scanCode, int modifiers) {
+        if (state.getActiveModal() != null) {
+            if (state.getActiveModal().keyPressed(key, scanCode, modifiers)) {
+                return true;
+            }
+        }
+
+        if (state.isSearchFocused()) {
+            if (key == GLFW.GLFW_KEY_ESCAPE || key == GLFW.GLFW_KEY_ENTER || key == GLFW.GLFW_KEY_KP_ENTER) {
+                state.setSearchFocused(false);
+                return true;
+            }
+            if (key == GLFW.GLFW_KEY_BACKSPACE) {
+                String query = state.getSearchQuery();
+                if (!query.isEmpty()) {
+                    state.setSearchQuery(query.substring(0, query.length() - 1));
+                }
+                return true;
+            }
+            return true;
+        }
+
         if (key == GLFW.GLFW_KEY_ESCAPE) {
             PanelRefractions.close(Minecraft.getInstance());
             return true;
         }
+
+        for (Module module : Client.INSTANCE.moduleManager.getModules()) {
+            if (module.isExpanded() || module.getExpandAnim().getValue() > 0.01F) {
+                for (SettingRenderer<?> sr : module.getSettingRenderers()) {
+                    sr.keyPressed(key, scanCode, modifiers);
+                }
+            }
+        }
+
         return false;
     }
 
     public void handleChar(PanelLapState state, int codePoint) {
+        if (state.getActiveModal() != null) {
+            state.getActiveModal().charTyped(codePoint);
+            return;
+        }
+
+        if (state.isSearchFocused()) {
+            char c = (char) codePoint;
+            if (c >= 32 && c != 127) {
+                state.setSearchQuery(state.getSearchQuery() + c);
+            }
+            return;
+        }
+
+        for (Module module : Client.INSTANCE.moduleManager.getModules()) {
+            if (module.isExpanded() || module.getExpandAnim().getValue() > 0.01F) {
+                for (SettingRenderer<?> sr : module.getSettingRenderers()) {
+                    sr.charTyped(codePoint);
+                }
+            }
+        }
     }
 
     public void handleScroll(PanelLapState state, double vertical, int mouseX, int mouseY) {
-        state.scroll((float) (-vertical * 18.0F));
+        state.scroll((float) (vertical * 22.0F));
     }
 }
