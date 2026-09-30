@@ -50,8 +50,8 @@ public final class PanelLapState {
 
     private float panelX = 140;
     private float panelY = 90;
-    private float panelWidth = 440;
-    private float panelHeight = 270;
+    private float panelWidth = 535;
+    private float panelHeight = 320;
     private boolean positionInitialized;
 
     private float scrollOffset = 0.0F;
