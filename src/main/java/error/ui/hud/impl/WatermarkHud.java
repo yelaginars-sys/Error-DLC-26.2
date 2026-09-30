@@ -1,22 +1,17 @@
 package error.ui.hud.impl;
 
-import error.Client;
 import error.IMinecraft;
 import error.event.list.Render2DEvent;
 import error.ui.hud.HudElement;
 import error.util.client.clients.ColorUtil;
-import error.util.client.clients.Theme;
 import error.util.render.Render2D;
 import error.util.render.font.Fonts;
 import error.util.render.font.IconUse;
 import net.minecraft.client.player.AbstractClientPlayer;
 
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
-
 public final class WatermarkHud extends HudElement implements IMinecraft {
 
-    private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
+    public static final int ACCENT_PURPLE = ColorUtil.rgba(166, 130, 255, 255);
 
     public WatermarkHud() {
         super("watermark", "Watermark", 6.0F, 6.0F, 240.0F, 20.0F);
@@ -39,10 +34,10 @@ public final class WatermarkHud extends HudElement implements IMinecraft {
         float drawX = getX();
         float drawY = getY();
 
-        String clientName = "Error DLC";
+        String clientName = "Waper";
         String username = mc.player != null ? mc.player.getScoreboardName() : "User";
-        String role = username.equalsIgnoreCase("zxcwashik") || username.equalsIgnoreCase("yelag") ? "Developer" : "User";
-        String fpsInfo = mc.getFps() + " fps";
+        String role = username.equalsIgnoreCase("zxcwashik") || username.equalsIgnoreCase("yelag") ? "Разработчик" : "Пользователь";
+        String fpsInfo = mc.getFps() + "fps";
         String serverInfo = getServerAddress();
 
         float padding = 4.0F;
@@ -64,15 +59,15 @@ public final class WatermarkHud extends HudElement implements IMinecraft {
         this.width = totalWidth;
         this.height = totalHeight;
 
-        int primaryColor = Theme.getAccentColor();
-        int glowColor = ColorUtil.applyAlpha(primaryColor, (int) (alpha * 35));
-        int borderColor = ColorUtil.applyAlpha(primaryColor, (int) (alpha * 70));
-        int bgColor = ColorUtil.applyAlpha(ColorUtil.rgba(14, 14, 18, 195), alpha);
+        int primaryColor = ACCENT_PURPLE;
+        int glowColor = ColorUtil.applyAlpha(primaryColor, (int) (alpha * 15));
+        int borderColor = ColorUtil.applyAlpha(primaryColor, (int) (alpha * 40));
+        int bgColor = ColorUtil.rgba(14, 14, 18, (int) (160 * alpha));
         int dotColor = ColorUtil.rgba(150, 150, 150, (int) (alpha * 255));
         int whiteColor = ColorUtil.applyAlpha(-1, alpha);
 
-        // Render Background (Glow border + Blur style + Dark container)
-        Render2D.drawShadow(drawX, drawY, totalWidth, totalHeight, radius, 6.0F, glowColor);
+        // Render Background (Waper Style: 15% outer accent -> 40% border outline -> dark container)
+        Render2D.drawRoundedRect(drawX - 2.0F, drawY - 2.0F, totalWidth + 4.0F, totalHeight + 4.0F, radius + 2.0F, glowColor);
         Render2D.drawRoundedRect(drawX - 0.5F, drawY - 0.5F, totalWidth + 1.0F, totalHeight + 1.0F, radius + 0.5F, borderColor);
         Render2D.drawRoundedRect(drawX, drawY, totalWidth, totalHeight, radius, bgColor);
 
@@ -81,8 +76,8 @@ public final class WatermarkHud extends HudElement implements IMinecraft {
         float headY = drawY + (totalHeight - headSize) / 2.0F;
         float dotY = drawY + (totalHeight - 8.0F) / 2.0F;
 
-        // 1. Client Name
-        Fonts.drawString(Fonts.SF_MEDIUM, clientName, currentX, textY, fontSize, ColorUtil.applyAlpha(primaryColor, alpha));
+        // 1. Client Name (Waper in soft purple)
+        Fonts.drawString(Fonts.SF_MEDIUM, clientName, currentX, textY, fontSize, primaryColor);
         currentX += clientW;
 
         // Dot
@@ -99,8 +94,7 @@ public final class WatermarkHud extends HudElement implements IMinecraft {
         Fonts.drawString(Fonts.SF_MEDIUM, username, currentX, textY, fontSize, whiteColor);
         currentX += Fonts.SF_MEDIUM.getWidth(username, fontSize);
         String roleStr = " [" + role + "]";
-        int roleColor = role.equalsIgnoreCase("Developer") ? primaryColor : dotColor;
-        Fonts.drawString(Fonts.SF_MEDIUM, roleStr, currentX, textY, fontSize, roleColor);
+        Fonts.drawString(Fonts.SF_MEDIUM, roleStr, currentX, textY, fontSize, primaryColor);
         currentX += Fonts.SF_MEDIUM.getWidth(roleStr, fontSize);
 
         // Dot

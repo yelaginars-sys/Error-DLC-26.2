@@ -49,6 +49,9 @@ public final class HudManager implements IMinecraft {
         register(new ArmorHud());
         register(new StaffsHud());
         register(new TotemCounterHud());
+        register(new InventoryHud());
+        register(new MediaPlayerHud());
+        register(new CooldownsHud());
     }
 
     public static HudManager getInstance() {
@@ -326,10 +329,14 @@ public final class HudManager implements IMinecraft {
                 HudElement el = elements.get(i);
                 if (!el.isEnabled()) continue;
                 if (el.isHovered(mouseX, mouseY)) {
-                    contextMenuElement = el;
-                    contextMenuOpen = true;
-                    contextMenuX = (float) mouseX;
-                    contextMenuY = (float) mouseY;
+                    if (el instanceof NotificationHud) {
+                        NotificationHud.toggleSettings();
+                    } else {
+                        contextMenuElement = el;
+                        contextMenuOpen = true;
+                        contextMenuX = (float) mouseX;
+                        contextMenuY = (float) mouseY;
+                    }
                     event.cancel();
                     return;
                 }

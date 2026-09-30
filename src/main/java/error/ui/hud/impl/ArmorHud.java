@@ -3,101 +3,126 @@ package error.ui.hud.impl;
 import error.IMinecraft;
 import error.event.list.Render2DEvent;
 import error.ui.hud.HudElement;
-import error.ui.hud.HudManager;
 import error.util.client.clients.ColorUtil;
-import error.util.client.clients.Theme;
 import error.util.render.Render2D;
 import error.util.render.font.Fonts;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public final class ArmorHud extends HudElement implements IMinecraft {
 
-    private static final float HEIGHT = 26.0F;
-    private static final float SLOT_SIZE = 16.0F;
-    private static final float PADDING_X = 6.0F;
-
-    private static final EquipmentSlot[] SLOTS = {
-            EquipmentSlot.HEAD,
-            EquipmentSlot.CHEST,
-            EquipmentSlot.LEGS,
-            EquipmentSlot.FEET
-    };
+    public static final int ACCENT_PURPLE = ColorUtil.rgba(166, 130, 255, 255);
+    private static final float HEADER_HEIGHT = 12.0F;
 
     public ArmorHud() {
-        super("armorhud", "Armor Hud", 10.0F, 160.0F, 100.0F, HEIGHT);
+        super("armor", "Armor Hud", 200.0F, 100.0F, 70.0F, 28.0F);
+    }
+
+    private List<ItemStack> getArmorItems() {
+        List<ItemStack> list = new ArrayList<>();
+        if (mc.player == null) return list;
+        list.add(mc.player.getItemBySlot(EquipmentSlot.HEAD));
+        list.add(mc.player.getItemBySlot(EquipmentSlot.CHEST));
+        list.add(mc.player.getItemBySlot(EquipmentSlot.LEGS));
+        list.add(mc.player.getItemBySlot(EquipmentSlot.FEET));
+        return list;
     }
 
     @Override
     public void draw(Render2DEvent event) {
-        if (mc.player == null) return;
+        List<ItemStack> armor = getArmorItems();
+        boolean editing = isDragging() || (mc.gui != null && mc.gui.screen() instanceof net.minecraft.client.gui.screens.ChatScreen);
 
-        List<ItemStack> armorItems = new ArrayList<>();
         boolean hasArmor = false;
-        for (EquipmentSlot slot : SLOTS) {
-            ItemStack stack = mc.player.getItemBySlot(slot);
-            armorItems.add(stack);
+        for (ItemStack stack : armor) {
             if (!stack.isEmpty()) {
                 hasArmor = true;
+                break;
             }
         }
 
-        boolean editing = isHovered(HudManager.getMouseX(), HudManager.getMouseY()) || (mc.gui != null && mc.gui.screen() instanceof net.minecraft.client.gui.screens.ChatScreen);
-
-        if (!hasArmor && !editing) {
-            fadeAnim.setTarget(0.0F);
-            fadeAnim.update();
-            return;
+        if (!hasArmor && editing) {
+            armor.clear();
+            armor.add(new ItemStack(Items.DIAMOND_HELMET));
+            armor.add(new ItemStack(Items.NETHERITE_CHESTPLATE));
+            armor.add(new ItemStack(Items.NETHERITE_LEGGINGS));
+            armor.add(new ItemStack(Items.DIAMOND_BOOTS));
+            hasArmor = true;
         }
 
-        fadeAnim.setTarget(1.0F);
+        fadeAnim.setTarget(hasArmor ? 1.0F : 0.0F);
         fadeAnim.update();
+
         float alpha = fadeAnim.getValue();
         if (alpha <= 0.01F) return;
 
         float drawX = getX();
         float drawY = getY();
-        float totalWidth = PADDING_X * 2.0F + 4 * 22.0F;
 
-        this.width = totalWidth;
-        this.height = HEIGHT;
+        float padX = 4.0F;
+        float padY = 3.0F;
+        float itemSize = 12.0F;
+        float gap = 3.0F;
+        float radius = 5.0F;
 
-        int primaryColor = Theme.getAccentColor();
-        int glowColor = ColorUtil.applyAlpha(primaryColor, (int) (alpha * 30));
-        int borderColor = ColorUtil.applyAlpha(primaryColor, (int) (alpha * 60));
-        int bgColor = ColorUtil.applyAlpha(ColorUtil.rgba(14, 14, 18, 195), alpha);
+        int count = 0;
+        for (ItemStack stack : armor) {
+            if (!stack.isEmpty()) count++;
+        }
 
-        // Render Background
-        Render2D.drawShadow(drawX, drawY, totalWidth, HEIGHT, 5.0F, 6.0F, glowColor);
-        Render2D.drawRoundedRect(drawX - 0.5F, drawY - 0.5F, totalWidth + 1.0F, HEIGHT + 1.0F, 5.5F, borderColor);
-        Render2D.drawRoundedRect(drawX, drawY, totalWidth, HEIGHT, 5.0F, bgColor);
+        float contentW = count > 0 ? count * itemSize + (count - 1) * gap : 0.0F;
+        float width = Math.max(padX * 2.0F + contentW, padX * 2.0F + 50.0F);
+        float height = HEADER_HEIGHT + itemSize + padY * 2.0F + 3.0F;
 
-        // Render Armor Slots
-        float currentX = drawX + PADDING_X;
-        for (ItemStack stack : armorItems) {
-            if (!stack.isEmpty()) {
-                int maxDurability = stack.getMaxDamage();
-                int currentDurability = maxDurability - stack.getDamageValue();
-                int durabilityPercent = maxDurability > 0 ? (int) ((currentDurability / (float) maxDurability) * 100) : 100;
+        this.width = width;
+        this.height = height;
 
-                int durColor = ColorUtil.rgba(65, 220, 120, 255);
-                if (durabilityPercent < 30) {
-                    durColor = ColorUtil.rgba(235, 75, 75, 255);
-                } else if (durabilityPercent < 60) {
-                    durColor = ColorUtil.rgba(245, 190, 45, 255);
-                }
+        int primaryColor = ACCENT_PURPLE;
+        int glowColor = ColorUtil.applyAlpha(primaryColor, (int) (alpha * 15));
+        int borderColor = ColorUtil.applyAlpha(primaryColor, (int) (alpha * 40));
+        int bgColor = ColorUtil.rgba(14, 14, 18, (int) (160 * alpha));
+        int headerBg = ColorUtil.rgba(0, 0, 0, (int) (160 * alpha));
 
-                String durStr = durabilityPercent + "%";
-                float durW = Fonts.SF_MEDIUM.getWidth(durStr, 5.5F);
+        // Background (Waper Style)
+        Render2D.drawRoundedRect(drawX - 2.0F, drawY - 2.0F, width + 4.0F, height + 4.0F, radius + 2.0F, glowColor);
+        Render2D.drawRoundedRect(drawX - 0.5F, drawY - 0.5F, width + 1.0F, height + 1.0F, radius + 0.5F, borderColor);
+        Render2D.drawRoundedRect(drawX, drawY, width, height, radius, bgColor);
 
-                Fonts.drawString(Fonts.SF_MEDIUM, durStr, currentX + (20.0F - durW) / 2.0F, drawY + HEIGHT - 7.5F, 5.5F, ColorUtil.applyAlpha(durColor, alpha));
-            } else {
-                Fonts.drawString(Fonts.SF_MEDIUM, "-", currentX + 8.0F, drawY + HEIGHT - 7.5F, 5.5F, ColorUtil.applyAlpha(ColorUtil.rgba(120, 120, 120, 255), alpha));
+        // Header
+        Render2D.drawRoundedRect(drawX, drawY, width, HEADER_HEIGHT, radius, headerBg);
+        Fonts.drawString(Fonts.SF_MEDIUM, "Armor", drawX + padX, drawY + 2.5F, 6.0F, ColorUtil.applyAlpha(primaryColor, alpha));
+
+        // Items + Green durability line
+        float cx = drawX + padX;
+        float cy = drawY + HEADER_HEIGHT + padY;
+
+        var extractor = error.util.RenderExtend.currentGuiGraphicsExtractor();
+
+        for (ItemStack stack : armor) {
+            if (stack.isEmpty()) continue;
+
+            if (extractor != null) {
+                extractor.item(stack, (int) cx, (int) cy);
             }
-            currentX += 22.0F;
+
+            // Durability line under item
+            if (stack.isDamageableItem()) {
+                float maxDamage = stack.getMaxDamage();
+                float damage = stack.getDamageValue();
+                float percent = Math.max(0.0F, 1.0F - (damage / maxDamage));
+
+                float lineY = cy + itemSize + 1.5F;
+                float lineW = itemSize * percent;
+                int durColor = ColorUtil.rgba(65, 225, 120, (int) (230 * alpha));
+
+                Render2D.drawRect(cx, lineY, lineW, 1.5F, durColor);
+            }
+
+            cx += itemSize + gap;
         }
     }
 }

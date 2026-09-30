@@ -3,90 +3,103 @@ package error.ui.hud.impl;
 import error.IMinecraft;
 import error.event.list.Render2DEvent;
 import error.ui.hud.HudElement;
-import error.ui.hud.HudManager;
 import error.util.client.clients.ColorUtil;
-import error.util.client.clients.Theme;
 import error.util.render.Render2D;
 import error.util.render.font.Fonts;
-import error.util.render.font.IconUse;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public final class StaffsHud extends HudElement implements IMinecraft {
 
+    public static final int ACCENT_PURPLE = ColorUtil.rgba(166, 130, 255, 255);
     private static final float HEADER_HEIGHT = 14.0F;
-    private static final float ROW_HEIGHT = 11.5F;
-    private static final float PADDING_X = 5.0F;
-    private static final float PADDING_BOTTOM = 4.0F;
-
-    private static final int BG_COLOR = ColorUtil.rgba(14, 14, 18, 195);
-    private static final int SHADOW_COLOR = ColorUtil.rgba(0, 0, 0, 150);
 
     public StaffsHud() {
-        super("staffs", "Staff List", 10.0F, 140.0F, 90.0F, HEADER_HEIGHT + PADDING_BOTTOM);
+        super("staffs", "Staff List", 6.0F, 60.0F, 90.0F, HEADER_HEIGHT + 14.0F);
     }
 
-    public record StaffMember(String name, String role, boolean online) {}
+    private List<String> getOnlineStaff() {
+        List<String> list = new ArrayList<>();
+        if (mc.getConnection() == null) return list;
 
-    private List<StaffMember> getStaffList() {
-        List<StaffMember> list = new ArrayList<>();
-        if (mc.getSingleplayerServer() == null && mc.getConnection() != null) {
-            mc.getConnection().getOnlinePlayers().forEach(p -> {
-                String name = p.getProfile().name();
-                if (name != null) {
-                    String lower = name.toLowerCase();
-                    if (lower.contains("admin") || lower.contains("mod") || lower.contains("staff") || lower.contains("helper") || lower.contains("owner")) {
-                        list.add(new StaffMember(name, "Staff", true));
-                    }
+        for (var entry : mc.getConnection().getOnlinePlayers()) {
+            if (entry != null && entry.getProfile() != null) {
+                String name = entry.getProfile().name();
+                if (isStaffName(name)) {
+                    list.add(name);
                 }
-            });
+            }
         }
         return list;
     }
 
+    private boolean isStaffName(String name) {
+        if (name == null) return false;
+        String lower = name.toLowerCase();
+        return lower.contains("admin") || lower.contains("mod") || lower.contains("helper") || lower.contains("staff") || lower.contains("owner");
+    }
+
     @Override
     public void draw(Render2DEvent event) {
-        List<StaffMember> staffList = getStaffList();
-        boolean editing = isHovered(HudManager.getMouseX(), HudManager.getMouseY()) || (mc.gui != null && mc.gui.screen() instanceof net.minecraft.client.gui.screens.ChatScreen);
+        List<String> staff = getOnlineStaff();
+        boolean editing = isDragging() || (mc.gui != null && mc.gui.screen() instanceof net.minecraft.client.gui.screens.ChatScreen);
 
-        if (staffList.isEmpty() && !editing) {
-            fadeAnim.setTarget(0.0F);
-            fadeAnim.update();
-            return;
-        }
-
-        fadeAnim.setTarget(1.0F);
+        fadeAnim.setTarget((!staff.isEmpty() || editing) ? 1.0F : 0.0F);
         fadeAnim.update();
+
         float alpha = fadeAnim.getValue();
         if (alpha <= 0.01F) return;
 
         float drawX = getX();
         float drawY = getY();
-        float contentHeight = staffList.size() * ROW_HEIGHT;
-        float totalHeight = HEADER_HEIGHT + contentHeight + PADDING_BOTTOM;
 
-        this.height = totalHeight;
+        float padX = 4.0F;
+        float headerH = HEADER_HEIGHT;
+        float itemH = 12.0F;
+        float radius = 5.0F;
 
-        // Render Background & Header
-        Render2D.drawShadow(drawX, drawY, width, totalHeight, 4.0F, 6.0F, ColorUtil.applyAlpha(SHADOW_COLOR, alpha));
-        Render2D.drawRoundedRect(drawX, drawY, width, totalHeight, 4.0F, ColorUtil.applyAlpha(BG_COLOR, alpha));
+        String title = "Staff";
+        float maxW = Fonts.SF_MEDIUM.getWidth(title, 6.0F);
 
-        // Header Title
-        int primaryColor = Theme.getAccentColor();
-        Fonts.drawIcon(IconUse.STAFF, drawX + PADDING_X, drawY + 3.0F, 8.0F, ColorUtil.applyAlpha(primaryColor, alpha));
-        Fonts.drawString(Fonts.SF_MEDIUM, "Staff List", drawX + PADDING_X + 11.0F, drawY + 3.5F, 6.5F, ColorUtil.applyAlpha(-1, alpha));
-
-        // Render Staff Members
-        float currentY = drawY + HEADER_HEIGHT;
-        if (staffList.isEmpty()) {
-            Fonts.drawString(Fonts.SF_MEDIUM, "No staff online", drawX + PADDING_X, currentY + 1.0F, 6.0F, ColorUtil.applyAlpha(ColorUtil.rgba(180, 180, 180, 255), alpha));
+        if (staff.isEmpty() && editing) {
+            maxW = Math.max(maxW, Fonts.SF_MEDIUM.getWidth("No staff online", 6.0F));
         } else {
-            for (StaffMember staff : staffList) {
-                int statusColor = staff.online() ? ColorUtil.rgba(65, 220, 120, 255) : ColorUtil.rgba(235, 75, 75, 255);
-                Fonts.drawString(Fonts.SF_MEDIUM, staff.name(), drawX + PADDING_X, currentY + 1.0F, 6.0F, ColorUtil.applyAlpha(-1, alpha));
-                Fonts.drawString(Fonts.SF_MEDIUM, staff.role(), drawX + width - PADDING_X - Fonts.SF_MEDIUM.getWidth(staff.role(), 5.5F), currentY + 1.5F, 5.5F, ColorUtil.applyAlpha(statusColor, alpha));
-                currentY += ROW_HEIGHT;
+            for (String s : staff) {
+                maxW = Math.max(maxW, Fonts.SF_MEDIUM.getWidth(s, 6.0F));
+            }
+        }
+
+        float width = Math.max(80.0F, padX * 2.0F + maxW + 10.0F);
+        int itemCount = staff.isEmpty() ? 1 : staff.size();
+        float height = headerH + itemCount * itemH + 3.0F;
+
+        this.width = width;
+        this.height = height;
+
+        int primaryColor = ACCENT_PURPLE;
+        int glowColor = ColorUtil.applyAlpha(primaryColor, (int) (alpha * 15));
+        int borderColor = ColorUtil.applyAlpha(primaryColor, (int) (alpha * 40));
+        int bgColor = ColorUtil.rgba(14, 14, 18, (int) (160 * alpha));
+        int headerBg = ColorUtil.rgba(0, 0, 0, (int) (160 * alpha));
+
+        // Background (Waper Style)
+        Render2D.drawRoundedRect(drawX - 2.0F, drawY - 2.0F, width + 4.0F, height + 4.0F, radius + 2.0F, glowColor);
+        Render2D.drawRoundedRect(drawX - 0.5F, drawY - 0.5F, width + 1.0F, height + 1.0F, radius + 0.5F, borderColor);
+        Render2D.drawRoundedRect(drawX, drawY, width, height, radius, bgColor);
+
+        // Header
+        Render2D.drawRoundedRect(drawX, drawY, width, headerH, radius, headerBg);
+        Fonts.drawString(Fonts.SF_MEDIUM, title, drawX + padX, drawY + 3.5F, 6.0F, ColorUtil.applyAlpha(primaryColor, alpha));
+
+        // Rows
+        float currentY = drawY + headerH + 2.0F;
+        if (staff.isEmpty()) {
+            Fonts.drawString(Fonts.SF_MEDIUM, "No staff online", drawX + padX, currentY + 2.5F, 6.0F, ColorUtil.applyAlpha(ColorUtil.rgba(150, 150, 160, 255), alpha));
+        } else {
+            for (String s : staff) {
+                Fonts.drawString(Fonts.SF_MEDIUM, s, drawX + padX, currentY + 2.5F, 6.0F, ColorUtil.applyAlpha(ColorUtil.WHITE, alpha));
+                currentY += itemH;
             }
         }
     }
