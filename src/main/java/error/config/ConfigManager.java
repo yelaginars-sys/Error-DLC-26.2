@@ -45,7 +45,7 @@ public class ConfigManager {
     private String currentConfig = "default";
 
     public ConfigManager() {
-        this.configFolder = new File(new File(System.getProperty("user.home"), "femboy"), "configs");
+        this.configFolder = new File(new File(System.getProperty("user.home"), "error"), "configs");
         if (!configFolder.exists()) {
             configFolder.mkdirs();
         }

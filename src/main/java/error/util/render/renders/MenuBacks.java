@@ -55,9 +55,9 @@ public final class MenuBacks {
                 quarterTarget.destroyBuffers();
                 quarterTarget = null;
             }
-            halfTarget = new TextureTarget("godweer-gui-backdrop-half", halfWidth, halfHeight, false, GpuFormat.RGBA8_UNORM);
+            halfTarget = new TextureTarget("error-gui-backdrop-half", halfWidth, halfHeight, false, GpuFormat.RGBA8_UNORM);
             quarterTarget = new TextureTarget(
-                    "godweer-gui-backdrop-quarter",
+                    "error-gui-backdrop-quarter",
                     Math.max(1, halfWidth / 2),
                     Math.max(1, halfHeight / 2),
                     false,

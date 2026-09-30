@@ -37,7 +37,7 @@ public class RotationBuilderManager {
     private static final Minecraft mc = Minecraft.getInstance();
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
-    private final Path rootDir = Minecraft.getInstance().gameDirectory.toPath().resolve("femboy").resolve("builder");
+    private final Path rootDir = Minecraft.getInstance().gameDirectory.toPath().resolve("error").resolve("builder");
     private final List<BuilderData.AimSample> sessionData = new ArrayList<>();
 
     @Getter private boolean recording = false;

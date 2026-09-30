@@ -20,7 +20,7 @@ public class FriendManager {
     private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
     public FriendManager() {
-        File dir = new File(System.getProperty("user.home"), "femboy");
+        File dir = new File(System.getProperty("user.home"), "error");
         if (!dir.exists()) dir.mkdirs();
         this.file = new File(dir, "friends.json");
     }

@@ -48,7 +48,7 @@ public class CustomTitleScreen extends Screen {
     };
     private static int currentBgIndex = 0;
 
-    private static final File WALLPAPER_FILE = new File(new File(System.getProperty("user.home"), "femboy"), "wallpaper.json");
+    private static final File WALLPAPER_FILE = new File(new File(System.getProperty("user.home"), "error"), "wallpaper.json");
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
     private boolean accountModalOpen = false;
