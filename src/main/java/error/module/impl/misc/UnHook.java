@@ -191,8 +191,8 @@ public class UnHook extends Module {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player != null) {
             Client.getInstance().getCommandManager().setPrefix("!");
-            if (mc.gui != null && mc.gui.getChat() != null) {
-                mc.gui.getChat().clearMessages(false);
+            if (mc.gui != null && mc.gui.hud != null && mc.gui.hud.getChat() != null) {
+                mc.gui.hud.getChat().clearMessages(false);
             }
         }
 
