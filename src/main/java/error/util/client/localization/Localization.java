@@ -53,6 +53,7 @@ public final class Localization {
         RU_DICT.put("Bound", "С биндом");
         RU_DICT.put("Unbound", "Без бинда");
         RU_DICT.put("Language", "Язык");
+        RU_DICT.put("Theme", "Тема");
         RU_DICT.put("Background", "Задний фон");
         RU_DICT.put("Accent", "Акцент темы");
         RU_DICT.put("Blur", "Размытие");

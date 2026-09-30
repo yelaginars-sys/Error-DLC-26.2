@@ -85,28 +85,9 @@ public final class PanelLapSuperimposition {
             float contentX = x + sideW + 12.0F;
             float contentW = 380.0F;
 
-            int laserCol = ColorUtil.rgba(239, 165, 222, (int) (245 * mainGuiAlpha));
-            int laserGlow = ColorUtil.rgba(225, 130, 205, (int) (110 * mainGuiAlpha));
-
-            // Vertical glowing accent rail on right edge of sidebar:
-            float railSideX = x + sideW;
-            float railSideY = y + h * 0.40F;
-            float railSideH = h * 0.45F;
-            Render2D.drawShadow(railSideX - 1.0F, railSideY, 2.0F, railSideH, 1.0F, 6.0F, laserGlow);
-            Render2D.drawRoundedRect(railSideX - 1.0F, railSideY, 2.0F, railSideH, 1.0F, laserCol);
-            // Bottom glowing terminal orb on sidebar rail
-            Render2D.drawShadow(railSideX - 2.5F, railSideY + railSideH, 5.0F, 5.0F, 2.5F, 8.0F, laserGlow);
-            Render2D.drawRoundedRect(railSideX - 2.5F, railSideY + railSideH, 5.0F, 5.0F, 2.5F, ColorUtil.rgba(255, 255, 255, (int) (255 * mainGuiAlpha)));
-
-            // Vertical glowing accent rail on right edge of main panel:
-            float railMainX = contentX + contentW;
-            float railMainY = y + h * 0.30F;
-            float railMainH = h * 0.55F;
-            Render2D.drawShadow(railMainX - 1.0F, railMainY, 2.0F, railMainH, 1.0F, 6.0F, laserGlow);
-            Render2D.drawRoundedRect(railMainX - 1.0F, railMainY, 2.0F, railMainH, 1.0F, laserCol);
-            // Bottom glowing terminal orb on main panel rail
-            Render2D.drawShadow(railMainX - 2.5F, railMainY + railMainH, 5.0F, 5.0F, 2.5F, 8.0F, laserGlow);
-            Render2D.drawRoundedRect(railMainX - 2.5F, railMainY + railMainH, 5.0F, 5.0F, 2.5F, ColorUtil.rgba(255, 255, 255, (int) (255 * mainGuiAlpha)));
+            int themeAccent = Theme.getAccentColor();
+            int laserCol = ColorUtil.multiplyAlpha(themeAccent, mainGuiAlpha);
+            int laserGlow = ColorUtil.rgba(ColorUtil.red(themeAccent), ColorUtil.green(themeAccent), ColorUtil.blue(themeAccent), (int) (110 * mainGuiAlpha));
 
             renderDescriptionAboveGui(state, centerX, y - 18.0F, mainGuiAlpha);
 
@@ -115,7 +96,7 @@ public final class PanelLapSuperimposition {
             int shadowColor = ColorUtil.rgba(0, 0, 0, (int) (160 * mainGuiAlpha));
             int glassGloss = ColorUtil.rgba(255, 255, 255, (int) (28 * mainGuiAlpha));
             int glassBorder = ColorUtil.rgba(255, 255, 255, (int) (65 * mainGuiAlpha));
-            int glassHalo = ColorUtil.rgba(215, 140, 240, (int) (30 * mainGuiAlpha));
+            int glassHalo = ColorUtil.rgba(ColorUtil.red(themeAccent), ColorUtil.green(themeAccent), ColorUtil.blue(themeAccent), (int) (25 * mainGuiAlpha));
 
             // Real Liquid Glass Blur + Translucent Fill + Specular Gloss + Glass Border + Glass Halo
             Render2D.drawShadow(x, y, sideW, h, 14.0F, 12.0F, shadowColor);
@@ -125,21 +106,18 @@ public final class PanelLapSuperimposition {
             Render2D.drawRoundedRect(x, y, sideW, 16.0F, 14.0F, glassGloss);
             Render2D.drawRoundedOutline(x, y, sideW, h, 14.0F, 1.0F, glassBorder);
 
-            // Top Header Split Pills: Left [Rose v] | Right [1.21.11] (Matching media_1790804005720.png 1:1)
+            // Top Header: Error DLC 26.2 Branding & Client Logo
             float dropdownY = y + 8.0F;
-            float leftPillW = sideW - 54.0F;
+            float brandW = sideW - 16.0F;
             int pillGlass = ColorUtil.rgba(65, 58, 80, (int) (115 * mainGuiAlpha));
             int pillBorder = ColorUtil.rgba(255, 255, 255, (int) (25 * mainGuiAlpha));
 
-            Render2D.drawRoundedRect(x + 8.0F, dropdownY, leftPillW, 19.0F, 6.0F, pillGlass);
-            Render2D.drawRoundedOutline(x + 8.0F, dropdownY, leftPillW, 19.0F, 6.0F, 1.0F, pillBorder);
-            Fonts.drawString(Fonts.SF_MEDIUM, "🌹 Rose", x + 13.0F, dropdownY + 4.5F, 8.0F, ColorUtil.rgba(255, 255, 255, (int) (240 * mainGuiAlpha)));
-            Fonts.drawString(Fonts.SF_MEDIUM, "v", x + leftPillW - 2.0F, dropdownY + 5.0F, 7.0F, ColorUtil.rgba(180, 180, 200, (int) (180 * mainGuiAlpha)));
+            Render2D.drawRoundedRect(x + 8.0F, dropdownY, brandW, 19.0F, 6.0F, pillGlass);
+            Render2D.drawRoundedOutline(x + 8.0F, dropdownY, brandW, 19.0F, 6.0F, 1.0F, pillBorder);
 
-            float rightPillX = x + 8.0F + leftPillW + 4.0F;
-            Render2D.drawRoundedRect(rightPillX, dropdownY, 34.0F, 19.0F, 6.0F, pillGlass);
-            Render2D.drawRoundedOutline(rightPillX, dropdownY, 34.0F, 19.0F, 6.0F, 1.0F, pillBorder);
-            Fonts.drawString(Fonts.SF_MEDIUM, "1.21.11", rightPillX + 4.0F, dropdownY + 5.0F, 7.0F, ColorUtil.rgba(200, 200, 220, (int) (200 * mainGuiAlpha)));
+            // Glowing Client Logo & Client Name
+            Fonts.drawIcon(IconUse.LOGO, x + 14.0F, dropdownY + 4.5F, 10.0F, laserCol);
+            Fonts.drawString(Fonts.SF_MEDIUM, "Error DLC 26.2", x + 28.0F, dropdownY + 5.0F, 7.5F, ColorUtil.rgba(255, 255, 255, (int) (245 * mainGuiAlpha)));
 
             // Categories List
             float catY = y + 35.0F;
@@ -221,29 +199,30 @@ public final class PanelLapSuperimposition {
             Render2D.drawRoundedRect(contentX, y, contentW, 16.0F, 14.0F, glassGloss);
             Render2D.drawRoundedOutline(contentX, y, contentW, h, 14.0F, 1.0F, glassBorder);
 
-            // Top Breadcrumb & Config Dropdown
+            // Top Breadcrumb & Theme Settings Dropdown Button
             float breadY = y + 8.0F;
-            Fonts.drawString(Fonts.SF_MEDIUM, "Rose  /  Categories  /  " + state.getCurrentCategory().getDisplayName(), contentX + 12.0F, breadY + 3.0F, 8.0F, ColorUtil.rgba(200, 195, 215, (int) (180 * mainGuiAlpha)));
+            Fonts.drawString(Fonts.SF_MEDIUM, "Error  /  " + Localization.get(state.getCurrentCategory().getDisplayName()), contentX + 14.0F, breadY + 4.0F, 8.0F, ColorUtil.rgba(200, 195, 215, (int) (180 * mainGuiAlpha)));
 
-            Render2D.drawRoundedRect(contentX + contentW - 70.0F, breadY, 58.0F, 17.0F, 5.0F, pillGlass);
-            Render2D.drawRoundedOutline(contentX + contentW - 70.0F, breadY, 58.0F, 17.0F, 5.0F, 1.0F, pillBorder);
-            Render2D.drawRoundedRect(contentX + contentW - 65.0F, breadY + 5.5F, 6.0F, 6.0F, 3.0F, laserCol);
-            Fonts.drawString(Fonts.SF_MEDIUM, "Custom", contentX + contentW - 56.0F, breadY + 3.5F, 7.5F, ColorUtil.rgba(240, 240, 255, (int) (220 * mainGuiAlpha)));
-            Fonts.drawString(Fonts.SF_MEDIUM, "v", contentX + contentW - 18.0F, breadY + 4.0F, 6.5F, ColorUtil.rgba(180, 180, 200, (int) (180 * mainGuiAlpha)));
+            float themeBtnW = 68.0F;
+            float themeBtnH = 17.0F;
+            float themeBtnX = contentX + contentW - themeBtnW - 12.0F;
+            float themeBtnY = breadY;
 
-            // Sub-mode Pills Bar
-            float subY = y + 30.0F;
-            int activeOptionPill = ColorUtil.rgba(225, 120, 205, (int) (140 * mainGuiAlpha));
+            boolean themeHovered = mouseX >= themeBtnX && mouseX <= themeBtnX + themeBtnW && mouseY >= themeBtnY && mouseY <= themeBtnY + themeBtnH;
+            boolean themeOpen = state.isSettingsPopupOpen();
 
-            Render2D.drawRoundedRect(contentX + 12.0F, subY, 110.0F, 17.0F, 5.0F, ColorUtil.rgba(60, 52, 78, (int) (115 * mainGuiAlpha)));
-            Fonts.drawString(Fonts.SF_MEDIUM, "Коррекция движения", contentX + 16.0F, subY + 3.5F, 7.0F, ColorUtil.rgba(200, 195, 215, (int) (180 * mainGuiAlpha)));
+            int themeBtnBg = themeOpen || themeHovered
+                    ? ColorUtil.rgba(ColorUtil.red(themeAccent), ColorUtil.green(themeAccent), ColorUtil.blue(themeAccent), (int) (65 * mainGuiAlpha))
+                    : pillGlass;
+            int themeBtnBorder = themeOpen || themeHovered ? laserCol : pillBorder;
 
-            Render2D.drawRoundedRect(contentX + 128.0F, subY, 95.0F, 17.0F, 5.0F, activeOptionPill);
-            Render2D.drawRoundedOutline(contentX + 128.0F, subY, 95.0F, 17.0F, 5.0F, 1.0F, ColorUtil.rgba(250, 160, 235, (int) (190 * mainGuiAlpha)));
-            Fonts.drawString(Fonts.SF_MEDIUM, "Сфокусированная", contentX + 133.0F, subY + 3.5F, 7.0F, ColorUtil.rgba(255, 255, 255, (int) (255 * mainGuiAlpha)));
-
-            Render2D.drawRoundedRect(contentX + 228.0F, subY, 70.0F, 17.0F, 5.0F, ColorUtil.rgba(60, 52, 78, (int) (115 * mainGuiAlpha)));
-            Fonts.drawString(Fonts.SF_MEDIUM, "Свободная", contentX + 234.0F, subY + 3.5F, 7.0F, ColorUtil.rgba(200, 195, 215, (int) (180 * mainGuiAlpha)));
+            Render2D.drawRoundedRect(themeBtnX, themeBtnY, themeBtnW, themeBtnH, 5.0F, themeBtnBg);
+            Render2D.drawRoundedOutline(themeBtnX, themeBtnY, themeBtnW, themeBtnH, 5.0F, 1.0F, themeBtnBorder);
+            // Glowing Accent Color Dot matching HUD and theme
+            Render2D.drawShadow(themeBtnX + 7.0F, themeBtnY + 5.5F, 6.0F, 6.0F, 3.0F, 3.0F, laserGlow);
+            Render2D.drawRoundedRect(themeBtnX + 7.0F, themeBtnY + 5.5F, 6.0F, 6.0F, 3.0F, laserCol);
+            Fonts.drawString(Fonts.SF_MEDIUM, Localization.get("Theme"), themeBtnX + 17.0F, themeBtnY + 3.5F, 7.5F, ColorUtil.rgba(240, 240, 255, (int) (230 * mainGuiAlpha)));
+            Fonts.drawString(Fonts.SF_MEDIUM, themeOpen ? "^" : "v", themeBtnX + themeBtnW - 11.0F, themeBtnY + 4.0F, 6.0F, ColorUtil.rgba(200, 200, 220, (int) (180 * mainGuiAlpha)));
 
             renderSearchAndHintsUnderGui(state, centerX, y + h + 16.0F, mainGuiAlpha);
         }
@@ -251,9 +230,9 @@ public final class PanelLapSuperimposition {
         // Inner Modules Scroll Area
         float sideW = 145.0F;
         float contentX = x + sideW + 12.0F;
-        float contentY = y + 54.0F;
+        float contentY = y + 32.0F;
         float contentW = 380.0F;
-        float contentH = h - 64.0F;
+        float contentH = h - 40.0F;
 
         float catProgress = state.getCategoryAnim().getValue();
         float contentAlpha = openProgress * catProgress;
@@ -264,6 +243,18 @@ public final class PanelLapSuperimposition {
         Render2D.pushScissor(contentX + 4.0F, contentY, contentW - 8.0F, contentH);
         renderModules(state, contentX + 8.0F, contentY + slideY, contentW - 16.0F, contentH, mouseX, mouseY, contentAlpha);
         Render2D.popScissor();
+
+        // Settings Popup Dropdown
+        float popupProgress = state.getSettingsPopupAnim().getValue();
+        if (popupProgress > 0.01F) {
+            float popupW = settingsPopup.getWidth();
+            float themeBtnW = 68.0F;
+            float themeBtnX = contentX + contentW - themeBtnW - 12.0F;
+            float themeBtnY = y + 8.0F;
+            float popupX = themeBtnX + themeBtnW - popupW;
+            float popupY = themeBtnY + 17.0F + 5.0F;
+            settingsPopup.render(popupX, popupY, mouseX, mouseY, mainGuiAlpha * popupProgress);
+        }
 
         extractor.pose().popMatrix();
 
@@ -393,6 +384,9 @@ public final class PanelLapSuperimposition {
             if (state.getActiveModal() != null) {
                 state.getActiveModal().mouseReleased(mouseX, mouseY, button);
             }
+            if (state.isSettingsPopupOpen()) {
+                settingsPopup.mouseReleased(mouseX, mouseY, button);
+            }
             for (Module module : Client.INSTANCE.moduleManager.getModules()) {
                 for (SettingRenderer<?> sr : module.getSettingRenderers()) {
                     sr.mouseReleased(mouseX, mouseY, button);
@@ -416,6 +410,33 @@ public final class PanelLapSuperimposition {
         float h = state.getPanelHeight();
 
         float sideW = 145.0F;
+        float contentX = x + sideW + 12.0F;
+        float contentW = 380.0F;
+
+        // Theme Settings button and dropdown popup
+        float themeBtnW = 68.0F;
+        float themeBtnH = 17.0F;
+        float themeBtnX = contentX + contentW - themeBtnW - 12.0F;
+        float themeBtnY = y + 8.0F;
+        float popupW = settingsPopup.getWidth();
+        float popupX = themeBtnX + themeBtnW - popupW;
+        float popupY = themeBtnY + 17.0F + 5.0F;
+
+        if (state.isSettingsPopupOpen()) {
+            if (settingsPopup.mouseClicked(popupX, popupY, mouseX, mouseY, button)) {
+                return true;
+            }
+            if (mouseX >= themeBtnX && mouseX <= themeBtnX + themeBtnW && mouseY >= themeBtnY && mouseY <= themeBtnY + themeBtnH) {
+                state.closeSettingsPopup();
+                return true;
+            }
+            state.closeSettingsPopup();
+        } else if (mouseX >= themeBtnX && mouseX <= themeBtnX + themeBtnW && mouseY >= themeBtnY && mouseY <= themeBtnY + themeBtnH) {
+            if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+                state.toggleSettingsPopup();
+                return true;
+            }
+        }
 
         // 2. Category Clicks (Sidebar) - Hitbox precisely aligned with render
         float catY = y + 35.0F;
@@ -447,8 +468,9 @@ public final class PanelLapSuperimposition {
         // 4. Panel Header Dragging
         if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
             boolean inSidebarHeader = mouseX >= x && mouseX <= x + sideW && mouseY >= y && mouseY <= y + 32.0F;
-            boolean inContentHeader = mouseX >= x + sideW + 12.0F && mouseX <= x + w && mouseY >= y && mouseY <= y + 30.0F;
-            if (inSidebarHeader || inContentHeader) {
+            boolean inContentHeader = mouseX >= contentX && mouseX <= contentX + contentW && mouseY >= y && mouseY <= y + 30.0F;
+            boolean onThemeBtn = mouseX >= themeBtnX && mouseX <= themeBtnX + themeBtnW && mouseY >= themeBtnY && mouseY <= themeBtnY + themeBtnH;
+            if ((inSidebarHeader || inContentHeader) && !onThemeBtn) {
                 dragging = true;
                 dragOffsetX = mouseX - x;
                 dragOffsetY = mouseY - y;
@@ -457,10 +479,8 @@ public final class PanelLapSuperimposition {
         }
 
         // 5. Module Toggles & Setting Interactions
-        float contentX = x + sideW + 12.0F;
-        float contentY = y + 54.0F;
-        float contentW = 380.0F;
-        float contentH = h - 64.0F;
+        float contentY = y + 32.0F;
+        float contentH = h - 40.0F;
 
         if (mouseX >= contentX && mouseX <= contentX + contentW && mouseY >= contentY && mouseY <= contentY + contentH) {
             List<Module> list = getFilteredModules(state);
@@ -506,6 +526,13 @@ public final class PanelLapSuperimposition {
     public boolean handleKey(PanelLapState state, int key, int scanCode, int modifiers) {
         if (state.getActiveModal() != null) {
             if (state.getActiveModal().keyPressed(key, scanCode, modifiers)) {
+                return true;
+            }
+        }
+
+        if (state.isSettingsPopupOpen()) {
+            if (key == GLFW.GLFW_KEY_ESCAPE) {
+                state.closeSettingsPopup();
                 return true;
             }
         }

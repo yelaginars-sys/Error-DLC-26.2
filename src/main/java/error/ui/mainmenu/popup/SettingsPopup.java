@@ -79,15 +79,22 @@ public class SettingsPopup {
         }
         this.cachedHeight = 20.0F + totalSettingsH + 5.0F;
 
-        int popupBgColor = 0xFF0D0E12;
-        float popupAlpha = alpha * 0.95F;
+        int accent = Theme.getAccentColor();
+        int popupShadow = ColorUtil.rgba(0, 0, 0, (int) (180 * alpha));
+        int popupGlow = ColorUtil.rgba(ColorUtil.red(accent), ColorUtil.green(accent), ColorUtil.blue(accent), (int) (40 * alpha));
+        int popupBg = ColorUtil.rgba(36, 30, 46, (int) (225 * alpha));
+        int popupBorder = ColorUtil.rgba(ColorUtil.red(accent), ColorUtil.green(accent), ColorUtil.blue(accent), (int) (140 * alpha));
 
+        Render2D.drawShadow(x, y, width, cachedHeight, 8.0F, 10.0F, popupShadow);
+        Render2D.drawShadow(x, y, width, cachedHeight, 8.0F, 6.0F, popupGlow);
         if (Theme.getBackgroundMode().equalsIgnoreCase("Blur")) {
-            Render2D.drawBlur(x, y, width, cachedHeight, 6.0F, ColorUtil.multiplyAlpha(popupBgColor, popupAlpha), alpha);
+            Render2D.drawBlur(x, y, width, cachedHeight, 8.0F, popupBg, alpha);
         }
-        Render2D.drawRoundedRect(x, y, width, cachedHeight, 6.0F, ColorUtil.multiplyAlpha(popupBgColor, popupAlpha));
+        Render2D.drawRoundedRect(x, y, width, cachedHeight, 8.0F, popupBg);
+        Render2D.drawRoundedOutline(x, y, width, cachedHeight, 8.0F, 1.0F, popupBorder);
 
-        Fonts.drawString(Fonts.SF_MEDIUM, Localization.get("GUI Settings"), x + 7, y + 6.0F, 9.5F, ColorUtil.multiplyAlpha(Theme.TEXT_MUTED, alpha));
+        Render2D.drawRoundedRect(x + 8.0F, y + 8.5F, 4.0F, 4.0F, 2.0F, ColorUtil.multiplyAlpha(accent, alpha));
+        Fonts.drawString(Fonts.SF_MEDIUM, Localization.get("GUI Settings"), x + 16.0F, y + 6.0F, 8.5F, ColorUtil.rgba(255, 255, 255, (int) (230 * alpha)));
 
         float curY = y + 19.0F;
         for (SettingRenderer<?> sr : renderers) {
