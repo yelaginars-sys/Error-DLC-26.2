@@ -33,8 +33,8 @@ public final class PanelKeyBoardHandler implements IMinecraft {
         }
 
         if (!PanelRefractions.isOpen()) {
-            if (event.getAction() == GLFW.GLFW_PRESS && screen() == null) {
-                Client.INSTANCE.moduleManager.onKey(event.getKey());
+            if (screen() == null) {
+                Client.INSTANCE.moduleManager.onKey(event.getKey(), event.getAction());
             }
             return;
         }
@@ -79,8 +79,8 @@ public final class PanelKeyBoardHandler implements IMinecraft {
         }
 
         if (!PanelRefractions.isOpen()) {
-            if (event.getAction() == GLFW.GLFW_PRESS && screen() == null) {
-                Client.INSTANCE.moduleManager.onMouse(event.getButton());
+            if (screen() == null) {
+                Client.INSTANCE.moduleManager.onMouse(event.getButton(), event.getAction());
             }
             return;
         }

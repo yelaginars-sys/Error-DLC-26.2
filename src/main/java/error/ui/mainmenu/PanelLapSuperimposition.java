@@ -54,9 +54,10 @@ public final class PanelLapSuperimposition {
         float w = state.getPanelWidth();
         float h = state.getPanelHeight();
 
+        float easeProgress = 1.0F - (float) Math.pow(1.0F - openProgress, 3);
         float centerX = x + (w / 2.0F);
         float centerY = y + (h / 2.0F);
-        float scale = 0.94F + (0.06F * openProgress);
+        float scale = 0.88F + (0.12F * easeProgress);
 
         extractor.pose().pushMatrix();
         extractor.pose().translate(centerX, centerY);
@@ -64,18 +65,25 @@ public final class PanelLapSuperimposition {
         extractor.pose().translate(-centerX, -centerY);
 
         float holdProgress = state.getHoldAnim().getValue();
-        float mainGuiAlpha = openProgress * (1.0F - holdProgress);
+        float mainGuiAlpha = easeProgress * (1.0F - holdProgress);
 
         if (mainGuiAlpha > 0.01F) {
-            // Subtle ambient dark backdrop (NOT solid opaque, so world is blurred behind liquid glass!)
-            int ambientBg = ColorUtil.rgba(10, 8, 16, (int) (115 * mainGuiAlpha));
-            Render2D.drawRect(0, 0, screenWidth, screenHeight, ambientBg);
+            // Ambient backdrop matching Theme backgroundMode setting ("Blur" vs "None")
+            boolean isBlur = Theme.getBackgroundMode().equalsIgnoreCase("Blur");
+            if (isBlur) {
+                int ambientBg = ColorUtil.rgba(10, 8, 16, (int) (130 * mainGuiAlpha));
+                Render2D.drawRect(0, 0, screenWidth, screenHeight, ambientBg);
+                Render2D.drawBlur(0, 0, screenWidth, screenHeight, 0.0F, 16.0F, ColorUtil.rgba(0, 0, 0, 80), mainGuiAlpha);
+            } else {
+                int ambientBg = ColorUtil.rgba(10, 8, 16, (int) (65 * mainGuiAlpha));
+                Render2D.drawRect(0, 0, screenWidth, screenHeight, ambientBg);
+            }
 
             // Top-Right Purple Spotlight Beam Accent
             int spotlightCol = ColorUtil.rgba(195, 125, 245, (int) (40 * mainGuiAlpha));
             Render2D.drawRoundedRect(screenWidth * 0.55F, -60.0F, screenWidth * 0.5F, 220.0F, 100.0F, spotlightCol);
 
-            // Ambient Floating Rings in background (Matching video 0:08)
+            // Ambient Floating Rings in background
             int ringCol = ColorUtil.rgba(215, 170, 245, (int) (35 * mainGuiAlpha));
             Render2D.drawRoundedOutline(screenWidth * 0.22F, screenHeight * 0.75F, 18.0F, 18.0F, 9.0F, 1.0F, ringCol);
             Render2D.drawRoundedOutline(screenWidth * 0.76F, screenHeight * 0.22F, 14.0F, 14.0F, 7.0F, 1.0F, ringCol);
@@ -308,7 +316,7 @@ public final class PanelLapSuperimposition {
             int textCol = module.isState() ? ColorUtil.WHITE : ColorUtil.rgba(205, 200, 220, 200);
             Fonts.drawString(Fonts.SF_MEDIUM, module.getName(), modX + 8.0F, modY + 5.5F, 8.5F, ColorUtil.multiplyAlpha(textCol, alpha));
 
-            // Module State Toggle Switch Pill (Glowing Neon Pink when ON)
+            // Module State Toggle Switch Pill
             float toggleW = 20.0F;
             float toggleH = 10.0F;
             float toggleX = modX + colWidth - toggleW - 8.0F;
@@ -326,6 +334,26 @@ public final class PanelLapSuperimposition {
                 Render2D.drawRoundedOutline(toggleX, toggleY, toggleW, toggleH, 5.0F, 1.0F, ColorUtil.rgba(255, 255, 255, (int) (35 * alpha)));
                 Render2D.drawRoundedRect(toggleX + 2.0F, toggleY + 1.5F, 7.0F, 7.0F, 3.5F, ColorUtil.rgba(200, 195, 215, (int) (200 * alpha)));
             }
+
+            // Keybind Pill & Keyboard Icon
+            boolean isBound = module.getBind().isBound();
+            String bindText = isBound ? "⌨ " + module.getBind().getDisplayValue() : "⌨";
+            float bindFontSz = 7.0F;
+            float bindTextW = Fonts.SF_MEDIUM.getWidth(bindText, bindFontSz);
+            float bindPillW = bindTextW + 8.0F;
+            float bindPillH = 10.0F;
+            float bindPillX = toggleX - bindPillW - 6.0F;
+            float bindPillY = modY + 6.0F;
+
+            boolean bindHovered = hovered && mouseX >= bindPillX && mouseX <= bindPillX + bindPillW && mouseY >= bindPillY && mouseY <= bindPillY + bindPillH;
+            int accent = Theme.getAccentColor();
+            int bindBg = bindHovered ? ColorUtil.multiplyAlpha(accent, 0.40F * alpha)
+                    : (isBound ? ColorUtil.multiplyAlpha(accent, 0.22F * alpha) : ColorUtil.rgba(255, 255, 255, (int) (14 * alpha)));
+            int bindBorder = bindHovered || isBound ? ColorUtil.multiplyAlpha(accent, alpha) : ColorUtil.rgba(255, 255, 255, (int) (25 * alpha));
+
+            Render2D.drawRoundedRect(bindPillX, bindPillY, bindPillW, bindPillH, 3.5F, bindBg);
+            Render2D.drawRoundedOutline(bindPillX, bindPillY, bindPillW, bindPillH, 3.5F, 1.0F, bindBorder);
+            Fonts.drawString(Fonts.SF_MEDIUM, bindText, bindPillX + 4.0F, bindPillY + 1.5F, bindFontSz, ColorUtil.rgba(255, 255, 255, (int) ((bindHovered ? 255 : (isBound ? 230 : 160)) * alpha)));
 
             if (module.getExpandAnim().getValue() > 0.02F) {
                 float setY = modY + 22.0F;
@@ -479,6 +507,27 @@ public final class PanelLapSuperimposition {
                 float cardHeight = 22.0F + (module.getExpandAnim().getValue() * (totalSetH + 4.0F));
 
                 if (mouseY >= modY && mouseY <= modY + cardHeight) {
+                    float colWidth = contentW - 16.0F;
+                    float modX = contentX + 8.0F;
+                    float toggleW = 20.0F;
+                    float toggleX = modX + colWidth - toggleW - 8.0F;
+
+                    boolean isBound = module.getBind().isBound();
+                    String bindText = isBound ? "⌨ " + module.getBind().getDisplayValue() : "⌨";
+                    float bindFontSz = 7.0F;
+                    float bindTextW = Fonts.SF_MEDIUM.getWidth(bindText, bindFontSz);
+                    float bindPillW = bindTextW + 8.0F;
+                    float bindPillH = 10.0F;
+                    float bindPillX = toggleX - bindPillW - 6.0F;
+                    float bindPillY = modY + 6.0F;
+
+                    // Middle Click anywhere on card OR Click directly on Keyboard Icon -> Open Bind Modal!
+                    boolean clickedPill = mouseX >= bindPillX && mouseX <= bindPillX + bindPillW && mouseY >= bindPillY && mouseY <= bindPillY + bindPillH;
+                    if (button == GLFW.GLFW_MOUSE_BUTTON_MIDDLE || clickedPill) {
+                        state.setActiveModal(new error.ui.mainmenu.popup.BindModal(module));
+                        return true;
+                    }
+
                     // Header click (first 22 pixels)
                     if (mouseY <= modY + 22.0F) {
                         if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {

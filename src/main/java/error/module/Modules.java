@@ -2,6 +2,7 @@ package error.module;
 
 import lombok.Getter;
 import org.lwjgl.glfw.GLFW;
+import error.setting.BindMode;
 import error.module.impl.combat.*;
 import error.module.impl.misc.*;
 import error.module.impl.movement.*;
@@ -161,19 +162,41 @@ public class Modules {
                 .collect(Collectors.toList());
     }
 
-    public void onKey(int key) {
+    public void onKey(int key, int action) {
         if (key == GLFW.GLFW_KEY_UNKNOWN || key == 0) return;
         for (Module module : modules) {
             if (module.getBind().matches(key)) {
-                module.toggle();
+                BindMode mode = module.getBind().getMode(0, BindMode.TOGGLE);
+                if (mode == BindMode.HOLD) {
+                    if (action == GLFW.GLFW_PRESS) {
+                        module.setState(true);
+                    } else if (action == GLFW.GLFW_RELEASE) {
+                        module.setState(false);
+                    }
+                } else {
+                    if (action == GLFW.GLFW_PRESS) {
+                        module.toggle();
+                    }
+                }
             }
         }
     }
 
-    public void onMouse(int button) {
+    public void onMouse(int button, int action) {
         for (Module module : modules) {
             if (module.getBind().matchesMouse(button)) {
-                module.toggle();
+                BindMode mode = module.getBind().getMode(0, BindMode.TOGGLE);
+                if (mode == BindMode.HOLD) {
+                    if (action == GLFW.GLFW_PRESS) {
+                        module.setState(true);
+                    } else if (action == GLFW.GLFW_RELEASE) {
+                        module.setState(false);
+                    }
+                } else {
+                    if (action == GLFW.GLFW_PRESS) {
+                        module.toggle();
+                    }
+                }
             }
         }
     }
