@@ -16,6 +16,8 @@ public final class PanelKeyBoardHandler implements IMinecraft {
     public void onKeyboardInput(KeyboardInputEvent event) {
         if (event.getKey() == GLFW.GLFW_KEY_F11) return;
 
+        if (error.module.impl.misc.UnHook.unhooked) return;
+
         ClickGui clickGui = Client.INSTANCE.moduleManager.getClickGui();
         boolean isGuiKey = clickGui != null && clickGui.getBind().matches(event.getKey());
 

@@ -82,7 +82,7 @@ public final class HudManager implements IMinecraft {
 
     @EventTarget(priority = 500)
     public void onRender2D(Render2DEvent event) {
-        if (mc == null || mc.getWindow() == null) return;
+        if (mc == null || mc.getWindow() == null || error.module.impl.misc.UnHook.unhooked) return;
 
         boolean isEditMode = isDraggableScreenOpen();
         double mouseX = getMouseX();

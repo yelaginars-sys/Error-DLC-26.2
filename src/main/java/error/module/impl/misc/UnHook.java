@@ -189,6 +189,11 @@ public class UnHook extends Module {
         installLogFilter();
 
         Minecraft mc = Minecraft.getInstance();
+        error.ui.mainmenu.PanelRefractions.close(mc);
+        if (mc.screen != null && !(mc.screen instanceof net.minecraft.client.gui.screens.ChatScreen)) {
+            mc.setScreen(null);
+        }
+
         if (mc.player != null) {
             Client.getInstance().getCommandManager().setPrefix("!");
             if (mc.gui != null && mc.gui.hud != null && mc.gui.hud.getChat() != null) {
