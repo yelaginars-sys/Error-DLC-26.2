@@ -4,6 +4,7 @@ import error.IMinecraft;
 import error.event.list.Render2DEvent;
 import error.ui.hud.HudElement;
 import error.util.client.clients.ColorUtil;
+import error.util.client.clients.Theme;
 import error.util.render.Render2D;
 import error.util.render.font.Fonts;
 import error.util.render.font.IconUse;
@@ -131,7 +132,7 @@ public final class NotificationHud extends HudElement implements IMinecraft {
             if (alpha <= 0.01F) continue;
 
             IconUse icon = note.type == Type.ON ? IconUse.CHECK : (note.type == Type.OFF ? IconUse.CROSS : IconUse.INFO);
-            int primaryColor = ACCENT_PURPLE;
+            int primaryColor = Theme.getAccentColor();
 
             String textStr = note.title + (note.message.isEmpty() ? "" : ", " + note.message);
             float textW = Fonts.SF_MEDIUM.getWidth(textStr, 6.5F);
@@ -140,11 +141,12 @@ public final class NotificationHud extends HudElement implements IMinecraft {
 
             int glowColor = ColorUtil.applyAlpha(primaryColor, (int) (alpha * 15));
             int borderColor = ColorUtil.applyAlpha(primaryColor, (int) (alpha * 40));
-            int bgColor = ColorUtil.rgba(14, 14, 18, (int) (195 * alpha));
+            int bgColor = ColorUtil.rgba(0, 0, 0, (int) (180 * alpha));
 
-            // Capsule Banner (Waper Style)
+            // Capsule Banner with blur and theme accent glow
             Render2D.drawRoundedRect(drawX - 2.0F, currentY - 2.0F, noteWidth + 4.0F, noteHeight + 4.0F, 10.0F, glowColor);
             Render2D.drawRoundedRect(drawX - 0.5F, currentY - 0.5F, noteWidth + 1.0F, noteHeight + 1.0F, 8.5F, borderColor);
+            Render2D.drawBlur(drawX, currentY, noteWidth, noteHeight, 8.0F, 10.0F, bgColor, alpha);
             Render2D.drawRoundedRect(drawX, currentY, noteWidth, noteHeight, 8.0F, bgColor);
 
             Fonts.drawIcon(icon, drawX + 6.0F, currentY + 5.5F, 8.0F, ColorUtil.applyAlpha(primaryColor, alpha));
@@ -168,16 +170,17 @@ public final class NotificationHud extends HudElement implements IMinecraft {
         float height = 95.0F;
         float radius = 8.0F;
 
-        int primaryColor = ACCENT_PURPLE;
+        int primaryColor = Theme.getAccentColor();
         int glowColor = ColorUtil.applyAlpha(primaryColor, (int) (alpha * 20));
         int borderColor = ColorUtil.applyAlpha(primaryColor, (int) (alpha * 50));
-        int bgColor = ColorUtil.rgba(14, 14, 18, (int) (235 * alpha));
+        int bgColor = ColorUtil.rgba(0, 0, 0, (int) (200 * alpha));
         int headerBg = ColorUtil.rgba(0, 0, 0, (int) (180 * alpha));
 
-        // Window Frame
+        // Window Frame with blur and theme accent glow
         Render2D.drawShadow(modalX, modalY, width, height, radius, 8.0F, ColorUtil.rgba(0, 0, 0, (int) (160 * alpha)));
         Render2D.drawRoundedRect(modalX - 2.0F, modalY - 2.0F, width + 4.0F, height + 4.0F, radius + 2.0F, glowColor);
         Render2D.drawRoundedRect(modalX - 0.5F, modalY - 0.5F, width + 1.0F, height + 1.0F, radius + 0.5F, borderColor);
+        Render2D.drawBlur(modalX, modalY, width, height, radius, 12.0F, bgColor, alpha);
         Render2D.drawRoundedRect(modalX, modalY, width, height, radius, bgColor);
 
         // Header "Настройки"
