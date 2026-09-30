@@ -48,6 +48,8 @@ public final class HudManager implements IMinecraft {
         register(new StaffsHud());
         register(new ArmorHud());
         register(new TotemCounterHud());
+        register(new CooldownsHud());
+        register(new InventoryHud());
     }
 
     public static HudManager getInstance() {

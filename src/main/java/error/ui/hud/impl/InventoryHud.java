@@ -4,13 +4,13 @@ import error.IMinecraft;
 import error.event.list.Render2DEvent;
 import error.ui.hud.HudElement;
 import error.util.client.clients.ColorUtil;
+import error.util.client.clients.Theme;
 import error.util.render.Render2D;
 import error.util.render.font.Fonts;
 import net.minecraft.world.item.ItemStack;
 
 public final class InventoryHud extends HudElement implements IMinecraft {
 
-    public static final int ACCENT_PURPLE = ColorUtil.rgba(166, 130, 255, 255);
     private static final float HEADER_HEIGHT = 13.0F;
 
     public InventoryHud() {
@@ -48,15 +48,16 @@ public final class InventoryHud extends HudElement implements IMinecraft {
         this.width = width;
         this.height = height;
 
-        int primaryColor = ACCENT_PURPLE;
+        int primaryColor = Theme.getAccentColor();
         int glowColor = ColorUtil.applyAlpha(primaryColor, (int) (alpha * 15));
         int borderColor = ColorUtil.applyAlpha(primaryColor, (int) (alpha * 40));
-        int bgColor = ColorUtil.rgba(14, 14, 18, (int) (160 * alpha));
+        int bgColor = ColorUtil.rgba(0, 0, 0, (int) (160 * alpha));
         int headerBg = ColorUtil.rgba(0, 0, 0, (int) (160 * alpha));
 
-        // Background (Waper Style)
+        // Background with blur and theme accent glow
         Render2D.drawRoundedRect(drawX - 2.0F, drawY - 2.0F, width + 4.0F, height + 4.0F, radius + 2.0F, glowColor);
         Render2D.drawRoundedRect(drawX - 0.5F, drawY - 0.5F, width + 1.0F, height + 1.0F, radius + 0.5F, borderColor);
+        Render2D.drawBlur(drawX, drawY, width, height, radius, 12.0F, bgColor, alpha);
         Render2D.drawRoundedRect(drawX, drawY, width, height, radius, bgColor);
 
         // Header
