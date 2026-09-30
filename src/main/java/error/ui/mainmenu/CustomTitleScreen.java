@@ -257,11 +257,9 @@ public class CustomTitleScreen extends Screen {
         float dockX = (screenWidth - dockW) / 2.0F;
         float dockY = screenHeight - dockH - 12.0F;
 
-        // Capsule Background - Liquid Frosted Glass
-        Render2D.drawShadow(dockX, dockY, dockW, dockH, 15.0F, 8.0F, ColorUtil.rgba(0, 0, 0, 160));
-        Render2D.drawRoundedRect(dockX, dockY, dockW, dockH, 15.0F, ColorUtil.rgba(255, 255, 255, 18));
-        Render2D.drawRoundedRect(dockX + 0.5F, dockY + 0.5F, dockW - 1.0F, dockH - 1.0F, 14.5F, ColorUtil.rgba(14, 14, 20, 195));
-        Render2D.drawRoundedOutline(dockX, dockY, dockW, dockH, 15.0F, 1.0F, ColorUtil.rgba(255, 255, 255, 45));
+        // Capsule Background - Liquid Translucent Glass (No Outline)
+        Render2D.drawShadow(dockX, dockY, dockW, dockH, 15.0F, 8.0F, ColorUtil.rgba(0, 0, 0, 140));
+        Render2D.drawRoundedRect(dockX, dockY, dockW, dockH, 15.0F, ColorUtil.rgba(14, 14, 20, 195));
 
         IconUse[] icons = {
                 IconUse.PERSONS,
@@ -282,9 +280,6 @@ public class CustomTitleScreen extends Screen {
 
             int btnBg = ColorUtil.lerp(ColorUtil.rgba(25, 25, 35, 150), Theme.getAccentWithAlpha(190), hAnim);
             Render2D.drawRoundedRect(bx, by, btnSize, btnSize, 11.0F, btnBg);
-            if (hAnim > 0.01F) {
-                Render2D.drawRoundedOutline(bx, by, btnSize, btnSize, 11.0F, 1.0F, ColorUtil.applyAlpha(ColorUtil.WHITE, hAnim * 0.3F));
-            }
 
             int iconCol = ColorUtil.lerp(ColorUtil.rgba(220, 220, 230, 220), ColorUtil.WHITE, hAnim);
             Fonts.drawCenteredIcon(icons[i], bx + btnSize / 2.0F, by + (btnSize - 10.0F) / 2.0F, 10.0F, iconCol);
@@ -297,13 +292,11 @@ public class CustomTitleScreen extends Screen {
         float x = 12.0F - (1.0F - alpha) * 160.0F;
         float y = screenHeight - h - 12.0F;
 
-        int bgColor = ColorUtil.rgba(14, 14, 20, (int) (200 * alpha));
+        int bgColor = ColorUtil.rgba(14, 14, 20, (int) (195 * alpha));
         int shadowColor = ColorUtil.rgba(0, 0, 0, (int) (140 * alpha));
 
         Render2D.drawShadow(x, y, w, h, 6.0F, 6.0F, shadowColor);
-        Render2D.drawRoundedRect(x, y, w, h, 6.0F, ColorUtil.rgba(255, 255, 255, (int) (18 * alpha)));
-        Render2D.drawRoundedRect(x + 0.5F, y + 0.5F, w - 1.0F, h - 1.0F, 5.5F, bgColor);
-        Render2D.drawRoundedOutline(x, y, w, h, 6.0F, 1.0F, ColorUtil.rgba(255, 255, 255, (int) (40 * alpha)));
+        Render2D.drawRoundedRect(x, y, w, h, 6.0F, bgColor);
 
         // Preview thumbnail icon
         float thumbW = 20.0F;
@@ -325,13 +318,11 @@ public class CustomTitleScreen extends Screen {
         float x = screenWidth - w - 12.0F + (1.0F - alpha) * 160.0F;
         float y = screenHeight - h - 12.0F;
 
-        int bgColor = ColorUtil.rgba(14, 14, 20, (int) (200 * alpha));
+        int bgColor = ColorUtil.rgba(14, 14, 20, (int) (195 * alpha));
         int shadowColor = ColorUtil.rgba(0, 0, 0, (int) (140 * alpha));
 
         Render2D.drawShadow(x, y, w, h, 6.0F, 6.0F, shadowColor);
-        Render2D.drawRoundedRect(x, y, w, h, 6.0F, ColorUtil.rgba(255, 255, 255, (int) (18 * alpha)));
-        Render2D.drawRoundedRect(x + 0.5F, y + 0.5F, w - 1.0F, h - 1.0F, 5.5F, bgColor);
-        Render2D.drawRoundedOutline(x, y, w, h, 6.0F, 1.0F, ColorUtil.rgba(255, 255, 255, (int) (40 * alpha)));
+        Render2D.drawRoundedRect(x, y, w, h, 6.0F, bgColor);
 
         // Player Head
         float headSize = 18.0F;

@@ -172,11 +172,9 @@ public abstract class LoadingOverlayMixin {
             float barX = (width - barW) / 2.0F;
             float barY = height - 48.0F;
 
-            // Liquid Glass Container
+            // Liquid Glass Container (No Outline)
             Render2D.drawShadow(barX, barY, barW, barH, 7.0F, 6.0F, ColorUtil.rgba(0, 0, 0, (int) (140 * alpha)));
-            Render2D.drawRoundedRect(barX, barY, barW, barH, 7.0F, ColorUtil.rgba(255, 255, 255, (int) (16 * alpha)));
-            Render2D.drawRoundedRect(barX + 0.5F, barY + 0.5F, barW - 1.0F, barH - 1.0F, 6.5F, ColorUtil.rgba(14, 14, 20, (int) (195 * alpha)));
-            Render2D.drawRoundedOutline(barX, barY, barW, barH, 7.0F, 1.0F, ColorUtil.rgba(255, 255, 255, (int) (40 * alpha)));
+            Render2D.drawRoundedRect(barX, barY, barW, barH, 7.0F, ColorUtil.rgba(14, 14, 20, (int) (195 * alpha)));
 
             // Animated Bar Fill
             float fillMargin = 2.0F;
