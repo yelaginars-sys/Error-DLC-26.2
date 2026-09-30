@@ -42,17 +42,6 @@ public final class HudManager implements IMinecraft {
 
     private HudManager() {
         register(new DynamicIslandHud());
-        register(new WatermarkHud());
-        register(new TargetHud());
-        register(new KeybindsHud());
-        register(new PotionsHud());
-        register(new StaffsHud());
-        register(new ArmorHud());
-        register(new TotemCounterHud());
-        register(new CooldownsHud());
-        register(new InventoryHud());
-        register(new MediaPlayerHud());
-        register(new NotificationHud());
     }
 
     public static HudManager getInstance() {
@@ -330,14 +319,10 @@ public final class HudManager implements IMinecraft {
                 HudElement el = elements.get(i);
                 if (!el.isEnabled()) continue;
                 if (el.isHovered(mouseX, mouseY)) {
-                    if (el instanceof NotificationHud) {
-                        NotificationHud.toggleSettings();
-                    } else {
-                        contextMenuElement = el;
-                        contextMenuOpen = true;
-                        contextMenuX = (float) mouseX;
-                        contextMenuY = (float) mouseY;
-                    }
+                    contextMenuElement = el;
+                    contextMenuOpen = true;
+                    contextMenuX = (float) mouseX;
+                    contextMenuY = (float) mouseY;
                     event.cancel();
                     return;
                 }

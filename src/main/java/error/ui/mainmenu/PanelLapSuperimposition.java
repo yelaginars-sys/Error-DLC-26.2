@@ -124,20 +124,6 @@ public final class PanelLapSuperimposition {
             for (Category category : Category.values()) {
                 boolean active = state.getCurrentTab() == PanelLapState.Tab.CATEGORY && category == state.getCurrentCategory();
 
-                if (category == Category.COMBAT) {
-                    Fonts.drawString(Fonts.SF_MEDIUM, "COMBAT", x + 12.0F, catY, 6.5F, ColorUtil.rgba(160, 150, 180, (int) (140 * mainGuiAlpha)));
-                    Fonts.drawString(Fonts.SF_MEDIUM, "v 35", x + sideW - 32.0F, catY, 6.5F, ColorUtil.rgba(160, 150, 180, (int) (140 * mainGuiAlpha)));
-                    catY += 9.0F;
-                } else if (category == Category.RENDER) {
-                    Fonts.drawString(Fonts.SF_MEDIUM, "VISUAL", x + 12.0F, catY, 6.5F, ColorUtil.rgba(160, 150, 180, (int) (140 * mainGuiAlpha)));
-                    Fonts.drawString(Fonts.SF_MEDIUM, "v 46", x + sideW - 32.0F, catY, 6.5F, ColorUtil.rgba(160, 150, 180, (int) (140 * mainGuiAlpha)));
-                    catY += 9.0F;
-                } else if (category == Category.MISC) {
-                    Fonts.drawString(Fonts.SF_MEDIUM, "OTHER", x + 12.0F, catY, 6.5F, ColorUtil.rgba(160, 150, 180, (int) (140 * mainGuiAlpha)));
-                    Fonts.drawString(Fonts.SF_MEDIUM, "v 20", x + sideW - 32.0F, catY, 6.5F, ColorUtil.rgba(160, 150, 180, (int) (140 * mainGuiAlpha)));
-                    catY += 9.0F;
-                }
-
                 if (active) {
                     // Active button with Vertical Pink Accent Bar on Left Edge (Matching media_1790804005720.png 1:1)
                     Render2D.drawRoundedRect(x + 8.0F, catY, sideW - 16.0F, 19.0F, 6.0F, ColorUtil.rgba(75, 68, 96, (int) (125 * mainGuiAlpha)));
@@ -235,7 +221,7 @@ public final class PanelLapSuperimposition {
         float contentH = h - 40.0F;
 
         float catProgress = state.getCategoryAnim().getValue();
-        float contentAlpha = openProgress * catProgress;
+        float contentAlpha = openProgress * catProgress * (1.0F - state.getHoldAnim().getValue());
         float slideY = (1.0F - catProgress) * (state.getCategoryDirection() * 12.0F);
 
         state.setHoveredModule(null);
@@ -332,8 +318,9 @@ public final class PanelLapSuperimposition {
             float toggleY = modY + 6.0F;
 
             if (module.isState()) {
-                int toggleBg = ColorUtil.rgba(235, 145, 225, (int) (240 * alpha));
-                Render2D.drawShadow(toggleX, toggleY, toggleW, toggleH, 5.0F, 4.0F, ColorUtil.rgba(230, 135, 220, (int) (110 * alpha)));
+                int accent = Theme.getAccentColor();
+                int toggleBg = ColorUtil.rgba(ColorUtil.red(accent), ColorUtil.green(accent), ColorUtil.blue(accent), (int) (240 * alpha));
+                Render2D.drawShadow(toggleX, toggleY, toggleW, toggleH, 5.0F, 4.0F, ColorUtil.rgba(ColorUtil.red(accent), ColorUtil.green(accent), ColorUtil.blue(accent), (int) (110 * alpha)));
                 Render2D.drawRoundedRect(toggleX, toggleY, toggleW, toggleH, 5.0F, toggleBg);
                 Render2D.drawRoundedRect(toggleX + toggleW - 8.0F, toggleY + 1.5F, 7.0F, 7.0F, 3.5F, ColorUtil.rgba(255, 255, 255, (int) (255 * alpha)));
             } else {
@@ -441,9 +428,6 @@ public final class PanelLapSuperimposition {
         // 2. Category Clicks (Sidebar) - Hitbox precisely aligned with render
         float catY = y + 35.0F;
         for (Category category : Category.values()) {
-            if (category == Category.COMBAT || category == Category.RENDER || category == Category.MISC) {
-                catY += 9.0F;
-            }
             if (mouseX >= x + 8.0F && mouseX <= x + sideW - 8.0F && mouseY >= catY && mouseY <= catY + 19.0F) {
                 if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
                     state.switchCategory(category);

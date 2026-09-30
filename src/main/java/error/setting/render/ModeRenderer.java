@@ -91,9 +91,10 @@ public class ModeRenderer extends SettingRenderer<ModeSetting> {
             chipBounds.put(mode, new float[]{curX, curY, chipW, chipH});
 
             if (active) {
-                int activeBg = ColorUtil.rgba(235, 145, 225, (int) (125 * effectiveAlpha));
-                int activeOutline = ColorUtil.rgba(250, 180, 240, (int) (210 * effectiveAlpha));
-                int glowCol = ColorUtil.rgba(230, 135, 220, (int) (95 * effectiveAlpha));
+                int accent = Theme.getAccentColor();
+                int activeBg = ColorUtil.rgba(ColorUtil.red(accent), ColorUtil.green(accent), ColorUtil.blue(accent), (int) (125 * effectiveAlpha));
+                int activeOutline = ColorUtil.rgba(ColorUtil.red(accent), ColorUtil.green(accent), ColorUtil.blue(accent), (int) (210 * effectiveAlpha));
+                int glowCol = ColorUtil.rgba(ColorUtil.red(accent), ColorUtil.green(accent), ColorUtil.blue(accent), (int) (95 * effectiveAlpha));
                 Render2D.drawShadow(curX, curY, chipW, chipH, 4.0F, 4.0F, glowCol);
                 Render2D.drawRoundedRect(curX, curY, chipW, chipH, 4.0F, activeBg);
                 Render2D.drawRoundedOutline(curX, curY, chipW, chipH, 4.0F, 1.0F, activeOutline);

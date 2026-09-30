@@ -6,10 +6,6 @@ import lombok.Setter;
 import error.Client;
 import error.ui.hud.HudElement;
 import error.ui.hud.HudManager;
-import error.ui.hud.impl.NotificationHud;
-import error.ui.hud.impl.PotionsHud;
-import error.ui.hud.impl.TargetHud;
-import error.ui.hud.impl.WatermarkHud;
 import error.module.Module;
 import error.setting.Setting;
 import error.setting.impl.*;
@@ -130,16 +126,6 @@ public class ConfigManager {
                     elementData.addProperty("x", element.getX());
                     elementData.addProperty("y", element.getY());
                     elementData.addProperty("enabled", element.isEnabled());
-
-                    if (element instanceof WatermarkHud watermark) {
-                        elementData.add("customConfig", watermark.writeConfig());
-                    } else if (element instanceof TargetHud targetHud) {
-                        elementData.add("customConfig", targetHud.writeConfig());
-                    } else if (element instanceof PotionsHud potionsHud) {
-                        elementData.add("customConfig", potionsHud.writeConfig());
-                    } else if (element instanceof NotificationHud notifHud) {
-                        elementData.add("customConfig", notifHud.writeConfig());
-                    }
 
                     hudJson.add(element.getClass().getSimpleName(), elementData);
                 }
@@ -268,19 +254,6 @@ public class ConfigManager {
                         if (elementData.has("x")) element.setX(elementData.get("x").getAsFloat());
                         if (elementData.has("y")) element.setY(elementData.get("y").getAsFloat());
                         if (elementData.has("enabled")) element.setEnabled(elementData.get("enabled").getAsBoolean());
-
-                        if (elementData.has("customConfig")) {
-                            JsonObject customObj = elementData.getAsJsonObject("customConfig");
-                            if (element instanceof WatermarkHud watermark) {
-                                watermark.readConfig(customObj);
-                            } else if (element instanceof TargetHud targetHud) {
-                                targetHud.readConfig(customObj);
-                            } else if (element instanceof PotionsHud potionsHud) {
-                                potionsHud.readConfig(customObj);
-                            } else if (element instanceof NotificationHud notifHud) {
-                                notifHud.readConfig(customObj);
-                            }
-                        }
                     }
                 }
             }
