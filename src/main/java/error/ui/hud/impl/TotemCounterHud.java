@@ -58,7 +58,7 @@ public final class TotemCounterHud extends HudElement implements IMinecraft {
         float drawX = getX();
         float drawY = getY();
 
-        Render2D.drawShadow(drawX, drawY, width, height, 6.0F, ColorUtil.applyAlpha(SHADOW_COLOR, alpha));
+        Render2D.drawShadow(drawX, drawY, width, height, 4.0F, 6.0F, ColorUtil.applyAlpha(SHADOW_COLOR, alpha));
         Render2D.drawRoundedRect(drawX, drawY, width, height, 4.0F, ColorUtil.applyAlpha(BG_COLOR, alpha));
 
         int primaryColor = Theme.getAccentColor();

@@ -69,7 +69,7 @@ public final class StaffsHud extends HudElement implements IMinecraft {
         this.height = totalHeight;
 
         // Render Background & Header
-        Render2D.drawShadow(drawX, drawY, width, totalHeight, 6.0F, ColorUtil.applyAlpha(SHADOW_COLOR, alpha));
+        Render2D.drawShadow(drawX, drawY, width, totalHeight, 4.0F, 6.0F, ColorUtil.applyAlpha(SHADOW_COLOR, alpha));
         Render2D.drawRoundedRect(drawX, drawY, width, totalHeight, 4.0F, ColorUtil.applyAlpha(BG_COLOR, alpha));
 
         // Header Title
