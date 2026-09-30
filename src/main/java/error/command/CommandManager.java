@@ -4,6 +4,8 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.tree.LiteralCommandNode;
+import lombok.Getter;
+import lombok.Setter;
 import error.command.impl.*;
 import error.util.client.persiki.ChatUtil;
 
@@ -15,7 +17,7 @@ import java.util.List;
  * Create by daun kvass
  */
 public class CommandManager {
-    @Getter @Setter
+    @Setter
     private String prefix = ".";
     private final List<Command> commands = new ArrayList<>();
     private final CommandDispatcher<Object> dispatcher = new CommandDispatcher<>();

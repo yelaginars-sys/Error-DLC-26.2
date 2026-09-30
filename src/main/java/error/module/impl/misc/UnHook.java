@@ -191,8 +191,8 @@ public class UnHook extends Module {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player != null) {
             Client.getInstance().getCommandManager().setPrefix("!");
-            if (mc.gui != null && mc.gui.getChat() != null) {
-                mc.gui.getChat().clearMessages(false);
+            if (mc.gui != null && mc.gui.getChatListener() != null) {
+                mc.gui.getChatListener().clearQueue();
             }
         }
 
@@ -203,7 +203,7 @@ public class UnHook extends Module {
 
         savedModules.clear();
         savedKeys.clear();
-        for (Module m : Client.getInstance().getModules().getModules()) {
+        for (Module m : Client.getInstance().getModuleManager().getModules()) {
             if (m == this) continue;
 
             if (m.isEnabled()) {
@@ -211,9 +211,12 @@ public class UnHook extends Module {
                 m.setState(false);
             }
 
-            if (m.getBind() != null && m.getBind().getKey() > 0 && !(m instanceof ClickGui)) {
-                savedKeys.put(m, m.getBind().getKey());
-                m.getBind().setKey(0);
+            if (m.getBind() != null && m.getBind().isBound() && !(m instanceof ClickGui)) {
+                if (!m.getBind().getValue().isEmpty()) {
+                    int primaryKey = m.getBind().getValue().get(0);
+                    savedKeys.put(m, primaryKey);
+                    m.getBind().clear();
+                }
             }
         }
 
@@ -237,7 +240,7 @@ public class UnHook extends Module {
         }
 
         for (Map.Entry<Module, Integer> entry : savedKeys.entrySet()) {
-            entry.getKey().getBind().setKey(entry.getValue());
+            entry.getKey().getBind().setSingle(entry.getValue());
         }
         savedKeys.clear();
 
@@ -251,7 +254,7 @@ public class UnHook extends Module {
 
     @EventTarget
     public void onKey(KeyboardInputEvent event) {
-        if (event.getAction() == GLFW.GLFW_PRESS && unhooked && getBind() != null && event.getKey() == getBind().getKey()) {
+        if (event.getAction() == GLFW.GLFW_PRESS && unhooked && getBind() != null && getBind().matches(event.getKey())) {
             setState(false);
         }
     }

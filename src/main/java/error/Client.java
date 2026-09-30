@@ -49,4 +49,20 @@ public class Client implements ModInitializer {
     public EventManager getEventManager() {
         return eventManager;
     }
+
+    public CommandManager getCommandManager() {
+        return commandManager;
+    }
+
+    public ConfigManager getConfigManager() {
+        return configManager;
+    }
+
+    public FriendManager getFriendManager() {
+        return friendManager;
+    }
+
+    public Modules getModuleManager() {
+        return moduleManager;
+    }
 }
