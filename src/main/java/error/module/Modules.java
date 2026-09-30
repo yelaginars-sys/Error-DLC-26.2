@@ -58,6 +58,7 @@ public class Modules {
     public FireworkESP fireworkESP;
     public FreeCam freeCam;
     public ItemScroller itemScroller;
+    public UnHook unHook;
     public FullBright fullBright;
     public AHHelper ahHelper;
     public AntiPush antiPush;
@@ -124,7 +125,8 @@ public class Modules {
                 this.auraModule = new AuraModule(),
                 this.worldParticles = new WorldParticles(),
                 this.particles = new Particles(),
-                this.clientSounds = new ClientSounds()
+                this.clientSounds = new ClientSounds(),
+                this.unHook = new UnHook()
         );
     }
 

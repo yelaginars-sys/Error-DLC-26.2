@@ -15,7 +15,8 @@ import java.util.List;
  * Create by daun kvass
  */
 public class CommandManager {
-    private final String prefix = ".";
+    @Getter @Setter
+    private String prefix = ".";
     private final List<Command> commands = new ArrayList<>();
     private final CommandDispatcher<Object> dispatcher = new CommandDispatcher<>();
     private final Object dummySource = new Object();
