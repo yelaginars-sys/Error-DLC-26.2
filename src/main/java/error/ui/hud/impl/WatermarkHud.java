@@ -22,6 +22,13 @@ public final class WatermarkHud extends HudElement implements IMinecraft {
         super("watermark", "Watermark", 6.0F, 6.0F, 240.0F, 20.0F);
     }
 
+    public com.google.gson.JsonObject writeConfig() {
+        return new com.google.gson.JsonObject();
+    }
+
+    public void readConfig(com.google.gson.JsonObject json) {
+    }
+
     @Override
     public void draw(Render2DEvent event) {
         fadeAnim.setTarget(1.0F);
@@ -84,7 +91,7 @@ public final class WatermarkHud extends HudElement implements IMinecraft {
 
         // 2. Player Head
         if (mc.player instanceof AbstractClientPlayer clientPlayer) {
-            Render2D.drawHead(clientPlayer, currentX, headY, headSize, headSize, radius * 0.5F, alpha);
+            Render2D.drawHead(clientPlayer, currentX, headY, headSize, radius * 0.5F, alpha);
         }
         currentX += headSize + 3.0F;
 

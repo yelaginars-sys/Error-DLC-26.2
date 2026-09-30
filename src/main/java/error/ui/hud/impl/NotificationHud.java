@@ -45,6 +45,25 @@ public final class NotificationHud extends HudElement implements IMinecraft {
         QUEUE.add(new Note(title, message, type, 3000L));
     }
 
+    public static void post(String title, String description, IconUse icon, int iconColor, long durationMs) {
+        if (error.module.impl.misc.UnHook.unhooked) return;
+        Type type = Type.INFO;
+        if (iconColor == error.util.client.persiki.Notify.COLOR_SUCCESS) type = Type.ON;
+        else if (iconColor == error.util.client.persiki.Notify.COLOR_ERROR) type = Type.OFF;
+        QUEUE.add(new Note(title, description, type, durationMs));
+    }
+
+    public static boolean isNotifyElytraSwapEnabled() {
+        return true;
+    }
+
+    public com.google.gson.JsonObject writeConfig() {
+        return new com.google.gson.JsonObject();
+    }
+
+    public void readConfig(com.google.gson.JsonObject json) {
+    }
+
     public static void onModuleToggle(String moduleName, boolean state) {
         if (error.module.impl.misc.UnHook.unhooked) return;
         String title = moduleName;

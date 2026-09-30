@@ -4,7 +4,17 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import error.Info;
+import error.account.AccountManager;
+import error.event.list.Render2DEvent;
+import error.ui.hud.HudManager;
+import error.util.RenderExtend;
+import error.util.client.clients.ColorUtil;
+import error.util.client.clients.Theme;
+import error.util.client.localization.Localization;
+import error.util.render.Render2D;
+import error.util.render.Render2DUtil;
+import error.util.render.font.Fonts;
+import error.util.render.font.IconUse;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.ConfirmScreen;
 import net.minecraft.client.gui.screens.Screen;
@@ -13,57 +23,62 @@ import net.minecraft.client.gui.screens.options.OptionsScreen;
 import net.minecraft.client.gui.screens.worldselection.SelectWorldScreen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.resources.DefaultPlayerSkin;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import org.lwjgl.glfw.GLFW;
-import error.util.RenderExtend;
-import error.util.client.clients.ColorUtil;
-import error.util.client.clients.Theme;
-import error.util.client.localization.Localization;
-import error.util.render.Render2D;
-import error.util.render.font.Fonts;
-import error.util.render.font.IconUse;
-import error.util.render.Render2DUtil;
-import error.account.AccountManager;
 
-import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.UUID;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 
-/**
- * Create by daun kvass
- */
 public class CustomTitleScreen extends Screen {
-    private static String as = "images/ui/title/title";
-    private static final Identifier[] BACKGROUNDS = new Identifier[]{
-            Identifier.fromNamespaceAndPath("error", as+".png"),
-            Identifier.fromNamespaceAndPath("error", as+"2.png"),
-            Identifier.fromNamespaceAndPath("error", as+"3.png"),
-            Identifier.fromNamespaceAndPath("error", as+"4.png"),
-            Identifier.fromNamespaceAndPath("error", as+"5.png"),
-            Identifier.fromNamespaceAndPath("error", as+"6.png")
-    };
-    private static int currentBgIndex = 0;
 
+    private static final Identifier[] BACKGROUNDS = new Identifier[]{
+            Identifier.fromNamespaceAndPath("error", "images/ui/title/title.png"),
+            Identifier.fromNamespaceAndPath("error", "images/ui/title/title2.png"),
+            Identifier.fromNamespaceAndPath("error", "images/ui/title/title3.png"),
+            Identifier.fromNamespaceAndPath("error", "images/ui/title/title4.png"),
+            Identifier.fromNamespaceAndPath("error", "images/ui/title/title5.png"),
+            Identifier.fromNamespaceAndPath("error", "images/ui/title/title6.png")
+    };
+
+    private static final String[] WALLPAPER_NAMES = {
+            "Золотой час", "Токийский гуль", "Киберпанк", "Закат", "Туман", "Ночной город"
+    };
+
+    private static int currentBgIndex = 0;
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
+    // Modal & Widget states
     private boolean accountModalOpen = false;
     private float accountModalAnim = 0.0F;
-    private String addAccountQuery = "";
-    private boolean addInputFocused = false;
-    private float accountScroll = 0.0F;
-    private float maxAccountScroll = 0.0F;
 
     private boolean bgSelectorOpen = false;
     private float bgSelectorAnim = 0.0F;
 
+    // Corner Hover Animations
+    private float bgHoverAnim = 0.0F;
+    private float accountHoverAnim = 0.0F;
+
+    // Transition Alpha
     private float screenAlpha = 0.0F;
     private Screen targetScreen = null;
 
-    private final float[] buttonHoverAnims = new float[5];
+    // Account Manager State
+    private String selectedAccount = "";
+    private String searchFilter = "";
+    private int selectedTab = 0; // 0: Все, 1: Избранные, 2: В базе
+    private boolean searchFocused = false;
+    private float accountScroll = 0.0F;
+    private float maxAccountScroll = 0.0F;
+
+    // Dock hover animations
+    private final float[] dockHoverAnims = new float[5];
 
     static {
         loadWallpaper();
@@ -80,6 +95,7 @@ public class CustomTitleScreen extends Screen {
         loadWallpaper();
         this.screenAlpha = 0.0F;
         this.targetScreen = null;
+        this.selectedAccount = AccountManager.getInstance().getActiveAccount();
     }
 
     public static void loadWallpaper() {
@@ -120,6 +136,7 @@ public class CustomTitleScreen extends Screen {
         int screenWidth = this.width;
         int screenHeight = this.height;
 
+        // Screen transition fade
         if (this.targetScreen != null) {
             this.screenAlpha = Math.max(0.0F, this.screenAlpha - 0.08F);
             if (this.screenAlpha <= 0.01F) {
@@ -130,32 +147,53 @@ public class CustomTitleScreen extends Screen {
             this.screenAlpha = Math.min(1.0F, this.screenAlpha + 0.08F);
         }
 
+        // Modal animations
         this.accountModalAnim = Mth.clamp(this.accountModalAnim + (accountModalOpen ? 0.08F : -0.08F), 0.0F, 1.0F);
         this.bgSelectorAnim = Mth.clamp(this.bgSelectorAnim + (bgSelectorOpen ? 0.08F : -0.08F), 0.0F, 1.0F);
+
+        // Corner Hover Checks
+        boolean isBgCornerHovered = !accountModalOpen && !bgSelectorOpen && targetScreen == null &&
+                mouseX < 180 && mouseY > screenHeight - 65;
+        this.bgHoverAnim = Mth.clamp(this.bgHoverAnim + (isBgCornerHovered || bgSelectorOpen ? 0.12F : -0.12F), 0.0F, 1.0F);
+
+        boolean isAccountCornerHovered = !accountModalOpen && !bgSelectorOpen && targetScreen == null &&
+                mouseX > screenWidth - 180 && mouseY > screenHeight - 65;
+        this.accountHoverAnim = Mth.clamp(this.accountHoverAnim + (isAccountCornerHovered || accountModalOpen ? 0.12F : -0.12F), 0.0F, 1.0F);
 
         RenderExtend.enter2D(null, extractor, null);
         try {
             Render2DUtil.beginFrame();
 
+            // Background Image
             Render2D.drawTexture(BACKGROUNDS[currentBgIndex], 0, 0, screenWidth, screenHeight, 0.0F, 0xFFFFFFFF);
 
-            float rightPanelW = 240.0F;
-            Render2D.drawGradientRound(screenWidth - rightPanelW, 0, rightPanelW, screenHeight, 0.0F,
-                    0x00000000, 0x900B0C10, 0x900B0C10, 0x00000000);
-            renderRightButtons(screenWidth, screenHeight, mouseX, mouseY);
+            // Center Clock & Date
+            renderCenterClock(screenWidth, screenHeight);
 
-            renderTopLeftAccount(screenWidth, screenHeight);
+            // Bottom Center Dock Bar
+            renderBottomDock(screenWidth, screenHeight, mouseX, mouseY);
 
-            renderWallpaperButton(screenWidth, screenHeight, mouseX, mouseY);
+            // Bottom Left Hover Widget ("Сменить фон")
+            if (this.bgHoverAnim > 0.001F) {
+                renderBottomLeftWidget(screenWidth, screenHeight, mouseX, mouseY, this.bgHoverAnim);
+            }
 
+            // Bottom Right Hover Widget ("Сменить аккаунт")
+            if (this.accountHoverAnim > 0.001F) {
+                renderBottomRightWidget(screenWidth, screenHeight, mouseX, mouseY, this.accountHoverAnim);
+            }
+
+            // Wallpaper Selector Modal
             if (this.bgSelectorAnim > 0.001F) {
                 renderWallpaperModal(extractor, screenWidth, screenHeight, mouseX, mouseY, this.bgSelectorAnim);
             }
 
+            // Account Manager Modal (Photo 2 UI)
             if (this.accountModalAnim > 0.001F) {
                 renderAccountModal(screenWidth, screenHeight, mouseX, mouseY, this.accountModalAnim);
             }
 
+            // Transition Overlay
             if (this.screenAlpha < 0.999F) {
                 int fadeOverlay = ColorUtil.rgba(0, 0, 0, (int) ((1.0F - this.screenAlpha) * 255));
                 Render2D.drawRect(0, 0, screenWidth, screenHeight, fadeOverlay);
@@ -167,233 +205,298 @@ public class CustomTitleScreen extends Screen {
         }
     }
 
-    private void renderRightButtons(int screenWidth, int screenHeight, int mouseX, int mouseY) {
-        float btnW = 160.0F;
-        float btnH = 28.0F;
-        float spacing = 7.0F;
+    private void renderCenterClock(int screenWidth, int screenHeight) {
+        float centerX = screenWidth / 2.0F;
+        float centerY = screenHeight / 3.0F;
 
-        String[] titles = {"Single Player", "Multi Player", "Alt Manager", "Settings", "Quit"};
+        // Eye Logo Icon above Date
+        Fonts.drawCenteredIcon(IconUse.LOGO, centerX, centerY - 28.0F, 14.0F, Theme.getAccentColor());
 
-        float totalH = (titles.length * btnH) + ((titles.length - 1) * spacing);
-        float startX = screenWidth / 2.5f;
-        float startY = (screenHeight - totalH) / 2.0F + 10.0F;
+        // Date String (Russian format)
+        String dateStr = "Среда, 30 сентября";
+        try {
+            LocalDate now = LocalDate.now();
+            DateTimeFormatter df = DateTimeFormatter.ofPattern("EEEE, d MMMM", new Locale("ru"));
+            dateStr = now.format(df);
+            dateStr = dateStr.substring(0, 1).toUpperCase() + dateStr.substring(1);
+        } catch (Exception ignored) {}
 
-        float wave = (float) (Math.sin(System.currentTimeMillis() / 1150.0) * 0.5 + 0.5);
-        int animatedTitleColor = ColorUtil.interpolateColor(ColorUtil.WHITE, Theme.getAccentColor(), wave);
+        Fonts.drawCenteredString(Fonts.SF_MEDIUM, dateStr, centerX, centerY - 10.0F, 7.5F, ColorUtil.rgba(220, 220, 230, 220));
 
-        Fonts.drawCenteredString(Fonts.SF_MEDIUM, Info.NAME, startX + (btnW / 2.0F), startY - 26.0F, 16.0F, animatedTitleColor);
+        // Large Clock HH:mm
+        String timeStr = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm"));
+        Fonts.drawCenteredString(Fonts.SF_MEDIUM, timeStr, centerX, centerY + 2.0F, 28.0F, ColorUtil.WHITE);
 
-        for (int i = 0; i < titles.length; i++) {
-            float y = startY + i * (btnH + spacing);
-            boolean hovered = !accountModalOpen && !bgSelectorOpen && targetScreen == null
-                    && mouseX >= startX && mouseX <= startX + btnW && mouseY >= y && mouseY <= y + btnH;
+        // Subtitle Greeting
+        int hour = LocalTime.now().getHour();
+        String greeting = (hour >= 6 && hour < 12) ? "Доброе утро" : (hour >= 12 && hour < 18) ? "Добрый день" : (hour >= 18 && hour < 23) ? "Добрый вечер" : "Доброй ночи";
+        Fonts.drawCenteredString(Fonts.SF_MEDIUM, greeting + ", " + this.minecraft.getUser().getName(), centerX, centerY + 34.0F, 7.0F, ColorUtil.rgba(200, 200, 210, 190));
+    }
 
-            buttonHoverAnims[i] = Mth.clamp(buttonHoverAnims[i] + (hovered ? 0.12F : -0.12F), 0.0F, 1.0F);
-            float hAnim = buttonHoverAnims[i];
+    private void renderBottomDock(int screenWidth, int screenHeight, int mouseX, int mouseY) {
+        float btnSize = 22.0F;
+        float spacing = 8.0F;
+        int count = 5;
+        float dockW = count * btnSize + (count + 1) * spacing;
+        float dockH = 30.0F;
+        float dockX = (screenWidth - dockW) / 2.0F;
+        float dockY = screenHeight - dockH - 12.0F;
 
-            int bgCol = ColorUtil.lerp(0x55111218, Theme.getAccentWithAlpha(50), hAnim);
-            Render2D.drawRoundedRect(startX, y, btnW, btnH, 5.0F, bgCol);
+        // Capsule Background
+        Render2D.drawShadow(dockX, dockY, dockW, dockH, 15.0F, 6.0F, ColorUtil.rgba(0, 0, 0, 120));
+        Render2D.drawRoundedRect(dockX, dockY, dockW, dockH, 15.0F, ColorUtil.rgba(14, 14, 18, 195));
 
-            int textCol = ColorUtil.lerp(Theme.TEXT_MAIN, ColorUtil.WHITE, hAnim);
-            String localizedTitle = Localization.get(titles[i]);
-            Fonts.drawCenteredString(Fonts.SF_MEDIUM, localizedTitle, startX + (btnW / 2.0F), y + (btnH - 10.0F) / 2.0F + 1.0F, 10.0F, textCol);
+        IconUse[] icons = {
+                IconUse.PERSONS,
+                IconUse.GLOBE,
+                IconUse.STAFF,
+                IconUse.GEAR,
+                IconUse.EXIT
+        };
+
+        for (int i = 0; i < count; i++) {
+            float bx = dockX + spacing + i * (btnSize + spacing);
+            float by = dockY + (dockH - btnSize) / 2.0F;
+            boolean hovered = !accountModalOpen && !bgSelectorOpen && targetScreen == null &&
+                    mouseX >= bx && mouseX <= bx + btnSize && mouseY >= by && mouseY <= by + btnSize;
+
+            dockHoverAnims[i] = Mth.clamp(dockHoverAnims[i] + (hovered ? 0.14F : -0.14F), 0.0F, 1.0F);
+            float hAnim = dockHoverAnims[i];
+
+            int btnBg = ColorUtil.lerp(ColorUtil.rgba(25, 25, 32, 160), Theme.getAccentWithAlpha(180), hAnim);
+            Render2D.drawRoundedRect(bx, by, btnSize, btnSize, 11.0F, btnBg);
+
+            int iconCol = ColorUtil.lerp(ColorUtil.rgba(220, 220, 230, 220), ColorUtil.WHITE, hAnim);
+            Fonts.drawCenteredIcon(icons[i], bx + btnSize / 2.0F, by + (btnSize - 10.0F) / 2.0F, 10.0F, iconCol);
         }
     }
 
-    private void renderTopLeftAccount(int screenWidth, int screenHeight) {
-        String curUser = this.minecraft.getUser().getName();
-        float fontSize = 9.5F;
-        float textW = Fonts.SF_MEDIUM.getWidth(curUser, fontSize);
-        float iconSize = 14.0F;
-        float paddingX = 8.0F;
-        float paddingY = 4.5F;
-        float totalW = iconSize + 6.0F + textW + (paddingX * 2);
-        float totalH = iconSize + (paddingY * 2);
-
+    private void renderBottomLeftWidget(int screenWidth, int screenHeight, int mouseX, int mouseY, float alpha) {
+        float w = 135.0F;
+        float h = 26.0F;
         float x = 12.0F;
-        float y = 12.0F;
+        float y = screenHeight - h - 12.0F - (1.0F - alpha) * 10.0F;
 
-        Render2D.drawRoundedRect(x, y, totalW, totalH, 6.0F, 0x66111218);
+        int bgColor = ColorUtil.rgba(14, 14, 18, (int) (195 * alpha));
+        int shadowColor = ColorUtil.rgba(0, 0, 0, (int) (130 * alpha));
+
+        Render2D.drawShadow(x, y, w, h, 6.0F, 6.0F, shadowColor);
+        Render2D.drawRoundedRect(x, y, w, h, 6.0F, bgColor);
+
+        // Preview thumbnail icon
+        float thumbW = 20.0F;
+        float thumbH = 18.0F;
+        float thumbX = x + 4.0F;
+        float thumbY = y + (h - thumbH) / 2.0F;
+        Render2D.drawTexture(BACKGROUNDS[currentBgIndex], thumbX, thumbY, thumbW, thumbH, 3.0F, ColorUtil.applyAlpha(0xFFFFFFFF, alpha));
+
+        // Name & Button subtitle
+        String bgName = WALLPAPER_NAMES[currentBgIndex];
+        Fonts.drawString(Fonts.SF_MEDIUM, bgName, thumbX + thumbW + 5.0F, y + 4.0F, 6.5F, ColorUtil.applyAlpha(ColorUtil.WHITE, alpha));
+        Fonts.drawString(Fonts.SF_MEDIUM, "Сменить фон", thumbX + thumbW + 5.0F, y + 13.5F, 5.5F, ColorUtil.applyAlpha(Theme.getAccentColor(), alpha));
+    }
+
+    private void renderBottomRightWidget(int screenWidth, int screenHeight, int mouseX, int mouseY, float alpha) {
+        String curUser = this.minecraft.getUser().getName();
+        float w = 135.0F;
+        float h = 26.0F;
+        float x = screenWidth - w - 12.0F;
+        float y = screenHeight - h - 12.0F - (1.0F - alpha) * 10.0F;
+
+        int bgColor = ColorUtil.rgba(14, 14, 18, (int) (195 * alpha));
+        int shadowColor = ColorUtil.rgba(0, 0, 0, (int) (130 * alpha));
+
+        Render2D.drawShadow(x, y, w, h, 6.0F, 6.0F, shadowColor);
+        Render2D.drawRoundedRect(x, y, w, h, 6.0F, bgColor);
+
+        // Player Head
+        float headSize = 18.0F;
+        float headX = x + 5.0F;
+        float headY = y + (h - headSize) / 2.0F;
 
         UUID uuid = UUID.nameUUIDFromBytes(("OfflinePlayer:" + curUser).getBytes(StandardCharsets.UTF_8));
         Identifier skin = DefaultPlayerSkin.get(uuid).body().texturePath();
-        Render2D.drawHead(skin, x + paddingX, y + paddingY, iconSize, 2.0F);
+        Render2D.drawHead(skin, headX, headY, headSize, 3.0F, alpha);
 
-        Fonts.drawString(Fonts.SF_MEDIUM, curUser, x + paddingX + iconSize + 6.0F, y + paddingY + 2.5F, fontSize, Theme.TEXT_MAIN);
-    }
-
-    private void renderWallpaperButton(int screenWidth, int screenHeight, int mouseX, int mouseY) {
-        float btnW = 54.0F;
-        float btnH = 22.0F;
-        float btnX = screenWidth - btnW - 12.0F;
-        float btnY = screenHeight - btnH - 10.0F;
-
-        boolean hovered = !accountModalOpen && targetScreen == null && mouseX >= btnX && mouseX <= btnX + btnW && mouseY >= btnY && mouseY <= btnY + btnH;
-        int bgCol = hovered || bgSelectorOpen ? Theme.getAccentWithAlpha(120) : 0x66111218;
-
-        Render2D.drawRoundedRect(btnX, btnY, btnW, btnH, 5.0F, bgCol);
-
-        Fonts.drawCenteredString(Fonts.SF_MEDIUM, Localization.get("Wallpaper"), btnX + (btnW / 2.0F), btnY + 6.0F, 9.5F, Theme.TEXT_MAIN);
+        // Username & Subtitle
+        Fonts.drawString(Fonts.SF_MEDIUM, curUser, headX + headSize + 5.0F, y + 4.0F, 6.5F, ColorUtil.applyAlpha(ColorUtil.WHITE, alpha));
+        Fonts.drawString(Fonts.SF_MEDIUM, "Сменить аккаунт", headX + headSize + 5.0F, y + 13.5F, 5.5F, ColorUtil.applyAlpha(ColorUtil.rgba(180, 180, 190, 255), alpha));
     }
 
     private void renderWallpaperModal(GuiGraphicsExtractor extractor, int screenWidth, int screenHeight, int mouseX, int mouseY, float alpha) {
         float modalW = 180.0F;
         float modalH = 110.0F;
-        float modalX = screenWidth - modalW - 12.0F;
-        float modalY = screenHeight - modalH - 38.0F;
+        float modalX = 12.0F;
+        float modalY = screenHeight - modalH - 44.0F;
 
-        if (Theme.getBackgroundMode().equalsIgnoreCase("Blur")) {
-            Render2D.drawBlur(modalX, modalY, modalW, modalH, 10, ColorUtil.WHITE, 0.1f);
-        }
-
-        Render2D.drawRoundedRect(modalX, modalY, modalW, modalH, 7.0F, ColorUtil.multiplyAlpha(0xEE111218, alpha));
-        Fonts.drawString(Fonts.SF_MEDIUM, Localization.get("Wallpaper"), modalX + 12.0F, modalY + 6.0F, 10.5F, ColorUtil.multiplyAlpha(Theme.TEXT_MAIN, alpha));
+        Render2D.drawShadow(modalX, modalY, modalW, modalH, 8.0F, 6.0F, ColorUtil.rgba(0, 0, 0, (int) (140 * alpha)));
+        Render2D.drawRoundedRect(modalX, modalY, modalW, modalH, 8.0F, ColorUtil.multiplyAlpha(0xEE111218, alpha));
+        Fonts.drawString(Fonts.SF_MEDIUM, "Выбор фона", modalX + 12.0F, modalY + 8.0F, 8.5F, ColorUtil.multiplyAlpha(Theme.TEXT_MAIN, alpha));
 
         float previewW = 124.0F;
         float previewH = 70.0F;
         float previewX = modalX + (modalW - previewW) / 2.0F;
-        float previewY = modalY + 20.0F;
+        float previewY = modalY + 22.0F;
 
-        Render2D.drawTexture(BACKGROUNDS[currentBgIndex], previewX, previewY, previewW, previewH, 0.0F, ColorUtil.multiplyAlpha(0xFFFFFFFF, alpha));
+        Render2D.drawTexture(BACKGROUNDS[currentBgIndex], previewX, previewY, previewW, previewH, 4.0F, ColorUtil.multiplyAlpha(0xFFFFFFFF, alpha));
 
-        float arrowSize = 18.0F;
+        float arrowSize = 16.0F;
         float arrowY = previewY + (previewH - arrowSize) / 2.0F;
-        float arrowCy = arrowY + (arrowSize / 2.0F);
 
-        float leftArrowX = previewX - arrowSize - 6.0F;
-        float leftCx = leftArrowX + (arrowSize / 2.0F);
+        float leftArrowX = previewX - arrowSize - 4.0F;
         boolean leftHover = mouseX >= leftArrowX && mouseX <= leftArrowX + arrowSize && mouseY >= arrowY && mouseY <= arrowY + arrowSize;
         Render2D.drawRoundedRect(leftArrowX, arrowY, arrowSize, arrowSize, 4.0F, ColorUtil.multiplyAlpha(leftHover ? 0xFF2A2D3D : 0x551E202C, alpha));
-        int leftCol = ColorUtil.multiplyAlpha(leftHover ? ColorUtil.WHITE : Theme.TEXT_MUTED, alpha);
-        drawRotatedIcon(extractor, IconUse.UP, leftCx, arrowCy, 9.0F, -90.0F, leftCol);
+        Fonts.drawString(Fonts.SF_MEDIUM, "<", leftArrowX + 5.0F, arrowY + 3.0F, 8.0F, ColorUtil.multiplyAlpha(ColorUtil.WHITE, alpha));
 
-        float rightArrowX = previewX + previewW + 6.0F;
-        float rightCx = rightArrowX + (arrowSize / 2.0F);
+        float rightArrowX = previewX + previewW + 4.0F;
         boolean rightHover = mouseX >= rightArrowX && mouseX <= rightArrowX + arrowSize && mouseY >= arrowY && mouseY <= arrowY + arrowSize;
         Render2D.drawRoundedRect(rightArrowX, arrowY, arrowSize, arrowSize, 4.0F, ColorUtil.multiplyAlpha(rightHover ? 0xFF2A2D3D : 0x551E202C, alpha));
-        int rightCol = ColorUtil.multiplyAlpha(rightHover ? ColorUtil.WHITE : Theme.TEXT_MUTED, alpha);
-        drawRotatedIcon(extractor, IconUse.UP, rightCx, arrowCy, 9.0F, 90.0F, rightCol);
+        Fonts.drawString(Fonts.SF_MEDIUM, ">", rightArrowX + 5.0F, arrowY + 3.0F, 8.0F, ColorUtil.multiplyAlpha(ColorUtil.WHITE, alpha));
 
-        String pageInfo = (currentBgIndex + 1) + " / " + BACKGROUNDS.length;
-        Fonts.drawCenteredString(Fonts.SF_MEDIUM, pageInfo, modalX + (modalW / 2.0F), previewY + previewH + 8.0F, 9.0F, ColorUtil.multiplyAlpha(Theme.TEXT_MUTED, alpha));
-    }
-
-    private void drawRotatedIcon(GuiGraphicsExtractor extractor, IconUse icon, float cx, float cy, float size, float angleDeg, int color) {
-        var pose = extractor.pose();
-        pose.pushMatrix();
-        pose.translate(cx, cy);
-        pose.rotate((float) Math.toRadians(angleDeg));
-        Fonts.drawIcon(icon, -size / 2.0F, -size / 2.0F, size, color);
-        pose.popMatrix();
+        String pageInfo = WALLPAPER_NAMES[currentBgIndex] + " (" + (currentBgIndex + 1) + "/" + BACKGROUNDS.length + ")";
+        Fonts.drawCenteredString(Fonts.SF_MEDIUM, pageInfo, modalX + (modalW / 2.0F), previewY + previewH + 4.0F, 6.0F, ColorUtil.multiplyAlpha(Theme.TEXT_MUTED, alpha));
     }
 
     private void renderAccountModal(int screenWidth, int screenHeight, int mouseX, int mouseY, float alpha) {
-        Render2D.drawRect(0, 0, screenWidth, screenHeight, ColorUtil.multiplyAlpha(0x88000000, alpha));
+        // Dark Backdrop
+        Render2D.drawRect(0, 0, screenWidth, screenHeight, ColorUtil.multiplyAlpha(0x99000000, alpha));
 
-        float modalW = 270.0F;
-        float modalH = 310.0F;
+        float modalW = 460.0F;
+        float modalH = 270.0F;
         float modalX = (screenWidth - modalW) / 2.0F;
         float modalY = (screenHeight - modalH) / 2.0F;
 
-        if (Theme.getBackgroundMode().equalsIgnoreCase("Blur")) {
-            Render2D.drawBlur(modalX, modalY, modalW, modalH, 10, ColorUtil.WHITE, 0.1f);
+        Render2D.drawShadow(modalX, modalY, modalW, modalH, 10.0F, 8.0F, ColorUtil.rgba(0, 0, 0, (int) (180 * alpha)));
+        Render2D.drawRoundedRect(modalX, modalY, modalW, modalH, 10.0F, ColorUtil.multiplyAlpha(0xEE111218, alpha));
+
+        // LEFT PANE (Account List & Controls)
+        float leftW = 260.0F;
+        float leftX = modalX + 10.0F;
+        float leftY = modalY + 10.0F;
+
+        // Header: "Аккаунты" & stats
+        List<String> allAccounts = AccountManager.getInstance().getAccounts();
+        Fonts.drawString(Fonts.SF_MEDIUM, "Аккаунты", leftX + 4.0F, leftY + 2.0F, 10.0F, ColorUtil.multiplyAlpha(ColorUtil.WHITE, alpha));
+        String statsStr = "Сохранено: " + allAccounts.size();
+        Fonts.drawString(Fonts.SF_MEDIUM, statsStr, leftX + 65.0F, leftY + 5.0F, 5.5F, ColorUtil.multiplyAlpha(Theme.TEXT_MUTED, alpha));
+
+        // Search Bar
+        float searchY = leftY + 18.0F;
+        float searchW = leftW - 8.0F;
+        float searchH = 18.0F;
+        Render2D.drawRoundedRect(leftX, searchY, searchW, searchH, 4.0F, ColorUtil.multiplyAlpha(0x551E202C, alpha));
+        if (searchFocused) {
+            Render2D.drawRoundedOutline(leftX, searchY, searchW, searchH, 4.0F, 1.0F, ColorUtil.multiplyAlpha(Theme.getAccentColor(), alpha));
         }
-        Render2D.drawRoundedRect(modalX, modalY, modalW, modalH, 8.0F, ColorUtil.multiplyAlpha(0xEE111218, alpha));
-
-        Fonts.drawString(Fonts.SF_MEDIUM, Localization.get("Account Manager"), modalX + 12.0F, modalY + 12.0F, 12.0F, ColorUtil.multiplyAlpha(Theme.TEXT_MAIN, alpha));
-
-        float closeX = modalX + modalW - 22.0F;
-        float closeY = modalY + 11.0F;
-        boolean closeHover = mouseX >= closeX - 2 && mouseX <= closeX + 12 && mouseY >= closeY - 2 && mouseY <= closeY + 12;
-        Fonts.drawIcon(IconUse.CROSS, closeX, closeY, 10.0F, ColorUtil.multiplyAlpha(closeHover ? 0xFFEF4444 : Theme.TEXT_MUTED, alpha));
-
-        float inputX = modalX + 10.0F;
-        float inputY = modalY + 34.0F;
-        float inputW = modalW - 20.0F;
-        float inputH = 22.0F;
-
-        Render2D.drawRoundedRect(inputX, inputY, inputW, inputH, 4.0F, ColorUtil.multiplyAlpha(0x551E202C, alpha));
-        if (addInputFocused) {
-            Render2D.drawRoundedOutline(inputX, inputY, inputW, inputH, 4.0F, 1.0F, ColorUtil.multiplyAlpha(Theme.getAccentColor(), alpha));
-        }
-
         boolean blink = (System.currentTimeMillis() / 450) % 2 == 0;
-        String displayInput = addAccountQuery.isEmpty() ? Localization.get("Enter nickname...") : addAccountQuery + (addInputFocused && blink ? "|" : "");
-        int inputCol = addAccountQuery.isEmpty() ? 0xFF65687A : Theme.TEXT_MAIN;
-        Fonts.drawString(Fonts.SF_MEDIUM, displayInput, inputX + 8.0F, inputY + 6.5F, 9.5F, ColorUtil.multiplyAlpha(inputCol, alpha));
+        String displaySearch = searchFilter.isEmpty() ? "Поиск по нику..." : searchFilter + (searchFocused && blink ? "|" : "");
+        int searchCol = searchFilter.isEmpty() ? 0xFF65687A : ColorUtil.WHITE;
+        Fonts.drawString(Fonts.SF_MEDIUM, displaySearch, leftX + 6.0F, searchY + 5.0F, 6.0F, ColorUtil.multiplyAlpha(searchCol, alpha));
 
-        float addBtnX = inputX + inputW - 18.0F;
-        float addBtnY = inputY + 5.5F;
-        boolean addBtnHover = mouseX >= addBtnX - 3 && mouseX <= addBtnX + 14 && mouseY >= inputY && mouseY <= inputY + inputH;
-        Fonts.drawIcon(IconUse.ADD, addBtnX, addBtnY, 10.0F, ColorUtil.multiplyAlpha(addBtnHover ? Theme.getAccentColor() : ColorUtil.WHITE, alpha));
+        // Filter Tabs: Все (X) | Избранные (Y)
+        float tabY = searchY + searchH + 6.0F;
+        String[] tabs = {"Все (" + allAccounts.size() + ")", "Избранные"};
+        float tabW = 65.0F;
+        for (int i = 0; i < tabs.length; i++) {
+            float tx = leftX + i * (tabW + 4.0F);
+            boolean isSel = selectedTab == i;
+            int tabBg = isSel ? Theme.getAccentWithAlpha(180) : ColorUtil.rgba(28, 30, 40, 160);
+            Render2D.drawRoundedRect(tx, tabY, tabW, 14.0F, 3.0F, ColorUtil.multiplyAlpha(tabBg, alpha));
+            Fonts.drawCenteredString(Fonts.SF_MEDIUM, tabs[i], tx + tabW / 2.0F, tabY + 3.5F, 5.5F, ColorUtil.multiplyAlpha(ColorUtil.WHITE, alpha));
+        }
 
-        float listX = modalX + 10.0F;
-        float listY = inputY + inputH + 8.0F;
-        float listW = modalW - 20.0F;
-        float listH = modalH - (listY - modalY) - 10.0F;
+        // Account List Box
+        float listY = tabY + 18.0F;
+        float listH = 150.0F;
+        Render2D.pushScissor(leftX, listY, searchW, listH);
 
-        Render2D.pushScissor(listX, listY, listW, listH);
+        List<String> sortedAccs = AccountManager.getInstance().getSortedAccounts();
+        if (selectedTab == 1) {
+            sortedAccs.removeIf(a -> !AccountManager.getInstance().isFavorite(a));
+        }
+        if (!searchFilter.trim().isEmpty()) {
+            sortedAccs.removeIf(a -> !a.toLowerCase().contains(searchFilter.trim().toLowerCase()));
+        }
 
-        List<String> accounts = AccountManager.getInstance().getSortedAccounts();
-        String currentName = this.minecraft.getUser().getName();
-
-        float cardH = 28.0F;
+        String curUser = this.minecraft.getUser().getName();
+        float cardH = 22.0F;
         float cardY = listY - this.accountScroll;
 
-        for (String acc : accounts) {
-            boolean isCur = acc.equalsIgnoreCase(currentName);
+        for (String acc : sortedAccs) {
+            boolean isCur = acc.equalsIgnoreCase(curUser);
+            boolean isSel = acc.equalsIgnoreCase(selectedAccount);
             boolean isFav = AccountManager.getInstance().isFavorite(acc);
             boolean inScissor = mouseY >= listY && mouseY <= listY + listH;
-            boolean hovered = inScissor && mouseX >= listX && mouseX <= listX + listW && mouseY >= cardY && mouseY <= cardY + cardH;
+            boolean hovered = inScissor && mouseX >= leftX && mouseX <= leftX + searchW && mouseY >= cardY && mouseY <= cardY + cardH;
 
-            int cardBg;
-            if (isCur) {
-                cardBg = ColorUtil.lerp(0xFF181A26, Theme.getAccentColor(), 0.28F);
-            } else if (isFav) {
-                cardBg = hovered ? 0x803A2E0D : 0x5033280B;
-            } else {
-                cardBg = hovered ? 0xFF1C1E2A : 0x50181A26;
-            }
-
-            Render2D.drawRoundedRect(listX, cardY, listW, cardH, 4.0F, ColorUtil.multiplyAlpha(cardBg, alpha));
+            int cardBg = isSel ? Theme.getAccentWithAlpha(160) : (hovered ? ColorUtil.rgba(35, 37, 50, 180) : ColorUtil.rgba(20, 22, 30, 140));
+            Render2D.drawRoundedRect(leftX, cardY, searchW, cardH, 4.0F, ColorUtil.multiplyAlpha(cardBg, alpha));
 
             UUID uuid = UUID.nameUUIDFromBytes(("OfflinePlayer:" + acc).getBytes(StandardCharsets.UTF_8));
             Identifier skin = DefaultPlayerSkin.get(uuid).body().texturePath();
-            Render2D.drawHead(skin, listX + 5.0F, cardY + 5.0F, 18.0F, 2.0F);
+            Render2D.drawHead(skin, leftX + 4.0F, cardY + 3.0F, 16.0F, 2.0F, alpha);
 
-            String nameText = Fonts.SF_MEDIUM.trimToWidth(acc, listW - 90.0F, 10.0F);
-            Fonts.drawString(Fonts.SF_MEDIUM, nameText, listX + 28.0F, cardY + 8.5F, 10.0F,
-                    ColorUtil.multiplyAlpha(isCur ? ColorUtil.WHITE : (isFav ? 0xFFFFF1AA : Theme.TEXT_MAIN), alpha));
+            Fonts.drawString(Fonts.SF_MEDIUM, acc, leftX + 24.0F, cardY + 6.5F, 6.5F, ColorUtil.multiplyAlpha(isCur ? Theme.getAccentColor() : ColorUtil.WHITE, alpha));
 
-            float linkX = listX + listW - 58.0F;
-            float linkY = cardY + 8.5F;
-            boolean linkHover = inScissor && mouseX >= linkX && mouseX <= linkX + 12 && mouseY >= linkY && mouseY <= linkY + 12;
-            int linkCol = linkHover ? ColorUtil.WHITE : Theme.TEXT_MUTED;
-            Fonts.drawIcon(IconUse.LINK, linkX, linkY, 10.0F, ColorUtil.multiplyAlpha(linkCol, alpha));
+            float starX = leftX + searchW - 16.0F;
+            int starCol = isFav ? 0xFFFFD700 : ColorUtil.rgba(120, 120, 130, 255);
+            Fonts.drawIcon(IconUse.STAR, starX, cardY + 6.0F, 8.0F, ColorUtil.multiplyAlpha(starCol, alpha));
 
-            float starX = listX + listW - 38.0F;
-            float starY = cardY + 8.5F;
-            boolean starHover = inScissor && mouseX >= starX && mouseX <= starX + 12 && mouseY >= starY && mouseY <= starY + 12;
-            int starCol = isFav ? 0xFFFFD700 : (starHover ? 0xFFFFF275 : Theme.TEXT_MUTED);
-            Fonts.drawIcon(IconUse.STAR, starX, starY, 10.0F, ColorUtil.multiplyAlpha(starCol, alpha));
-
-            float delX = listX + listW - 18.0F;
-            float delY = cardY + 8.5F;
-            boolean delHover = inScissor && mouseX >= delX && mouseX <= delX + 12 && mouseY >= delY && mouseY <= delY + 12;
-            int delCol = delHover ? 0xFFEF4444 : Theme.TEXT_MUTED;
-            Fonts.drawIcon(IconUse.CROSS, delX, delY, 10.0F, ColorUtil.multiplyAlpha(delCol, alpha));
-
-            cardY += cardH + 4.0F;
-        }
-
-        if (accounts.isEmpty()) {
-            Fonts.drawCenteredString(Fonts.SF_MEDIUM, Localization.get("Account list is empty"), listX + (listW / 2.0F), listY + (listH / 2.0F) - 5.0F, 10.0F, ColorUtil.multiplyAlpha(Theme.TEXT_MUTED, alpha));
+            cardY += cardH + 3.0F;
         }
 
         Render2D.popScissor();
+        this.maxAccountScroll = Math.max(0.0F, (cardY + this.accountScroll) - listY - listH);
 
-        float totalHeight = (cardY + this.accountScroll) - listY;
-        this.maxAccountScroll = Math.max(0.0F, totalHeight - listH);
+        // Bottom Action Controls (Новый ник + Добавить + Случайный)
+        float botY = listY + listH + 6.0F;
+        float addBtnW = 75.0F;
+        float randBtnW = 65.0F;
+        int pinkBtnColor = ColorUtil.rgba(235, 80, 140, 255);
+
+        Render2D.drawRoundedRect(leftX, botY, addBtnW, 16.0F, 4.0F, ColorUtil.multiplyAlpha(pinkBtnColor, alpha));
+        Fonts.drawCenteredString(Fonts.SF_MEDIUM, "+ Добавить", leftX + addBtnW / 2.0F, botY + 4.0F, 6.0F, ColorUtil.multiplyAlpha(ColorUtil.WHITE, alpha));
+
+        Render2D.drawRoundedRect(leftX + addBtnW + 6.0F, botY, randBtnW, 16.0F, 4.0F, ColorUtil.multiplyAlpha(ColorUtil.rgba(35, 37, 48, 200), alpha));
+        Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Случайный", leftX + addBtnW + 6.0F + randBtnW / 2.0F, botY + 4.0F, 5.5F, ColorUtil.multiplyAlpha(ColorUtil.WHITE, alpha));
+
+        // RIGHT PANE (Selected Account Info & Skin Display)
+        float rightX = modalX + leftW + 15.0F;
+        float rightW = modalW - leftW - 25.0F;
+
+        String targetAcc = selectedAccount.isEmpty() ? curUser : selectedAccount;
+
+        // Top Status Badge: "Сейчас: <nick>"
+        Fonts.drawString(Fonts.SF_MEDIUM, "Сейчас: " + targetAcc, rightX, leftY + 2.0F, 6.5F, ColorUtil.multiplyAlpha(ColorUtil.WHITE, alpha));
+
+        // Skin Card Box
+        float skinBoxY = leftY + 18.0F;
+        float skinBoxH = 150.0F;
+        Render2D.drawRoundedRect(rightX, skinBoxY, rightW, skinBoxH, 6.0F, ColorUtil.multiplyAlpha(ColorUtil.rgba(20, 22, 30, 160), alpha));
+
+        UUID targetUuid = UUID.nameUUIDFromBytes(("OfflinePlayer:" + targetAcc).getBytes(StandardCharsets.UTF_8));
+        Identifier targetSkin = DefaultPlayerSkin.get(targetUuid).body().texturePath();
+        Render2D.drawHead(targetSkin, rightX + (rightW - 48.0F) / 2.0F, skinBoxY + 10.0F, 48.0F, 4.0F, alpha);
+
+        Fonts.drawCenteredString(Fonts.SF_MEDIUM, targetAcc, rightX + rightW / 2.0F, skinBoxY + 64.0F, 7.5F, ColorUtil.multiplyAlpha(ColorUtil.WHITE, alpha));
+        Fonts.drawCenteredString(Fonts.SF_MEDIUM, "В сети", rightX + rightW / 2.0F, skinBoxY + 74.0F, 5.5F, ColorUtil.multiplyAlpha(ColorUtil.rgba(65, 220, 120, 255), alpha));
+
+        float infoY = skinBoxY + 86.0F;
+        Fonts.drawString(Fonts.SF_MEDIUM, "Добавлен: 30 сентября", rightX + 6.0F, infoY, 5.0F, ColorUtil.multiplyAlpha(Theme.TEXT_MUTED, alpha));
+        Fonts.drawString(Fonts.SF_MEDIUM, "Последний сервер: mail.su.fun", rightX + 6.0F, infoY + 8.0F, 5.0F, ColorUtil.multiplyAlpha(Theme.TEXT_MUTED, alpha));
+        Fonts.drawString(Fonts.SF_MEDIUM, "UUID: " + targetUuid.toString().substring(0, 13) + "...", rightX + 6.0F, infoY + 16.0F, 5.0F, ColorUtil.multiplyAlpha(Theme.TEXT_MUTED, alpha));
+
+        // Big Green Action Button: "Войти в этот аккаунт"
+        float loginBtnY = skinBoxY + skinBoxH + 8.0F;
+        float loginBtnH = 20.0F;
+        int greenBtnCol = ColorUtil.rgba(45, 180, 95, 255);
+        Render2D.drawRoundedRect(rightX, loginBtnY, rightW, loginBtnH, 5.0F, ColorUtil.multiplyAlpha(greenBtnCol, alpha));
+        Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Войти в этот аккаунт", rightX + rightW / 2.0F, loginBtnY + 5.5F, 6.5F, ColorUtil.multiplyAlpha(ColorUtil.WHITE, alpha));
+
+        // Bottom Action Buttons: Удалить
+        float delBtnY = loginBtnY + loginBtnH + 6.0F;
+        Render2D.drawRoundedRect(rightX, delBtnY, rightW, 16.0F, 4.0F, ColorUtil.multiplyAlpha(ColorUtil.rgba(200, 50, 50, 200), alpha));
+        Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Удалить аккаунт", rightX + rightW / 2.0F, delBtnY + 4.0F, 5.5F, ColorUtil.multiplyAlpha(ColorUtil.WHITE, alpha));
     }
 
     @Override
@@ -407,36 +510,81 @@ public class CustomTitleScreen extends Screen {
         int screenWidth = this.width;
         int screenHeight = this.height;
 
+        // Corner Hover Clicks
+        if (!accountModalOpen && !bgSelectorOpen) {
+            // Left Corner (Background Widget)
+            if (mouseX < 160 && mouseY > screenHeight - 50) {
+                this.bgSelectorOpen = !this.bgSelectorOpen;
+                return true;
+            }
+            // Right Corner (Account Widget)
+            if (mouseX > screenWidth - 170 && mouseY > screenHeight - 50) {
+                this.accountModalOpen = true;
+                this.bgSelectorOpen = false;
+                return true;
+            }
+        }
+
+        // Bottom Dock Clicks
+        float btnSize = 22.0F;
+        float spacing = 8.0F;
+        int count = 5;
+        float dockW = count * btnSize + (count + 1) * spacing;
+        float dockH = 30.0F;
+        float dockX = (screenWidth - dockW) / 2.0F;
+        float dockY = screenHeight - dockH - 12.0F;
+
+        if (!accountModalOpen && !bgSelectorOpen && mouseY >= dockY && mouseY <= dockY + dockH) {
+            for (int i = 0; i < count; i++) {
+                float bx = dockX + spacing + i * (btnSize + spacing);
+                if (mouseX >= bx && mouseX <= bx + btnSize) {
+                    switch (i) {
+                        case 0 -> switchScreen(new SelectWorldScreen(this));
+                        case 1 -> switchScreen(new JoinMultiplayerScreen(this));
+                        case 2 -> {
+                            this.accountModalOpen = true;
+                            this.bgSelectorOpen = false;
+                        }
+                        case 3 -> switchScreen(new OptionsScreen(this, this.minecraft.options, false));
+                        case 4 -> switchScreen(new ConfirmScreen(
+                                (confirmed) -> {
+                                    if (confirmed) this.minecraft.stop();
+                                    else this.minecraft.gui.setScreen(this);
+                                },
+                                Component.literal(Localization.get("Quit")),
+                                Component.literal(Localization.get("Are you sure you want to quit?"))
+                        ));
+                    }
+                    return true;
+                }
+            }
+        }
+
+        // Wallpaper Selector Clicks
         if (this.bgSelectorOpen) {
             float modalW = 180.0F;
             float modalH = 110.0F;
-            float modalX = screenWidth - modalW - 12.0F;
-            float modalY = screenHeight - modalH - 38.0F;
+            float modalX = 12.0F;
+            float modalY = screenHeight - modalH - 44.0F;
 
             if (mouseX < modalX || mouseX > modalX + modalW || mouseY < modalY || mouseY > modalY + modalH) {
-                float btnW = 54.0F;
-                float btnH = 22.0F;
-                float btnX = screenWidth - btnW - 12.0F;
-                float btnY = screenHeight - btnH - 10.0F;
-                if (!(mouseX >= btnX && mouseX <= btnX + btnW && mouseY >= btnY && mouseY <= btnY + btnH)) {
-                    this.bgSelectorOpen = false;
-                }
+                this.bgSelectorOpen = false;
             } else {
                 float previewW = 124.0F;
                 float previewH = 70.0F;
                 float previewX = modalX + (modalW - previewW) / 2.0F;
-                float previewY = modalY + 20.0F;
-                float arrowSize = 18.0F;
+                float previewY = modalY + 22.0F;
+                float arrowSize = 16.0F;
                 float arrowY = previewY + (previewH - arrowSize) / 2.0F;
 
-                float leftArrowX = previewX - arrowSize - 6.0F;
+                float leftArrowX = previewX - arrowSize - 4.0F;
                 if (mouseX >= leftArrowX && mouseX <= leftArrowX + arrowSize && mouseY >= arrowY && mouseY <= arrowY + arrowSize) {
                     currentBgIndex = (currentBgIndex - 1 + BACKGROUNDS.length) % BACKGROUNDS.length;
                     saveWallpaper();
                     return true;
                 }
 
-                float rightArrowX = previewX + previewW + 6.0F;
+                float rightArrowX = previewX + previewW + 4.0F;
                 if (mouseX >= rightArrowX && mouseX <= rightArrowX + arrowSize && mouseY >= arrowY && mouseY <= arrowY + arrowSize) {
                     currentBgIndex = (currentBgIndex + 1) % BACKGROUNDS.length;
                     saveWallpaper();
@@ -446,122 +594,128 @@ public class CustomTitleScreen extends Screen {
             }
         }
 
-        float bgBtnW = 54.0F;
-        float bgBtnH = 22.0F;
-        float bgBtnX = screenWidth - bgBtnW - 12.0F;
-        float bgBtnY = screenHeight - bgBtnH - 10.0F;
-        if (!accountModalOpen && mouseX >= bgBtnX && mouseX <= bgBtnX + bgBtnW && mouseY >= bgBtnY && mouseY <= bgBtnY + bgBtnH) {
-            this.bgSelectorOpen = !this.bgSelectorOpen;
-            return true;
-        }
-
+        // Account Modal Clicks
         if (this.accountModalOpen) {
-            float modalW = 270.0F;
-            float modalH = 310.0F;
+            float modalW = 460.0F;
+            float modalH = 270.0F;
             float modalX = (screenWidth - modalW) / 2.0F;
             float modalY = (screenHeight - modalH) / 2.0F;
 
             if (mouseX < modalX || mouseX > modalX + modalW || mouseY < modalY || mouseY > modalY + modalH) {
                 this.accountModalOpen = false;
-                this.addInputFocused = false;
+                this.searchFocused = false;
                 return true;
             }
 
-            float closeX = modalX + modalW - 22.0F;
-            float closeY = modalY + 11.0F;
-            if (mouseX >= closeX - 2 && mouseX <= closeX + 14 && mouseY >= closeY - 2 && mouseY <= closeY + 14) {
-                this.accountModalOpen = false;
-                this.addInputFocused = false;
-                return true;
-            }
+            float leftW = 260.0F;
+            float leftX = modalX + 10.0F;
+            float leftY = modalY + 10.0F;
+            float searchY = leftY + 18.0F;
+            float searchW = leftW - 8.0F;
+            float searchH = 18.0F;
 
-            float inputX = modalX + 10.0F;
-            float inputY = modalY + 34.0F;
-            float inputW = modalW - 20.0F;
-            float inputH = 22.0F;
-
-            if (mouseX >= inputX && mouseX <= inputX + inputW && mouseY >= inputY && mouseY <= inputY + inputH) {
-                float addBtnX = inputX + inputW - 18.0F;
-                if (mouseX >= addBtnX - 3) {
-                    confirmAddAccount();
-                } else {
-                    this.addInputFocused = true;
-                }
+            // Search Bar Focus
+            if (mouseX >= leftX && mouseX <= leftX + searchW && mouseY >= searchY && mouseY <= searchY + searchH) {
+                this.searchFocused = true;
                 return true;
             } else {
-                this.addInputFocused = false;
+                this.searchFocused = false;
             }
 
-            float listX = modalX + 10.0F;
-            float listY = inputY + inputH + 8.0F;
-            float listW = modalW - 20.0F;
-            float listH = modalH - (listY - modalY) - 10.0F;
+            // Tabs
+            float tabY = searchY + searchH + 6.0F;
+            float tabW = 65.0F;
+            for (int i = 0; i < 2; i++) {
+                float tx = leftX + i * (tabW + 4.0F);
+                if (mouseX >= tx && mouseX <= tx + tabW && mouseY >= tabY && mouseY <= tabY + 14.0F) {
+                    this.selectedTab = i;
+                    return true;
+                }
+            }
 
-            if (mouseY >= listY && mouseY <= listY + listH && mouseX >= listX && mouseX <= listX + listW) {
-                float cardH = 28.0F;
+            // Account List Item Select & Favorite Toggle
+            float listY = tabY + 18.0F;
+            float listH = 150.0F;
+            if (mouseY >= listY && mouseY <= listY + listH && mouseX >= leftX && mouseX <= leftX + searchW) {
+                List<String> sortedAccs = AccountManager.getInstance().getSortedAccounts();
+                if (selectedTab == 1) {
+                    sortedAccs.removeIf(a -> !AccountManager.getInstance().isFavorite(a));
+                }
+                if (!searchFilter.trim().isEmpty()) {
+                    sortedAccs.removeIf(a -> !a.toLowerCase().contains(searchFilter.trim().toLowerCase()));
+                }
+
+                float cardH = 22.0F;
                 float cardY = listY - this.accountScroll;
 
-                for (String acc : AccountManager.getInstance().getSortedAccounts()) {
+                for (String acc : sortedAccs) {
                     if (mouseY >= cardY && mouseY <= cardY + cardH) {
-                        float linkX = listX + listW - 58.0F;
-                        float starX = listX + listW - 38.0F;
-                        float delX = listX + listW - 18.0F;
-                        float iconY = cardY + 8.5F;
-
-                        if (mouseX >= linkX && mouseX <= linkX + 14 && mouseY >= iconY && mouseY <= iconY + 14) {
-                            this.minecraft.keyboardHandler.setClipboard(acc);
-                            return true;
-                        }
-
-                        if (mouseX >= starX && mouseX <= starX + 14 && mouseY >= iconY && mouseY <= iconY + 14) {
+                        float starX = leftX + searchW - 16.0F;
+                        if (mouseX >= starX && mouseX <= starX + 14) {
                             AccountManager.getInstance().toggleFavorite(acc);
                             return true;
                         }
 
-                        if (mouseX >= delX && mouseX <= delX + 14 && mouseY >= iconY && mouseY <= iconY + 14) {
-                            AccountManager.getInstance().removeAccount(acc);
-                            return true;
-                        }
-
-                        AccountManager.getInstance().setSession(acc);
+                        this.selectedAccount = acc;
                         return true;
                     }
-                    cardY += cardH + 4.0F;
+                    cardY += cardH + 3.0F;
                 }
             }
-            return true;
-        }
 
-        float btnW = 160.0F;
-        float btnH = 28.0F;
-        float spacing = 7.0F;
-        float totalH = (5 * btnH) + (4 * spacing);
-        float startX = screenWidth / 2.5f;
-        float startY = (screenHeight - totalH) / 2.0F + 10.0F;
-
-        for (int i = 0; i < 5; i++) {
-            float y = startY + i * (btnH + spacing);
-            if (mouseX >= startX && mouseX <= startX + btnW && mouseY >= y && mouseY <= y + btnH) {
-                switch (i) {
-                    case 0 -> switchScreen(new SelectWorldScreen(this));
-                    case 1 -> switchScreen(new JoinMultiplayerScreen(this));
-                    case 2 -> {
-                        this.accountModalOpen = true;
-                        this.bgSelectorOpen = false;
-                        this.addAccountQuery = "";
+            // Bottom Add & Random Buttons
+            float botY = listY + listH + 6.0F;
+            float addBtnW = 75.0F;
+            float randBtnW = 65.0F;
+            if (mouseY >= botY && mouseY <= botY + 16.0F) {
+                if (mouseX >= leftX && mouseX <= leftX + addBtnW) {
+                    // Add Button
+                    if (!searchFilter.trim().isEmpty()) {
+                        String newAcc = searchFilter.trim();
+                        AccountManager.getInstance().addAccount(newAcc);
+                        AccountManager.getInstance().setSession(newAcc);
+                        this.selectedAccount = newAcc;
+                        this.searchFilter = "";
                     }
-                    case 3 -> switchScreen(new OptionsScreen(this, this.minecraft.options, false));
-                    case 4 -> switchScreen(new ConfirmScreen(
-                            (confirmed) -> {
-                                if (confirmed) this.minecraft.stop();
-                                else this.minecraft.gui.setScreen(this);
-                            },
-                            Component.literal(Localization.get("Quit")),
-                            Component.literal(Localization.get("Are you sure you want to quit?"))
-                    ));
+                    return true;
+                }
+                if (mouseX >= leftX + addBtnW + 6.0F && mouseX <= leftX + addBtnW + 6.0F + randBtnW) {
+                    // Random Button
+                    String randName = "User_" + (100 + new Random().nextInt(900));
+                    AccountManager.getInstance().addAccount(randName);
+                    AccountManager.getInstance().setSession(randName);
+                    this.selectedAccount = randName;
+                    return true;
+                }
+            }
+
+            // Right Pane Action Buttons (Login / Delete)
+            float rightX = modalX + leftW + 15.0F;
+            float rightW = modalW - leftW - 25.0F;
+            float skinBoxY = leftY + 18.0F;
+            float skinBoxH = 150.0F;
+            float loginBtnY = skinBoxY + skinBoxH + 8.0F;
+            float loginBtnH = 20.0F;
+            float delBtnY = loginBtnY + loginBtnH + 6.0F;
+
+            // Login Button
+            if (mouseX >= rightX && mouseX <= rightX + rightW && mouseY >= loginBtnY && mouseY <= loginBtnY + loginBtnH) {
+                if (!selectedAccount.isEmpty()) {
+                    AccountManager.getInstance().setSession(selectedAccount);
                 }
                 return true;
             }
+
+            // Delete Button
+            if (mouseX >= rightX && mouseX <= rightX + rightW && mouseY >= delBtnY && mouseY <= delBtnY + 16.0F) {
+                if (!selectedAccount.isEmpty()) {
+                    AccountManager.getInstance().removeAccount(selectedAccount);
+                    this.selectedAccount = AccountManager.getInstance().getActiveAccount();
+                }
+                return true;
+            }
+
+            return true;
         }
 
         return super.mouseClicked(event, bl);
@@ -588,49 +742,55 @@ public class CustomTitleScreen extends Screen {
         if (this.accountModalOpen) {
             if (event.isEscape() || keyCode == GLFW.GLFW_KEY_ESCAPE) {
                 this.accountModalOpen = false;
-                this.addInputFocused = false;
+                this.searchFocused = false;
                 return true;
             }
 
-            if (this.addInputFocused) {
+            if (this.searchFocused) {
                 if (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER) {
-                    confirmAddAccount();
+                    if (!searchFilter.trim().isEmpty()) {
+                        String newAcc = searchFilter.trim();
+                        AccountManager.getInstance().addAccount(newAcc);
+                        AccountManager.getInstance().setSession(newAcc);
+                        this.selectedAccount = newAcc;
+                        this.searchFilter = "";
+                    }
                     return true;
                 }
-                if (keyCode == GLFW.GLFW_KEY_BACKSPACE && !this.addAccountQuery.isEmpty()) {
-                    this.addAccountQuery = this.addAccountQuery.substring(0, this.addAccountQuery.length() - 1);
+                if (keyCode == GLFW.GLFW_KEY_BACKSPACE && !this.searchFilter.isEmpty()) {
+                    this.searchFilter = this.searchFilter.substring(0, this.searchFilter.length() - 1);
                     return true;
                 }
                 if (event.hasControlDown() && keyCode == GLFW.GLFW_KEY_V) {
                     String paste = this.minecraft.keyboardHandler.getClipboard();
                     if (paste != null) {
                         paste = paste.replaceAll("[^a-zA-Z0-9_]", "");
-                        String res = this.addAccountQuery + paste;
+                        String res = this.searchFilter + paste;
                         if (res.length() > 16) res = res.substring(0, 16);
-                        this.addAccountQuery = res;
+                        this.searchFilter = res;
                     }
                     return true;
                 }
 
                 if (keyCode >= GLFW.GLFW_KEY_A && keyCode <= GLFW.GLFW_KEY_Z) {
-                    if (this.addAccountQuery.length() < 16) {
+                    if (this.searchFilter.length() < 16) {
                         char c = (char) ('a' + (keyCode - GLFW.GLFW_KEY_A));
                         if (event.hasShiftDown()) c = Character.toUpperCase(c);
-                        this.addAccountQuery += c;
+                        this.searchFilter += c;
                     }
                     return true;
                 }
 
                 if (keyCode >= GLFW.GLFW_KEY_0 && keyCode <= GLFW.GLFW_KEY_9) {
-                    if (this.addAccountQuery.length() < 16) {
-                        this.addAccountQuery += (char) ('0' + (keyCode - GLFW.GLFW_KEY_0));
+                    if (this.searchFilter.length() < 16) {
+                        this.searchFilter += (char) ('0' + (keyCode - GLFW.GLFW_KEY_0));
                     }
                     return true;
                 }
 
                 if (keyCode == GLFW.GLFW_KEY_MINUS && event.hasShiftDown()) {
-                    if (this.addAccountQuery.length() < 16) {
-                        this.addAccountQuery += "_";
+                    if (this.searchFilter.length() < 16) {
+                        this.searchFilter += "_";
                     }
                     return true;
                 }
@@ -639,14 +799,5 @@ public class CustomTitleScreen extends Screen {
         }
 
         return super.keyPressed(event);
-    }
-
-    private void confirmAddAccount() {
-        String name = this.addAccountQuery.trim();
-        if (!name.isEmpty()) {
-            AccountManager.getInstance().addAccount(name);
-            AccountManager.getInstance().setSession(name);
-            this.addAccountQuery = "";
-        }
     }
 }

@@ -97,11 +97,6 @@ public final class HudManager implements IMinecraft {
             if (draggedElement != null && draggedElement.isDragging()) {
                 updateDraggingPosition(draggedElement, mouseX, mouseY);
             }
-            for (HudElement el : elements) {
-                if (el.isEnabled() && el instanceof WatermarkHud watermark) {
-                    watermark.onMouseMove(mouseX, mouseY);
-                }
-            }
 
             if (showGuidelines) {
                 float screenW = mc.getWindow().getGuiScaledWidth();
@@ -330,16 +325,7 @@ public final class HudManager implements IMinecraft {
             for (int i = elements.size() - 1; i >= 0; i--) {
                 HudElement el = elements.get(i);
                 if (!el.isEnabled()) continue;
-                if (el instanceof WatermarkHud watermark) {
-                    if (watermark.getClusterAt(mouseX, mouseY) != null) {
-                        contextMenuElement = el;
-                        contextMenuOpen = true;
-                        contextMenuX = (float) mouseX;
-                        contextMenuY = (float) mouseY;
-                        event.cancel();
-                        return;
-                    }
-                } else if (el.isHovered(mouseX, mouseY)) {
+                if (el.isHovered(mouseX, mouseY)) {
                     contextMenuElement = el;
                     contextMenuOpen = true;
                     contextMenuX = (float) mouseX;
@@ -356,13 +342,6 @@ public final class HudManager implements IMinecraft {
             for (int i = elements.size() - 1; i >= 0; i--) {
                 HudElement el = elements.get(i);
                 if (!el.isEnabled()) continue;
-                if (el instanceof WatermarkHud watermark) {
-                    if (watermark.getClusterAt(mouseX, mouseY) != null) {
-                        watermark.onMousePress(mouseX, mouseY, event.getButton());
-                        event.cancel();
-                        return;
-                    }
-                }
                 if (el.isHovered(mouseX, mouseY)) {
                     draggedElement = el;
                     el.startDragging(mouseX, mouseY);
@@ -373,11 +352,6 @@ public final class HudManager implements IMinecraft {
         }
 
         if (event.getAction() == GLFW.GLFW_RELEASE && event.getButton() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
-            for (HudElement el : elements) {
-                if (el.isEnabled() && el instanceof WatermarkHud watermark) {
-                    watermark.onMouseRelease(mouseX, mouseY);
-                }
-            }
             if (draggedElement != null) {
                 draggedElement.stopDragging();
                 draggedElement = null;

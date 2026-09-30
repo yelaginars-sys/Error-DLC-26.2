@@ -70,6 +70,13 @@ public final class TargetHud extends HudElement implements IMinecraft {
         super("targethud", "Target HUD", 140.0F, 120.0F, 130.0F, 34.0F);
     }
 
+    public com.google.gson.JsonObject writeConfig() {
+        return new com.google.gson.JsonObject();
+    }
+
+    public void readConfig(com.google.gson.JsonObject json) {
+    }
+
     private LivingEntity getTarget() {
         AuraModule aura = AuraModule.INSTANCE;
         if (aura != null && aura.isEnabled() && aura.getTarget() != null) return aura.getTarget();
@@ -178,7 +185,7 @@ public final class TargetHud extends HudElement implements IMinecraft {
 
         // Player Head with hit flash
         if (target instanceof AbstractClientPlayer clientPlayer) {
-            Render2D.drawHead(clientPlayer, headX, headY, headSize, headSize, 4.0F, alpha);
+            Render2D.drawHead(clientPlayer, headX, headY, headSize, 4.0F, alpha);
         } else {
             Render2D.drawRoundedRect(headX, headY, headSize, headSize, 4.0F, ColorUtil.rgba(30, 30, 30, (int) (200 * alpha)));
             Fonts.drawString(Fonts.SF_MEDIUM, "?", headX + headSize / 2.0F - 3.0F, headY + headSize / 2.0F - 5.0F, 12.0F, ColorUtil.applyAlpha(-1, alpha));

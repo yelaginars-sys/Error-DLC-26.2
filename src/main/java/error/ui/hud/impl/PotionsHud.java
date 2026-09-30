@@ -30,6 +30,13 @@ public final class PotionsHud extends HudElement implements IMinecraft {
         super("potions", "Potions", 10.0F, 180.0F, 105.0F, HEADER_HEIGHT + PADDING_BOTTOM);
     }
 
+    public com.google.gson.JsonObject writeConfig() {
+        return new com.google.gson.JsonObject();
+    }
+
+    public void readConfig(com.google.gson.JsonObject json) {
+    }
+
     private record ActivePotion(String name, String duration, boolean harmful) {}
 
     private List<ActivePotion> getActivePotions() {

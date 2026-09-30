@@ -148,9 +148,14 @@ public class Render2D {
         drawHead(skin, x, y, size, radius, 0xFFFFFFFF);
     }
 
+    public static void drawHead(Identifier skin, float x, float y, float size, float radius, float alpha) {
+        int tint = error.util.client.clients.ColorUtil.applyAlpha(0xFFFFFFFF, alpha);
+        drawHead(skin, x, y, size, radius, tint);
+    }
+
     public static void drawHead(net.minecraft.client.player.AbstractClientPlayer player, float x, float y, float size, float radius, float alpha) {
         if (player == null) return;
-        Identifier skin = player.getSkin().texture();
+        Identifier skin = player.getSkin().body().texturePath();
         int tint = error.util.client.clients.ColorUtil.applyAlpha(0xFFFFFFFF, alpha);
         drawHead(skin, x, y, size, radius, tint);
     }
