@@ -79,37 +79,36 @@ public final class PanelLapSuperimposition {
             float contentX = x + sideW + 12.0F;
             float contentW = 380.0F;
 
-            // 1) Glowing Neon Pink Connector Laser Cord wrapping from avatar around bottom-left corner of sidebar:
-            float avatarCenterX = x + 19.0F;
-            float avatarCenterY = y + h - 18.0F;
             int laserCol = ColorUtil.rgba(239, 165, 222, (int) (245 * mainGuiAlpha));
             int laserGlow = ColorUtil.rgba(225, 130, 205, (int) (110 * mainGuiAlpha));
 
-            // Vertical drop from avatar down around corner
-            Render2D.drawShadow(avatarCenterX - 10.0F, avatarCenterY - 4.0F, 2.0F, 14.0F, 1.0F, 5.0F, laserGlow);
-            Render2D.drawRoundedRect(avatarCenterX - 10.0F, avatarCenterY - 4.0F, 2.0F, 14.0F, 1.0F, laserCol);
-            // Horizontal tail under sidebar
-            Render2D.drawShadow(avatarCenterX - 10.0F, avatarCenterY + 10.0F, 65.0F, 2.0F, 1.0F, 5.0F, laserGlow);
-            Render2D.drawRoundedRect(avatarCenterX - 10.0F, avatarCenterY + 10.0F, 65.0F, 2.0F, 1.0F, laserCol);
-            // Avatar connector bead
-            Render2D.drawRoundedRect(avatarCenterX - 11.5F, avatarCenterY - 5.0F, 5.0F, 5.0F, 2.5F, ColorUtil.rgba(255, 255, 255, (int) (255 * mainGuiAlpha)));
+            // Vertical glowing accent rail on right edge of sidebar:
+            float railSideX = x + sideW;
+            float railSideY = y + h * 0.40F;
+            float railSideH = h * 0.45F;
+            Render2D.drawShadow(railSideX - 1.0F, railSideY, 2.0F, railSideH, 1.0F, 6.0F, laserGlow);
+            Render2D.drawRoundedRect(railSideX - 1.0F, railSideY, 2.0F, railSideH, 1.0F, laserCol);
+            // Bottom glowing terminal orb on sidebar rail
+            Render2D.drawShadow(railSideX - 2.5F, railSideY + railSideH, 5.0F, 5.0F, 2.5F, 8.0F, laserGlow);
+            Render2D.drawRoundedRect(railSideX - 2.5F, railSideY + railSideH, 5.0F, 5.0F, 2.5F, ColorUtil.rgba(255, 255, 255, (int) (255 * mainGuiAlpha)));
 
-            // 2) Glowing Laser Line under the Right Panel starting at 38% width:
-            float rightLaserStartX = contentX + contentW * 0.38F;
-            float rightLaserW = (contentX + contentW - 12.0F) - rightLaserStartX;
-            Render2D.drawShadow(rightLaserStartX, y + h + 2.0F, rightLaserW, 2.0F, 1.0F, 6.0F, laserGlow);
-            Render2D.drawRoundedRect(rightLaserStartX, y + h + 2.0F, rightLaserW, 2.0F, 1.0F, laserCol);
-            // Terminal glowing bead on left of line
-            Render2D.drawShadow(rightLaserStartX - 2.5F, y + h + 0.5F, 5.0F, 5.0F, 2.5F, 8.0F, laserGlow);
-            Render2D.drawRoundedRect(rightLaserStartX - 2.5F, y + h + 0.5F, 5.0F, 5.0F, 2.5F, ColorUtil.rgba(255, 255, 255, (int) (255 * mainGuiAlpha)));
+            // Vertical glowing accent rail on right edge of main panel:
+            float railMainX = contentX + contentW;
+            float railMainY = y + h * 0.30F;
+            float railMainH = h * 0.55F;
+            Render2D.drawShadow(railMainX - 1.0F, railMainY, 2.0F, railMainH, 1.0F, 6.0F, laserGlow);
+            Render2D.drawRoundedRect(railMainX - 1.0F, railMainY, 2.0F, railMainH, 1.0F, laserCol);
+            // Bottom glowing terminal orb on main panel rail
+            Render2D.drawShadow(railMainX - 2.5F, railMainY + railMainH, 5.0F, 5.0F, 2.5F, 8.0F, laserGlow);
+            Render2D.drawRoundedRect(railMainX - 2.5F, railMainY + railMainH, 5.0F, 5.0F, 2.5F, ColorUtil.rgba(255, 255, 255, (int) (255 * mainGuiAlpha)));
 
             renderDescriptionAboveGui(state, centerX, y - 18.0F, mainGuiAlpha);
 
             // 1. NARROW LEFT SIDEBAR PANEL (sideW = 145.0F, Authentic Frosted Liquid Glass)
-            int liquidGlassFill = ColorUtil.rgba(26, 20, 36, (int) (95 * mainGuiAlpha));
+            int liquidGlassFill = ColorUtil.rgba(45, 38, 54, (int) (115 * mainGuiAlpha));
             int shadowColor = ColorUtil.rgba(0, 0, 0, (int) (160 * mainGuiAlpha));
-            int glassGloss = ColorUtil.rgba(255, 255, 255, (int) (22 * mainGuiAlpha));
-            int glassBorder = ColorUtil.rgba(255, 255, 255, (int) (55 * mainGuiAlpha));
+            int glassGloss = ColorUtil.rgba(255, 255, 255, (int) (28 * mainGuiAlpha));
+            int glassBorder = ColorUtil.rgba(255, 255, 255, (int) (65 * mainGuiAlpha));
             int glassHalo = ColorUtil.rgba(215, 140, 240, (int) (30 * mainGuiAlpha));
 
             // Real Liquid Glass Blur + Translucent Fill + Specular Gloss + Glass Border + Glass Halo
