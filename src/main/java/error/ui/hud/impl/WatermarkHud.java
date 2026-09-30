@@ -13,7 +13,7 @@ import net.minecraft.client.player.AbstractClientPlayer;
 public final class WatermarkHud extends HudElement implements IMinecraft {
 
     public WatermarkHud() {
-        super("watermark", "Watermark", 6.0F, 6.0F, 240.0F, 20.0F, true);
+        super("watermark", "Watermark", 6.0F, 6.0F, 240.0F, 20.0F, false);
     }
 
     public com.google.gson.JsonObject writeConfig() {
@@ -42,7 +42,7 @@ public final class WatermarkHud extends HudElement implements IMinecraft {
 
         String username = mc.player != null ? mc.player.getScoreboardName() : "User";
         String role = (username.equalsIgnoreCase("zxcwashik") || username.equalsIgnoreCase("yelag")) ? "Разработчик" : "Пользователь";
-        String clientName = "Waper";
+        String clientName = "Error";
         String fpsInfo = mc.getFps() + "fps";
         String serverInfo = getServerAddress();
 

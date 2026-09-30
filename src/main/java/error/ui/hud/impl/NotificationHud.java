@@ -48,7 +48,7 @@ public final class NotificationHud extends HudElement implements IMinecraft {
     private float settingsAnim = 0.0F;
 
     public NotificationHud() {
-        super("notifications", "Notifications", 6.0F, 300.0F, 180.0F, 24.0F, true);
+        super("notifications", "Notifications", 6.0F, 300.0F, 180.0F, 24.0F, false);
     }
 
     public static void notify(String title, String message, Type type) {
@@ -56,6 +56,7 @@ public final class NotificationHud extends HudElement implements IMinecraft {
         if (type == Type.ON || type == Type.OFF) {
             if (!moduleState) return;
         }
+        DynamicIslandHud.postNotification(title + (message.isEmpty() ? "" : ": " + message), type == Type.ON);
         QUEUE.add(new Note(title, message, type, 3000L));
     }
 
@@ -64,6 +65,7 @@ public final class NotificationHud extends HudElement implements IMinecraft {
         Type type = Type.INFO;
         if (iconColor == error.util.client.persiki.Notify.COLOR_SUCCESS) type = Type.ON;
         else if (iconColor == error.util.client.persiki.Notify.COLOR_ERROR) type = Type.OFF;
+        DynamicIslandHud.postNotification(title + (description.isEmpty() ? "" : ": " + description), type == Type.ON);
         QUEUE.add(new Note(title, description, type, durationMs));
     }
 

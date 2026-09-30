@@ -41,6 +41,7 @@ public final class HudManager implements IMinecraft {
     private final Animation menuFadeAnim = new Animation(0.0F, 0.22F);
 
     private HudManager() {
+        register(new DynamicIslandHud());
         register(new WatermarkHud());
         register(new TargetHud());
         register(new KeybindsHud());
@@ -349,6 +350,10 @@ public final class HudManager implements IMinecraft {
             for (int i = elements.size() - 1; i >= 0; i--) {
                 HudElement el = elements.get(i);
                 if (!el.isEnabled()) continue;
+                if (el instanceof DynamicIslandHud island && island.mouseClicked(mouseX, mouseY, event.getButton())) {
+                    event.cancel();
+                    return;
+                }
                 if (el.isHovered(mouseX, mouseY)) {
                     draggedElement = el;
                     el.startDragging(mouseX, mouseY);
