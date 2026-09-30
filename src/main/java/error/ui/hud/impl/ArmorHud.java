@@ -4,6 +4,7 @@ import error.IMinecraft;
 import error.event.list.Render2DEvent;
 import error.ui.hud.HudElement;
 import error.util.client.clients.ColorUtil;
+import error.util.client.clients.Theme;
 import error.util.render.Render2D;
 import error.util.render.font.Fonts;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -15,7 +16,6 @@ import java.util.List;
 
 public final class ArmorHud extends HudElement implements IMinecraft {
 
-    public static final int ACCENT_PURPLE = ColorUtil.rgba(166, 130, 255, 255);
     private static final float HEADER_HEIGHT = 12.0F;
 
     public ArmorHud() {
@@ -81,22 +81,23 @@ public final class ArmorHud extends HudElement implements IMinecraft {
         this.width = width;
         this.height = height;
 
-        int primaryColor = ACCENT_PURPLE;
+        int primaryColor = Theme.getAccentColor();
         int glowColor = ColorUtil.applyAlpha(primaryColor, (int) (alpha * 15));
         int borderColor = ColorUtil.applyAlpha(primaryColor, (int) (alpha * 40));
-        int bgColor = ColorUtil.rgba(14, 14, 18, (int) (160 * alpha));
+        int bgColor = ColorUtil.rgba(0, 0, 0, (int) (160 * alpha));
         int headerBg = ColorUtil.rgba(0, 0, 0, (int) (160 * alpha));
 
-        // Background (Waper Style)
+        // Background with blur and theme accent glow
         Render2D.drawRoundedRect(drawX - 2.0F, drawY - 2.0F, width + 4.0F, height + 4.0F, radius + 2.0F, glowColor);
         Render2D.drawRoundedRect(drawX - 0.5F, drawY - 0.5F, width + 1.0F, height + 1.0F, radius + 0.5F, borderColor);
+        Render2D.drawBlur(drawX, drawY, width, height, radius, 12.0F, bgColor, alpha);
         Render2D.drawRoundedRect(drawX, drawY, width, height, radius, bgColor);
 
         // Header
         Render2D.drawRoundedRect(drawX, drawY, width, HEADER_HEIGHT, radius, headerBg);
         Fonts.drawString(Fonts.SF_MEDIUM, "Armor", drawX + padX, drawY + 2.5F, 6.0F, ColorUtil.applyAlpha(primaryColor, alpha));
 
-        // Items + Green durability line
+        // Items + durability line
         float cx = drawX + padX;
         float cy = drawY + HEADER_HEIGHT + padY;
 
@@ -117,9 +118,12 @@ public final class ArmorHud extends HudElement implements IMinecraft {
 
                 float lineY = cy + itemSize + 1.5F;
                 float lineW = itemSize * percent;
-                int durColor = ColorUtil.rgba(65, 225, 120, (int) (230 * alpha));
 
-                Render2D.drawRect(cx, lineY, lineW, 1.5F, durColor);
+                int durColor = percent > 0.5F
+                        ? ColorUtil.lerp(ColorUtil.rgba(255, 215, 65, 255), ColorUtil.rgba(65, 225, 120, 255), (percent - 0.5F) * 2.0F)
+                        : ColorUtil.lerp(ColorUtil.rgba(240, 65, 65, 255), ColorUtil.rgba(255, 215, 65, 255), percent * 2.0F);
+
+                Render2D.drawRect(cx, lineY, lineW, 1.5F, ColorUtil.applyAlpha(durColor, alpha));
             }
 
             cx += itemSize + gap;
