@@ -22,7 +22,7 @@ public final class Localization {
         }
     }
 
-    private static Language currentLanguage = Language.ENG;
+    private static Language currentLanguage = Language.RU;
     private static final Map<String, String> RU_DICT = new HashMap<>();
 
     static {
@@ -60,7 +60,63 @@ public final class Localization {
         RU_DICT.put("None", "Нет");
         RU_DICT.put("Main", "Основное");
         RU_DICT.put("Checks", "Проверки");
-        RU_DICT.put("Settings", "Настройки");
+
+        // Modules Russian Translations
+        RU_DICT.put("ClickGUI", "ClickGUI");
+        RU_DICT.put("Sprint", "Спринт");
+        RU_DICT.put("ElytraSwap", "Элитра Свап");
+        RU_DICT.put("FullBright", "Яркость");
+        RU_DICT.put("ActionTracker", "Трекер Действий");
+        RU_DICT.put("AutoAccept", "Авто Приём");
+        RU_DICT.put("TriggerBot", "Триггер Бот");
+        RU_DICT.put("Criticals", "Критический Удар");
+        RU_DICT.put("CrystalAura", "Кристал Аура");
+        RU_DICT.put("AHHelper", "Аукцион Помощник");
+        RU_DICT.put("AntiPush", "Анти Толкание");
+        RU_DICT.put("ProjectileHelper", "Помощник Снарядов");
+        RU_DICT.put("AutoTool", "Авто Инструмент");
+        RU_DICT.put("ClickFriend", "Кликер Друзей");
+        RU_DICT.put("AutoExplosion", "Авто Взрыв");
+        RU_DICT.put("PopEffect", "Поп Эффект");
+        RU_DICT.put("FireworkESP", "Фейерверк ESP");
+        RU_DICT.put("AimAssistant", "Аим Ассистент");
+        RU_DICT.put("ItemScroller", "Быстрый Скролл");
+        RU_DICT.put("WaterSpeed", "Скорость в Воде");
+        RU_DICT.put("JumpCircles", "Круги При Прыжке");
+        RU_DICT.put("FreeCam", "Свободная Камера");
+        RU_DICT.put("SwingAnimation", "Анимация Атаки");
+        RU_DICT.put("Predictions", "Предикт Игроков");
+        RU_DICT.put("WebTrap", "Паутина Трап");
+        RU_DICT.put("ViewModel", "Позиция Оружия");
+        RU_DICT.put("BlockHighlight", "Подсветка Блока");
+        RU_DICT.put("AutoSwap", "Авто Свап");
+        RU_DICT.put("HitEffect", "Эффект Удара");
+        RU_DICT.put("AutoTotem", "Авто Тотем");
+        RU_DICT.put("NoFall", "Анти Падение");
+        RU_DICT.put("HandShader", "Шейдер Рук");
+        RU_DICT.put("BetterMinecraft", "Оптимизация Игры");
+        RU_DICT.put("GuiWalk", "Ходьба в Меню");
+        RU_DICT.put("Removals", "Очистка Визуалов");
+        RU_DICT.put("NoDelay", "Без Задержек");
+        RU_DICT.put("Arrows", "Стрелки на Игроков");
+        RU_DICT.put("FreeLook", "Свободный Обзор");
+        RU_DICT.put("ServerHelper", "Сервер Помощник");
+        RU_DICT.put("ClickPearl", "Быстрый Перл");
+        RU_DICT.put("Timer", "Таймер");
+        RU_DICT.put("ElytraBooster", "Элитра Бустер");
+        RU_DICT.put("AirStuck", "Зависание в Воздухе");
+        RU_DICT.put("FakePlayer", "Фейк Игрок");
+        RU_DICT.put("ElytraMotion", "Управление Элитрой");
+        RU_DICT.put("Ambience", "Окружение");
+        RU_DICT.put("HUD", "HUD");
+        RU_DICT.put("Interface", "Интерфейс");
+        RU_DICT.put("NameTags", "Инфо о Игроках");
+        RU_DICT.put("Aura", "Аура");
+        RU_DICT.put("AuraModule", "Аура");
+        RU_DICT.put("WorldParticles", "Частицы Мира");
+        RU_DICT.put("Particles", "Частицы Ударов");
+        RU_DICT.put("ClientSounds", "Звуки Клиента");
+        RU_DICT.put("UnHook", "Анхук");
 
         RU_DICT.put("Shows arrows pointing towards nearby players", "Показывает стрелочки в направлении ближайших игроков");
         RU_DICT.put("Distance from Crosshair", "Дистанция от прицела");

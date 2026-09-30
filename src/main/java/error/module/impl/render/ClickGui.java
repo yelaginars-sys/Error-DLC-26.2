@@ -16,7 +16,7 @@ public class ClickGui extends Module {
     public final BindSetting holdKey = bind("Bind", GLFW.GLFW_KEY_LEFT_ALT);
 
     public ClickGui() {
-        super("ClickGUI", "Хуйня а не меню ", Category.MISC, GLFW.GLFW_KEY_RIGHT_SHIFT);//а хуйня потому что кодер дебил
+        super("ClickGUI", "Интерфейс настройки функций и визуального стиля клиента", Category.MISC, GLFW.GLFW_KEY_RIGHT_SHIFT);
         INSTANCE = this;
     }
 

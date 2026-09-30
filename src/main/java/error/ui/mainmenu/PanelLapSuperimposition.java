@@ -116,9 +116,14 @@ public final class PanelLapSuperimposition {
             Render2D.drawRoundedRect(x + 8.0F, dropdownY, brandW, 19.0F, 6.0F, pillGlass);
             Render2D.drawRoundedOutline(x + 8.0F, dropdownY, brandW, 19.0F, 6.0F, 1.0F, pillBorder);
 
-            // Glowing Client Logo & Client Name
-            Fonts.drawIcon(IconUse.LOGO, x + 14.0F, dropdownY + 4.5F, 10.0F, laserCol);
-            Fonts.drawString(Fonts.SF_MEDIUM, "Error DLC 26.2", x + 28.0F, dropdownY + 5.0F, 7.5F, ColorUtil.rgba(255, 255, 255, (int) (245 * mainGuiAlpha)));
+            // Glowing Client Logo & Client Name with precise alignment
+            float logoSz = 9.0F;
+            float logoW = Fonts.getIconWidth(IconUse.LOGO, logoSz);
+            float logoY = dropdownY + (19.0F - Fonts.ICONS.textHeight(logoSz)) / 2.0F - 0.5F;
+            float textY = dropdownY + (19.0F - Fonts.SF_MEDIUM.textHeight(7.5F)) / 2.0F - 0.5F;
+
+            Fonts.drawIcon(IconUse.LOGO, x + 14.0F, logoY, logoSz, laserCol);
+            Fonts.drawString(Fonts.SF_MEDIUM, "Error DLC 26.2", x + 14.0F + logoW + 5.0F, textY, 7.5F, ColorUtil.rgba(255, 255, 255, (int) (245 * mainGuiAlpha)));
 
             // Categories List
             float catY = y + 35.0F;
