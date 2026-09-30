@@ -98,7 +98,7 @@ public final class PanelLapState {
         settingsPopupAnim.setTarget(settingsPopupOpen ? 1.0F : 0.0F);
         settingsPopupAnim.update();
 
-        boolean showDesc = hoveredModule != null && hoveredModule.hasDescription() && !holdActive;
+        boolean showDesc = hoveredModule != null && hoveredModule.hasDescription();
         if (showDesc) {
             lastDescription = hoveredModule.getDescription();
         }

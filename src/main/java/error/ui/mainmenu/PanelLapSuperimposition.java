@@ -30,10 +30,6 @@ public final class PanelLapSuperimposition {
     private final SettingsPopup settingsPopup = new SettingsPopup();
 
     public void render(Minecraft mc, GuiGraphicsExtractor extractor, PanelLapState state, int screenWidth, int screenHeight, int mouseX, int mouseY) {
-        ClickGui clickGui = Client.INSTANCE.moduleManager.getClickGui();
-        boolean isHoldDown = clickGui != null && clickGui.isHoldKeyPressed(mc.getWindow().handle());
-        state.setHoldActive(isHoldDown);
-
         state.update();
         float openProgress = state.getOpenAnimation().getValue();
         if (openProgress <= 0.001F) return;
@@ -44,7 +40,7 @@ public final class PanelLapSuperimposition {
             state.setPositionInitialized(true);
         }
 
-        if (dragging && !state.isHoldActive()) {
+        if (dragging) {
             state.setPanelX(mouseX - dragOffsetX);
             state.setPanelY(mouseY - dragOffsetY);
         }
@@ -64,8 +60,7 @@ public final class PanelLapSuperimposition {
         extractor.pose().scale(scale, scale);
         extractor.pose().translate(-centerX, -centerY);
 
-        float holdProgress = state.getHoldAnim().getValue();
-        float mainGuiAlpha = easeProgress * (1.0F - holdProgress);
+        float mainGuiAlpha = easeProgress;
 
         if (mainGuiAlpha > 0.01F) {
             // Ambient backdrop matching Theme backgroundMode setting ("Blur" vs "None")
@@ -152,17 +147,17 @@ public final class PanelLapSuperimposition {
 
             String searchDisplay;
             if (state.getSearchQuery().isEmpty()) {
-                searchDisplay = state.isSearchFocused() ? "🔍 |" : "🔍 Search";
+                searchDisplay = state.isSearchFocused() ? "⌕  |" : "⌕  Search...";
             } else {
                 boolean cursorBlink = state.isSearchFocused() && (System.currentTimeMillis() % 1000 > 500);
-                searchDisplay = "🔍 " + state.getSearchQuery() + (cursorBlink ? "|" : "");
+                searchDisplay = "⌕  " + state.getSearchQuery() + (cursorBlink ? "|" : "");
             }
             int searchTextColor = state.isSearchFocused() || !state.getSearchQuery().isEmpty()
                     ? ColorUtil.rgba(255, 255, 255, (int) (240 * mainGuiAlpha))
                     : ColorUtil.rgba(180, 180, 200, (int) (160 * mainGuiAlpha));
             Fonts.drawString(Fonts.SF_MEDIUM, searchDisplay, x + 14.0F, searchY + 4.5F, 7.5F, searchTextColor);
 
-            // Pink Glowing Dot on Right Side of Search Bar
+            // Accent Glowing Dot on Right Side of Search Bar
             Render2D.drawRoundedRect(x + sideW - 18.0F, searchY + 5.0F, 6.0F, 8.0F, 4.0F, laserCol);
 
             // User Profile Footer with Circular Avatar & Glowing Ring ("Zodiac BETA" - No surrounding card!)
@@ -226,7 +221,7 @@ public final class PanelLapSuperimposition {
         float contentH = h - 40.0F;
 
         float catProgress = state.getCategoryAnim().getValue();
-        float contentAlpha = openProgress * catProgress * (1.0F - state.getHoldAnim().getValue());
+        float contentAlpha = easeProgress * catProgress;
         float slideY = (1.0F - catProgress) * (state.getCategoryDirection() * 12.0F);
 
         state.setHoveredModule(null);
@@ -270,7 +265,7 @@ public final class PanelLapSuperimposition {
     }
 
     private void renderSearchAndHintsUnderGui(PanelLapState state, float centerX, float startY, float alpha) {
-        String hint = Localization.get("Hold Left Alt to inspect");
+        String hint = "MB3 / ⌨ — Бинд  •  ПКМ — Настройки модуля";
         Fonts.drawCenteredString(Fonts.SF_MEDIUM, hint, centerX, startY, 7.5F, ColorUtil.multiplyAlpha(ColorUtil.rgba(180, 180, 200, 200), alpha * 0.85F));
     }
 
