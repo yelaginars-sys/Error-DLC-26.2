@@ -257,9 +257,11 @@ public class CustomTitleScreen extends Screen {
         float dockX = (screenWidth - dockW) / 2.0F;
         float dockY = screenHeight - dockH - 12.0F;
 
-        // Capsule Background - Liquid Translucent Glass (No Outline)
-        Render2D.drawShadow(dockX, dockY, dockW, dockH, 15.0F, 8.0F, ColorUtil.rgba(0, 0, 0, 140));
-        Render2D.drawRoundedRect(dockX, dockY, dockW, dockH, 15.0F, ColorUtil.rgba(14, 14, 20, 195));
+        // Real Liquid Glass Capsule Backdrop (Shadow + Glass Base + Top Gloss Highlight + Subtle Glass Border)
+        Render2D.drawShadow(dockX, dockY, dockW, dockH, 15.0F, 10.0F, ColorUtil.rgba(0, 0, 0, 160));
+        Render2D.drawRoundedRect(dockX, dockY, dockW, dockH, 15.0F, ColorUtil.rgba(12, 12, 18, 175));
+        Render2D.drawRoundedRect(dockX, dockY, dockW, dockH * 0.45F, 15.0F, ColorUtil.rgba(255, 255, 255, 20));
+        Render2D.drawRoundedOutline(dockX, dockY, dockW, dockH, 15.0F, 1.0F, ColorUtil.rgba(255, 255, 255, 45));
 
         IconUse[] icons = {
                 IconUse.PERSONS,
@@ -278,8 +280,9 @@ public class CustomTitleScreen extends Screen {
             dockHoverAnims[i] = Mth.clamp(dockHoverAnims[i] + (hovered ? 0.14F : -0.14F), 0.0F, 1.0F);
             float hAnim = dockHoverAnims[i];
 
-            int btnBg = ColorUtil.lerp(ColorUtil.rgba(25, 25, 35, 150), Theme.getAccentWithAlpha(190), hAnim);
+            int btnBg = ColorUtil.lerp(ColorUtil.rgba(25, 25, 35, 140), Theme.getAccentWithAlpha(190), hAnim);
             Render2D.drawRoundedRect(bx, by, btnSize, btnSize, 11.0F, btnBg);
+            Render2D.drawRoundedRect(bx, by, btnSize, btnSize * 0.45F, 11.0F, ColorUtil.rgba(255, 255, 255, (int) (15 + hAnim * 25)));
 
             int iconCol = ColorUtil.lerp(ColorUtil.rgba(220, 220, 230, 220), ColorUtil.WHITE, hAnim);
             Fonts.drawCenteredIcon(icons[i], bx + btnSize / 2.0F, by + (btnSize - 10.0F) / 2.0F, 10.0F, iconCol);
@@ -292,11 +295,14 @@ public class CustomTitleScreen extends Screen {
         float x = 12.0F - (1.0F - alpha) * 160.0F;
         float y = screenHeight - h - 12.0F;
 
-        int bgColor = ColorUtil.rgba(14, 14, 20, (int) (195 * alpha));
-        int shadowColor = ColorUtil.rgba(0, 0, 0, (int) (140 * alpha));
+        int bgColor = ColorUtil.rgba(12, 12, 18, (int) (175 * alpha));
+        int shadowColor = ColorUtil.rgba(0, 0, 0, (int) (160 * alpha));
 
-        Render2D.drawShadow(x, y, w, h, 6.0F, 6.0F, shadowColor);
+        // Real Liquid Glass Widget Backdrop
+        Render2D.drawShadow(x, y, w, h, 6.0F, 8.0F, shadowColor);
         Render2D.drawRoundedRect(x, y, w, h, 6.0F, bgColor);
+        Render2D.drawRoundedRect(x, y, w, h * 0.45F, 6.0F, ColorUtil.rgba(255, 255, 255, (int) (20 * alpha)));
+        Render2D.drawRoundedOutline(x, y, w, h, 6.0F, 1.0F, ColorUtil.rgba(255, 255, 255, (int) (45 * alpha)));
 
         // Preview thumbnail icon
         float thumbW = 20.0F;
@@ -318,11 +324,14 @@ public class CustomTitleScreen extends Screen {
         float x = screenWidth - w - 12.0F + (1.0F - alpha) * 160.0F;
         float y = screenHeight - h - 12.0F;
 
-        int bgColor = ColorUtil.rgba(14, 14, 20, (int) (195 * alpha));
-        int shadowColor = ColorUtil.rgba(0, 0, 0, (int) (140 * alpha));
+        int bgColor = ColorUtil.rgba(12, 12, 18, (int) (175 * alpha));
+        int shadowColor = ColorUtil.rgba(0, 0, 0, (int) (160 * alpha));
 
-        Render2D.drawShadow(x, y, w, h, 6.0F, 6.0F, shadowColor);
+        // Real Liquid Glass Widget Backdrop
+        Render2D.drawShadow(x, y, w, h, 6.0F, 8.0F, shadowColor);
         Render2D.drawRoundedRect(x, y, w, h, 6.0F, bgColor);
+        Render2D.drawRoundedRect(x, y, w, h * 0.45F, 6.0F, ColorUtil.rgba(255, 255, 255, (int) (20 * alpha)));
+        Render2D.drawRoundedOutline(x, y, w, h, 6.0F, 1.0F, ColorUtil.rgba(255, 255, 255, (int) (45 * alpha)));
 
         // Player Head
         float headSize = 18.0F;
