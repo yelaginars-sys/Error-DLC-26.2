@@ -75,6 +75,12 @@ public final class PanelLapSuperimposition {
             int spotlightCol = ColorUtil.rgba(195, 125, 245, (int) (40 * mainGuiAlpha));
             Render2D.drawRoundedRect(screenWidth * 0.55F, -60.0F, screenWidth * 0.5F, 220.0F, 100.0F, spotlightCol);
 
+            // Ambient Floating Rings in background (Matching video 0:08)
+            int ringCol = ColorUtil.rgba(215, 170, 245, (int) (35 * mainGuiAlpha));
+            Render2D.drawRoundedOutline(screenWidth * 0.22F, screenHeight * 0.75F, 18.0F, 18.0F, 9.0F, 1.0F, ringCol);
+            Render2D.drawRoundedOutline(screenWidth * 0.76F, screenHeight * 0.22F, 14.0F, 14.0F, 7.0F, 1.0F, ringCol);
+            Render2D.drawRoundedOutline(screenWidth * 0.82F, screenHeight * 0.72F, 22.0F, 22.0F, 11.0F, 1.0F, ringCol);
+
             float sideW = 145.0F;
             float contentX = x + sideW + 12.0F;
             float contentW = 380.0F;
@@ -209,7 +215,9 @@ public final class PanelLapSuperimposition {
 
             Render2D.drawRoundedRect(contentX + contentW - 70.0F, breadY, 58.0F, 17.0F, 5.0F, pillGlass);
             Render2D.drawRoundedOutline(contentX + contentW - 70.0F, breadY, 58.0F, 17.0F, 5.0F, 1.0F, pillBorder);
-            Fonts.drawString(Fonts.SF_MEDIUM, "Custom v", contentX + contentW - 62.0F, breadY + 3.5F, 7.5F, ColorUtil.rgba(240, 240, 255, (int) (220 * mainGuiAlpha)));
+            Render2D.drawRoundedRect(contentX + contentW - 65.0F, breadY + 5.5F, 6.0F, 6.0F, 3.0F, laserCol);
+            Fonts.drawString(Fonts.SF_MEDIUM, "Custom", contentX + contentW - 56.0F, breadY + 3.5F, 7.5F, ColorUtil.rgba(240, 240, 255, (int) (220 * mainGuiAlpha)));
+            Fonts.drawString(Fonts.SF_MEDIUM, "v", contentX + contentW - 18.0F, breadY + 4.0F, 6.5F, ColorUtil.rgba(180, 180, 200, (int) (180 * mainGuiAlpha)));
 
             // Sub-mode Pills Bar
             float subY = y + 30.0F;
