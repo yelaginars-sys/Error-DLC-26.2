@@ -18,8 +18,8 @@ public final class Interface extends Module {
 
     public final MultiModeSetting elements = multiMode(
             "Elements",
-            List.of("Watermark", "Target HUD", "Keybinds", "Potions", "Notifications"),
-            "Watermark", "Target HUD", "Keybinds", "Potions", "Notifications","Armor Hud"
+            List.of("Watermark", "Target HUD", "Keybinds", "Potions", "Notifications", "Armor Hud", "Staff List", "Totem Counter"),
+            "Watermark", "Target HUD", "Keybinds", "Potions", "Notifications", "Armor Hud", "Staff List", "Totem Counter"
     );
 
     public final CheckBox snapping = checkbox("Snapping", true);
