@@ -79,22 +79,29 @@ public final class PanelLapSuperimposition {
             float contentX = x + sideW + 12.0F;
             float contentW = 380.0F;
 
-            // Glowing Neon Pink Connector Laser Cord wrapping from avatar circle around panel bottom and running under BOTH panels!
+            // 1) Glowing Neon Pink Connector Laser Cord wrapping from avatar around bottom-left corner of sidebar:
             float avatarCenterX = x + 19.0F;
             float avatarCenterY = y + h - 18.0F;
-            int laserCol = ColorUtil.rgba(240, 165, 225, (int) (245 * mainGuiAlpha));
+            int laserCol = ColorUtil.rgba(239, 165, 222, (int) (245 * mainGuiAlpha));
             int laserGlow = ColorUtil.rgba(225, 130, 205, (int) (110 * mainGuiAlpha));
 
-            float totalCordW = (contentX + contentW - 10.0F) - avatarCenterX;
-            // Vertical drop from avatar
-            Render2D.drawRoundedRect(avatarCenterX - 1.0F, avatarCenterY + 4.0F, 2.0F, 7.0F, 1.0F, laserCol);
-            // Long horizontal laser line under sidebar, gap, and right panel
-            Render2D.drawShadow(avatarCenterX - 1.0F, avatarCenterY + 11.0F, totalCordW, 2.5F, 1.0F, 6.0F, laserGlow);
-            Render2D.drawRoundedRect(avatarCenterX - 1.0F, avatarCenterY + 11.0F, totalCordW, 2.0F, 1.0F, laserCol);
-            // Right upward terminal hook
-            Render2D.drawRoundedRect(contentX + contentW - 11.0F, avatarCenterY + 5.0F, 2.0F, 7.0F, 1.0F, laserCol);
-            // Terminal avatar connector bead
-            Render2D.drawRoundedRect(avatarCenterX - 2.5F, avatarCenterY + 3.0F, 5.0F, 5.0F, 2.5F, ColorUtil.rgba(255, 255, 255, (int) (255 * mainGuiAlpha)));
+            // Vertical drop from avatar down around corner
+            Render2D.drawShadow(avatarCenterX - 10.0F, avatarCenterY - 4.0F, 2.0F, 14.0F, 1.0F, 5.0F, laserGlow);
+            Render2D.drawRoundedRect(avatarCenterX - 10.0F, avatarCenterY - 4.0F, 2.0F, 14.0F, 1.0F, laserCol);
+            // Horizontal tail under sidebar
+            Render2D.drawShadow(avatarCenterX - 10.0F, avatarCenterY + 10.0F, 65.0F, 2.0F, 1.0F, 5.0F, laserGlow);
+            Render2D.drawRoundedRect(avatarCenterX - 10.0F, avatarCenterY + 10.0F, 65.0F, 2.0F, 1.0F, laserCol);
+            // Avatar connector bead
+            Render2D.drawRoundedRect(avatarCenterX - 11.5F, avatarCenterY - 5.0F, 5.0F, 5.0F, 2.5F, ColorUtil.rgba(255, 255, 255, (int) (255 * mainGuiAlpha)));
+
+            // 2) Glowing Laser Line under the Right Panel starting at 38% width:
+            float rightLaserStartX = contentX + contentW * 0.38F;
+            float rightLaserW = (contentX + contentW - 12.0F) - rightLaserStartX;
+            Render2D.drawShadow(rightLaserStartX, y + h + 2.0F, rightLaserW, 2.0F, 1.0F, 6.0F, laserGlow);
+            Render2D.drawRoundedRect(rightLaserStartX, y + h + 2.0F, rightLaserW, 2.0F, 1.0F, laserCol);
+            // Terminal glowing bead on left of line
+            Render2D.drawShadow(rightLaserStartX - 2.5F, y + h + 0.5F, 5.0F, 5.0F, 2.5F, 8.0F, laserGlow);
+            Render2D.drawRoundedRect(rightLaserStartX - 2.5F, y + h + 0.5F, 5.0F, 5.0F, 2.5F, ColorUtil.rgba(255, 255, 255, (int) (255 * mainGuiAlpha)));
 
             renderDescriptionAboveGui(state, centerX, y - 18.0F, mainGuiAlpha);
 
