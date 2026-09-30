@@ -16,12 +16,7 @@ import java.util.List;
  */
 public final class Interface extends Module {
 
-    public final MultiModeSetting elements = multiMode(
-            "Elements",
-            List.of("Watermark", "Target HUD", "Keybinds", "Potions", "Notifications", "Armor Hud", "Staff List", "Totem Counter", "Inventory", "Media Player", "Cooldowns"),
-            "Watermark", "Target HUD", "Keybinds", "Potions", "Notifications", "Armor Hud", "Staff List", "Totem Counter", "Inventory", "Media Player", "Cooldowns"
-    );
-
+    public final CheckBox dynamicIsland = checkbox("Dynamic Island", true);
     public final CheckBox snapping = checkbox("Snapping", true);
     public final CheckBox collisions = checkbox("Collisions", true);
     public final CheckBox guidelines = checkbox("Guidelines", true);
@@ -54,20 +49,9 @@ public final class Interface extends Module {
         manager.setCollisionsEnabled(this.collisions.getValue());
         manager.setShowGuidelines(this.guidelines.getValue());
 
-        boolean moduleActive = this.isEnabled();
-
+        boolean active = this.isEnabled() && this.dynamicIsland.getValue();
         for (HudElement el : manager.getElements()) {
-            if (!moduleActive) {
-                el.setEnabled(false);
-                continue;
-            }
-
-            String name = el.getName();
-            boolean isElEnabled = this.elements.isEnabled(name)
-                    || (name.equalsIgnoreCase("Keybinds") && this.elements.isEnabled("HotKeys"))
-                    || (name.equalsIgnoreCase("HotKeys") && this.elements.isEnabled("Keybinds"));
-
-            el.setEnabled(isElEnabled);
+            el.setEnabled(active);
         }
     }
 }

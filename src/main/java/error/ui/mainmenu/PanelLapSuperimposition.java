@@ -94,16 +94,14 @@ public final class PanelLapSuperimposition {
             // 1. NARROW LEFT SIDEBAR PANEL (sideW = 145.0F, Authentic Frosted Liquid Glass)
             int liquidGlassFill = ColorUtil.rgba(45, 38, 54, (int) (115 * mainGuiAlpha));
             int shadowColor = ColorUtil.rgba(0, 0, 0, (int) (160 * mainGuiAlpha));
-            int glassGloss = ColorUtil.rgba(255, 255, 255, (int) (28 * mainGuiAlpha));
             int glassBorder = ColorUtil.rgba(255, 255, 255, (int) (65 * mainGuiAlpha));
             int glassHalo = ColorUtil.rgba(ColorUtil.red(themeAccent), ColorUtil.green(themeAccent), ColorUtil.blue(themeAccent), (int) (25 * mainGuiAlpha));
 
-            // Real Liquid Glass Blur + Translucent Fill + Specular Gloss + Glass Border + Glass Halo
+            // Real Liquid Glass Blur + Translucent Fill + Glass Border + Glass Halo
             Render2D.drawShadow(x, y, sideW, h, 14.0F, 12.0F, shadowColor);
             Render2D.drawShadow(x, y, sideW, h, 14.0F, 6.0F, glassHalo);
             Render2D.drawBlur(x, y, sideW, h, 14.0F, 22.0F, liquidGlassFill, mainGuiAlpha);
             Render2D.drawRoundedRect(x, y, sideW, h, 14.0F, liquidGlassFill);
-            Render2D.drawRoundedRect(x, y, sideW, 16.0F, 14.0F, glassGloss);
             Render2D.drawRoundedOutline(x, y, sideW, h, 14.0F, 1.0F, glassBorder);
 
             // Top Header: Error DLC 26.2 Branding & Client Logo
@@ -182,7 +180,6 @@ public final class PanelLapSuperimposition {
             Render2D.drawShadow(contentX, y, contentW, h, 14.0F, 6.0F, glassHalo);
             Render2D.drawBlur(contentX, y, contentW, h, 14.0F, 22.0F, liquidGlassFill, mainGuiAlpha);
             Render2D.drawRoundedRect(contentX, y, contentW, h, 14.0F, liquidGlassFill);
-            Render2D.drawRoundedRect(contentX, y, contentW, 16.0F, 14.0F, glassGloss);
             Render2D.drawRoundedOutline(contentX, y, contentW, h, 14.0F, 1.0F, glassBorder);
 
             // Top Breadcrumb & Theme Settings Dropdown Button

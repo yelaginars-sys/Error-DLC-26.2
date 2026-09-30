@@ -60,11 +60,12 @@ public class CheckBoxRenderer extends SettingRenderer<CheckBox> {
         Render2D.popScissor();
 
         int offColor = ColorUtil.rgba(255, 255, 255, 25);
-        int activeColor = ColorUtil.rgba(235, 145, 225, 250);
+        int accent = Theme.getAccentColor();
+        int activeColor = ColorUtil.rgba(ColorUtil.red(accent), ColorUtil.green(accent), ColorUtil.blue(accent), 250);
         int currentBg = ColorUtil.lerp(offColor, activeColor, toggleAnim.getValue());
 
         if (toggleAnim.getValue() > 0.05F) {
-            Render2D.drawShadow(switchX, switchY, switchW, switchH, switchH / 2.0F, 4.0F, ColorUtil.rgba(230, 135, 220, (int) (100 * toggleAnim.getValue() * effectiveAlpha)));
+            Render2D.drawShadow(switchX, switchY, switchW, switchH, switchH / 2.0F, 4.0F, ColorUtil.rgba(ColorUtil.red(accent), ColorUtil.green(accent), ColorUtil.blue(accent), (int) (100 * toggleAnim.getValue() * effectiveAlpha)));
         }
         Render2D.drawRoundedRect(switchX, switchY, switchW, switchH, switchH / 2.0F, ColorUtil.multiplyAlpha(currentBg, effectiveAlpha));
         Render2D.drawRoundedOutline(switchX, switchY, switchW, switchH, switchH / 2.0F, 1.0F, ColorUtil.rgba(255, 255, 255, (int) (35 * effectiveAlpha)));
