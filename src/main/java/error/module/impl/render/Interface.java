@@ -27,7 +27,8 @@ public final class Interface extends Module {
     public final CheckBox guidelines = checkbox("Guidelines", true);
 
     public Interface() {
-        super("Interface", "Интерфейс", Category.RENDER);
+        super("HUD", "Отображение ХУДа и элементов интерфейса", Category.RENDER);
+        setState(true);
     }
 
     @Override
