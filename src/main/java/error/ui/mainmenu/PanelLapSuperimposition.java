@@ -67,99 +67,104 @@ public final class PanelLapSuperimposition {
         float mainGuiAlpha = openProgress * (1.0F - holdProgress);
 
         if (mainGuiAlpha > 0.01F) {
-            // Fullscreen Background Spotlight Beam & Dot Mesh Atmosphere (Matching Photo 1:1)
-            int ambientBg = ColorUtil.rgba(7, 6, 11, (int) (210 * mainGuiAlpha));
+            // Fullscreen Background Spotlight Beam & Micro Dot Mesh (Matching photo 1:1)
+            int ambientBg = ColorUtil.rgba(8, 7, 12, (int) (210 * mainGuiAlpha));
             Render2D.drawRect(0, 0, screenWidth, screenHeight, ambientBg);
 
             // Top-Right Purple Spotlight Beam Accent
             int spotlightCol = ColorUtil.rgba(195, 125, 245, (int) (65 * mainGuiAlpha));
-            Render2D.drawRoundedRect(screenWidth * 0.5F, -50.0F, screenWidth * 0.6F, 220.0F, 100.0F, spotlightCol);
+            Render2D.drawRoundedRect(screenWidth * 0.55F, -60.0F, screenWidth * 0.5F, 220.0F, 100.0F, spotlightCol);
 
-            // Glowing Neon Purple Connector Laser Trace Line around bottom of panels
-            float traceY = y + h + 10.0F;
-            int laserCol = ColorUtil.rgba(228, 142, 216, (int) (220 * mainGuiAlpha));
+            // Glowing Neon Pink Connector Laser Cord wrapping from avatar circle
+            float avatarCenterX = x + 18.0F;
+            float avatarCenterY = y + h - 18.0F;
+            int laserCol = ColorUtil.rgba(228, 142, 216, (int) (230 * mainGuiAlpha));
             int laserGlow = ColorUtil.rgba(228, 142, 216, (int) (90 * mainGuiAlpha));
 
-            Render2D.drawShadow(x - 10.0F, traceY - 1.0F, w + 20.0F, 3.0F, 3.0F, 6.0F, laserGlow);
-            Render2D.drawRoundedRect(x - 10.0F, traceY, w + 20.0F, 2.0F, 1.0F, laserCol);
-            Render2D.drawRoundedRect(x - 12.0F, traceY - 1.0F, 4.0F, 4.0F, 2.0F, ColorUtil.rgba(232, 163, 222, (int) (255 * mainGuiAlpha)));
-            Render2D.drawRoundedRect(x + w + 8.0F, traceY - 1.0F, 4.0F, 4.0F, 2.0F, ColorUtil.rgba(228, 142, 216, (int) (255 * mainGuiAlpha)));
+            Render2D.drawShadow(avatarCenterX - 2.0F, avatarCenterY + 10.0F, 120.0F, 3.0F, 3.0F, 6.0F, laserGlow);
+            Render2D.drawRoundedRect(avatarCenterX - 2.0F, avatarCenterY + 10.0F, 120.0F, 2.0F, 1.0F, laserCol);
+            Render2D.drawRoundedRect(avatarCenterX - 3.0F, avatarCenterY + 9.0F, 4.0F, 4.0F, 2.0F, ColorUtil.rgba(232, 163, 222, (int) (255 * mainGuiAlpha)));
 
             renderDescriptionAboveGui(state, centerX, y - 18.0F, mainGuiAlpha);
 
-            // 1. NARROW LEFT SIDEBAR PANEL (sideW = 145.0F)
+            // 1. NARROW LEFT SIDEBAR PANEL (sideW = 145.0F, 100% 1:1 match of media_1790804005720.png)
             float sideW = 145.0F;
-            int cardBg = ColorUtil.rgba(20, 16, 28, (int) (185 * mainGuiAlpha));
+            int cardBg = ColorUtil.rgba(26, 23, 36, (int) (185 * mainGuiAlpha));
             int shadowColor = ColorUtil.rgba(0, 0, 0, (int) (170 * mainGuiAlpha));
-            int topGloss = ColorUtil.rgba(255, 255, 255, (int) (20 * mainGuiAlpha));
-            int glassBorder = ColorUtil.rgba(255, 255, 255, (int) (35 * mainGuiAlpha));
+            int glassBorder = ColorUtil.rgba(255, 255, 255, (int) (40 * mainGuiAlpha));
 
-            Render2D.drawShadow(x, y, sideW, h, 12.0F, 10.0F, shadowColor);
-            Render2D.drawRoundedRect(x, y, sideW, h, 12.0F, cardBg);
-            Render2D.drawRoundedRect(x, y, sideW, h * 0.40F, 12.0F, topGloss);
-            Render2D.drawRoundedOutline(x, y, sideW, h, 12.0F, 1.0F, glassBorder);
+            Render2D.drawShadow(x, y, sideW, h, 14.0F, 10.0F, shadowColor);
+            Render2D.drawRoundedRect(x, y, sideW, h, 14.0F, cardBg);
+            Render2D.drawRoundedOutline(x, y, sideW, h, 14.0F, 1.0F, glassBorder);
 
-            // Top Title & Version Dropdown ("Rose 1.21.11 ▾")
+            // Top Header Split Pills: Left [Rose v] | Right [1.21.11]
             float dropdownY = y + 8.0F;
-            Render2D.drawRoundedRect(x + 8.0F, dropdownY, sideW - 16.0F, 20.0F, 6.0F, ColorUtil.rgba(255, 255, 255, (int) (15 * mainGuiAlpha)));
-            Render2D.drawRoundedOutline(x + 8.0F, dropdownY, sideW - 16.0F, 20.0F, 6.0F, 1.0F, ColorUtil.rgba(255, 255, 255, (int) (25 * mainGuiAlpha)));
+            float leftPillW = sideW - 54.0F;
+            Render2D.drawRoundedRect(x + 8.0F, dropdownY, leftPillW, 19.0F, 6.0F, ColorUtil.rgba(255, 255, 255, (int) (15 * mainGuiAlpha)));
+            Render2D.drawRoundedOutline(x + 8.0F, dropdownY, leftPillW, 19.0F, 6.0F, 1.0F, ColorUtil.rgba(255, 255, 255, (int) (25 * mainGuiAlpha)));
 
-            int activePillCol = ColorUtil.rgba(235, 135, 215, (int) (110 * mainGuiAlpha));
-            Render2D.drawRoundedRect(x + 12.0F, dropdownY + 3.0F, 14.0F, 14.0F, 4.0F, activePillCol);
-            Fonts.drawString(Fonts.SF_MEDIUM, "R", x + 16.5F, dropdownY + 5.0F, 8.0F, ColorUtil.rgba(255, 255, 255, (int) (255 * mainGuiAlpha)));
+            Fonts.drawString(Fonts.SF_MEDIUM, "🌹 Rose", x + 13.0F, dropdownY + 4.5F, 8.0F, ColorUtil.rgba(255, 255, 255, (int) (240 * mainGuiAlpha)));
+            Fonts.drawString(Fonts.SF_MEDIUM, "v", x + leftPillW - 2.0F, dropdownY + 5.0F, 7.0F, ColorUtil.rgba(180, 180, 200, (int) (180 * mainGuiAlpha)));
 
-            Fonts.drawString(Fonts.SF_MEDIUM, "Rose", x + 31.0F, dropdownY + 5.5F, 8.5F, ColorUtil.rgba(255, 255, 255, (int) (240 * mainGuiAlpha)));
-            Fonts.drawString(Fonts.SF_MEDIUM, "1.21.11 ▾", x + sideW - 44.0F, dropdownY + 6.0F, 7.5F, ColorUtil.rgba(180, 180, 200, (int) (180 * mainGuiAlpha)));
+            float rightPillX = x + 8.0F + leftPillW + 4.0F;
+            Render2D.drawRoundedRect(rightPillX, dropdownY, 34.0F, 19.0F, 6.0F, ColorUtil.rgba(255, 255, 255, (int) (15 * mainGuiAlpha)));
+            Render2D.drawRoundedOutline(rightPillX, dropdownY, 34.0F, 19.0F, 6.0F, 1.0F, ColorUtil.rgba(255, 255, 255, (int) (25 * mainGuiAlpha)));
+            Fonts.drawString(Fonts.SF_MEDIUM, "1.21.11", rightPillX + 4.0F, dropdownY + 5.0F, 7.0F, ColorUtil.rgba(200, 200, 220, (int) (200 * mainGuiAlpha)));
 
             // Categories List
-            float catY = y + 36.0F;
+            float catY = y + 35.0F;
             for (Category category : Category.values()) {
                 boolean active = state.getCurrentTab() == PanelLapState.Tab.CATEGORY && category == state.getCurrentCategory();
 
                 if (category == Category.COMBAT) {
-                    Fonts.drawString(Fonts.SF_MEDIUM, "COMBAT", x + 12.0F, catY, 7.0F, ColorUtil.rgba(160, 150, 180, (int) (140 * mainGuiAlpha)));
-                    Fonts.drawString(Fonts.SF_MEDIUM, "v 35", x + sideW - 32.0F, catY, 7.0F, ColorUtil.rgba(160, 150, 180, (int) (140 * mainGuiAlpha)));
-                    catY += 10.0F;
+                    Fonts.drawString(Fonts.SF_MEDIUM, "COMBAT", x + 12.0F, catY, 6.5F, ColorUtil.rgba(160, 150, 180, (int) (140 * mainGuiAlpha)));
+                    Fonts.drawString(Fonts.SF_MEDIUM, "v 35", x + sideW - 32.0F, catY, 6.5F, ColorUtil.rgba(160, 150, 180, (int) (140 * mainGuiAlpha)));
+                    catY += 9.0F;
                 } else if (category == Category.RENDER) {
-                    Fonts.drawString(Fonts.SF_MEDIUM, "VISUAL", x + 12.0F, catY, 7.0F, ColorUtil.rgba(160, 150, 180, (int) (140 * mainGuiAlpha)));
-                    Fonts.drawString(Fonts.SF_MEDIUM, "v 46", x + sideW - 32.0F, catY, 7.0F, ColorUtil.rgba(160, 150, 180, (int) (140 * mainGuiAlpha)));
-                    catY += 10.0F;
+                    Fonts.drawString(Fonts.SF_MEDIUM, "VISUAL", x + 12.0F, catY, 6.5F, ColorUtil.rgba(160, 150, 180, (int) (140 * mainGuiAlpha)));
+                    Fonts.drawString(Fonts.SF_MEDIUM, "v 46", x + sideW - 32.0F, catY, 6.5F, ColorUtil.rgba(160, 150, 180, (int) (140 * mainGuiAlpha)));
+                    catY += 9.0F;
                 } else if (category == Category.MISC) {
-                    Fonts.drawString(Fonts.SF_MEDIUM, "OTHER", x + 12.0F, catY, 7.0F, ColorUtil.rgba(160, 150, 180, (int) (140 * mainGuiAlpha)));
-                    Fonts.drawString(Fonts.SF_MEDIUM, "v 20", x + sideW - 32.0F, catY, 7.0F, ColorUtil.rgba(160, 150, 180, (int) (140 * mainGuiAlpha)));
-                    catY += 10.0F;
+                    Fonts.drawString(Fonts.SF_MEDIUM, "OTHER", x + 12.0F, catY, 6.5F, ColorUtil.rgba(160, 150, 180, (int) (140 * mainGuiAlpha)));
+                    Fonts.drawString(Fonts.SF_MEDIUM, "v 20", x + sideW - 32.0F, catY, 6.5F, ColorUtil.rgba(160, 150, 180, (int) (140 * mainGuiAlpha)));
+                    catY += 9.0F;
                 }
 
                 if (active) {
-                    Render2D.drawShadow(x + 8.0F, catY, sideW - 16.0F, 19.0F, 6.0F, 6.0F, ColorUtil.rgba(230, 120, 210, (int) (100 * mainGuiAlpha)));
-                    Render2D.drawRoundedRect(x + 8.0F, catY, sideW - 16.0F, 19.0F, 6.0F, activePillCol);
-                    Render2D.drawRoundedOutline(x + 8.0F, catY, sideW - 16.0F, 19.0F, 6.0F, 1.0F, ColorUtil.rgba(250, 160, 235, (int) (190 * mainGuiAlpha)));
-                } else {
-                    Render2D.drawRoundedRect(x + 8.0F, catY, sideW - 16.0F, 19.0F, 6.0F, ColorUtil.rgba(46, 38, 60, (int) (120 * mainGuiAlpha)));
+                    // Active button with Vertical Pink Accent Bar on Left Edge (Matching media_1790804005720.png 1:1)
+                    Render2D.drawRoundedRect(x + 8.0F, catY, sideW - 16.0F, 19.0F, 6.0F, ColorUtil.rgba(54, 46, 72, (int) (170 * mainGuiAlpha)));
+                    Render2D.drawRoundedRect(x + 8.0F, catY + 2.5F, 3.5F, 14.0F, 2.0F, laserCol);
+                    Render2D.drawShadow(x + 8.0F, catY + 2.5F, 3.5F, 14.0F, 2.0F, 4.0F, laserGlow);
                 }
 
-                int col = active ? ColorUtil.rgba(255, 255, 255, 255) : ColorUtil.rgba(200, 195, 215, 200);
-                Fonts.drawIcon(getCategoryIcon(category), x + 14.0F, catY + 4.5F, 9.5F, ColorUtil.multiplyAlpha(col, mainGuiAlpha));
-                Fonts.drawString(Fonts.SF_MEDIUM, Localization.get(category.getDisplayName()), x + 28.0F, catY + 5.0F, 8.5F, ColorUtil.multiplyAlpha(col, mainGuiAlpha));
+                int col = active ? ColorUtil.rgba(255, 255, 255, 255) : ColorUtil.rgba(200, 195, 215, 180);
+                Fonts.drawIcon(getCategoryIcon(category), x + 16.0F, catY + 4.5F, 9.5F, ColorUtil.multiplyAlpha(col, mainGuiAlpha));
+                Fonts.drawString(Fonts.SF_MEDIUM, Localization.get(category.getDisplayName()), x + 30.0F, catY + 5.0F, 8.5F, ColorUtil.multiplyAlpha(col, mainGuiAlpha));
                 catY += 23.0F;
             }
 
-            // Bottom Search Input
+            // Bottom Search Input with Pink Glowing Dot on Right Side
             float searchY = y + h - 50.0F;
             Render2D.drawRoundedRect(x + 8.0F, searchY, sideW - 16.0F, 18.0F, 6.0F, ColorUtil.rgba(255, 255, 255, (int) (15 * mainGuiAlpha)));
             Render2D.drawRoundedOutline(x + 8.0F, searchY, sideW - 16.0F, 18.0F, 6.0F, 1.0F, ColorUtil.rgba(255, 255, 255, (int) (25 * mainGuiAlpha)));
             Fonts.drawString(Fonts.SF_MEDIUM, "🔍 Search", x + 14.0F, searchY + 4.5F, 7.5F, ColorUtil.rgba(180, 180, 200, (int) (160 * mainGuiAlpha)));
 
-            // User Profile Footer ("Zodiac BETA")
+            // Pink Glowing Dot on Right Side of Search Bar
+            Render2D.drawRoundedRect(x + sideW - 18.0F, searchY + 5.0F, 6.0F, 8.0F, 4.0F, laserCol);
+
+            // User Profile Footer with Circular Avatar & Glowing Ring ("Zodiac BETA")
             float userY = y + h - 28.0F;
             String curUser = Minecraft.getInstance().getUser().getName();
-            Render2D.drawRoundedRect(x + 8.0F, userY, sideW - 16.0F, 20.0F, 6.0F, ColorUtil.rgba(255, 255, 255, (int) (15 * mainGuiAlpha)));
 
             UUID uuid = UUID.nameUUIDFromBytes(("OfflinePlayer:" + curUser).getBytes(StandardCharsets.UTF_8));
             Identifier skinTexture = DefaultPlayerSkin.get(uuid).body().texturePath();
-            Render2D.drawHead(skinTexture, x + 12.0F, userY + 3.0F, 14.0F, 2.0F, mainGuiAlpha);
 
-            Fonts.drawString(Fonts.SF_MEDIUM, curUser, x + 30.0F, userY + 5.0F, 8.0F, ColorUtil.rgba(255, 255, 255, (int) (240 * mainGuiAlpha)));
+            // Circular Avatar with Glowing Ring
+            Render2D.drawShadow(x + 10.0F, userY + 1.0F, 18.0F, 18.0F, 9.0F, 6.0F, laserGlow);
+            Render2D.drawHead(skinTexture, x + 10.0F, userY + 1.0F, 18.0F, 9.0F, mainGuiAlpha);
+            Render2D.drawRoundedOutline(x + 10.0F, userY + 1.0F, 18.0F, 18.0F, 9.0F, 1.0F, laserCol);
+
+            Fonts.drawString(Fonts.SF_MEDIUM, curUser, x + 34.0F, userY + 5.0F, 8.0F, ColorUtil.rgba(255, 255, 255, (int) (240 * mainGuiAlpha)));
             Render2D.drawRoundedRect(x + sideW - 36.0F, userY + 4.5F, 24.0F, 11.0F, 3.0F, ColorUtil.rgba(180, 120, 240, (int) (140 * mainGuiAlpha)));
             Fonts.drawString(Fonts.SF_MEDIUM, "BETA", x + sideW - 34.0F, userY + 6.0F, 6.0F, ColorUtil.rgba(255, 255, 255, (int) (255 * mainGuiAlpha)));
 
@@ -167,10 +172,9 @@ public final class PanelLapSuperimposition {
             float contentX = x + sideW + 12.0F;
             float contentW = 378.0F;
 
-            Render2D.drawShadow(contentX, y, contentW, h, 12.0F, 10.0F, shadowColor);
-            Render2D.drawRoundedRect(contentX, y, contentW, h, 12.0F, cardBg);
-            Render2D.drawRoundedRect(contentX, y, contentW, h * 0.40F, 12.0F, topGloss);
-            Render2D.drawRoundedOutline(contentX, y, contentW, h, 12.0F, 1.0F, glassBorder);
+            Render2D.drawShadow(contentX, y, contentW, h, 14.0F, 10.0F, shadowColor);
+            Render2D.drawRoundedRect(contentX, y, contentW, h, 14.0F, cardBg);
+            Render2D.drawRoundedOutline(contentX, y, contentW, h, 14.0F, 1.0F, glassBorder);
 
             // Top Breadcrumb & Config Dropdown
             float breadY = y + 8.0F;
@@ -181,14 +185,16 @@ public final class PanelLapSuperimposition {
 
             // Sub-mode Pills Bar
             float subY = y + 30.0F;
-            Render2D.drawRoundedRect(contentX + 12.0F, subY, 110.0F, 17.0F, 5.0F, ColorUtil.rgba(46, 38, 60, (int) (120 * mainGuiAlpha)));
+            int activeOptionPill = ColorUtil.rgba(230, 125, 210, (int) (140 * mainGuiAlpha));
+
+            Render2D.drawRoundedRect(contentX + 12.0F, subY, 110.0F, 17.0F, 5.0F, ColorUtil.rgba(48, 40, 64, (int) (120 * mainGuiAlpha)));
             Fonts.drawString(Fonts.SF_MEDIUM, "Коррекция движения", contentX + 16.0F, subY + 3.5F, 7.0F, ColorUtil.rgba(200, 195, 215, (int) (180 * mainGuiAlpha)));
 
-            Render2D.drawRoundedRect(contentX + 128.0F, subY, 95.0F, 17.0F, 5.0F, activePillCol);
+            Render2D.drawRoundedRect(contentX + 128.0F, subY, 95.0F, 17.0F, 5.0F, activeOptionPill);
             Render2D.drawRoundedOutline(contentX + 128.0F, subY, 95.0F, 17.0F, 5.0F, 1.0F, ColorUtil.rgba(250, 160, 235, (int) (190 * mainGuiAlpha)));
             Fonts.drawString(Fonts.SF_MEDIUM, "Сфокусированная", contentX + 133.0F, subY + 3.5F, 7.0F, ColorUtil.rgba(255, 255, 255, (int) (255 * mainGuiAlpha)));
 
-            Render2D.drawRoundedRect(contentX + 228.0F, subY, 70.0F, 17.0F, 5.0F, ColorUtil.rgba(46, 38, 60, (int) (120 * mainGuiAlpha)));
+            Render2D.drawRoundedRect(contentX + 228.0F, subY, 70.0F, 17.0F, 5.0F, ColorUtil.rgba(48, 40, 64, (int) (120 * mainGuiAlpha)));
             Fonts.drawString(Fonts.SF_MEDIUM, "Свободная", contentX + 234.0F, subY + 3.5F, 7.0F, ColorUtil.rgba(200, 195, 215, (int) (180 * mainGuiAlpha)));
 
             renderSearchAndHintsUnderGui(state, centerX, y + h + 16.0F, mainGuiAlpha);
@@ -244,8 +250,8 @@ public final class PanelLapSuperimposition {
         float currentScroll = state.getScrollOffset();
         float currentY = startY - currentScroll;
 
-        int activeCardBg = ColorUtil.rgba(32, 26, 44, (int) (140 * alpha));
-        int inactiveCardBg = ColorUtil.rgba(22, 18, 30, (int) (110 * alpha));
+        int activeCardBg = ColorUtil.rgba(30, 25, 42, (int) (140 * alpha));
+        int inactiveCardBg = ColorUtil.rgba(22, 19, 32, (int) (110 * alpha));
 
         for (Module module : list) {
             float modX = startX;
@@ -340,14 +346,14 @@ public final class PanelLapSuperimposition {
 
         if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
             // Category Clicks
-            float catY = y + 46.0F;
+            float catY = y + 44.0F;
             for (Category category : Category.values()) {
                 if (mouseX >= x + 8.0F && mouseX <= x + sideW - 8.0F && mouseY >= catY && mouseY <= catY + 19.0F) {
                     state.switchCategory(category);
                     return true;
                 }
                 catY += 23.0F;
-                if (category == Category.COMBAT || category == Category.RENDER || category == Category.MISC) catY += 10.0F;
+                if (category == Category.COMBAT || category == Category.RENDER || category == Category.MISC) catY += 9.0F;
             }
 
             // Panel Dragging
