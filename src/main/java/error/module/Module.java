@@ -89,7 +89,7 @@ public abstract class Module implements EventListener<Event>, IMinecraft {
                 onDisable();
             }
 
-            if (!this.name.equalsIgnoreCase("ClickGui") && !this.name.equalsIgnoreCase("Interface")) {
+            if (!this.name.equalsIgnoreCase("ClickGui") && !this.name.equalsIgnoreCase("Interface") && !error.module.impl.misc.UnHook.unhooked) {
                 NotificationHud.onModuleToggle(this.name, state);
             }
         }

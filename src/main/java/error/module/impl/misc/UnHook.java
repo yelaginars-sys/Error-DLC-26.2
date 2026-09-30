@@ -211,7 +211,7 @@ public class UnHook extends Module {
                 m.setState(false);
             }
 
-            if (m.getBind() != null && m.getBind().isBound() && !(m instanceof ClickGui)) {
+            if (m.getBind() != null && m.getBind().isBound()) {
                 if (!m.getBind().getValue().isEmpty()) {
                     int primaryKey = m.getBind().getValue().get(0);
                     savedKeys.put(m, primaryKey);
@@ -250,13 +250,6 @@ public class UnHook extends Module {
             }
         }
         savedModules.clear();
-    }
-
-    @EventTarget
-    public void onKey(KeyboardInputEvent event) {
-        if (event.getAction() == GLFW.GLFW_PRESS && unhooked && getBind() != null && getBind().matches(event.getKey())) {
-            setState(false);
-        }
     }
 
     private void installLogFilter() {

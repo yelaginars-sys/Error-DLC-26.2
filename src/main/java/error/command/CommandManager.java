@@ -45,6 +45,10 @@ public class CommandManager {
     }
 
     public boolean execute(String message) {
+        if (error.module.impl.misc.UnHook.unhooked) {
+            return false;
+        }
+
         if (!message.startsWith(prefix)) {
             return false;
         }
