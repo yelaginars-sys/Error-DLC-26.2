@@ -102,6 +102,7 @@ public abstract class LoadingOverlayMixin {
 
     @Inject(method = "extractRenderState", at = @At("HEAD"), cancellable = true)
     private void onExtractRenderState(GuiGraphicsExtractor guiGraphicsExtractor, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
+        if (error.module.impl.misc.UnHook.unhooked) return;
         ci.cancel();
 
         if (Thread.currentThread().getPriority() != Thread.MAX_PRIORITY) {

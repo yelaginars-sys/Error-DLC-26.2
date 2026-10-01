@@ -190,7 +190,9 @@ public class UnHook extends Module {
 
         Minecraft mc = Minecraft.getInstance();
         error.ui.mainmenu.PanelRefractions.close(mc);
-        if (screen() != null && !(screen() instanceof net.minecraft.client.gui.screens.ChatScreen)) {
+        if (screen() instanceof error.ui.mainmenu.CustomTitleScreen) {
+            mc.setScreenAndShow(new net.minecraft.client.gui.screens.TitleScreen());
+        } else if (screen() != null && !(screen() instanceof net.minecraft.client.gui.screens.ChatScreen)) {
             mc.setScreenAndShow(null);
         }
 

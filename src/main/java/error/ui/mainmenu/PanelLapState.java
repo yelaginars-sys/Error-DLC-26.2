@@ -124,6 +124,8 @@ public final class PanelLapState {
 
     public void switchCategory(Category cat) {
         this.currentTab = Tab.CATEGORY;
+        this.searchQuery = "";
+        this.searchFocused = false;
         if (this.currentCategory == cat) return;
         this.categoryDirection = cat.ordinal() >= currentCategory.ordinal() ? 1 : -1;
         this.currentCategory = cat;

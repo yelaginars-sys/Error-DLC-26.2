@@ -21,6 +21,7 @@ public abstract class TitleScreenMixin extends Screen {
 
     @Inject(method = "init", at = @At("HEAD"), cancellable = true)
     private void onInit(CallbackInfo ci) {
+        if (error.module.impl.misc.UnHook.unhooked) return;
         if (this.minecraft != null && this.minecraft.gui != null) {
             this.minecraft.gui.setScreen(new CustomTitleScreen());
             ci.cancel();
