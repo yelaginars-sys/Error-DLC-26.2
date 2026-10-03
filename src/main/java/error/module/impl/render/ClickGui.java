@@ -13,7 +13,7 @@ public class ClickGui extends Module {
 
     public static ClickGui INSTANCE;
 
-    public final ModeSetting mode = mode("Style", "Modern CS", "Modern CS", "Dimasik Concept");
+    public final ModeSetting mode = mode("Style", "New Concept", "New Concept", "Modern CS");
     public final BindSetting holdKey = bind("Bind", GLFW.GLFW_KEY_LEFT_ALT);
 
     public ClickGui() {
