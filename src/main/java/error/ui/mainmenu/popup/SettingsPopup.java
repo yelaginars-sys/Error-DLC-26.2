@@ -13,23 +13,25 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Create by daun kvass
  */
 public class SettingsPopup {
     private final ModeSetting language = new ModeSetting("Language", "ENG", "ENG", "RU");
     private final ModeSetting bgMode = new ModeSetting("Background", Theme.getBackgroundMode(), "Blur", "None");
+    private final ModeSetting glassStyle = new ModeSetting("Glass Style", Theme.getGlassStyle(), "Liquid Glass", "Lumen Glow", "Solid");
     private final ColorSetting accent = new ColorSetting("Accent", Theme.getAccentColor());
 
     private final List<SettingRenderer<?>> renderers = new ArrayList<>();
-    private float cachedHeight = 135.0F;
-    private final float width = 125.0F;
+    private float cachedHeight = 160.0F;
+    private final float width = 135.0F;
 
     private int lastSyncedAccent = -1;
     private String lastSyncedBgMode = "";
+    private String lastSyncedGlassStyle = "";
 
     public SettingsPopup() {
         renderers.add(language.createRenderer());
         renderers.add(bgMode.createRenderer());
+        renderers.add(glassStyle.createRenderer());
         renderers.add(accent.createRenderer());
     }
 
@@ -45,25 +47,31 @@ public class SettingsPopup {
         if (!bgMode.getValue().equalsIgnoreCase(Theme.getBackgroundMode())) {
             bgMode.setValue(Theme.getBackgroundMode());
         }
+        if (!glassStyle.getValue().equalsIgnoreCase(Theme.getGlassStyle())) {
+            glassStyle.setValue(Theme.getGlassStyle());
+        }
         if (accent.getValue() != Theme.getAccentColor()) {
             accent.setValue(Theme.getAccentColor());
         }
         this.lastSyncedAccent = Theme.getAccentColor();
         this.lastSyncedBgMode = Theme.getBackgroundMode();
+        this.lastSyncedGlassStyle = Theme.getGlassStyle();
     }
 
     private void updateConfigs() {
         Localization.setLanguage(language.getValue());
         Theme.setBackgroundMode(bgMode.getValue());
+        Theme.setGlassStyle(glassStyle.getValue());
         Theme.setAccentColor(accent.getValue());
         this.lastSyncedAccent = Theme.getAccentColor();
         this.lastSyncedBgMode = Theme.getBackgroundMode();
+        this.lastSyncedGlassStyle = Theme.getGlassStyle();
     }
 
     public void render(float x, float y, int mouseX, int mouseY, float alpha) {
         if (alpha <= 0.01F) return;
 
-        if (Theme.getAccentColor() != lastSyncedAccent || !Theme.getBackgroundMode().equalsIgnoreCase(lastSyncedBgMode)) {
+        if (Theme.getAccentColor() != lastSyncedAccent || !Theme.getBackgroundMode().equalsIgnoreCase(lastSyncedBgMode) || !Theme.getGlassStyle().equalsIgnoreCase(lastSyncedGlassStyle)) {
             syncFromTheme();
         }
 

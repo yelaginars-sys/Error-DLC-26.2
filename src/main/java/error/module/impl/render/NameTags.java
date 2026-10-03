@@ -56,7 +56,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import static error.util.client.clients.Theme.*;
 
 /**
- * Create by daun kvass
  */
 public final class NameTags extends Module {
 

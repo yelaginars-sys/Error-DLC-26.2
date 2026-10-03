@@ -12,7 +12,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Create by daun kvass
  */
 public class MultiModeRenderer extends SettingRenderer<MultiModeSetting> {
     private final Map<String, float[]> chipBounds = new HashMap<>();

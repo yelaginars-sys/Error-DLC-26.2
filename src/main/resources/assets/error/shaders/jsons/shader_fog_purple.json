@@ -1,0 +1,19 @@
+{
+  "vertex": "minecraft:post/sobel",
+  "fragment": "zenith:post/shader_fog_purple",
+  "samplers": [
+    { "name": "InSampler" }
+  ],
+  "uniforms": [
+    { "name": "ProjMat", "type": "matrix4x4", "count": 16, "values": [ 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0 ] },
+    { "name": "InSize", "type": "float", "count": 2, "values": [ 1.0, 1.0 ] },
+    { "name": "OutSize", "type": "float", "count": 2, "values": [ 1.0, 1.0 ] },
+    { "name": "PurpleColor", "type": "float", "count": 4, "values": [ 0.727, 0.221, 0.765, 1.0 ] },
+    { "name": "Intensity", "type": "float", "count": 1, "values": [ 0.65 ] },
+    { "name": "time", "type": "float", "count": 1, "values": [ 0.0 ] },
+    { "name": "SkyPitch", "type": "float", "count": 1, "values": [ 0.0 ] },
+    { "name": "SkyYaw", "type": "float", "count": 1, "values": [ 0.0 ] },
+    { "name": "TanHalfFov", "type": "float", "count": 1, "values": [ 0.7 ] },
+    { "name": "Aspect", "type": "float", "count": 1, "values": [ 1.0 ] }
+  ]
+}

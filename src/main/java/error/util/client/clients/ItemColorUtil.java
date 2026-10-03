@@ -12,7 +12,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Create by daun kvass
  */
 public final class ItemColorUtil {
     private static final Map<Item, Integer> COLOR_CACHE = new ConcurrentHashMap<>();

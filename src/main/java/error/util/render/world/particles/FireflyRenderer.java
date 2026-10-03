@@ -32,7 +32,6 @@ import java.util.List;
 import java.util.Random;
 
 /**
- * Create by daun kvass
  */
 public final class FireflyRenderer {
     private static final float BASE_FLY_SPEED = 2.2f;
@@ -452,10 +451,9 @@ public final class FireflyRenderer {
             ByteBuffer vertexData = meshData.vertexBuffer();
             int remainingBytes = vertexData.remaining();
             ensureVertexCapacity(remainingBytes);
-            device.createCommandEncoder().writeToBuffer(this.vertexBuffer.slice(0, remainingBytes), vertexData);
 
             try (RenderPass pass = device.createCommandEncoder().createRenderPass(
-                    () -> "Godweer Firefly Laser & Bloom",
+                    () -> "Error Firefly Laser & Bloom",
                     targetRT.getColorTextureView(),
                     java.util.Optional.empty(),
                     targetRT.getDepthTextureView(),

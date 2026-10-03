@@ -18,7 +18,6 @@ import error.setting.impl.MultiModeSetting;
 import java.util.List;
 
 /**
- * Create by daun kvass
  */
 @Getter
 public class Removals extends Module {

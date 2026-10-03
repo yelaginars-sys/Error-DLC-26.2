@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Create by daun kvass
  */
 @Mixin(EditBox.class)
 public abstract class EditBoxMixin {

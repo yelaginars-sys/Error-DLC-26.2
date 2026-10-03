@@ -14,7 +14,6 @@ import error.event.list.ScreenKeyEvent;
 import error.event.list.ScreenMouseButtonEvent;
 
 /**
- * Create by daun kvass
  */
 @Mixin(ContainerEventHandler.class)
 public interface ContainerEventHandlerMixin {

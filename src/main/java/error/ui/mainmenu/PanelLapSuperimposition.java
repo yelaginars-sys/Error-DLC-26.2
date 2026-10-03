@@ -25,6 +25,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 public final class PanelLapSuperimposition {
+    private static final Identifier LOGO_TEX = Identifier.fromNamespaceAndPath("error", "images/logo.png");
     private boolean dragging;
     private float dragOffsetX, dragOffsetY;
     private final SettingsPopup settingsPopup = new SettingsPopup();
@@ -50,55 +51,55 @@ public final class PanelLapSuperimposition {
         float w = state.getPanelWidth();
         float h = state.getPanelHeight();
 
-        float easeProgress = 1.0F - (float) Math.pow(1.0F - openProgress, 3);
+        float easeProgress = openProgress * openProgress * (3.0F - 2.0F * openProgress);
         float centerX = x + (w / 2.0F);
         float centerY = y + (h / 2.0F);
-        float scale = 0.88F + (0.12F * easeProgress);
+        float scale = 0.92F + (0.08F * easeProgress);
+
+        float mainGuiAlpha = easeProgress;
+
+        if (mainGuiAlpha > 0.01F) {
+            // Ambient full-screen backdrop rendered BEFORE pose matrix scale transform
+            boolean isBlur = Theme.getBackgroundMode().equalsIgnoreCase("Blur");
+            if (isBlur) {
+                int ambientBg = ColorUtil.rgba(10, 8, 16, (int) (140 * mainGuiAlpha));
+                Render2D.drawRect(0, 0, screenWidth, screenHeight, ambientBg);
+                Render2D.drawBlur(0, 0, screenWidth, screenHeight, 0.0F, 16.0F, ColorUtil.rgba(0, 0, 0, 80), mainGuiAlpha);
+            } else {
+                int ambientBg = ColorUtil.rgba(10, 8, 16, (int) (75 * mainGuiAlpha));
+                Render2D.drawRect(0, 0, screenWidth, screenHeight, ambientBg);
+            }
+        }
 
         extractor.pose().pushMatrix();
         extractor.pose().translate(centerX, centerY);
         extractor.pose().scale(scale, scale);
         extractor.pose().translate(-centerX, -centerY);
 
-        float mainGuiAlpha = easeProgress;
-
         if (mainGuiAlpha > 0.01F) {
-            // Ambient backdrop matching Theme backgroundMode setting ("Blur" vs "None")
-            boolean isBlur = Theme.getBackgroundMode().equalsIgnoreCase("Blur");
-            if (isBlur) {
-                int ambientBg = ColorUtil.rgba(10, 8, 16, (int) (130 * mainGuiAlpha));
-                Render2D.drawRect(0, 0, screenWidth, screenHeight, ambientBg);
-                Render2D.drawBlur(0, 0, screenWidth, screenHeight, 0.0F, 16.0F, ColorUtil.rgba(0, 0, 0, 80), mainGuiAlpha);
-            } else {
-                int ambientBg = ColorUtil.rgba(10, 8, 16, (int) (65 * mainGuiAlpha));
-                Render2D.drawRect(0, 0, screenWidth, screenHeight, ambientBg);
-            }
-
-            // Top-Right Purple Spotlight Beam Accent
-            int spotlightCol = ColorUtil.rgba(195, 125, 245, (int) (40 * mainGuiAlpha));
+            // Top-Right Accent Beam
+            int spotlightCol = ColorUtil.rgba(ColorUtil.red(Theme.getAccentColor()), ColorUtil.green(Theme.getAccentColor()), ColorUtil.blue(Theme.getAccentColor()), (int) (40 * mainGuiAlpha));
             Render2D.drawRoundedRect(screenWidth * 0.55F, -60.0F, screenWidth * 0.5F, 220.0F, 100.0F, spotlightCol);
-
-            // Ambient Floating Rings in background
-            int ringCol = ColorUtil.rgba(215, 170, 245, (int) (35 * mainGuiAlpha));
-            Render2D.drawRoundedOutline(screenWidth * 0.22F, screenHeight * 0.75F, 18.0F, 18.0F, 9.0F, 1.0F, ringCol);
-            Render2D.drawRoundedOutline(screenWidth * 0.76F, screenHeight * 0.22F, 14.0F, 14.0F, 7.0F, 1.0F, ringCol);
-            Render2D.drawRoundedOutline(screenWidth * 0.82F, screenHeight * 0.72F, 22.0F, 22.0F, 11.0F, 1.0F, ringCol);
 
             float sideW = 145.0F;
             float contentX = x + sideW + 12.0F;
             float contentW = 380.0F;
 
             int themeAccent = Theme.getAccentColor();
+            int ar = ColorUtil.red(themeAccent);
+            int ag = ColorUtil.green(themeAccent);
+            int ab = ColorUtil.blue(themeAccent);
+
             int laserCol = ColorUtil.multiplyAlpha(themeAccent, mainGuiAlpha);
-            int laserGlow = ColorUtil.rgba(ColorUtil.red(themeAccent), ColorUtil.green(themeAccent), ColorUtil.blue(themeAccent), (int) (110 * mainGuiAlpha));
+            int laserGlow = ColorUtil.rgba(ar, ag, ab, (int) (110 * mainGuiAlpha));
 
             renderDescriptionAboveGui(state, centerX, y - 18.0F, mainGuiAlpha);
 
-            // 1. NARROW LEFT SIDEBAR PANEL (sideW = 145.0F, Authentic Frosted Liquid Glass)
-            int liquidGlassFill = ColorUtil.rgba(45, 38, 54, (int) (115 * mainGuiAlpha));
+            // 1. NARROW LEFT SIDEBAR PANEL (sideW = 145.0F, Dynamic Theme Glass)
+            int liquidGlassFill = ColorUtil.rgba((int)(18*0.85F + ar*0.15F), (int)(16*0.85F + ag*0.15F), (int)(24*0.85F + ab*0.15F), (int) (180 * mainGuiAlpha));
             int shadowColor = ColorUtil.rgba(0, 0, 0, (int) (160 * mainGuiAlpha));
-            int glassBorder = ColorUtil.rgba(255, 255, 255, (int) (65 * mainGuiAlpha));
-            int glassHalo = ColorUtil.rgba(ColorUtil.red(themeAccent), ColorUtil.green(themeAccent), ColorUtil.blue(themeAccent), (int) (25 * mainGuiAlpha));
+            int glassBorder = ColorUtil.rgba(255, 255, 255, (int) (55 * mainGuiAlpha));
+            int glassHalo = ColorUtil.rgba(ar, ag, ab, (int) (30 * mainGuiAlpha));
 
             // Real Liquid Glass Blur + Translucent Fill + Glass Border + Glass Halo
             Render2D.drawShadow(x, y, sideW, h, 14.0F, 12.0F, shadowColor);
@@ -107,23 +108,22 @@ public final class PanelLapSuperimposition {
             Render2D.drawRoundedRect(x, y, sideW, h, 14.0F, liquidGlassFill);
             Render2D.drawRoundedOutline(x, y, sideW, h, 14.0F, 1.0F, glassBorder);
 
-            // Top Header: Error DLC 26.2 Branding & Client Logo
+            // Top Header: Error DLC 26.2 Branding & Client Logo PNG
             float dropdownY = y + 8.0F;
             float brandW = sideW - 16.0F;
-            int pillGlass = ColorUtil.rgba(65, 58, 80, (int) (115 * mainGuiAlpha));
-            int pillBorder = ColorUtil.rgba(255, 255, 255, (int) (25 * mainGuiAlpha));
+            int pillGlass = ColorUtil.rgba((int)(30*0.85F + ar*0.15F), (int)(28*0.85F + ag*0.15F), (int)(38*0.85F + ab*0.15F), (int) (140 * mainGuiAlpha));
+            int pillBorder = ColorUtil.rgba(255, 255, 255, (int) (30 * mainGuiAlpha));
 
             Render2D.drawRoundedRect(x + 8.0F, dropdownY, brandW, 19.0F, 6.0F, pillGlass);
             Render2D.drawRoundedOutline(x + 8.0F, dropdownY, brandW, 19.0F, 6.0F, 1.0F, pillBorder);
 
-            // Glowing Client Logo & Client Name with precise alignment
-            float logoSz = 9.0F;
-            float logoW = Fonts.getIconWidth(IconUse.LOGO, logoSz);
-            float logoY = dropdownY + (19.0F - Fonts.ICONS.textHeight(logoSz)) / 2.0F - 0.5F;
+            // Client PNG Logo & Title Text
             float textY = dropdownY + (19.0F - Fonts.SF_MEDIUM.textHeight(7.5F)) / 2.0F - 0.5F;
-
-            Fonts.drawIcon(IconUse.LOGO, x + 14.0F, logoY, logoSz, laserCol);
-            Fonts.drawString(Fonts.SF_MEDIUM, "Error DLC 26.2", x + 14.0F + logoW + 5.0F, textY, 7.5F, ColorUtil.rgba(255, 255, 255, (int) (245 * mainGuiAlpha)));
+            Render2D.drawTexture(LOGO_TEX, x + 13.0F, dropdownY + 3.5F, 12.0F, 12.0F, ColorUtil.rgba(255, 255, 255, (int) (255 * mainGuiAlpha)));
+            float brandX = x + 13.0F + 12.0F + 6.0F;
+            Fonts.drawString(Fonts.SF_MEDIUM, "Error DLC ", brandX, textY, 7.5F, ColorUtil.rgba(170, 170, 185, (int) (245 * mainGuiAlpha)));
+            brandX += Fonts.SF_MEDIUM.getWidth("Error DLC ", 7.5F);
+            Fonts.drawString(Fonts.SF_MEDIUM, "26.2", brandX, textY, 7.5F, ColorUtil.rgba(150, 150, 165, (int) (210 * mainGuiAlpha)));
 
             // Categories List
             float catY = y + 35.0F;
@@ -131,9 +131,11 @@ public final class PanelLapSuperimposition {
                 boolean active = state.getCurrentTab() == PanelLapState.Tab.CATEGORY && category == state.getCurrentCategory();
 
                 if (active) {
-                    // Active button with Vertical Pink Accent Bar on Left Edge (Matching media_1790804005720.png 1:1)
-                    Render2D.drawRoundedRect(x + 8.0F, catY, sideW - 16.0F, 19.0F, 6.0F, ColorUtil.rgba(75, 68, 96, (int) (125 * mainGuiAlpha)));
-                    Render2D.drawRoundedOutline(x + 8.0F, catY, sideW - 16.0F, 19.0F, 6.0F, 1.0F, ColorUtil.rgba(255, 255, 255, (int) (25 * mainGuiAlpha)));
+                    // Active category fill with dark sleek glass background and subtle accent tint
+                    int activeCatBg = ColorUtil.rgba((int)(40*0.75F + ar*0.25F), (int)(38*0.75F + ag*0.25F), (int)(52*0.75F + ab*0.25F), (int) (180 * mainGuiAlpha));
+                    int activeCatBorder = ColorUtil.rgba((int)(80*0.7F + ar*0.3F), (int)(75*0.7F + ag*0.3F), (int)(105*0.7F + ab*0.3F), (int) (160 * mainGuiAlpha));
+                    Render2D.drawRoundedRect(x + 8.0F, catY, sideW - 16.0F, 19.0F, 6.0F, activeCatBg);
+                    Render2D.drawRoundedOutline(x + 8.0F, catY, sideW - 16.0F, 19.0F, 6.0F, 1.0F, activeCatBorder);
                     Render2D.drawRoundedRect(x + 10.0F, catY + 3.0F, 3.0F, 13.0F, 1.5F, laserCol);
                     Render2D.drawShadow(x + 10.0F, catY + 3.0F, 3.0F, 13.0F, 1.5F, 4.0F, laserGlow);
                 }
@@ -150,35 +152,38 @@ public final class PanelLapSuperimposition {
             Render2D.drawRoundedRect(x + 8.0F, searchY, sideW - 16.0F, 18.0F, 6.0F, pillGlass);
             Render2D.drawRoundedOutline(x + 8.0F, searchY, sideW - 16.0F, 18.0F, 6.0F, 1.0F, curSearchBorder);
 
-            String searchDisplay;
-            if (state.getSearchQuery().isEmpty()) {
-                searchDisplay = state.isSearchFocused() ? "⌕  |" : "⌕  Search...";
-            } else {
-                boolean cursorBlink = state.isSearchFocused() && (System.currentTimeMillis() % 1000 > 500);
-                searchDisplay = "⌕  " + state.getSearchQuery() + (cursorBlink ? "|" : "");
-            }
             int searchTextColor = state.isSearchFocused() || !state.getSearchQuery().isEmpty()
                     ? ColorUtil.rgba(255, 255, 255, (int) (240 * mainGuiAlpha))
                     : ColorUtil.rgba(180, 180, 200, (int) (160 * mainGuiAlpha));
-            Fonts.drawString(Fonts.SF_MEDIUM, searchDisplay, x + 14.0F, searchY + 4.5F, 7.5F, searchTextColor);
+
+            // Clean Search Icon (IconUse.SEARCH)
+            Fonts.drawIcon(IconUse.SEARCH, x + 14.0F, searchY + 4.5F, 8.0F, ColorUtil.multiplyAlpha(searchTextColor, mainGuiAlpha));
+
+            String searchDisplay;
+            if (state.getSearchQuery().isEmpty()) {
+                searchDisplay = state.isSearchFocused() ? "|" : "Поиск...";
+            } else {
+                boolean cursorBlink = state.isSearchFocused() && (System.currentTimeMillis() % 1000 > 500);
+                searchDisplay = state.getSearchQuery() + (cursorBlink ? "|" : "");
+            }
+            Fonts.drawString(Fonts.SF_MEDIUM, searchDisplay, x + 25.0F, searchY + 4.5F, 7.5F, searchTextColor);
 
             // Accent Glowing Dot on Right Side of Search Bar
             Render2D.drawRoundedRect(x + sideW - 18.0F, searchY + 5.0F, 6.0F, 8.0F, 4.0F, laserCol);
 
-            // User Profile Footer with Circular Avatar & Glowing Ring ("Zodiac BETA" - No surrounding card!)
+            // User Profile Footer: Nickname "Walfini Develop" and Custom Avatar (D:\Без названия (2).jpg)
             float userY = y + h - 28.0F;
-            String curUser = Minecraft.getInstance().getUser().getName();
-
-            UUID uuid = UUID.nameUUIDFromBytes(("OfflinePlayer:" + curUser).getBytes(StandardCharsets.UTF_8));
-            Identifier skinTexture = DefaultPlayerSkin.get(uuid).body().texturePath();
+            String curUser = "Walfini Develop";
 
             // Circular Avatar with Glowing Ring
             Render2D.drawShadow(x + 10.0F, userY + 1.0F, 18.0F, 18.0F, 9.0F, 6.0F, laserGlow);
-            Render2D.drawHead(skinTexture, x + 10.0F, userY + 1.0F, 18.0F, 9.0F, mainGuiAlpha);
+            Render2D.drawCustomAvatar(x + 10.0F, userY + 1.0F, 18.0F, 9.0F, mainGuiAlpha);
             Render2D.drawRoundedOutline(x + 10.0F, userY + 1.0F, 18.0F, 18.0F, 9.0F, 1.0F, laserCol);
 
             Fonts.drawString(Fonts.SF_MEDIUM, curUser, x + 34.0F, userY + 5.0F, 8.0F, ColorUtil.rgba(255, 255, 255, (int) (240 * mainGuiAlpha)));
-            Render2D.drawRoundedRect(x + sideW - 36.0F, userY + 4.5F, 24.0F, 11.0F, 3.0F, ColorUtil.rgba(140, 80, 180, (int) (140 * mainGuiAlpha)));
+            int betaBg = ColorUtil.rgba(ar, ag, ab, (int) (140 * mainGuiAlpha));
+            Render2D.drawRoundedRect(x + sideW - 36.0F, userY + 4.5F, 24.0F, 11.0F, 3.0F, betaBg);
+            Render2D.drawRoundedOutline(x + sideW - 36.0F, userY + 4.5F, 24.0F, 11.0F, 3.0F, 1.0F, laserCol);
             Fonts.drawString(Fonts.SF_MEDIUM, "BETA", x + sideW - 34.0F, userY + 6.0F, 6.0F, ColorUtil.rgba(255, 255, 255, (int) (255 * mainGuiAlpha)));
 
             // 2. EXTRA-WIDE RIGHT MAIN CONTENT PANEL (contentW = 380.0F, Authentic Frosted Liquid Glass)
@@ -192,7 +197,7 @@ public final class PanelLapSuperimposition {
 
             // Top Breadcrumb & Theme Settings Dropdown Button
             float breadY = y + 8.0F;
-            Fonts.drawString(Fonts.SF_MEDIUM, "Error  /  " + Localization.get(state.getCurrentCategory().getDisplayName()), contentX + 14.0F, breadY + 4.0F, 8.0F, ColorUtil.rgba(200, 195, 215, (int) (180 * mainGuiAlpha)));
+            Fonts.drawString(Fonts.SF_MEDIUM, "Error DLC  /  " + Localization.get(state.getCurrentCategory().getDisplayName()), contentX + 14.0F, breadY + 4.0F, 8.0F, ColorUtil.rgba(200, 195, 215, (int) (180 * mainGuiAlpha)));
 
             float themeBtnW = 68.0F;
             float themeBtnH = 17.0F;
@@ -232,7 +237,13 @@ public final class PanelLapSuperimposition {
         state.setHoveredModule(null);
 
         Render2D.pushScissor(contentX + 4.0F, contentY, contentW - 8.0F, contentH);
-        renderModules(state, contentX + 8.0F, contentY + slideY, contentW - 16.0F, contentH, mouseX, mouseY, contentAlpha);
+        if (state.getCurrentCategory() == Category.CONFIGS) {
+            renderConfigs(state, contentX + 8.0F, contentY + slideY, contentW - 16.0F, contentH, mouseX, mouseY, contentAlpha);
+        } else if (state.getCurrentCategory() == Category.FRIENDS) {
+            renderFriends(state, contentX + 8.0F, contentY + slideY, contentW - 16.0F, contentH, mouseX, mouseY, contentAlpha);
+        } else {
+            renderModules(state, contentX + 8.0F, contentY + slideY, contentW - 16.0F, contentH, mouseX, mouseY, contentAlpha);
+        }
         Render2D.popScissor();
 
         // Settings Popup Dropdown
@@ -337,23 +348,37 @@ public final class PanelLapSuperimposition {
 
             // Keybind Pill & Keyboard Icon
             boolean isBound = module.getBind().isBound();
-            String bindText = isBound ? "⌨ " + module.getBind().getDisplayValue() : "⌨";
             float bindFontSz = 7.0F;
-            float bindTextW = Fonts.SF_MEDIUM.getWidth(bindText, bindFontSz);
-            float bindPillW = bindTextW + 8.0F;
             float bindPillH = 10.0F;
-            float bindPillX = toggleX - bindPillW - 6.0F;
+            float bindPillW;
+            float bindPillX;
             float bindPillY = modY + 6.0F;
-
-            boolean bindHovered = hovered && mouseX >= bindPillX && mouseX <= bindPillX + bindPillW && mouseY >= bindPillY && mouseY <= bindPillY + bindPillH;
             int accent = Theme.getAccentColor();
-            int bindBg = bindHovered ? ColorUtil.multiplyAlpha(accent, 0.40F * alpha)
-                    : (isBound ? ColorUtil.multiplyAlpha(accent, 0.22F * alpha) : ColorUtil.rgba(255, 255, 255, (int) (14 * alpha)));
-            int bindBorder = bindHovered || isBound ? ColorUtil.multiplyAlpha(accent, alpha) : ColorUtil.rgba(255, 255, 255, (int) (25 * alpha));
 
-            Render2D.drawRoundedRect(bindPillX, bindPillY, bindPillW, bindPillH, 3.5F, bindBg);
-            Render2D.drawRoundedOutline(bindPillX, bindPillY, bindPillW, bindPillH, 3.5F, 1.0F, bindBorder);
-            Fonts.drawString(Fonts.SF_MEDIUM, bindText, bindPillX + 4.0F, bindPillY + 1.5F, bindFontSz, ColorUtil.rgba(255, 255, 255, (int) ((bindHovered ? 255 : (isBound ? 230 : 160)) * alpha)));
+            if (isBound) {
+                String bindText = module.getBind().getDisplayValue();
+                bindPillW = Fonts.SF_MEDIUM.getWidth(bindText, bindFontSz) + 8.0F;
+                bindPillX = toggleX - bindPillW - 6.0F;
+
+                boolean bindHovered = hovered && mouseX >= bindPillX && mouseX <= bindPillX + bindPillW && mouseY >= bindPillY && mouseY <= bindPillY + bindPillH;
+                int bindBg = bindHovered ? ColorUtil.multiplyAlpha(accent, 0.45F * alpha) : ColorUtil.multiplyAlpha(accent, 0.22F * alpha);
+                int bindBorder = ColorUtil.multiplyAlpha(accent, alpha);
+
+                Render2D.drawRoundedRect(bindPillX, bindPillY, bindPillW, bindPillH, 3.5F, bindBg);
+                Render2D.drawRoundedOutline(bindPillX, bindPillY, bindPillW, bindPillH, 3.5F, 1.0F, bindBorder);
+                Fonts.drawString(Fonts.SF_MEDIUM, bindText, bindPillX + 4.0F, bindPillY + 1.5F, bindFontSz, ColorUtil.rgba(255, 255, 255, (int) ((bindHovered ? 255 : 230) * alpha)));
+            } else {
+                bindPillW = 14.0F;
+                bindPillX = toggleX - bindPillW - 6.0F;
+
+                boolean bindHovered = hovered && mouseX >= bindPillX && mouseX <= bindPillX + bindPillW && mouseY >= bindPillY && mouseY <= bindPillY + bindPillH;
+                int bindBg = bindHovered ? ColorUtil.rgba(255, 255, 255, (int) (28 * alpha)) : ColorUtil.rgba(255, 255, 255, (int) (14 * alpha));
+                int bindBorder = ColorUtil.rgba(255, 255, 255, (int) (25 * alpha));
+
+                Render2D.drawRoundedRect(bindPillX, bindPillY, bindPillW, bindPillH, 3.5F, bindBg);
+                Render2D.drawRoundedOutline(bindPillX, bindPillY, bindPillW, bindPillH, 3.5F, 1.0F, bindBorder);
+                Fonts.drawIcon(IconUse.KEYBOARD, bindPillX + 3.0F, bindPillY + 1.5F, 7.0F, ColorUtil.rgba(255, 255, 255, (int) ((bindHovered ? 255 : 170) * alpha)));
+            }
 
             if (module.getExpandAnim().getValue() > 0.02F) {
                 float setY = modY + 22.0F;
@@ -380,6 +405,308 @@ public final class PanelLapSuperimposition {
                 .collect(Collectors.toList());
     }
 
+    private void renderConfigs(PanelLapState state, float startX, float startY, float totalWidth, float totalHeight, int mouseX, int mouseY, float alpha) {
+        float currentY = startY - state.getScrollOffset();
+        int accent = Theme.getAccentColor();
+
+        float rowH = 20.0F;
+        float createW = (totalWidth - 10.0F) * 0.5F;
+        float createX = startX;
+        float inputW = createW - 55.0F;
+        float btnW = 50.0F;
+
+        int createBorder = state.isConfigInputFocused() ? accent : ColorUtil.rgba(255, 255, 255, (int) (30 * alpha));
+        Render2D.drawRoundedRect(createX, currentY, inputW, rowH, 5.0F, ColorUtil.rgba(30, 25, 40, (int) (160 * alpha)));
+        Render2D.drawRoundedOutline(createX, currentY, inputW, rowH, 5.0F, 1.0F, createBorder);
+
+        String cfgDisplay = state.getConfigInput().isEmpty() ? (state.isConfigInputFocused() ? "|" : "Имя конфига...") : state.getConfigInput() + (state.isConfigInputFocused() && System.currentTimeMillis() % 1000 > 500 ? "|" : "");
+        int cfgColor = state.getConfigInput().isEmpty() && !state.isConfigInputFocused() ? ColorUtil.rgba(160, 155, 175, (int) (160 * alpha)) : ColorUtil.rgba(240, 240, 255, (int) (240 * alpha));
+        Fonts.drawString(Fonts.SF_MEDIUM, cfgDisplay, createX + 6.0F, currentY + 5.5F, 7.5F, cfgColor);
+
+        Render2D.drawRoundedRect(createX + inputW + 5.0F, currentY, btnW, rowH, 5.0F, ColorUtil.multiplyAlpha(accent, 0.70F * alpha));
+        Render2D.drawRoundedOutline(createX + inputW + 5.0F, currentY, btnW, rowH, 5.0F, 1.0F, accent);
+        Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Создать", createX + inputW + 5.0F + btnW / 2.0F, currentY + 5.5F, 7.0F, 0xFFFFFFFF);
+
+        float importX = createX + createW + 10.0F;
+        float importInputW = createW - 55.0F;
+
+        int importBorder = state.isShareCodeInputFocused() ? accent : ColorUtil.rgba(255, 255, 255, (int) (30 * alpha));
+        Render2D.drawRoundedRect(importX, currentY, importInputW, rowH, 5.0F, ColorUtil.rgba(30, 25, 40, (int) (160 * alpha)));
+        Render2D.drawRoundedOutline(importX, currentY, importInputW, rowH, 5.0F, 1.0F, importBorder);
+
+        String codeDisplay = state.getShareCodeInput().isEmpty() ? (state.isShareCodeInputFocused() ? "|" : "Вставьте код...") : state.getShareCodeInput() + (state.isShareCodeInputFocused() && System.currentTimeMillis() % 1000 > 500 ? "|" : "");
+        int codeColor = state.getShareCodeInput().isEmpty() && !state.isShareCodeInputFocused() ? ColorUtil.rgba(160, 155, 175, (int) (160 * alpha)) : ColorUtil.rgba(240, 240, 255, (int) (240 * alpha));
+        Fonts.drawString(Fonts.SF_MEDIUM, codeDisplay, importX + 6.0F, currentY + 5.5F, 7.5F, codeColor);
+
+        Render2D.drawRoundedRect(importX + importInputW + 5.0F, currentY, btnW, rowH, 5.0F, ColorUtil.multiplyAlpha(accent, 0.70F * alpha));
+        Render2D.drawRoundedOutline(importX + importInputW + 5.0F, currentY, btnW, rowH, 5.0F, 1.0F, accent);
+        Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Импорт", importX + importInputW + 5.0F + btnW / 2.0F, currentY + 5.5F, 7.0F, 0xFFFFFFFF);
+
+        currentY += rowH + 12.0F;
+
+        List<String> configs = Client.INSTANCE.configManager.getAvailableConfigs();
+        Fonts.drawString(Fonts.SF_MEDIUM, "Сохраненные конфигурации (" + configs.size() + "):", startX, currentY, 8.0F, ColorUtil.rgba(200, 195, 215, (int) (200 * alpha)));
+        currentY += 14.0F;
+
+        String activeConfig = Client.INSTANCE.configManager.getCurrentConfig();
+
+        for (String config : configs) {
+            float cardH = 28.0F;
+            boolean isActive = config.equalsIgnoreCase(activeConfig);
+            boolean cardHovered = mouseX >= startX && mouseX <= startX + totalWidth && mouseY >= currentY && mouseY <= currentY + cardH;
+
+            int cardBg = cardHovered ? ColorUtil.rgba(255, 255, 255, (int) (16 * alpha)) : ColorUtil.rgba(255, 255, 255, (int) (8 * alpha));
+            int cardOutline = isActive ? accent : (cardHovered ? ColorUtil.rgba(255, 255, 255, (int) (35 * alpha)) : ColorUtil.rgba(255, 255, 255, (int) (18 * alpha)));
+
+            Render2D.drawRoundedRect(startX, currentY, totalWidth, cardH, 6.0F, cardBg);
+            Render2D.drawRoundedOutline(startX, currentY, totalWidth, cardH, 6.0F, 1.0F, cardOutline);
+
+            Fonts.drawIcon(IconUse.GEAR, startX + 8.0F, currentY + 8.0F, 9.0F, ColorUtil.rgba(255, 255, 255, (int) (240 * alpha)));
+            Fonts.drawString(Fonts.SF_MEDIUM, config, startX + 22.0F, currentY + 8.5F, 8.5F, ColorUtil.rgba(255, 255, 255, (int) (245 * alpha)));
+
+            if (isActive) {
+                float activeTagX = startX + 22.0F + Fonts.SF_MEDIUM.getWidth(config, 8.5F) + 8.0F;
+                Render2D.drawRoundedRect(activeTagX, currentY + 7.0F, 44.0F, 12.0F, 3.0F, ColorUtil.multiplyAlpha(accent, 0.40F * alpha));
+                Fonts.drawString(Fonts.SF_MEDIUM, "АКТИВЕН", activeTagX + 4.0F, currentY + 9.0F, 6.5F, 0xFFFFFFFF);
+            }
+
+            float actionBtnW = 46.0F;
+            float actionBtnH = 16.0F;
+            float actionY = currentY + 6.0F;
+
+            float delX = startX + totalWidth - actionBtnW - 6.0F;
+            boolean isDefault = config.equalsIgnoreCase("default");
+            int delBg = isDefault ? ColorUtil.rgba(40, 35, 45, (int) (80 * alpha)) : ColorUtil.rgba(180, 50, 60, (int) (140 * alpha));
+            Render2D.drawRoundedRect(delX, actionY, actionBtnW, actionBtnH, 4.0F, delBg);
+            Render2D.drawRoundedOutline(delX, actionY, actionBtnW, actionBtnH, 4.0F, 1.0F, ColorUtil.rgba(255, 255, 255, (int) (25 * alpha)));
+            Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Удалить", delX + actionBtnW / 2.0F, actionY + 4.0F, 6.5F, isDefault ? ColorUtil.rgba(140, 135, 150, (int) (140 * alpha)) : 0xFFFFFFFF);
+
+            float codeX = delX - actionBtnW - 4.0F;
+            Render2D.drawRoundedRect(codeX, actionY, actionBtnW, actionBtnH, 4.0F, ColorUtil.rgba(100, 60, 160, (int) (140 * alpha)));
+            Render2D.drawRoundedOutline(codeX, actionY, actionBtnW, actionBtnH, 4.0F, 1.0F, ColorUtil.rgba(255, 255, 255, (int) (25 * alpha)));
+            Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Код", codeX + actionBtnW / 2.0F, actionY + 4.0F, 6.5F, 0xFFFFFFFF);
+
+            float saveX = codeX - actionBtnW - 4.0F;
+            Render2D.drawRoundedRect(saveX, actionY, actionBtnW, actionBtnH, 4.0F, ColorUtil.rgba(50, 120, 180, (int) (140 * alpha)));
+            Render2D.drawRoundedOutline(saveX, actionY, actionBtnW, actionBtnH, 4.0F, 1.0F, ColorUtil.rgba(255, 255, 255, (int) (25 * alpha)));
+            Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Сохранить", saveX + actionBtnW / 2.0F, actionY + 4.0F, 6.5F, 0xFFFFFFFF);
+
+            float loadX = saveX - actionBtnW - 4.0F;
+            Render2D.drawRoundedRect(loadX, actionY, actionBtnW, actionBtnH, 4.0F, ColorUtil.multiplyAlpha(accent, 0.60F * alpha));
+            Render2D.drawRoundedOutline(loadX, actionY, actionBtnW, actionBtnH, 4.0F, 1.0F, accent);
+            Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Загрузить", loadX + actionBtnW / 2.0F, actionY + 4.0F, 6.5F, 0xFFFFFFFF);
+
+            currentY += cardH + 4.0F;
+        }
+
+        float totalContentH = currentY + state.getScrollOffset() - startY;
+        state.setMaxScroll(Math.max(0.0F, totalContentH - totalHeight + 10.0F));
+    }
+
+    private void renderFriends(PanelLapState state, float startX, float startY, float totalWidth, float totalHeight, int mouseX, int mouseY, float alpha) {
+        float currentY = startY - state.getScrollOffset();
+        int accent = Theme.getAccentColor();
+
+        float rowH = 20.0F;
+        float inputW = totalWidth - 65.0F;
+        float btnW = 60.0F;
+
+        int friendBorder = state.isFriendInputFocused() ? accent : ColorUtil.rgba(255, 255, 255, (int) (30 * alpha));
+        Render2D.drawRoundedRect(startX, currentY, inputW, rowH, 5.0F, ColorUtil.rgba(30, 25, 40, (int) (160 * alpha)));
+        Render2D.drawRoundedOutline(startX, currentY, inputW, rowH, 5.0F, 1.0F, friendBorder);
+
+        String friendDisplay = state.getFriendInput().isEmpty() ? (state.isFriendInputFocused() ? "|" : "Никнейм друга...") : state.getFriendInput() + (state.isFriendInputFocused() && System.currentTimeMillis() % 1000 > 500 ? "|" : "");
+        int friendColor = state.getFriendInput().isEmpty() && !state.isFriendInputFocused() ? ColorUtil.rgba(160, 155, 175, (int) (160 * alpha)) : ColorUtil.rgba(240, 240, 255, (int) (240 * alpha));
+        Fonts.drawString(Fonts.SF_MEDIUM, friendDisplay, startX + 8.0F, currentY + 5.5F, 7.5F, friendColor);
+
+        Render2D.drawRoundedRect(startX + inputW + 5.0F, currentY, btnW, rowH, 5.0F, ColorUtil.multiplyAlpha(accent, 0.70F * alpha));
+        Render2D.drawRoundedOutline(startX + inputW + 5.0F, currentY, btnW, rowH, 5.0F, 1.0F, accent);
+        Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Добавить", startX + inputW + 5.0F + btnW / 2.0F, currentY + 5.5F, 7.0F, 0xFFFFFFFF);
+
+        currentY += rowH + 12.0F;
+
+        java.util.Set<String> friends = error.friend.FriendManager.getInstance().getFriends();
+        Fonts.drawString(Fonts.SF_MEDIUM, "Список друзей (" + friends.size() + "):", startX, currentY, 8.0F, ColorUtil.rgba(200, 195, 215, (int) (200 * alpha)));
+        currentY += 14.0F;
+
+        for (String friendName : friends) {
+            float cardH = 26.0F;
+            boolean cardHovered = mouseX >= startX && mouseX <= startX + totalWidth && mouseY >= currentY && mouseY <= currentY + cardH;
+
+            int cardBg = cardHovered ? ColorUtil.rgba(255, 255, 255, (int) (16 * alpha)) : ColorUtil.rgba(255, 255, 255, (int) (8 * alpha));
+            int cardOutline = cardHovered ? ColorUtil.rgba(255, 255, 255, (int) (35 * alpha)) : ColorUtil.rgba(255, 255, 255, (int) (18 * alpha));
+
+            Render2D.drawRoundedRect(startX, currentY, totalWidth, cardH, 6.0F, cardBg);
+            Render2D.drawRoundedOutline(startX, currentY, totalWidth, cardH, 6.0F, 1.0F, cardOutline);
+
+            java.util.UUID uuid = java.util.UUID.nameUUIDFromBytes(("OfflinePlayer:" + friendName).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            Identifier skinTexture = DefaultPlayerSkin.get(uuid).body().texturePath();
+
+            Render2D.drawHead(skinTexture, startX + 6.0F, currentY + 4.0F, 18.0F, 9.0F, alpha);
+            Render2D.drawRoundedOutline(startX + 6.0F, currentY + 4.0F, 18.0F, 18.0F, 9.0F, 1.0F, accent);
+
+            Fonts.drawString(Fonts.SF_MEDIUM, friendName, startX + 30.0F, currentY + 7.5F, 8.5F, ColorUtil.rgba(255, 255, 255, (int) (245 * alpha)));
+
+            float remBtnW = 55.0F;
+            float remBtnH = 16.0F;
+            float remX = startX + totalWidth - remBtnW - 6.0F;
+            float remY = currentY + 5.0F;
+
+            Render2D.drawRoundedRect(remX, remY, remBtnW, remBtnH, 4.0F, ColorUtil.rgba(180, 50, 60, (int) (140 * alpha)));
+            Render2D.drawRoundedOutline(remX, remY, remBtnW, remBtnH, 4.0F, 1.0F, ColorUtil.rgba(255, 255, 255, (int) (25 * alpha)));
+            Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Удалить", remX + remBtnW / 2.0F, remY + 4.0F, 6.5F, 0xFFFFFFFF);
+
+            currentY += cardH + 4.0F;
+        }
+
+        float totalContentH = currentY + state.getScrollOffset() - startY;
+        state.setMaxScroll(Math.max(0.0F, totalContentH - totalHeight + 10.0F));
+    }
+
+    private boolean handleConfigsClick(PanelLapState state, float startX, float startY, float totalWidth, float totalHeight, int mouseX, int mouseY, int button) {
+        if (button != GLFW.GLFW_MOUSE_BUTTON_LEFT) return false;
+
+        float currentY = startY - state.getScrollOffset();
+        float rowH = 20.0F;
+
+        float createW = (totalWidth - 10.0F) * 0.5F;
+        float createX = startX;
+        float inputW = createW - 55.0F;
+        float btnW = 50.0F;
+
+        if (mouseX >= createX && mouseX <= createX + inputW && mouseY >= currentY && mouseY <= currentY + rowH) {
+            state.setConfigInputFocused(true);
+            state.setShareCodeInputFocused(false);
+            state.setFriendInputFocused(false);
+            return true;
+        }
+
+        float createBtnX = createX + inputW + 5.0F;
+        if (mouseX >= createBtnX && mouseX <= createBtnX + btnW && mouseY >= currentY && mouseY <= currentY + rowH) {
+            if (!state.getConfigInput().trim().isEmpty()) {
+                Client.INSTANCE.configManager.saveConfig(state.getConfigInput().trim(), true);
+                state.setConfigInput("");
+            }
+            state.setConfigInputFocused(false);
+            return true;
+        }
+
+        float importX = createX + createW + 10.0F;
+        float importInputW = createW - 55.0F;
+
+        if (mouseX >= importX && mouseX <= importX + importInputW && mouseY >= currentY && mouseY <= currentY + rowH) {
+            state.setShareCodeInputFocused(true);
+            state.setConfigInputFocused(false);
+            state.setFriendInputFocused(false);
+            return true;
+        }
+
+        float importBtnX = importX + importInputW + 5.0F;
+        if (mouseX >= importBtnX && mouseX <= importBtnX + btnW && mouseY >= currentY && mouseY <= currentY + rowH) {
+            if (!state.getShareCodeInput().trim().isEmpty()) {
+                Client.INSTANCE.configManager.loadShareCode(state.getShareCodeInput().trim(), true);
+                state.setShareCodeInput("");
+            }
+            state.setShareCodeInputFocused(false);
+            return true;
+        }
+
+        state.setConfigInputFocused(false);
+        state.setShareCodeInputFocused(false);
+
+        currentY += rowH + 12.0F + 14.0F;
+
+        List<String> configs = Client.INSTANCE.configManager.getAvailableConfigs();
+        for (String config : configs) {
+            float cardH = 28.0F;
+            if (mouseY >= currentY && mouseY <= currentY + cardH) {
+                float actionBtnW = 46.0F;
+                float actionBtnH = 16.0F;
+                float actionY = currentY + 6.0F;
+
+                float delX = startX + totalWidth - actionBtnW - 6.0F;
+                if (mouseX >= delX && mouseX <= delX + actionBtnW && mouseY >= actionY && mouseY <= actionY + actionBtnH) {
+                    if (!config.equalsIgnoreCase("default")) {
+                        Client.INSTANCE.configManager.deleteConfig(config);
+                    }
+                    return true;
+                }
+
+                float codeX = delX - actionBtnW - 4.0F;
+                if (mouseX >= codeX && mouseX <= codeX + actionBtnW && mouseY >= actionY && mouseY <= actionY + actionBtnH) {
+                    state.setActiveModal(new error.ui.mainmenu.popup.ShareCodeModal(config));
+                    return true;
+                }
+
+                float saveX = codeX - actionBtnW - 4.0F;
+                if (mouseX >= saveX && mouseX <= saveX + actionBtnW && mouseY >= actionY && mouseY <= actionY + actionBtnH) {
+                    Client.INSTANCE.configManager.saveConfig(config, true);
+                    return true;
+                }
+
+                float loadX = saveX - actionBtnW - 4.0F;
+                if (mouseX >= loadX && mouseX <= loadX + actionBtnW && mouseY >= actionY && mouseY <= actionY + actionBtnH) {
+                    Client.INSTANCE.configManager.loadConfig(config, true);
+                    return true;
+                }
+            }
+            currentY += cardH + 4.0F;
+        }
+
+        return true;
+    }
+
+    private boolean handleFriendsClick(PanelLapState state, float startX, float startY, float totalWidth, float totalHeight, int mouseX, int mouseY, int button) {
+        if (button != GLFW.GLFW_MOUSE_BUTTON_LEFT) return false;
+
+        float currentY = startY - state.getScrollOffset();
+        float rowH = 20.0F;
+        float inputW = totalWidth - 65.0F;
+        float btnW = 60.0F;
+
+        if (mouseX >= startX && mouseX <= startX + inputW && mouseY >= currentY && mouseY <= currentY + rowH) {
+            state.setFriendInputFocused(true);
+            state.setConfigInputFocused(false);
+            state.setShareCodeInputFocused(false);
+            return true;
+        }
+
+        float addBtnX = startX + inputW + 5.0F;
+        if (mouseX >= addBtnX && mouseX <= addBtnX + btnW && mouseY >= currentY && mouseY <= currentY + rowH) {
+            if (!state.getFriendInput().trim().isEmpty()) {
+                error.friend.FriendManager.getInstance().addFriend(state.getFriendInput().trim());
+                error.util.client.persiki.ChatUtil.success("Друг '" + state.getFriendInput().trim() + "' добавлен!");
+                state.setFriendInput("");
+            }
+            state.setFriendInputFocused(false);
+            return true;
+        }
+
+        state.setFriendInputFocused(false);
+
+        currentY += rowH + 12.0F + 14.0F;
+
+        java.util.Set<String> friends = error.friend.FriendManager.getInstance().getFriends();
+        for (String friendName : new java.util.ArrayList<>(friends)) {
+            float cardH = 26.0F;
+            if (mouseY >= currentY && mouseY <= currentY + cardH) {
+                float remBtnW = 55.0F;
+                float remBtnH = 16.0F;
+                float remX = startX + totalWidth - remBtnW - 6.0F;
+                float remY = currentY + 5.0F;
+
+                if (mouseX >= remX && mouseX <= remX + remBtnW && mouseY >= remY && mouseY <= remY + remBtnH) {
+                    error.friend.FriendManager.getInstance().removeFriend(friendName);
+                    error.util.client.persiki.ChatUtil.success("Друг '" + friendName + "' удален.");
+                    return true;
+                }
+            }
+            currentY += cardH + 4.0F;
+        }
+
+        return true;
+    }
+
     private IconUse getCategoryIcon(Category category) {
         return switch (category) {
             case COMBAT -> IconUse.FIGHT;
@@ -387,6 +714,8 @@ public final class PanelLapSuperimposition {
             case PLAYER -> IconUse.PLAYER;
             case RENDER -> IconUse.RENDER;
             case MISC -> IconUse.MISC;
+            case CONFIGS -> IconUse.GEAR;
+            case FRIENDS -> IconUse.GROUP;
         };
     }
 
@@ -492,6 +821,12 @@ public final class PanelLapSuperimposition {
         float contentH = h - 40.0F;
 
         if (mouseX >= contentX && mouseX <= contentX + contentW && mouseY >= contentY && mouseY <= contentY + contentH) {
+            if (state.getCurrentCategory() == Category.CONFIGS) {
+                return handleConfigsClick(state, contentX + 8.0F, contentY, contentW - 16.0F, contentH, mouseX, mouseY, button);
+            } else if (state.getCurrentCategory() == Category.FRIENDS) {
+                return handleFriendsClick(state, contentX + 8.0F, contentY, contentW - 16.0F, contentH, mouseX, mouseY, button);
+            }
+
             List<Module> list = getFilteredModules(state);
             float currentY = contentY - state.getScrollOffset();
 
@@ -513,11 +848,9 @@ public final class PanelLapSuperimposition {
                     float toggleX = modX + colWidth - toggleW - 8.0F;
 
                     boolean isBound = module.getBind().isBound();
-                    String bindText = isBound ? "⌨ " + module.getBind().getDisplayValue() : "⌨";
                     float bindFontSz = 7.0F;
-                    float bindTextW = Fonts.SF_MEDIUM.getWidth(bindText, bindFontSz);
-                    float bindPillW = bindTextW + 8.0F;
                     float bindPillH = 10.0F;
+                    float bindPillW = isBound ? (Fonts.SF_MEDIUM.getWidth(module.getBind().getDisplayValue(), bindFontSz) + 8.0F) : 14.0F;
                     float bindPillX = toggleX - bindPillW - 6.0F;
                     float bindPillY = modY + 6.0F;
 
@@ -582,6 +915,64 @@ public final class PanelLapSuperimposition {
             return true;
         }
 
+        if (state.isConfigInputFocused()) {
+            if (key == GLFW.GLFW_KEY_ESCAPE || key == GLFW.GLFW_KEY_ENTER || key == GLFW.GLFW_KEY_KP_ENTER) {
+                if ((key == GLFW.GLFW_KEY_ENTER || key == GLFW.GLFW_KEY_KP_ENTER) && !state.getConfigInput().trim().isEmpty()) {
+                    Client.INSTANCE.configManager.saveConfig(state.getConfigInput().trim(), true);
+                    state.setConfigInput("");
+                }
+                state.setConfigInputFocused(false);
+                return true;
+            }
+            if (key == GLFW.GLFW_KEY_BACKSPACE) {
+                String input = state.getConfigInput();
+                if (!input.isEmpty()) {
+                    state.setConfigInput(input.substring(0, input.length() - 1));
+                }
+                return true;
+            }
+            return true;
+        }
+
+        if (state.isShareCodeInputFocused()) {
+            if (key == GLFW.GLFW_KEY_ESCAPE || key == GLFW.GLFW_KEY_ENTER || key == GLFW.GLFW_KEY_KP_ENTER) {
+                if ((key == GLFW.GLFW_KEY_ENTER || key == GLFW.GLFW_KEY_KP_ENTER) && !state.getShareCodeInput().trim().isEmpty()) {
+                    Client.INSTANCE.configManager.loadShareCode(state.getShareCodeInput().trim(), true);
+                    state.setShareCodeInput("");
+                }
+                state.setShareCodeInputFocused(false);
+                return true;
+            }
+            if (key == GLFW.GLFW_KEY_BACKSPACE) {
+                String input = state.getShareCodeInput();
+                if (!input.isEmpty()) {
+                    state.setShareCodeInput(input.substring(0, input.length() - 1));
+                }
+                return true;
+            }
+            return true;
+        }
+
+        if (state.isFriendInputFocused()) {
+            if (key == GLFW.GLFW_KEY_ESCAPE || key == GLFW.GLFW_KEY_ENTER || key == GLFW.GLFW_KEY_KP_ENTER) {
+                if ((key == GLFW.GLFW_KEY_ENTER || key == GLFW.GLFW_KEY_KP_ENTER) && !state.getFriendInput().trim().isEmpty()) {
+                    error.friend.FriendManager.getInstance().addFriend(state.getFriendInput().trim());
+                    error.util.client.persiki.ChatUtil.success("Друг '" + state.getFriendInput().trim() + "' добавлен!");
+                    state.setFriendInput("");
+                }
+                state.setFriendInputFocused(false);
+                return true;
+            }
+            if (key == GLFW.GLFW_KEY_BACKSPACE) {
+                String input = state.getFriendInput();
+                if (!input.isEmpty()) {
+                    state.setFriendInput(input.substring(0, input.length() - 1));
+                }
+                return true;
+            }
+            return true;
+        }
+
         if (key == GLFW.GLFW_KEY_ESCAPE) {
             PanelRefractions.close(Minecraft.getInstance());
             return true;
@@ -608,6 +999,30 @@ public final class PanelLapSuperimposition {
             char c = (char) codePoint;
             if (c >= 32 && c != 127) {
                 state.setSearchQuery(state.getSearchQuery() + c);
+            }
+            return;
+        }
+
+        if (state.isConfigInputFocused()) {
+            char c = (char) codePoint;
+            if (c >= 32 && c != 127) {
+                state.setConfigInput(state.getConfigInput() + c);
+            }
+            return;
+        }
+
+        if (state.isShareCodeInputFocused()) {
+            char c = (char) codePoint;
+            if (c >= 32 && c != 127) {
+                state.setShareCodeInput(state.getShareCodeInput() + c);
+            }
+            return;
+        }
+
+        if (state.isFriendInputFocused()) {
+            char c = (char) codePoint;
+            if (c >= 32 && c != 127) {
+                state.setFriendInput(state.getFriendInput() + c);
             }
             return;
         }

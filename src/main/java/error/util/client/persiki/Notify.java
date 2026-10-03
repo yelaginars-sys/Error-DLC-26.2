@@ -3,10 +3,9 @@ package error.util.client.persiki;
 import error.util.client.clients.ColorUtil;
 import error.util.client.clients.Theme;
 import error.util.render.font.IconUse;
-import error.ui.hud.impl.NotificationHud;
+import error.ui.hud.impl.DynamicIslandHud;
 
 /**
- * Create by daun kvass
  */
 public final class Notify {
 
@@ -17,7 +16,8 @@ public final class Notify {
 
 
     public static void add(String title, String description, IconUse icon, int iconColor, long durationMs) {
-        NotificationHud.post(title, description, icon, iconColor, durationMs);
+        String msg = (title != null && !title.isEmpty()) ? (title + ": " + description) : description;
+        DynamicIslandHud.postNotification(msg, iconColor != COLOR_ERROR);
     }
     public static void add(String title, String description, IconUse icon, int iconColor) {
         add(title, description, icon, iconColor, DEFAULT_DURATION);

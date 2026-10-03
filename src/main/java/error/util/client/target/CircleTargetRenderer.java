@@ -36,7 +36,6 @@ import java.util.OptionalDouble;
 import java.util.Random;
 
 /**
- * Create by daun kvass
  */
 public final class CircleTargetRenderer {
     private static final int SEGMENTS = 64;
@@ -201,10 +200,9 @@ public final class CircleTargetRenderer {
             ByteBuffer vertexData = meshData.vertexBuffer();
             int remainingBytes = vertexData.remaining();
             ensureVertexCapacity(remainingBytes);
-            device.createCommandEncoder().writeToBuffer(this.vertexBuffer.slice(0, remainingBytes), vertexData);
 
             try (RenderPass pass = device.createCommandEncoder().createRenderPass(
-                    () -> "Godweer Target Circle Pass",
+                    () -> "Error Target Circle Pass",
                     renderTarget.getColorTextureView(),
                     Optional.empty(),
                     renderTarget.getDepthTextureView(),

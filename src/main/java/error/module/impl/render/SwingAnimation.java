@@ -12,7 +12,6 @@ import error.setting.impl.SliderSetting;
 import error.util.math.anim.Easings;
 
 /**
- * Create by daun kvass
  */
 public final class SwingAnimation extends Module {
 

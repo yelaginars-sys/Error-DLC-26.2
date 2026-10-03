@@ -22,7 +22,6 @@ import error.module.impl.render.PopEffect;
 import error.module.impl.render.Removals;
 
 /**
- * Create by daun kvass
  */
 @Mixin(LivingEntity.class)
 public abstract class LivingEntityMixin {

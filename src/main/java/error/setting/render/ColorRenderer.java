@@ -11,7 +11,6 @@ import error.util.render.Render2D;
 import error.util.render.font.Fonts;
 
 /**
- * Create by daun kvass
  */
 public class ColorRenderer extends SettingRenderer<ColorSetting> {
     private float lastX, lastY, lastW, lastH;

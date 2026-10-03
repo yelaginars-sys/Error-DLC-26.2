@@ -14,7 +14,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Create by daun kvass
  */
 @Getter
 public class Modules {
@@ -72,10 +71,16 @@ public class Modules {
     public Criticals criticals;
     public AutoAccept autoAccept;
     public ActionTracker actionTracker;
+    public HoldMyItems holdMyItems;
+    public Notification notification;
+    public CustomModels customModels;
 
     public void init() {
         register(
                 this.clickGui = new ClickGui(),
+                this.notification = new Notification(),
+                this.customModels = new CustomModels(),
+                this.holdMyItems = new HoldMyItems(),
                 this.sprint = new Sprint(),
                 this.elytraSwap = new ElytraSwap(),
                 this.fullBright = new FullBright(),

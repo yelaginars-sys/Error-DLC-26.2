@@ -8,7 +8,6 @@ import error.event.list.*;
 import error.module.impl.render.ClickGui;
 
 /**
- * Create by daun kvass
  */
 public final class PanelKeyBoardHandler implements IMinecraft {
 
@@ -26,10 +25,9 @@ public final class PanelKeyBoardHandler implements IMinecraft {
         }
 
         if (event.getAction() == GLFW.GLFW_PRESS && isGuiKey) {
-            if (PanelRefractions.toggle(mc)) {
-                event.cancel();
-                return;
-            }
+            clickGui.toggle();
+            event.cancel();
+            return;
         }
 
         if (!PanelRefractions.isOpen()) {
@@ -72,10 +70,9 @@ public final class PanelKeyBoardHandler implements IMinecraft {
         boolean isGuiMouse = clickGui != null && clickGui.getBind().matchesMouse(event.getButton());
 
         if (isGuiMouse && event.getAction() == GLFW.GLFW_PRESS) {
-            if (PanelRefractions.toggle(mc)) {
-                event.cancel();
-                return;
-            }
+            if (clickGui != null) clickGui.toggle();
+            event.cancel();
+            return;
         }
 
         if (!PanelRefractions.isOpen()) {

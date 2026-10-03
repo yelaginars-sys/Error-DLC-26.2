@@ -35,7 +35,6 @@ import java.util.OptionalDouble;
 import java.util.Random;
 
 /**
- * Create by daun kvass
  */
 public final class CubesTargetRenderer {
     private static final float LINE_WIDTH = 0.0022F;
@@ -225,10 +224,9 @@ public final class CubesTargetRenderer {
             ByteBuffer vertexData = meshData.vertexBuffer();
             int remainingBytes = vertexData.remaining();
             ensureVertexCapacity(remainingBytes);
-            device.createCommandEncoder().writeToBuffer(this.vertexBuffer.slice(0, remainingBytes), vertexData);
 
             try (RenderPass pass = device.createCommandEncoder().createRenderPass(
-                    () -> "Godweer Target Cubes Pass",
+                    () -> "Error Target Cubes Pass",
                     renderTarget.getColorTextureView(),
                     Optional.empty(),
                     renderTarget.getDepthTextureView(),

@@ -5,7 +5,6 @@ import error.module.impl.combat.AuraModule;
 import error.util.client.clients.Theme;
 
 /**
- * Create by daun kvass
  */
 public final class TargetMarkers {
     public static final TargetMarkers INSTANCE = new TargetMarkers();

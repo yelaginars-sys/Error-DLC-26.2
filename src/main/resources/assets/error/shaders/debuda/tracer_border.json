@@ -1,0 +1,18 @@
+{
+    "vertex": "isle-client:core/sdf_rect",
+    "fragment": "isle-client:core/tracer_border",
+    "uniforms": [
+        { "name": "ModelViewMat",  "type": "matrix4x4", "count": 16, "values": [ 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0 ] },
+        { "name": "ProjMat",       "type": "matrix4x4", "count": 16, "values": [ 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0 ] },
+        { "name": "RectSize",      "type": "float", "count": 2, "values": [ 100.0, 30.0 ] },
+        { "name": "Padding",       "type": "float", "count": 2, "values": [ 12.0, 12.0 ] },
+        { "name": "Radius",        "type": "float", "count": 1, "values": [ 8.0 ] },
+        { "name": "BorderWidth",   "type": "float", "count": 1, "values": [ 1.5 ] },
+        { "name": "Time",          "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "Accent",        "type": "float", "count": 3, "values": [ 0.710, 0.482, 1.0 ] },
+        { "name": "Head",          "type": "float", "count": 3, "values": [ 1.0, 1.0, 1.0 ] },
+        { "name": "GlowWidth",     "type": "float", "count": 1, "values": [ 12.0 ] },
+        { "name": "GlowAlpha",     "type": "float", "count": 1, "values": [ 0.12 ] },
+        { "name": "Alpha",         "type": "float", "count": 1, "values": [ 1.0 ] }
+    ]
+}

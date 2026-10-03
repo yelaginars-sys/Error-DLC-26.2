@@ -7,7 +7,6 @@ import error.module.Category;
 import error.module.Module;
 
 /**
- * Create by daun kvass
  */
 public class Sprint extends Module {
 

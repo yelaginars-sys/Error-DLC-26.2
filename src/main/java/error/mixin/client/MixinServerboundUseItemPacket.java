@@ -8,7 +8,6 @@ import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import error.util.RotationHandler;
 
 /**
- * Create by daun kvass
  */
 @Mixin(ServerboundUseItemPacket.class)
 public abstract class MixinServerboundUseItemPacket {

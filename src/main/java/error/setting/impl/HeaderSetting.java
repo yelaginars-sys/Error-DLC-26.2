@@ -5,7 +5,6 @@ import error.setting.SettingRenderer;
 import error.setting.render.HeaderRenderer;
 
 /**
- * Create by daun kvass
  */
 public class HeaderSetting extends Setting<String> {
 

@@ -22,7 +22,6 @@ import java.nio.ByteBuffer;
 import java.util.Optional;
 
 /**
- * Create by daun kvass
  */
 public final class MenuBacks {
     private static final int PASS_COUNT = 3;
@@ -119,7 +118,7 @@ public final class MenuBacks {
         }
 
         try (RenderPass pass = RenderSystem.getDevice().createCommandEncoder().createRenderPass(
-                () -> "Godweer GUI backdrop blur",
+                () -> "Error GUI backdrop blur",
                 destination.getColorTextureView(),
                 Optional.empty()
         )) {
@@ -137,7 +136,7 @@ public final class MenuBacks {
             for (int i = 0; i < PASS_COUNT; i++) {
                 int index = i;
                 passUniforms[i] = RenderSystem.getDevice().createBuffer(
-                        () -> "Godweer Kawase UBO " + index,
+                        () -> "Error Kawase UBO " + index,
                         GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_COPY_DST,
                         UNIFORM_SIZE
                 );

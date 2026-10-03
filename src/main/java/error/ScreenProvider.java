@@ -5,7 +5,6 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import error.IMinecraft;
 
 /**
- * Create by daun kvass
  */
 public interface ScreenProvider extends IMinecraft {
     default Screen currentScreen() {

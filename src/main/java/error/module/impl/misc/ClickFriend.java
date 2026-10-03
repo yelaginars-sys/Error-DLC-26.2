@@ -18,7 +18,6 @@ import error.setting.impl.BindSetting;
 import error.util.client.persiki.ChatUtil;
 
 /**
- * Create by daun kvass
  */
 public class ClickFriend extends Module {
 

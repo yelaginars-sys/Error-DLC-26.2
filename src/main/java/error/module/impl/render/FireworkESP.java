@@ -25,7 +25,6 @@ import static error.util.client.clients.Theme.BG_COLOR;
 import static error.util.client.clients.Theme.DIVIDER_COLOR;
 
 /**
- * Create by daun kvass
  */
 public final class FireworkESP extends Module {
 

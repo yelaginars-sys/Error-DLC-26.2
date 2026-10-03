@@ -7,7 +7,6 @@ import error.util.render.Render2DUtil;
 import error.util.render.menu.TextRenderState;
 
 /**
- * Create by daun kvass
  */
 public final class Fonts {
     public static final MsdfFont SF_MEDIUM = MsdfFont.load(Identifier.parse("error:fonts/sfmedium.json"));

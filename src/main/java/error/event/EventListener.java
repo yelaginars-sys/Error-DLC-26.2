@@ -1,7 +1,6 @@
 package error.event;
 
 /**
- * Create by daun kvass
  */
 @FunctionalInterface
 public interface EventListener<T extends Event> {

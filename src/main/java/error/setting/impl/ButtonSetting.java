@@ -5,7 +5,6 @@ import error.setting.SettingRenderer;
 import error.setting.render.ButtonSettingRenderer;
 
 /**
- * Create by daun kvass
  */
 public class ButtonSetting extends Setting<Runnable> {
 

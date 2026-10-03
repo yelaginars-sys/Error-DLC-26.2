@@ -10,7 +10,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import error.module.impl.render.Removals;
 
 /**
- * Create by daun kvass
  */
 @Mixin(GuiGraphicsExtractor.class)
 public class GuiGraphicsExtractorMixin {

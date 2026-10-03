@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Create by daun kvass
  */
 public class JumpCircleRenderer {
     private static final int MAX_CIRCLES = 16;

@@ -5,7 +5,6 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import java.util.List;
 
 /**
- * Create by daun kvass
  */
 public abstract class Command {
     private final String name;

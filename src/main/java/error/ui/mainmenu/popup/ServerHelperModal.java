@@ -21,7 +21,6 @@ import java.util.List;
 import static error.IMinecraft.mc;
 
 /**
- * Create by daun kvass
  */
 public class ServerHelperModal implements Modal {
 

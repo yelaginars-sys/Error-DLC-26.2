@@ -12,7 +12,6 @@ import error.setting.impl.CheckBox;
 import java.util.Locale;
 
 /**
- * Create by daun kvass
  */
 public class AutoAccept extends Module {
     public AutoAccept(){super("AutoAccept","принимать", Category.MISC);}

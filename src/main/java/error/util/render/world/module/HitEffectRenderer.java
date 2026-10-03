@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Create by daun kvass
  */
 public final class HitEffectRenderer {
     private static final int MAX_HITS = 4;

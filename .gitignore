@@ -6,3 +6,4 @@ run/
 *.log
 *.tmp
 out/
+temp_class/

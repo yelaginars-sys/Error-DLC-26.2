@@ -7,7 +7,6 @@ import error.event.list.MenuRenderEvent;
 import error.util.render.Render2DUtil;
 
 /**
- * Create by daun kvass
  */
 
 public final class PanelLapRenderHandler {

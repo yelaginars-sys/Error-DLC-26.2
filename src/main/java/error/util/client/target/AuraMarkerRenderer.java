@@ -36,7 +36,6 @@ import java.nio.ByteBuffer;
 import java.util.Optional;
 
 /**
- * Create by daun kvass
  */
 public final class AuraMarkerRenderer {
     public static final Identifier TARGET_TEXTURE = Identifier.fromNamespaceAndPath("error", "images/world/target.png");
@@ -145,14 +144,14 @@ public final class AuraMarkerRenderer {
         GpuBuffer vertexBuffer = null;
         try {
             vertexBuffer = RenderSystem.getDevice().createBuffer(
-                    () -> "Godweer Aura Marker Vertices",
+                    () -> "Error Aura Marker Vertices",
                     GpuBuffer.USAGE_VERTEX,
                     mesh.vertexBuffer()
             );
 
             GpuSampler sampler = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR);
             try (RenderPass pass = RenderSystem.getDevice().createCommandEncoder().createRenderPass(
-                    () -> "Godweer Aura Marker Pass",
+                    () -> "Error Aura Marker Pass",
                     colorView,
                     Optional.empty()
             )) {
@@ -186,7 +185,7 @@ public final class AuraMarkerRenderer {
     private void ensureParamsBuffer() {
         if (paramsBuffer == null) {
             paramsBuffer = RenderSystem.getDevice().createBuffer(
-                    () -> "Godweer Aura Marker UBO",
+                    () -> "Error Aura Marker UBO",
                     GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_COPY_DST,
                     UNIFORM_SIZE
             );

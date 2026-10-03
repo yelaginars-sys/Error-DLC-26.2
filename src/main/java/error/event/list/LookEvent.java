@@ -6,7 +6,6 @@ import lombok.Setter;
 import error.event.Event;
 
 /**
- * Create by daun kvass
  */
 @Getter
 @Setter

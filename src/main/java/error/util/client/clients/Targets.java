@@ -21,7 +21,6 @@ import error.setting.impl.MultiModeSetting;
 import static error.IMinecraft.mc;
 
 /**
- * Create by daun kvass
  */
 public final class Targets {
 

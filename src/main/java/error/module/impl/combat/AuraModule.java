@@ -20,7 +20,6 @@ import error.util.client.clients.Targets;
 import error.util.player.MoveUtility;
 
 /**
- * Create by daun kvass
  */
 @Getter
 public class AuraModule extends Module {

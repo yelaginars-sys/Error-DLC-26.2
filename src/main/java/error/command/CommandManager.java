@@ -14,7 +14,6 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Create by daun kvass
  */
 public class CommandManager {
     @Setter
@@ -29,7 +28,6 @@ public class CommandManager {
         register(new GpsCommand());
         register(new BuilderCommand());
         register(new FriendCommand());
-        register(new VoiceCommand());
     }
 
     public void register(Command command) {

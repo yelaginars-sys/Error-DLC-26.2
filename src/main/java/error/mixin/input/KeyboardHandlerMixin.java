@@ -11,7 +11,6 @@ import error.Client;
 import error.event.Events;
 
 /**
- * Create by daun kvass
  */
 @Mixin(KeyboardHandler.class)
 public abstract class KeyboardHandlerMixin {

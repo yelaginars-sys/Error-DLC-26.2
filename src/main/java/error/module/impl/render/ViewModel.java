@@ -6,7 +6,6 @@ import error.setting.impl.HeaderSetting;
 import error.setting.impl.SliderSetting;
 
 /**
- * Create by daun kvass
  */
 public final class ViewModel extends Module {
 

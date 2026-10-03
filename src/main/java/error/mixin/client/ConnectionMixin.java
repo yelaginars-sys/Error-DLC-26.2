@@ -13,7 +13,6 @@ import error.event.list.PacketEvent;
 import error.util.network.NetworkUtils;
 
 /**
- * Create by daun kvass
  */
 @Mixin(Connection.class)
 public class ConnectionMixin {

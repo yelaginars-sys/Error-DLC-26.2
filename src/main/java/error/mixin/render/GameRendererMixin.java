@@ -26,7 +26,6 @@ import error.util.RenderExtend;
 import error.util.render.Render3DUtil;
 
 /**
- * Create by daun kvass
  */
 @Mixin(GameRenderer.class)
 public abstract class GameRendererMixin {

@@ -28,7 +28,6 @@ import error.setting.impl.CheckBox;
 import error.setting.impl.ModeSetting;
 
 /**
- * Create by daun kvass
  */
 public final class AutoTool extends Module {
     public static AutoTool INSTANCE;

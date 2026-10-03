@@ -6,7 +6,6 @@ import net.minecraft.world.phys.Vec3;
 import error.event.Event;
 
 /**
- * Create by daun kvass
  */
 @Getter
 @Setter

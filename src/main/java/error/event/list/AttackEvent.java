@@ -8,7 +8,6 @@ import net.minecraft.world.entity.Entity;
 import error.event.Event;
 
 /**
- * Create by daun kvass
  */
 @Getter
 @Setter

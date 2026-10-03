@@ -13,7 +13,6 @@ import org.joml.Matrix4fc;
 import org.joml.Vector4f;
 
 /**
- * Create by daun kvass
  */
 public final class Render3DUtil {
     private static final Matrix4f LEVEL_PROJECTION = new Matrix4f();

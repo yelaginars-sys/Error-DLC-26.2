@@ -3,7 +3,6 @@ package error.event;
 import error.event.list.*;
 
 /**
- * Create by daun kvass
  */
 public final class Events {
     public static final MenuRenderEvent FINAL_GUI_RENDER = new MenuRenderEvent();

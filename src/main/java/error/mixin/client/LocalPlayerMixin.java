@@ -21,7 +21,6 @@ import error.event.list.PlayerTickEvent;
 import error.module.impl.player.AntiPush;
 
 /**
- * Create by daun kvass
  */
 @Mixin(LocalPlayer.class)
 public abstract class LocalPlayerMixin {

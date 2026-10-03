@@ -9,7 +9,6 @@ import error.event.list.PlayerInputEvent;
 import static error.IMinecraft.mc;
 
 /**
- * Create by daun kvass
  */
 
 public final class MoveUtility {

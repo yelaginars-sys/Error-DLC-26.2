@@ -12,7 +12,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Create by daun kvass
  */
 public class ModeRenderer extends SettingRenderer<ModeSetting> {
     private final Map<String, float[]> chipBounds = new HashMap<>();

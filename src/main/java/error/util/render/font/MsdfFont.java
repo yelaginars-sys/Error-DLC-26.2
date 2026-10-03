@@ -22,7 +22,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Create by daun kvass
  */
 public final class MsdfFont {
     private static final Gson GSON = new Gson();
@@ -204,7 +203,7 @@ public final class MsdfFont {
         try {
             InputStream stream = openStream(id);
             if (stream == null) {
-                System.err.println("[GodWeer] Font file not found: " + id);
+                System.err.println("[Error] Font file not found: " + id);
                 return new MsdfFont(id, new FontFile());
             }
             try (Reader reader = new InputStreamReader(stream, StandardCharsets.UTF_8)) {
@@ -212,7 +211,7 @@ public final class MsdfFont {
                 return new MsdfFont(id, file != null ? file : new FontFile());
             }
         } catch (Throwable t) {
-            System.err.println("[GodWeer] Error parsing font: " + id + " (" + t.getMessage() + ")");
+            System.err.println("[Error] Error parsing font: " + id + " (" + t.getMessage() + ")");
             return new MsdfFont(id, new FontFile());
         }
     }

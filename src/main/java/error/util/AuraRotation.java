@@ -5,7 +5,6 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * Create by daun kvass
  */
 public interface AuraRotation {
     String getName();

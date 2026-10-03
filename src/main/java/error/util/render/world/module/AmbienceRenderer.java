@@ -26,7 +26,6 @@ import java.nio.ByteBuffer;
 import java.util.Optional;
 
 /**
- * Create by daun kvass
  */
 public class AmbienceRenderer {
     private static final int SKY_UNIFORM_SIZE = new Std140SizeCalculator()

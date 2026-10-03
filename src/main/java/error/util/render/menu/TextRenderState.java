@@ -11,7 +11,6 @@ import error.util.render.font.MsdfFont;
 import error.util.render.font.TextAlign;
 
 /**
- * Create by daun kvass
  */
 public final class TextRenderState extends MenuCompanionRenderState {
     private final MsdfFont font;

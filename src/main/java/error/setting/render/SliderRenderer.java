@@ -14,7 +14,6 @@ import error.util.render.font.Fonts;
 import java.util.Locale;
 
 /**
- * Create by daun kvass
  */
 public class SliderRenderer extends SettingRenderer<SliderSetting> {
     private final Animation visualAnim = new Animation(0.0F, 0.25F);

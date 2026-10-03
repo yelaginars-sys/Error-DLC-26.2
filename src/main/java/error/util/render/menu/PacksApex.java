@@ -3,7 +3,6 @@ package error.util.render.menu;
 import error.util.math.MathUtil;
 
 /**
- * Create by daun kvass
  */
 final class PacksApex {
 

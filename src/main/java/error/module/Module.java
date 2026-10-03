@@ -6,7 +6,7 @@ import error.Client;
 import error.IMinecraft;
 import error.event.Event;
 import error.event.EventListener;
-import error.ui.hud.impl.NotificationHud;
+
 import error.setting.*;
 import error.setting.impl.*;
 import error.util.math.Animation;
@@ -15,7 +15,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Create by daun kvass
  */
 @Getter
 @Setter
@@ -89,14 +88,27 @@ public abstract class Module implements EventListener<Event>, IMinecraft {
                 onDisable();
             }
 
-            if (!this.name.equalsIgnoreCase("ClickGui") && !this.name.equalsIgnoreCase("Interface") && !this.name.equalsIgnoreCase("HUD") && !error.module.impl.misc.UnHook.unhooked) {
-                NotificationHud.onModuleToggle(this.name, state);
+            if (!error.config.ConfigManager.isLoadingConfig && !this.name.equalsIgnoreCase("ClickGui") && !this.name.equalsIgnoreCase("Interface") && !this.name.equalsIgnoreCase("HUD") && !error.module.impl.misc.UnHook.unhooked) {
+                error.ui.hud.impl.DynamicIslandHud.postNotification(this.name + " " + (state ? "ВКЛ" : "ВЫКЛ"), state);
+                error.ui.hud.impl.NotificationHud.onModuleToggle(this.name, state);
+                error.util.client.ClientSoundPlayer.playModuleToggle(state);
+            }
+            if (Client.INSTANCE != null && Client.INSTANCE.configManager != null) {
+                Client.INSTANCE.configManager.autoSave();
             }
         }
     }
 
+    public String getDescription() {
+        String key = this.name + ".desc";
+        String loc = error.util.client.localization.Localization.get(key);
+        if (!loc.equals(key)) return loc;
+        return error.util.client.localization.Localization.get(this.description);
+    }
+
     public boolean hasDescription() {
-        return description != null && !description.trim().isEmpty();
+        String desc = getDescription();
+        return desc != null && !desc.trim().isEmpty();
     }
 
     public void triggerShake() {

@@ -10,7 +10,6 @@ import error.util.render.Render2D;
 import error.util.render.font.Fonts;
 
 /**
- * Create by daun kvass
  */
 public class CheckBoxRenderer extends SettingRenderer<CheckBox> {
     private final Animation toggleAnim = new Animation(0.0F, 0.25F);

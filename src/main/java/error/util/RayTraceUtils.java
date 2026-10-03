@@ -14,7 +14,6 @@ import java.util.Optional;
 import static error.IMinecraft.mc;
 
 /**
- * Create by daun kvass
  */
 public final class RayTraceUtils {
 

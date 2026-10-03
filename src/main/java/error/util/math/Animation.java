@@ -3,7 +3,6 @@ package error.util.math;
 import lombok.Getter;
 
 /**
- * Create by daun kvass
  */
 @Getter
 public class Animation {

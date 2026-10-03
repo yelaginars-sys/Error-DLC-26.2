@@ -19,7 +19,6 @@ import error.util.render.world.module.HitEffectRenderer;
 import java.util.List;
 
 /**
- * Create by daun kvass
  */
 public final class HitEffect extends Module {
 

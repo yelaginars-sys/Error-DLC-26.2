@@ -5,7 +5,6 @@ import net.minecraft.world.phys.Vec3;
 import java.util.Random;
 
 /**
- * Create by daun kvass
  */
 public class CubeParticle {
     private static final Random RANDOM = new Random();

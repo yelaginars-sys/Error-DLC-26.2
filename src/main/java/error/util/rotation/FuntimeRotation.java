@@ -10,7 +10,6 @@ import error.util.RotationHandler;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * Create by daun kvass
  */
 public final class FuntimeRotation implements AuraRotation {
 

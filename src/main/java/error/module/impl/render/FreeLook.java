@@ -10,7 +10,6 @@ import error.setting.impl.CheckBox;
 import error.setting.impl.ModeSetting;
 
 /**
- * Create by daun kvass
  */
 public class FreeLook extends Module {
 

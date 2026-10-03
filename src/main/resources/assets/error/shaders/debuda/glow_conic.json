@@ -1,0 +1,15 @@
+{
+    "vertex": "isle-client:core/sdf_rect",
+    "fragment": "isle-client:core/glow_conic",
+    "uniforms": [
+        { "name": "ModelViewMat",  "type": "matrix4x4", "count": 16, "values": [ 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0 ] },
+        { "name": "ProjMat",       "type": "matrix4x4", "count": 16, "values": [ 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0 ] },
+        { "name": "RectSize",      "type": "float", "count": 2, "values": [ 100.0, 100.0 ] },
+        { "name": "Padding",       "type": "float", "count": 2, "values": [ 0.0, 0.0 ] },
+        { "name": "Radius",        "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "GlowWidth",     "type": "float", "count": 1, "values": [ 14.0 ] },
+        { "name": "Time",          "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "Alpha",         "type": "float", "count": 1, "values": [ 1.0 ] },
+        { "name": "InnerAlpha",    "type": "float", "count": 1, "values": [ 0.0 ] }
+    ]
+}

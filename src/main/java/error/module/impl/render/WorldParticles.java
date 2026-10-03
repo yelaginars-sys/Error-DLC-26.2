@@ -7,7 +7,6 @@ import error.setting.impl.ModeSetting;
 import error.setting.impl.SliderSetting;
 
 /**
- * Create by daun kvass
  */
 public final class WorldParticles extends Module {
 

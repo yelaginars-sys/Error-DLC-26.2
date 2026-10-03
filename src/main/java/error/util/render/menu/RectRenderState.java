@@ -9,7 +9,6 @@ import error.util.render.pipeline.Pipelines;
 import error.util.render.renders.MenuCompanionRenderState;
 
 /**
- * Create by daun kvass
  */
 public final class RectRenderState extends MenuCompanionRenderState {
     private final float x0, y0, x1, y1;

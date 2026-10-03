@@ -9,7 +9,6 @@ import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import error.util.render.ShaderFallback;
 
 /**
- * Create by daun kvass
  */
 @Mixin(targets = "com.mojang.blaze3d.vulkan.VulkanDevice", remap = false)
 public class VulkanDeviceMixin {

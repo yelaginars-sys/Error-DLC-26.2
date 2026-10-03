@@ -27,7 +27,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Create by daun kvass
  */
 public class AHHelper extends Module {
     public static AHHelper INSTANCE;

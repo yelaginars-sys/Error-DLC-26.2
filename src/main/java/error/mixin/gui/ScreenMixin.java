@@ -14,7 +14,6 @@ import error.event.EventManager;
 import error.event.list.ScreenCloseEvent;
 
 /**
- * Create by daun kvass
  */
 @Mixin(Screen.class)
 public abstract class ScreenMixin {

@@ -1,7 +1,6 @@
 package error;
 
 /**
- * Create by daun kvass
  */
 public class Info {
     public static final String NAME = "Error DLC";

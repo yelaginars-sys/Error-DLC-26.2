@@ -4,7 +4,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Created by daun kvass
  */
 public final class Localization {
     public enum Language {
@@ -31,6 +30,8 @@ public final class Localization {
         RU_DICT.put("Render", "Визуалы");
         RU_DICT.put("Player", "Игрок");
         RU_DICT.put("Misc", "Разное");
+        RU_DICT.put("Configs", "Конфиги");
+        RU_DICT.put("Friends", "Друзья");
         RU_DICT.put("Single Player", "Одиночная игра");
         RU_DICT.put("Multi Player", "Сетевая игра");
         RU_DICT.put("Alt Manager", "Менеджер аккаунтов");
@@ -67,6 +68,7 @@ public final class Localization {
         RU_DICT.put("ElytraSwap", "Элитра Свап");
         RU_DICT.put("FullBright", "Яркость");
         RU_DICT.put("ActionTracker", "Трекер Действий");
+        RU_DICT.put("UseTracker", "Трекер Действий");
         RU_DICT.put("AutoAccept", "Авто Приём");
         RU_DICT.put("TriggerBot", "Триггер Бот");
         RU_DICT.put("Criticals", "Критический Удар");
@@ -292,6 +294,67 @@ public final class Localization {
         RU_DICT.put("Nebula", "Туманность");
         RU_DICT.put("Plasma", "Плазма");
         RU_DICT.put("Caustic", "Каустика");
+
+        // Complete Module Descriptions
+        RU_DICT.put("Aura.desc", "Автоматически атакует врагов на выбранной дистанции");
+        RU_DICT.put("AuraModule.desc", "Автоматически атакует врагов на выбранной дистанции");
+        RU_DICT.put("AimAssistant.desc", "Помогает плавно наводить прицел на игроков и мобов");
+        RU_DICT.put("AutoExplosion.desc", "Автоматически взрывает кристаллы эндера и якоря возрождения");
+        RU_DICT.put("AutoTotem.desc", "Автоматически помещает тотем бессмертия в левую руку");
+        RU_DICT.put("Criticals.desc", "Наносит критические удары во время каждой атаки");
+        RU_DICT.put("CrystalAura.desc", "Автоматически ставит и взрывает кристаллы для PvP");
+        RU_DICT.put("TriggerBot.desc", "Автоматически атакует цель при наведении прицела");
+
+        RU_DICT.put("ActionTracker.desc", "Отслеживает и показывает использование предметов врагами");
+        RU_DICT.put("UseTracker.desc", "Отслеживает использование предметов, тотемов и зелий в заданном радиусе");
+        RU_DICT.put("AHHelper.desc", "Помогает находить и покупать выгодные лоты на аукционе");
+        RU_DICT.put("AutoAccept.desc", "Автоматически принимает запросы на телепортацию и в клан");
+        RU_DICT.put("ClickFriend.desc", "Позволяет добавлять игроков в друзья кликом колесика мыши");
+        RU_DICT.put("ClientSounds.desc", "Воспроизводит кастомные звуки кликов и переключения функций");
+        RU_DICT.put("FakePlayer.desc", "Создает локального фейкового игрока для тестирования");
+        RU_DICT.put("FreeCam.desc", "Позволяет свободно перемещать камеру отдельно от игрока");
+        RU_DICT.put("FullBright.desc", "Максимальное освещение всего мира без факелов и зелий");
+        RU_DICT.put("ItemScroller.desc", "Быстрое перемещение предметов в инвентаре прокруткой колесика");
+        RU_DICT.put("NoDelay.desc", "Убирает задержку при кликах, использовании предметов и блоках");
+        RU_DICT.put("ProjectileHelper.desc", "Отображает траекторию полета и приземления снарядов");
+        RU_DICT.put("ServerHelper.desc", "Автоматизирует серверные команды, авто-реконнект и логин");
+        RU_DICT.put("UnHook.desc", "Скрывает клиент и восстанавливает оригинальный интерфейс игры");
+        RU_DICT.put("WebTrap.desc", "Автоматически ставит паутину под ноги выбранной цели");
+
+        RU_DICT.put("AirStuck.desc", "Замораживает положение игрока в воздухе");
+        RU_DICT.put("ElytraBooster.desc", "Ускоряет полет на элитрах при использовании фейерверков");
+        RU_DICT.put("ElytraMotion.desc", "Позволяет свободно управлять полетом на элитрах");
+        RU_DICT.put("NoFall.desc", "Отменяет урон от падения с любой высоты");
+        RU_DICT.put("Sprint.desc", "Автоматически удерживает спринт во время бега");
+        RU_DICT.put("Timer.desc", "Изменяет скорость игрового времени и процессов");
+        RU_DICT.put("WaterSpeed.desc", "Увеличивает скорость перемещения и плавания в воде");
+
+        RU_DICT.put("AntiPush.desc", "Предотвращает отталкивание от игроков, блоков и воды");
+        RU_DICT.put("AutoSwap.desc", "Быстрая смена предметов в быстрой панели и руках");
+        RU_DICT.put("AutoTool.desc", "Автоматически выбирает наилучший инструмент для блока");
+        RU_DICT.put("ClickPearl.desc", "Быстро бросает эндер-перл по нажатию клавиши");
+        RU_DICT.put("ElytraSwap.desc", "Быстро меняет нагрудник на элитры и обратно");
+        RU_DICT.put("GuiWalk.desc", "Позволяет перемещаться и прыгать с открытым инвентарем");
+
+        RU_DICT.put("Ambience.desc", "Настройка цвета неба, тумана, времени суток и погоды");
+        RU_DICT.put("Arrows.desc", "Отображает указующие стрелки в направлении ближайших игроков");
+        RU_DICT.put("BetterMinecraft.desc", "Оптимизация рендеринга и улучшение визуальных эффектов");
+        RU_DICT.put("BlockHighlight.desc", "Красивая кастомная подсветка выделенного блока");
+        RU_DICT.put("ClickGui.desc", "Главное меню настройки и управления модулями клиента");
+        RU_DICT.put("FireworkESP.desc", "Подсвечивает фейерверки и их траекторию");
+        RU_DICT.put("FreeLook.desc", "Позволяет вращать камеру вокруг игрока без поворота тела");
+        RU_DICT.put("HandShader.desc", "Применяет кастомные шейдеры и свечение на руки и оружие");
+        RU_DICT.put("HitEffect.desc", "Визуальные эффекты частиц и спавн марок при ударе");
+        RU_DICT.put("Interface.desc", "Настройки HUD элементов, тем оформления и цветов");
+        RU_DICT.put("JumpCircles.desc", "Спавнит анимационные круги на земле при прыжке");
+        RU_DICT.put("NameTags.desc", "Отображает подробную информацию, хп и предметы над игроками");
+        RU_DICT.put("Particles.desc", "Кастомные визуальные частицы при атаке и критических ударах");
+        RU_DICT.put("PopEffect.desc", "Красивые визуальные эффекты при сносе тотема бессмертия");
+        RU_DICT.put("Predictions.desc", "Отображает предсказанные траектории движения игроков");
+        RU_DICT.put("Removals.desc", "Отключает ненужные эффекты: тошноту, слепоту, взрывы");
+        RU_DICT.put("SwingAnimation.desc", "Настройка кастомной анимации взмаха рукой и блоком");
+        RU_DICT.put("ViewModel.desc", "Изменяет размер, дистанцию и позицию оружия в руках");
+        RU_DICT.put("WorldParticles.desc", "Спавнит красивые частицы в окружающем мире");
     }
 
     public static String get(String text) {

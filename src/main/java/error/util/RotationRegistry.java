@@ -6,7 +6,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Create by daun kvass
  */
 public final class RotationRegistry {
     private static final Map<String, AuraRotation> ROTATIONS = new LinkedHashMap<>();

@@ -136,7 +136,7 @@ public final class ParticlesWorldRenderer {
         GpuBuffer uniformBuffer = null;
         try {
             vertexBuffer = device.createBuffer(
-                    () -> "Godweer World Particles Vertices",
+                    () -> "Error World Particles Vertices",
                     GpuBuffer.USAGE_VERTEX | GpuBuffer.USAGE_COPY_DST,
                     meshData.vertexBuffer()
             );
@@ -146,9 +146,9 @@ public final class ParticlesWorldRenderer {
             GpuTextureView depthView = target.getDepthTextureView();
             RenderPass pass = !throughWalls && depthView != null
                     ? device.createCommandEncoder().createRenderPass(
-                    () -> "Godweer World Particles Pass", colorView, Optional.empty(), depthView, OptionalDouble.empty())
+                    () -> "Error World Particles Pass", colorView, Optional.empty(), depthView, OptionalDouble.empty())
                     : device.createCommandEncoder().createRenderPass(
-                    () -> "Godweer World Particles Pass", colorView, Optional.empty());
+                    () -> "Error World Particles Pass", colorView, Optional.empty());
             try {
                 RenderPipeline pipeline = additive
                         ? (throughWalls ? THROUGH_WALLS_PIPELINE : PIPELINE)
@@ -176,7 +176,7 @@ public final class ParticlesWorldRenderer {
     private GpuBuffer uploadUniform(float brightness) {
         var device = RenderSystem.getDevice();
         GpuBuffer buffer = device.createBuffer(
-                () -> "Godweer World Particles UBO",
+                () -> "Error World Particles UBO",
                 GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_COPY_DST,
                 UNIFORM_SIZE
         );

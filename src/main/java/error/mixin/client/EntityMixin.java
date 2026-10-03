@@ -18,7 +18,6 @@ import error.module.impl.player.AntiPush;
 import error.module.impl.render.FreeLook;
 
 /**
- * Create by daun kvass
  */
 @Mixin(Entity.class)
 public abstract class EntityMixin {

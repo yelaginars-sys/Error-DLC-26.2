@@ -33,7 +33,6 @@ import java.util.Optional;
 import java.util.OptionalDouble;
 
 /**
- * Create by daun kvass
  */
 public final class CubeParticleRenderer {
     private static final float LINE_WIDTH = 0.0022F;
@@ -219,10 +218,9 @@ public final class CubeParticleRenderer {
             ByteBuffer vertexData = meshData.vertexBuffer();
             int remainingBytes = vertexData.remaining();
             ensureVertexCapacity(remainingBytes);
-            device.createCommandEncoder().writeToBuffer(this.vertexBuffer.slice(0, remainingBytes), vertexData);
 
             try (RenderPass pass = device.createCommandEncoder().createRenderPass(
-                    () -> "Godweer World Cube Particles",
+                    () -> "Error World Cube Particles",
                     target.getColorTextureView(),
                     Optional.empty(),
                     target.getDepthTextureView(),

@@ -22,7 +22,6 @@ import error.util.player.MoveBlockUtility;
 import java.util.function.Predicate;
 
 /**
- * Create by daun kvass
  */
 public final class AutoSwap extends Module {
 

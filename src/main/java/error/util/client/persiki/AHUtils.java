@@ -11,7 +11,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Create by daun kvass
  */
 public class AHUtils {
     private static final Pattern PRICE_PATTERN = Pattern.compile("(?:Цена|Стоимость|Price):?\\s*\\$?([0-9\\s,.]+)(?:\\$|монет|руб)?", Pattern.CASE_INSENSITIVE);

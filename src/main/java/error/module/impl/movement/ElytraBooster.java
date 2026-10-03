@@ -14,7 +14,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Create by daun kvass
  */
 public class ElytraBooster extends Module {
 

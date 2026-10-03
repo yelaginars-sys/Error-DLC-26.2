@@ -9,7 +9,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import error.Client;
 
 /**
- * Create by daun kvass
  */
 @Mixin(DeltaTracker.Timer.class)
 public abstract class DeltaTrackerTimerMixin {

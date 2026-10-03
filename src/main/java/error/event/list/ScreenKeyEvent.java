@@ -6,7 +6,6 @@ import net.minecraft.client.input.KeyEvent;
 import error.event.Event;
 
 /**
- * Create by daun kvass
  */
 @Getter
 public final class ScreenKeyEvent extends Event {

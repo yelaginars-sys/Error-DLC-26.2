@@ -12,7 +12,6 @@ import error.module.impl.render.Ambience;
 import error.module.impl.render.Removals;
 
 /**
- * Create by daun kvass
  */
 @Mixin(Level.class)
 public abstract class LevelMixin {

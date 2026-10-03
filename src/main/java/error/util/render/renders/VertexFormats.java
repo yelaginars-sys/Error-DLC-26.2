@@ -5,7 +5,6 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 
 /**
- * Create by daun kvass
  */
 public final class VertexFormats {
     public static final VertexFormat UI = VertexFormat.builder(0)

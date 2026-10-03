@@ -3,7 +3,6 @@ package error.util.math;
 import lombok.experimental.UtilityClass;
 
 /**
- * Create by daun kvass
  */
 @UtilityClass
 public class MathUtil {

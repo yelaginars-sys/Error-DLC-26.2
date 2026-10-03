@@ -12,7 +12,6 @@ import error.setting.impl.CheckBox;
 import java.lang.reflect.Field;
 
 /**
- * Create by daun kvass
  */
 public final class FakePlayer extends Module {
 

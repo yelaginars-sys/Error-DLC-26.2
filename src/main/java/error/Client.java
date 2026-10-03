@@ -27,7 +27,13 @@ public class Client implements ModInitializer {
     @Override
     public void onInitialize() {
         INSTANCE = this;
+        error.config.ConfigManager.isLoadingConfig = true;
+        try {
+        error.module.impl.misc.UnHook.unhooked = false;
         this.moduleManager.init();
+        if (this.moduleManager.unHook != null) {
+            this.moduleManager.unHook.setState(false);
+        }
         FriendManager.getInstance().load();
         AccountManager.getInstance().load();
         this.commandManager = new CommandManager();
@@ -35,11 +41,19 @@ public class Client implements ModInitializer {
         EventManager.register(RotationBuilderManager.INSTANCE);
         CustomTitleScreen.loadWallpaper();
         this.configManager.loadConfig("default", false);
+        error.module.impl.misc.UnHook.unhooked = false;
+        if (this.moduleManager.unHook != null) {
+            this.moduleManager.unHook.setState(false);
+        }
+        error.irc.IrcManager.getInstance().updateSelfPresence();
+        error.cosmetic.CosmeticsManager.getInstance();
         this.eventManager.register(HudManager.getInstance());
         this.eventManager.register(Tps.INSTANCE);
         this.eventManager.register(new PanelKeyBoardHandler());
         this.eventManager.register(new PanelLapRenderHandler());
-
+        } finally {
+            error.config.ConfigManager.isLoadingConfig = false;
+        }
     }
 
     public static Client getInstance() {

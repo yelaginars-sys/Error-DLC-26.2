@@ -5,7 +5,6 @@ import lombok.RequiredArgsConstructor;
 import error.util.math.Animation;
 
 /**
- * Create by daun kvass
  */
 @Getter
 @RequiredArgsConstructor

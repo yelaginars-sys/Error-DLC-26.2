@@ -10,7 +10,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import error.module.impl.render.Ambience;
 
 /**
- * Create by daun kvass
  */
 @Mixin(ClientClockManager.class)
 public class ClientClockManagerMixin {

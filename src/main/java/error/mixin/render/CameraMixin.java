@@ -21,7 +21,6 @@ import error.module.impl.render.FreeLook;
 import error.module.impl.render.Removals;
 
 /**
- * Create by daun kvass
  */
 @Mixin(Camera.class)
 public abstract class CameraMixin {

@@ -6,241 +6,160 @@ import error.module.impl.combat.AuraModule;
 import error.ui.hud.HudElement;
 import error.util.client.clients.ColorUtil;
 import error.util.client.clients.Theme;
-import error.util.math.MathUtil;
+import error.util.math.Animation;
 import error.util.render.Render2D;
 import error.util.render.font.Fonts;
 import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.client.player.AbstractClientPlayer;
-import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Random;
 
 public final class TargetHud extends HudElement implements IMinecraft {
 
-    private float healthAnimation = 0.0F;
-    private float absorptionAnimation = 0.0F;
-    private LivingEntity target = null;
-    private float lastHealth = -1.0F;
-    private float hitFlash = 0.0F;
-    private float hitFlashTarget = 0.0F;
-    private long hitFlashHoldUntil = 0L;
-
-    private final List<HitParticle> particles = new ArrayList<>();
-    private final Random random = new Random();
-
-    private static class HitParticle {
-        float x, y;
-        float vx, vy;
-        float life;
-        float maxLife;
-        float size;
-        int color;
-
-        HitParticle(float x, float y, float vx, float vy, float life, float size, int color) {
-            this.x = x;
-            this.y = y;
-            this.vx = vx;
-            this.vy = vy;
-            this.life = life;
-            this.maxLife = life;
-            this.size = size;
-            this.color = color;
-        }
-
-        boolean update() {
-            x += vx;
-            y += vy;
-            vy += 0.02F;
-            vx *= 0.97F;
-            vy *= 0.97F;
-            life -= 1.0F;
-            return life <= 0.0F;
-        }
-
-        float alpha() {
-            return life / maxLife;
-        }
-    }
+    private final Animation healthAnim = new Animation(20.0F, 0.25F);
+    private LivingEntity targetEntity = null;
 
     public TargetHud() {
-        super("target", "Target HUD", 250.0F, 180.0F, 94.0F, 32.0F, true);
+        super("target_hud", "Target HUD", 240.0F, 180.0F, 140.0F, 42.0F, true);
     }
 
-    public com.google.gson.JsonObject writeConfig() {
-        return new com.google.gson.JsonObject();
-    }
+    private LivingEntity resolveTarget() {
+        AuraModule aura = AuraModule.INSTANCE;
+        if (aura != null && aura.isEnabled() && aura.getTarget() != null && aura.getTarget().isAlive()) {
+            return aura.getTarget();
+        }
 
-    public void readConfig(com.google.gson.JsonObject json) {
+        if (mc.crosshairPickEntity instanceof LivingEntity living && living.isAlive()) {
+            return living;
+        }
+
+        if (mc.gui.screen() instanceof ChatScreen) {
+            return mc.player;
+        }
+
+        return null;
     }
 
     @Override
     public void draw(Render2DEvent event) {
-        LivingEntity currentTarget = getTarget();
-        if (currentTarget != null) target = currentTarget;
+        if (mc.player == null) return;
 
-        boolean visible = target != null;
-        fadeAnim.setTarget(visible ? 1.0F : 0.0F);
+        LivingEntity curTarget = resolveTarget();
+        boolean chatOpen = mc.gui.screen() instanceof ChatScreen;
+
+        fadeAnim.setTarget(curTarget != null ? 1.0F : 0.0F);
         fadeAnim.update();
+        float alpha = fadeAnim.getValue();
 
-        float anim = fadeAnim.getValue();
-        if (anim <= 0.01F || target == null) return;
-
-        int fa = (int) (anim * 255.0F);
-        int themeAccent = Theme.getAccentColor();
-
-        float currentHp = target.getHealth();
-        float maxHp = target.getMaxHealth();
-        float absorptionHp = target.getAbsorptionAmount();
-
-        boolean gotHit = lastHealth > 0 && currentHp < lastHealth;
-        if (gotHit) {
-            hitFlashTarget = 1.0F;
-            hitFlashHoldUntil = System.currentTimeMillis() + 900L;
-        }
-        lastHealth = currentHp;
-
-        boolean holding = hitFlashHoldUntil > 0 && System.currentTimeMillis() < hitFlashHoldUntil;
-
-        if (hitFlashTarget > 0) {
-            hitFlash = MathUtil.lerp(hitFlash, hitFlashTarget, 0.25F);
-            if (hitFlash >= 0.95F && !holding) {
-                hitFlash = 1.0F;
-                hitFlashTarget = 0.0F;
-            }
-        } else {
-            hitFlash = MathUtil.lerp(hitFlash, 0.0F, holding ? 1.0F : 0.025F);
-            if (hitFlash < 0.01F) {
-                hitFlash = 0.0F;
-                hitFlashHoldUntil = 0L;
-            }
+        if (alpha <= 0.01F) {
+            this.width = 0.0F;
+            this.height = 0.0F;
+            return;
         }
 
-        healthAnimation = Mth.clamp(MathUtil.lerp(healthAnimation, currentHp / Math.max(1.0F, maxHp), 0.1F), 0.0F, 1.0F);
-        float absorptionPercent = absorptionHp > 0 ? Math.min(absorptionHp / Math.max(1.0F, maxHp), 1.0F) : 0.0F;
-        absorptionAnimation = Mth.clamp(MathUtil.lerp(absorptionAnimation, absorptionPercent, 0.08F), 0.0F, 1.0F);
+        if (curTarget != null) {
+            this.targetEntity = curTarget;
+        }
+
+        if (this.targetEntity == null) return;
+
+        float cardW = 145.0F;
+        float cardH = 42.0F;
+        this.width = cardW;
+        this.height = cardH;
 
         float x = getX();
         float y = getY();
 
-        float headSize = 26.0F;
-        float padding = 3.0F;
-        float gap = 3.0F;
-        float barH = 4.5F;
-        float barRound = 1.0F;
-        float round = 7.0F;
-        float width = 94.0F;
-        float height = headSize + padding * 2.0F;
+        int shadowCol = ColorUtil.rgba(0, 0, 0, (int) (150 * alpha));
+        int glassFill = ColorUtil.rgba(18, 16, 26, (int) (225 * alpha));
+        int glassBorder = ColorUtil.rgba(255, 255, 255, (int) (40 * alpha));
+        int themeAccent = Theme.getAccentColor();
 
-        this.width = width;
-        this.height = height;
+        // Glass background card
+        Render2D.drawShadow(x, y, cardW, cardH, 7.0F, 10.0F, shadowCol);
+        Render2D.drawBlur(x, y, cardW, cardH, 7.0F, 16.0F, glassFill, alpha);
+        Render2D.drawRoundedRect(x, y, cardW, cardH, 7.0F, glassFill);
+        Render2D.drawRoundedOutline(x, y, cardW, cardH, 7.0F, 1.0F, glassBorder);
 
-        float headX = x + padding;
-        float headY = y + (height - headSize) / 2.0F;
+        // Player Head / Avatar
+        float headSize = 28.0F;
+        float headX = x + 7.0F;
+        float headY = y + (cardH - headSize) / 2.0F;
 
-        if (gotHit) {
-            int count = 14;
-            for (int i = 0; i < count; i++) {
-                float angle = (float) (i * (Math.PI * 2.0 / count) + random.nextFloat() * 0.3F);
-                float radius = headSize / 2.0F;
-                float cx = headX + headSize / 2.0F + (float) (Math.cos(angle) * radius);
-                float cy = headY + headSize / 2.0F + (float) (Math.sin(angle) * radius);
-                float speed = 0.3F + random.nextFloat() * 0.5F;
-                float vx = (float) (Math.cos(angle) * speed);
-                float vy = (float) (Math.sin(angle) * speed);
-                float size = 2.0F + random.nextFloat() * 2.0F;
-                float life = 20.0F + random.nextFloat() * 15.0F;
-                particles.add(new HitParticle(cx, cy, vx, vy, life, size, themeAccent));
-            }
-        }
-
-        Iterator<HitParticle> iter = particles.iterator();
-        while (iter.hasNext()) {
-            HitParticle p = iter.next();
-            if (p.update()) {
-                iter.remove();
-            }
-        }
-
-        // Liquid glass background with blur and specular outline
-        Render2D.drawShadow(x, y, width, height, round, 6.0F, ColorUtil.rgba(0, 0, 0, (int) (140 * anim)));
-        int glassFill = ColorUtil.rgba(20, 18, 28, (int) (160 * anim));
-        Render2D.drawBlur(x, y, width, height, round, 12.0F, glassFill, anim);
-        Render2D.drawRoundedRect(x, y, width, height, round, glassFill);
-        Render2D.drawRoundedOutline(x, y, width, height, round, 1.0F, ColorUtil.rgba(255, 255, 255, (int) (28 * anim)));
-
-        // Head rendering
-        if (target instanceof AbstractClientPlayer clientPlayer) {
-            Render2D.drawHead(clientPlayer, headX, headY, headSize, 6.0F, anim);
+        if (targetEntity instanceof AbstractClientPlayer clientPlayer) {
+            Render2D.drawCustomAvatar(headX, headY, headSize, 5.0F, alpha);
         } else {
-            Render2D.drawRoundedRect(headX, headY, headSize, headSize, 6.0F, ColorUtil.rgba(30, 30, 30, (int) (200 * anim)));
-            Fonts.drawString(Fonts.SF_MEDIUM, "?", headX + headSize / 2.0F - 4.0F, headY + headSize / 2.0F - 6.0F, 14.0F, ColorUtil.rgba(255, 255, 255, fa));
+            Render2D.drawRoundedRect(headX, headY, headSize, headSize, 5.0F, ColorUtil.rgba(40, 36, 54, (int) (220 * alpha)));
         }
+        Render2D.drawRoundedOutline(headX, headY, headSize, headSize, 5.0F, 1.0F, ColorUtil.rgba(255, 255, 255, (int) (40 * alpha)));
 
-        // Hit flash overlay
-        if (hitFlash > 0.01F) {
-            int redAlpha = (int) (hitFlash * 127.0F * anim);
-            Render2D.drawRoundedRect(headX, headY, headSize, headSize, 6.0F, ColorUtil.rgba(255, 0, 0, redAlpha));
-        }
+        float contentX = headX + headSize + 8.0F;
+        float availableTextW = cardW - (contentX - x) - 8.0F;
 
-        float textX = headX + headSize + gap;
-        String nameStr = target.getName().getString();
-        float nameSize = 6.5F;
-        float hpLabelSize = 5.5F;
-        float hpNumSize = 6.0F;
+        // Target Name
+        String name = targetEntity.getName().getString();
+        Fonts.drawString(Fonts.SF_MEDIUM, name, contentX, y + 6.0F, 8.0F, ColorUtil.rgba(255, 255, 255, (int) (245 * alpha)));
 
-        float nameY = y + padding + 2.0F;
-        Fonts.drawString(Fonts.SF_MEDIUM, nameStr, textX, nameY, nameSize, ColorUtil.rgba(255, 255, 255, fa));
+        // Health & Absorption
+        float hp = targetEntity.getHealth();
+        float maxHp = Math.max(1.0F, targetEntity.getMaxHealth());
+        float absorb = targetEntity.getAbsorptionAmount();
 
-        float healthY = nameY + nameSize + 2.5F;
-        int themeColor = ColorUtil.withAlpha(themeAccent, fa);
-        String healthLabel = "Health:";
-        float labelW = Fonts.SF_MEDIUM.getWidth(healthLabel, hpLabelSize);
-        Fonts.drawString(Fonts.SF_MEDIUM, healthLabel, textX, healthY, hpLabelSize, themeColor);
+        healthAnim.setTarget(hp);
+        healthAnim.update();
+        float animHp = healthAnim.getValue();
 
-        String hpNum = String.format("%.1f", Math.max(0.0F, currentHp)).replace(".", ",");
-        Fonts.drawString(Fonts.SF_MEDIUM, hpNum, textX + labelW + 1.0F, healthY - 0.3F, hpNumSize, ColorUtil.rgba(255, 255, 255, fa));
+        String hpText = String.format("%.1f HP", hp + absorb);
+        float hpW = Fonts.SF_MEDIUM.getWidth(hpText, 6.5F);
+        Fonts.drawString(Fonts.SF_MEDIUM, hpText, x + cardW - hpW - 8.0F, y + 6.5F, 6.5F, ColorUtil.rgba(220, 220, 240, (int) (210 * alpha)));
 
-        float barX = headX + headSize + 4.0F;
-        float barY = y + height - padding - barH - 1.5F;
-        float barW = width - (headX + headSize + 4.0F - x) - padding - 3.0F;
+        // Distance Text
+        float dist = mc.player.distanceTo(targetEntity);
+        String distText = String.format("%.1fm", dist);
+        Fonts.drawString(Fonts.SF_MEDIUM, distText, contentX, y + 17.0F, 6.5F, ColorUtil.rgba(170, 175, 200, (int) (190 * alpha)));
 
-        int barBg = ColorUtil.rgba(
-                (int) (((themeAccent >> 16) & 0xFF) * 0.2F),
-                (int) (((themeAccent >> 8) & 0xFF) * 0.2F),
-                (int) ((themeAccent & 0xFF) * 0.2F),
-                (int) (180 * anim)
-        );
-        Render2D.drawRoundedRect(barX, barY, barW, barH, barRound, barBg);
+        // Health Bar at the bottom
+        float barX = contentX;
+        float barY = y + cardH - 11.0F;
+        float barW = availableTextW;
+        float barH = 4.0F;
 
-        if (healthAnimation > 0.001F) {
-            float filledW = barW * healthAnimation;
-            if (filledW > 1.0F) {
-                Render2D.drawRoundedRect(barX, barY, filledW, barH, barRound, themeColor);
+        Render2D.drawRoundedRect(barX, barY, barW, barH, 2.0F, ColorUtil.rgba(255, 255, 255, (int) (35 * alpha)));
+
+        float pct = Math.min(1.0F, Math.max(0.0F, animHp / maxHp));
+        float fillW = Math.max(2.0F, barW * pct);
+
+        int hpCol1 = ColorUtil.multiplyAlpha(themeAccent, alpha);
+        int hpCol2 = ColorUtil.rgba(ColorUtil.red(themeAccent), ColorUtil.green(themeAccent), ColorUtil.blue(themeAccent), (int) (180 * alpha));
+
+        Render2D.drawGradientRound(barX, barY, fillW, barH, 2.0F, hpCol1, hpCol2, hpCol2, hpCol1);
+
+        // Armor & Item Icons (if player)
+        if (targetEntity instanceof Player player) {
+            float armorX = contentX + 35.0F;
+            float armorY = y + 16.0F;
+            float iconSize = 9.0F;
+
+            List<ItemStack> armorItems = new ArrayList<>();
+            net.minecraft.world.entity.EquipmentSlot[] slots = {
+                    net.minecraft.world.entity.EquipmentSlot.HEAD,
+                    net.minecraft.world.entity.EquipmentSlot.CHEST,
+                    net.minecraft.world.entity.EquipmentSlot.LEGS,
+                    net.minecraft.world.entity.EquipmentSlot.FEET
+            };
+            for (var slot : slots) {
+                ItemStack stack = player.getItemBySlot(slot);
+                if (stack != null && !stack.isEmpty()) armorItems.add(stack);
+            }
+
+            for (int i = 0; i < armorItems.size(); i++) {
+                Render2D.drawRoundedRect(armorX + i * 11.0F, armorY, iconSize, iconSize, 2.0F, ColorUtil.rgba(255, 255, 255, (int) (30 * alpha)));
             }
         }
-
-        if (absorptionHp > 0 || absorptionAnimation > 0.01F) {
-            int goldColor = ColorUtil.rgba(255, 215, 0, fa);
-            Render2D.drawRoundedRect(barX, barY, barW * absorptionAnimation, barH, barRound, goldColor);
-        }
-
-        // Particle rendering
-        for (HitParticle p : particles) {
-            int pAlpha = (int) (p.alpha() * fa);
-            int pColor = ColorUtil.withAlpha(p.color, pAlpha);
-            Render2D.drawRoundedRect(p.x - p.size / 2.0F, p.y - p.size / 2.0F, p.size, p.size, p.size / 2.0F, pColor);
-        }
-    }
-
-    private LivingEntity getTarget() {
-        if (AuraModule.INSTANCE != null && AuraModule.INSTANCE.isEnabled() && AuraModule.INSTANCE.getTarget() != null) {
-            return AuraModule.INSTANCE.getTarget();
-        }
-        if (mc.gui != null && mc.gui.screen() instanceof ChatScreen) return mc.player;
-        return null;
     }
 }

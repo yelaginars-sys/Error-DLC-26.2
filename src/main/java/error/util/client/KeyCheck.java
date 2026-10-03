@@ -7,7 +7,6 @@ import error.IMinecraft;
 import error.util.client.persiki.KeyUtil;
 
 /**
- * Create by daun kvass
  */
 public final class KeyCheck implements IMinecraft {
 

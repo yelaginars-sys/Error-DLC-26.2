@@ -1,0 +1,139 @@
+package error.ui.hud.impl;
+
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.ChatScreen;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.phys.Vec3;
+import org.joml.Matrix3x2fStack;
+import error.event.list.Render2DEvent;
+import error.ui.hud.HudElement;
+import error.util.client.clients.ColorUtil;
+import error.util.client.clients.Theme;
+import error.util.render.Render2D;
+import error.util.render.Render3DUtil;
+import error.util.render.font.Fonts;
+
+public class GpsHud extends HudElement {
+    private static final Identifier POINTER_TEX = Identifier.fromNamespaceAndPath("error", "images/ui/pointer.png");
+
+    public static boolean active = false;
+    public static String targetName = null;
+    public static double targetX = 0;
+    public static double targetY = Double.NaN;
+    public static double targetZ = 0;
+
+    public GpsHud() {
+        super("gps", "GPS", 0, 0, 88.0F, 18.0F, true);
+        Minecraft mc = Minecraft.getInstance();
+        if (mc != null && mc.getWindow() != null) {
+            this.x = (mc.getWindow().getGuiScaledWidth() - 88.0F) / 2.0F;
+            this.y = 28.0F;
+        }
+    }
+
+    public static void setTarget(String name, double x, double y, double z) {
+        targetName = name;
+        targetX = x;
+        targetY = y;
+        targetZ = z;
+        active = true;
+    }
+
+    public static void clearGps() {
+        active = false;
+        targetName = null;
+        targetY = Double.NaN;
+    }
+
+    @Override
+    public boolean shouldRender() {
+        return enabled && active;
+    }
+
+    @Override
+    public void draw(Render2DEvent event) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc == null || mc.level == null || mc.player == null) return;
+
+        boolean inChat = mc.gui.screen() instanceof ChatScreen;
+        boolean isEditing = inChat || dragging;
+
+        // Visible ONLY when GPS target is active OR when in ChatScreen for HUD positioning
+        fadeAnim.setTarget((active || isEditing) && enabled ? 1.0F : 0.0F);
+        fadeAnim.update();
+
+        float alpha = fadeAnim.getValue();
+        if (alpha <= 0.01F) return;
+
+        var extractor = event.getGuiGraphicsExtractor();
+        if (extractor == null) return;
+
+        int themeAccent = Theme.getAccentColor();
+        int ar = ColorUtil.red(themeAccent);
+        int ag = ColorUtil.green(themeAccent);
+        int ab = ColorUtil.blue(themeAccent);
+
+        int bgFill = ColorUtil.rgba(18, 14, 26, (int) (210 * alpha));
+        int shadowCol = ColorUtil.rgba(0, 0, 0, (int) (140 * alpha));
+        int glassBorder = ColorUtil.rgba(255, 255, 255, (int) (40 * alpha));
+        int accentGlow = ColorUtil.rgba(ar, ag, ab, (int) (50 * alpha));
+
+        // 2.5x smaller compact dimensions
+        float w = 88.0F;
+        float h = 18.0F;
+        this.width = w;
+        this.height = h;
+
+        Render2D.drawShadow(x, y, w, h, 6.0F, 6.0F, shadowCol);
+        Render2D.drawShadow(x, y, w, h, 6.0F, 3.0F, accentGlow);
+        Render2D.drawBlur(x, y, w, h, 6.0F, 12.0F, bgFill, alpha);
+        Render2D.drawRoundedRect(x, y, w, h, 6.0F, bgFill);
+        Render2D.drawRoundedOutline(x, y, w, h, 6.0F, 1.0F, active ? ColorUtil.multiplyAlpha(themeAccent, alpha) : glassBorder);
+
+        float arrowSize = 9.0F;
+        float arrowCenterX = x + 8.0F;
+        float arrowCenterY = y + h / 2.0F;
+
+        if (active) {
+            float tickDelta = event.getDeltaTracker().getGameTimeDeltaPartialTick(false);
+            Vec3 playerPos = Render3DUtil.interpolatedPosition(mc.player, tickDelta);
+            float playerYaw = mc.player.getViewYRot(tickDelta);
+
+            double dx = targetX - playerPos.x;
+            double dz = targetZ - playerPos.z;
+
+            double yawToPoint = Math.toDegrees(Math.atan2(dz, dx)) - 90.0;
+            float relativeYawRad = (float) Math.toRadians(yawToPoint - playerYaw);
+
+            double dist2D = Math.hypot(dx, dz);
+            String distStr = (int) Math.round(dist2D) + "m";
+
+            Matrix3x2fStack pose = extractor.pose();
+            pose.pushMatrix();
+            pose.translate(arrowCenterX, arrowCenterY);
+            pose.rotate(relativeYawRad);
+
+            Render2D.drawTexture(POINTER_TEX, -arrowSize / 2.0F, -arrowSize / 2.0F, arrowSize, arrowSize, 0.0F, ColorUtil.multiplyAlpha(themeAccent, alpha));
+            pose.popMatrix();
+
+            String displayTitle = distStr + ((targetName != null && !targetName.isEmpty()) ? " • " + targetName : "");
+            Fonts.drawString(Fonts.SF_MEDIUM, displayTitle, x + 16.0F, y + 2.5F, 6.5F, ColorUtil.rgba(255, 255, 255, (int) (245 * alpha)));
+
+            String coordsStr;
+            if (!Double.isNaN(targetY)) {
+                coordsStr = (int) targetX + ", " + (int) targetY + ", " + (int) targetZ;
+            } else {
+                coordsStr = (int) targetX + ", " + (int) targetZ;
+            }
+            Fonts.drawString(Fonts.SF_MEDIUM, coordsStr, x + 16.0F, y + 9.5F, 5.5F, ColorUtil.rgba(180, 180, 195, (int) (200 * alpha)));
+        } else {
+            Render2D.drawTexture(POINTER_TEX, arrowCenterX - arrowSize / 2.0F, arrowCenterY - arrowSize / 2.0F, arrowSize, arrowSize, 0.0F, ColorUtil.multiplyAlpha(themeAccent, alpha));
+
+            String displayTitle = "150m • GPS";
+            Fonts.drawString(Fonts.SF_MEDIUM, displayTitle, x + 16.0F, y + 2.5F, 6.5F, ColorUtil.rgba(255, 255, 255, (int) (245 * alpha)));
+
+            String coordsStr = "100, 64, 200";
+            Fonts.drawString(Fonts.SF_MEDIUM, coordsStr, x + 16.0F, y + 9.5F, 5.5F, ColorUtil.rgba(180, 180, 195, (int) (180 * alpha)));
+        }
+    }
+}

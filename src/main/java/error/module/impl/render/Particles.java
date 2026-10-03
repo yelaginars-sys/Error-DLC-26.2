@@ -32,7 +32,6 @@ import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * Create by daun kvass
  */
 public final class Particles extends Module {
 

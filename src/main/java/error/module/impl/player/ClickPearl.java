@@ -16,7 +16,6 @@ import error.util.player.InventoryUtil;
 import error.util.player.MoveBlockUtility;
 
 /**
- * Create by daun kvass
  */
 public final class ClickPearl extends Module {
     private static final int HOTBAR_SIZE = 9;

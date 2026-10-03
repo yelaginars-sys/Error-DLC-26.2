@@ -12,7 +12,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import error.module.impl.render.Removals;
 
 /**
- * Create by daun kvass
  */
 @Mixin(BannerRenderer.class)
 public class BannerRendererMixin {

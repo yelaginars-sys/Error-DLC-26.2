@@ -16,7 +16,6 @@ import error.ui.mainmenu.PanelRefractions;
 import error.module.impl.misc.FreeCam;
 
 /**
- * Create by daun kvass
  */
 @Mixin(MouseHandler.class)
 public abstract class MouseHandlerMixin {

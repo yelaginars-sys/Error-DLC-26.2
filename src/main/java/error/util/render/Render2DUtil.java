@@ -13,7 +13,6 @@ import java.util.Deque;
 import java.util.List;
 
 /**
- * Create by daun kvass
  */
 public final class Render2DUtil {
     private static final List<GuiElementRenderState> QUEUED = new ArrayList<>(128);
@@ -76,6 +75,7 @@ public final class Render2DUtil {
         GuiGraphicsExtractor extractor = RenderExtend.currentGuiGraphicsExtractor();
         if (extractor == null) {
             QUEUED.clear();
+            error.util.render.pipeline.HudBlurPipeline.flush();
             return;
         }
 
@@ -84,6 +84,7 @@ public final class Render2DUtil {
             accessor.getGuiRenderState().addGuiElement(state);
         }
         QUEUED.clear();
+        error.util.render.pipeline.HudBlurPipeline.flush();
     }
 
     public static void queue(GuiElementRenderState state) {

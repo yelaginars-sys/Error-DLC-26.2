@@ -8,7 +8,6 @@ import error.module.Module;
 import error.setting.impl.SliderSetting;
 
 /**
- * Create by daun kvass
  */
 public class Timer extends Module {
 

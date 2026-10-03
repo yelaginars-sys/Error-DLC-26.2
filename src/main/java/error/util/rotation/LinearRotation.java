@@ -8,7 +8,6 @@ import error.util.AuraRotation;
 import error.util.RotationHandler;
 
 /**
- * Create by daun kvass
  */
 public final class LinearRotation implements AuraRotation {
     @Override

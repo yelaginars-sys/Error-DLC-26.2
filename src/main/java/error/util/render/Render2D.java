@@ -12,7 +12,6 @@ import error.util.render.menu.RectRenderState;
 import error.util.render.menu.TextureRenderState;
 
 /**
- * Create by daun kvass
  */
 public class Render2D {
 
@@ -160,6 +159,32 @@ public class Render2D {
         drawHead(skin, x, y, size, radius, tint);
     }
 
+    private static Identifier customAvatarIdentifier = null;
+
+    public static Identifier getCustomAvatarTexture() {
+        if (customAvatarIdentifier != null) return customAvatarIdentifier;
+        try {
+            java.io.File file = new java.io.File("D:\\Без названия (2).jpg");
+            if (file.exists()) {
+                com.mojang.blaze3d.platform.NativeImage img = com.mojang.blaze3d.platform.NativeImage.read(new java.io.FileInputStream(file));
+                customAvatarIdentifier = Identifier.fromNamespaceAndPath("error", "custom_avatar");
+                net.minecraft.client.renderer.texture.DynamicTexture tex = new net.minecraft.client.renderer.texture.DynamicTexture(() -> customAvatarIdentifier.toString(), img);
+                Minecraft.getInstance().getTextureManager().register(customAvatarIdentifier, tex);
+            }
+        } catch (Throwable ignored) {}
+        return customAvatarIdentifier;
+    }
+
+    public static void drawCustomAvatar(float x, float y, float size, float radius, float alpha) {
+        Identifier avatar = getCustomAvatarTexture();
+        int tint = error.util.client.clients.ColorUtil.applyAlpha(0xFFFFFFFF, alpha);
+        if (avatar != null) {
+            drawTexture(avatar, x, y, size, size, 0.0F, 0.0F, 1.0F, 1.0F, radius, tint, FilterMode.LINEAR);
+        } else if (Minecraft.getInstance().player != null) {
+            drawHead(Minecraft.getInstance().player, x, y, size, radius, alpha);
+        }
+    }
+
     public static void drawHead(Identifier skin, float x, float y, float size, float radius, int tint) {
         if (skin == null || size <= 0) return;
 
@@ -192,5 +217,56 @@ public class Render2D {
                 shadowBlur, shadowColor, isShadow,
                 Render2DUtil.currentScissor()
         ));
+    }
+
+    // ===================== GLASS =====================
+
+    public static void glass(GuiGraphicsExtractor gg, float x, float y, float w, float h, float r,
+                             float blurRadius, float alphaFactor, float smoothing, float tintAlpha) {
+        glass(gg, x, y, w, h, r, blurRadius, alphaFactor, smoothing, 0f, 0f, 0f, tintAlpha);
+    }
+
+    public static void glass(GuiGraphicsExtractor gg, float x, float y, float w, float h, float r,
+                             float blurRadius, float alphaFactor, float smoothing,
+                             float red, float green, float blue, float tintAlpha) {
+        if (alphaFactor <= 0.001f || w <= 0.0f || h <= 0.0f) return;
+        int ix = Math.round(x);
+        int iy = Math.round(y);
+        int iw = Math.max(1, Math.round(w));
+        int ih = Math.max(1, Math.round(h));
+        float radius = Math.min(r, Math.min(iw, ih) / 2.0f);
+        error.util.render.pipeline.HudBlurPipeline.requestGlass(ix, iy, iw, ih, radius,
+                blurRadius > 0.0f ? blurRadius : 40.0f, alphaFactor, smoothing,
+                red, green, blue, tintAlpha);
+    }
+
+    public static void glass(float x, float y, float width, float height,
+                             float alpha, float radius, int tintColor,
+                             float distortion, float waveSize, float edgeLight, float shine) {
+        glass(null, x, y, width, height, radius, 32.0F, alpha, 26.0F, 0.0F);
+    }
+
+    public static void glass(float x, float y, float width, float height,
+                             float alpha, float radius,
+                             float distortion, float waveSize) {
+        glass(null, x, y, width, height, radius, 32.0F, alpha, 26.0F, 0.0F);
+    }
+
+    public static void glass(float x, float y, float width, float height,
+                             float alpha, float topLeft, float topRight, float bottomRight, float bottomLeft,
+                             int tintColor, float distortion, float waveSize, float edgeLight, float shine) {
+        glass(null, x, y, width, height, (topLeft + topRight + bottomRight + bottomLeft) / 4.0F, 32.0F, alpha, 26.0F, 0.0F);
+    }
+
+    public static void glass(float x1, float y1, float width1, float height1,
+                             float x2, float y2, float width2, float height2,
+                             float alpha, float radius, int tintColor,
+                             float distortion, float waveSize, float edgeLight, float shine,
+                             float mergeRadius) {
+        float minX = Math.min(x1, x2);
+        float minY = Math.min(y1, y2);
+        float maxX = Math.max(x1 + width1, x2 + width2);
+        float maxY = Math.max(y1 + height1, y2 + height2);
+        glass(null, minX, minY, maxX - minX, maxY - minY, radius, 32.0F, alpha, 26.0F, 0.0F);
     }
 }

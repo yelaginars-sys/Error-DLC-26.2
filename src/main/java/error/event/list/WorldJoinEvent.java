@@ -6,7 +6,6 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import error.event.Event;
 
 /**
- * Create by daun kvass
  */
 @Getter
 public class WorldJoinEvent extends Event {

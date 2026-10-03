@@ -25,7 +25,6 @@ import java.nio.ByteBuffer;
 import java.util.Optional;
 
 /**
- * Create by daun kvass
  */
 public final class HandShaderRenderer {
     private static final Vector4f CLEAR_COLOR = new Vector4f(0.0F, 0.0F, 0.0F, 0.0F);

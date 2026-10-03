@@ -1,0 +1,19 @@
+{
+    "vertex": "isle-client:core/sky_ambilance",
+    "fragment": "isle-client:core/sky_sea",
+    "uniforms": [
+        { "name": "Time",      "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "Alpha",     "type": "float", "count": 1, "values": [ 1.0 ] },
+        { "name": "Bright",    "type": "float", "count": 1, "values": [ 1.0 ] },
+        { "name": "Sat",       "type": "float", "count": 1, "values": [ 1.0 ] },
+        { "name": "Cover",     "type": "float", "count": 1, "values": [ 0.5 ] },
+        { "name": "Tint",      "type": "float", "count": 3, "values": [ 1.0, 1.0, 1.0 ] },
+        { "name": "TintMix",   "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "Look",      "type": "float", "count": 3, "values": [ 0.0, 0.0, 1.0 ] },
+        { "name": "Right",     "type": "float", "count": 3, "values": [ 1.0, 0.0, 0.0 ] },
+        { "name": "Up",        "type": "float", "count": 3, "values": [ 0.0, 1.0, 0.0 ] },
+        { "name": "TanHalf",   "type": "float", "count": 1, "values": [ 0.7 ] },
+        { "name": "Aspect",    "type": "float", "count": 1, "values": [ 1.7778 ] },
+        { "name": "WorldLock", "type": "float", "count": 1, "values": [ 0.0 ] }
+    ]
+}

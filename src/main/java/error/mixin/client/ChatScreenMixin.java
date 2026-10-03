@@ -1,24 +1,26 @@
 package error.mixin.client;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.ChatScreen;
-import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
-import net.minecraft.network.chat.Component;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import error.Client;
+import error.command.ClientCommandSuggestions;
 
 import static error.IMinecraft.mc;
 
-/**
- * Create by daun kvass
- */
 @Mixin(ChatScreen.class)
-public class ChatScreenMixin {
+public abstract class ChatScreenMixin {
+
+    @Shadow protected EditBox input;
 
     @Inject(method = "handleChatInput", at = @At("HEAD"), cancellable = true)
     private void onChatInput(String message, boolean addToRecentChat, CallbackInfo ci) {
@@ -31,4 +33,31 @@ public class ChatScreenMixin {
         }
     }
 
+    @Inject(method = "extractRenderState", at = @At("TAIL"), require = 0)
+    private void onRender(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
+        if (input != null && !error.module.impl.misc.UnHook.unhooked) {
+            ClientCommandSuggestions.getInstance().update(input.getValue());
+            float screenW = Minecraft.getInstance().getWindow().getGuiScaledWidth();
+            float screenH = Minecraft.getInstance().getWindow().getGuiScaledHeight();
+            ClientCommandSuggestions.getInstance().render(screenW, screenH, 1.0F);
+        }
+    }
+
+    @Inject(method = "keyPressed", at = @At("HEAD"), cancellable = true)
+    private void onKeyPressed(KeyEvent event, CallbackInfoReturnable<Boolean> cir) {
+        if (input != null && !error.module.impl.misc.UnHook.unhooked) {
+            if (ClientCommandSuggestions.getInstance().onKeyPressed(event.key(), input)) {
+                cir.setReturnValue(true);
+            }
+        }
+    }
+
+    @Inject(method = "mouseClicked", at = @At("HEAD"), cancellable = true)
+    private void onMouseClicked(MouseButtonEvent event, boolean doubleClick, CallbackInfoReturnable<Boolean> cir) {
+        if (input != null && !error.module.impl.misc.UnHook.unhooked) {
+            if (ClientCommandSuggestions.getInstance().onMouseClicked(event.x(), event.y(), event.button(), input)) {
+                cir.setReturnValue(true);
+            }
+        }
+    }
 }

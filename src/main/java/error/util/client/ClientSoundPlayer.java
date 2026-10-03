@@ -27,6 +27,10 @@ public final class ClientSoundPlayer {
       executor.execute(() -> handleFileName(fileName, volume, pitch));
    }
 
+   public static void playModuleToggle(boolean enabled) {
+      playGuiSound(enabled);
+   }
+
    public static void playGuiOpen() {
       playGuiSound(true);
    }
@@ -39,17 +43,42 @@ public final class ClientSoundPlayer {
       playGuiSound(true);
    }
 
+   public static void playModePreview(String mode) {
+      ClientSounds sounds = ClientSounds.INSTANCE;
+      if (sounds != null && sounds.isEnabled() && mode != null && !"Нет".equalsIgnoreCase(mode)) {
+         String soundFile = mapModeToSound(mode, true);
+         playSound(soundFile, sounds.volume.get() / sounds.volume.getMax(), 1.0F);
+      }
+   }
+
    private static void playGuiSound(boolean open) {
       ClientSounds sounds = ClientSounds.INSTANCE;
       if (sounds != null && sounds.isEnabled()) {
          String mode = sounds.stateSounds.getValue();
-         if (mode != null && !"Нет".equals(mode)) {
-            playSound(mode + ".wav", sounds.volume.get() / sounds.volume.getMax(), 1.0F);
-            return;
+         if (mode != null && !"Нет".equalsIgnoreCase(mode)) {
+            String soundFile = mapModeToSound(mode, open);
+            playSound(soundFile, sounds.volume.get() / sounds.volume.getMax(), 1.0F);
          }
       }
+   }
 
-      playSound(open ? "opengui.wav" : "closegui.wav", 0.5, 1.0F);
+   private static String mapModeToSound(String mode, boolean open) {
+      switch (mode) {
+         case "Первый":
+            return open ? "1.wav" : "MODULE_OFF.wav";
+         case "Второй":
+            return open ? "2.wav" : "MODULE_OFF2.wav";
+         case "Третий":
+            return open ? "MODULE_ON.wav" : "MODULE_OFF.wav";
+         case "Четвертый":
+            return open ? "MODULE_ON2.wav" : "MODULE_OFF2.wav";
+         case "Пятый":
+            return open ? "MODULE_ON3.wav" : "MODULE_OFF3.wav";
+         case "Шестой":
+            return open ? "Function_ON.wav" : "Function_OFF.wav";
+         default:
+            return open ? "guiopen.wav" : "guiclose.wav";
+      }
    }
 
    private static void handleFileName(String fileName, double volume, float pitch) {

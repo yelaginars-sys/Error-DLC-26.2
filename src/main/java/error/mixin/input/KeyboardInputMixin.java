@@ -15,7 +15,6 @@ import error.module.impl.player.GuiWalk;
 import error.util.player.MoveBlockUtility;
 
 /**
- * Create by daun kvass
  */
 @Mixin(KeyboardInput.class)
 public abstract class KeyboardInputMixin extends ClientInput {

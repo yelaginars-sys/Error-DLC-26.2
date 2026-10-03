@@ -12,7 +12,6 @@ import error.util.render.world.particles.ParticleSpawn;
 import error.util.render.pipeline.PiplinePost;
 
 /**
- * Create by daun kvass
  */
 @Mixin(RenderPipelines.class)
 public abstract class RenderPipelinesMixin {

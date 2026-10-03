@@ -14,7 +14,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 
 /**
- * Create by daun kvass
  */
 public final class BindSetting extends Setting<List<Integer>> {
     public static final int UNBOUND = KeyUtil.UNBOUND;

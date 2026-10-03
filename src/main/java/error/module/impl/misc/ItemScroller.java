@@ -14,7 +14,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Create by daun kvass
  */
 public class ItemScroller extends Module {
     public static ItemScroller INSTANCE;

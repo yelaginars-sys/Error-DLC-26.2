@@ -13,7 +13,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Create by daun kvass
  */
 public final class GhostTargetRenderer {
     private static final int STRANDS = 3;

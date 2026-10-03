@@ -15,7 +15,6 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Create by daun kvass
  */
 @Mixin(BossHealthOverlay.class)
 public class BossHealthOverlayMixin {

@@ -34,7 +34,6 @@ import error.util.player.MoveBlockUtility;
 import java.util.*;
 
 /**
- * Create by daun kvass
  */
 public final class ServerHelper extends Module {
 
@@ -80,8 +79,11 @@ public final class ServerHelper extends Module {
     private ItemInfo pendingInfo = null;
     private int cooldownTicks = 0;
 
+    public static ServerHelper INSTANCE;
+
     public ServerHelper() {
         super("ServerHelper", "Использование предметов по биндам", Category.PLAYER);
+        INSTANCE = this;
         setupConfigs();
     }
 

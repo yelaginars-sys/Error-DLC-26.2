@@ -10,7 +10,6 @@ import error.IMinecraft;
 import error.util.client.clients.Theme;
 
 /**
- * Create by daun kvass
  */
 @UtilityClass
 public class ChatUtil {

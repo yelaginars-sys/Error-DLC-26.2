@@ -26,7 +26,6 @@ import java.util.Comparator;
 import java.util.stream.StreamSupport;
 
 /**
- * Create by daun kvass
  */
 @Getter
 public class AimAssistant extends Module {

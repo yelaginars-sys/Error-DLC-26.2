@@ -11,7 +11,6 @@ import error.module.Category;
 import error.module.Module;
 
 /**
- * Create by daun kvass
  */
 public class Criticals extends Module {
     public static Criticals INSTANCE;

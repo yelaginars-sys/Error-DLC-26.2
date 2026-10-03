@@ -23,7 +23,6 @@ import error.util.render.font.Fonts;
 import error.util.render.font.MsdfFont;
 
 /**
- * Create by daun kvass
  */
 public final class Arrows extends Module {
 

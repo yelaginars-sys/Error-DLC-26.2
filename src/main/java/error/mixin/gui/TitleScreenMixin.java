@@ -10,7 +10,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import error.ui.mainmenu.CustomTitleScreen;
 
 /**
- * Create by daun kvass
+ * Redirect vanilla TitleScreen → CustomTitleScreen.
  */
 @Mixin(TitleScreen.class)
 public abstract class TitleScreenMixin extends Screen {
@@ -22,9 +22,9 @@ public abstract class TitleScreenMixin extends Screen {
     @Inject(method = "init", at = @At("HEAD"), cancellable = true)
     private void onInit(CallbackInfo ci) {
         if (error.module.impl.misc.UnHook.unhooked) return;
-        if (this.minecraft != null && this.minecraft.gui != null) {
-            this.minecraft.gui.setScreen(new CustomTitleScreen());
+        if (this.minecraft != null && !(this.minecraft.gui.screen() instanceof CustomTitleScreen)) {
             ci.cancel();
+            this.minecraft.setScreenAndShow(new CustomTitleScreen());
         }
     }
 }

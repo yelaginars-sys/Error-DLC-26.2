@@ -6,7 +6,6 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.GameRenderer;
 
 /**
- * Create by daun kvass
  */
 public final class RenderExtend {
     private static Gui currentGui;

@@ -20,7 +20,6 @@ import error.friend.FriendManager;
 import java.util.Random;
 
 /**
- * Create by daun kvass
  */
 @Getter
 public class TriggerBot extends Module {

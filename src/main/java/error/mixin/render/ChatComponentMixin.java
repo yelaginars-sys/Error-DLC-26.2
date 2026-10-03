@@ -27,7 +27,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Create by daun kvass
  */
 @Mixin(ChatComponent.class)
 public abstract class ChatComponentMixin {

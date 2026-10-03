@@ -9,7 +9,6 @@ import net.minecraft.world.phys.Vec3;
 import static error.IMinecraft.mc;
 
 /**
- * Create by daun kvass
  */
 public class PredictUtils {
 

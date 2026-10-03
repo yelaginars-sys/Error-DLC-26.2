@@ -6,7 +6,6 @@ import net.minecraft.network.protocol.Packet;
 import error.event.Event;
 
 /**
- * Create by daun kvass
  */
 @Getter
 @Setter

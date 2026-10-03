@@ -9,7 +9,6 @@ import error.util.math.Animation;
 import error.util.render.font.Fonts;
 
 /**
- * Create by daun kvass
  */
 @Getter
 @Setter
@@ -39,6 +38,13 @@ public final class PanelLapState {
 
     private boolean searchFocused;
     private String searchQuery = "";
+
+    private String configInput = "";
+    private boolean configInputFocused;
+    private String shareCodeInput = "";
+    private boolean shareCodeInputFocused;
+    private String friendInput = "";
+    private boolean friendInputFocused;
 
     private boolean accountAddOpen;
     private String accountAddQuery = "";

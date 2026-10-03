@@ -40,27 +40,30 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
     }
 
     private static final float NORMAL_HEIGHT = 20.0F;
-    private static final float NOTIFICATION_HEIGHT = 22.0F;
-    private static final float MUSIC_HEIGHT = 32.0F;
-    private static final float MUSIC_CHAT_HEIGHT = 36.0F;
-    private static final float PVP_HEIGHT = 24.0F;
+    private static final float NOTIFICATION_HEIGHT = 20.0F;
+    private static final float MUSIC_HEIGHT = 26.0F;
+    private static final float MUSIC_CHAT_HEIGHT = 30.0F;
+    private static final float PVP_HEIGHT = 22.0F;
 
-    private static final float INFO_HEIGHT = 16.0F;
-    private static final float GAP_BETWEEN = 4.0F;
+    private static final float INFO_HEIGHT = 12.0F;
+    private static final float GAP_BETWEEN = 3.0F;
 
-    private static final float RADIUS = 7.0F;
-    private static final float HEAD_SIZE = 11.0F;
-    private static final float HEAD_RADIUS = 2.5F;
-    private static final float COMPACT_ART_SIZE = 13.0F;
-    private static final float EXPANDED_ART_SIZE = 24.0F;
+    private static final float RADIUS = 8.5F;
+    private static final float HEAD_SIZE = 9.0F;
+    private static final float HEAD_RADIUS = 4.5F;
+    private static final float COMPACT_ART_SIZE = 11.0F;
+    private static final float EXPANDED_ART_SIZE = 18.0F;
 
     private static final long CONTENT_TRANSITION_DURATION = 260L;
     private static final long MUSIC_EXPANDED_HOLD = 3500L;
     private static final long MEDIA_REFRESH_INTERVAL = 600L;
 
     // Animations
-    private final Animation widthAnimation = new Animation(180.0F, 0.28F);
+    private final Animation widthAnimation = new Animation(98.0F, 0.28F);
     private final Animation heightAnimation = new Animation(NORMAL_HEIGHT, 0.28F);
+    private final Animation infoWidthAnimation = new Animation(0.0F, 0.25F);
+    private final Animation subIslandAlphaAnim = new Animation(0.0F, 0.25F);
+    private final Animation yAnimation = new Animation(8.0F, 0.28F);
     private boolean layoutInitialized = false;
     private boolean positionCentered = false;
 
@@ -69,13 +72,27 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
     private static volatile boolean notificationPositive = true;
     private static volatile long notificationUntil = 0L;
     private static volatile long notificationScrollStarted = 0L;
+    private static volatile long notificationDuration = 2500L;
 
-    // PvP BossBar State (Enhanced with Lumen Regex)
+    public static void showNotification(String text, boolean positive, long durationMs) {
+        if (text != null && (text.contains("Подключение") || text.contains("Connecting"))) {
+            text = "Подключение...";
+        }
+        notificationText = text;
+        notificationPositive = positive;
+        notificationDuration = durationMs;
+        long now = System.currentTimeMillis();
+        notificationScrollStarted = now;
+        notificationUntil = now + durationMs;
+    }
+
+    // PvP & Server BossBar State
     private static volatile LerpingBossEvent activePvPEvent = null;
     private static volatile String pvpTitle = "";
     private static volatile int pvpSeconds = -1;
     private static volatile float pvpProgress = 1.0F;
     private static volatile long pvpLastSeen = 0L;
+    private static volatile int activeBossBarCount = 0;
 
     // Media Player State
     private final ExecutorService mediaExecutor = Executors.newSingleThreadExecutor();
@@ -96,6 +113,17 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
     private IslandState previousState = IslandState.NORMAL;
     private long contentTransitionStarted = 0L;
 
+    public static final Identifier LOGO_TEX = Identifier.fromNamespaceAndPath("error", "images/logo.png");
+    public static final Identifier AVATAR_TEX = Identifier.fromNamespaceAndPath("error", "images/avatar.jpg");
+
+    // Metrics Display Settings
+    private boolean showSubIsland = true;
+    private boolean showAvatar = true;
+    private boolean showFps = true;
+    private boolean showPing = true;
+    private boolean showTps = true;
+    private boolean showServer = true;
+
     // Media Control Button Hitboxes
     private float prevButtonX, playButtonX, nextButtonX;
     private float musicButtonY, musicButtonSize;
@@ -106,20 +134,29 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
 
     public static void postNotification(String text, boolean positive) {
         if (text == null || text.isBlank()) return;
-        notificationText = text.replace('\n', ' ').trim();
+        String clean = text.replace('\n', ' ').trim();
+        if (clean.contains("Подключение") || clean.contains("Connecting")) {
+            clean = "Подключение...";
+        }
+        notificationText = clean;
         notificationPositive = positive;
         long now = System.currentTimeMillis();
-        notificationScrollStarted = now + CONTENT_TRANSITION_DURATION;
-        float textWidth = notificationText.length() * 5.2F;
-        long scrollDuration = Math.max(2500L, (long) ((textWidth + 30.0F) / 0.05F));
-        notificationUntil = notificationScrollStarted + scrollDuration;
+        float textWidth = Fonts.SF_MEDIUM.getWidth(notificationText, 8.0F);
+        long duration = Math.max(2200L, (long) (textWidth * 26.0F));
+        notificationDuration = duration;
+        notificationScrollStarted = now;
+        notificationUntil = now + duration;
     }
 
     public static boolean interceptBossBars(Map<UUID, LerpingBossEvent> events) {
         if (events == null || events.isEmpty()) {
             activePvPEvent = null;
+            activeBossBarCount = 0;
             return false;
         }
+
+        boolean interceptedPvP = false;
+        int nonPvpCount = 0;
 
         for (LerpingBossEvent event : events.values()) {
             String raw = event.getName().getString();
@@ -133,7 +170,6 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
                 pvpProgress = event.getProgress();
                 pvpLastSeen = System.currentTimeMillis();
 
-                // Lumen-style Regex time parser
                 int parsed = -1;
                 Matcher m = Pattern.compile("(\\d+):(\\d+)").matcher(lower);
                 if (m.find()) {
@@ -145,12 +181,18 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
                     }
                 }
                 pvpSeconds = parsed;
-                return true;
+                interceptedPvP = true;
+            } else {
+                nonPvpCount++;
             }
         }
 
-        activePvPEvent = null;
-        return false;
+        if (!interceptedPvP) {
+            activePvPEvent = null;
+        }
+
+        activeBossBarCount = nonPvpCount;
+        return interceptedPvP;
     }
 
     private void refreshMedia() {
@@ -226,15 +268,17 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
         if (hash == artworkHash) return;
         artworkHash = hash;
 
-        try {
-            NativeImage image = NativeImage.read(new ByteArrayInputStream(artworkPng));
-            Identifier id = Identifier.fromNamespaceAndPath("error", "island_art_" + (++dynamicTextureCounter));
-            DynamicTexture texture = new DynamicTexture(() -> id.toString(), image);
-            mc.getTextureManager().register(id, texture);
-            this.artworkTexture = id;
-        } catch (Throwable ignored) {
-            this.artworkTexture = null;
-        }
+        mc.execute(() -> {
+            try {
+                NativeImage image = NativeImage.read(new ByteArrayInputStream(artworkPng));
+                Identifier id = Identifier.fromNamespaceAndPath("error", "island_art_" + (++dynamicTextureCounter));
+                DynamicTexture texture = new DynamicTexture(() -> id.toString(), image);
+                mc.getTextureManager().register(id, texture);
+                this.artworkTexture = id;
+            } catch (Throwable ignored) {
+                this.artworkTexture = null;
+            }
+        });
     }
 
     private boolean isPvPActive(long now) {
@@ -264,24 +308,26 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
                 String badgeText = pvpSeconds >= 0 ? (pvpSeconds + "s") : "PVP";
                 float badgeW = Fonts.SF_MEDIUM.getWidth(badgeText, 6.5F) + 6.0F;
                 float titleW = Fonts.SF_MEDIUM.getWidth(pvpTitle.isEmpty() ? "Режим PvP" : pvpTitle, 7.5F);
-                yield Math.max(160.0F, 22.0F + badgeW + 6.0F + titleW + 16.0F);
+                yield Math.max(110.0F, 22.0F + badgeW + 6.0F + titleW + 14.0F);
             }
             case NOTIFICATION -> {
                 float textW = Fonts.SF_MEDIUM.getWidth(notificationText, 8.0F);
-                yield Math.max(150.0F, Math.min(260.0F, textW + 34.0F));
+                yield Math.max(95.0F, Math.min(270.0F, textW + 36.0F));
             }
             case MUSIC -> {
                 float titleW = Fonts.SF_MEDIUM.getWidth(trackTitle, 8.0F);
                 float artistW = Fonts.SF_MEDIUM.getWidth(trackArtist, 6.5F);
-                float baseW = chatOpen ? 215.0F : 190.0F;
+                float baseW = chatOpen ? 215.0F : 175.0F;
                 float maxW = chatOpen ? 270.0F : 250.0F;
-                float pad = chatOpen ? 100.0F : 75.0F;
+                float pad = chatOpen ? 95.0F : 70.0F;
                 yield Math.max(baseW, Math.min(maxW, Math.max(titleW, artistW) + pad));
             }
             case NORMAL -> {
-                float brandW = Fonts.ICONS.getWidth(IconUse.LOGO.glyph, 9.0F) + 4.0F + Fonts.SF_MEDIUM.getWidth("Error DLC 26.2", 8.0F);
-                float mediaW = hasTrack() ? (COMPACT_ART_SIZE + 24.0F) : 0.0F;
-                yield Math.max(160.0F, brandW + mediaW + 28.0F);
+                float logoSize = 10.0F;
+                float brandTextW = Fonts.SF_MEDIUM.getWidth("Error DLC ", 8.0F) + Fonts.SF_MEDIUM.getWidth("26.2", 8.0F);
+                float brandW = logoSize + 4.0F + brandTextW;
+                float mediaW = hasTrack() ? (COMPACT_ART_SIZE + 20.0F) : 0.0F;
+                yield brandW + mediaW + 18.0F;
             }
         };
     }
@@ -296,15 +342,40 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
     }
 
     private float calculateInfoWidth() {
-        String username = mc.player != null ? mc.player.getScoreboardName() : "User";
-        float userW = HEAD_SIZE + 3.0F + Fonts.SF_MEDIUM.getWidth(username, 7.0F);
-        float fpsW = Fonts.ICONS.getWidth(IconUse.FPS.glyph, 7.0F) + Fonts.SF_MEDIUM.getWidth(" " + mc.getFps() + "fps", 7.0F);
-        float pingW = Fonts.ICONS.getWidth(IconUse.PING.glyph, 7.0F) + Fonts.SF_MEDIUM.getWidth(" " + getPingText() + "ms", 7.0F);
-        float tpsW = Fonts.ICONS.getWidth(IconUse.TPS.glyph, 7.0F) + Fonts.SF_MEDIUM.getWidth(" 20tps", 7.0F);
-        String server = getServerAddress();
-        float srvW = Fonts.ICONS.getWidth(IconUse.GLOBE.glyph, 7.0F) + Fonts.SF_MEDIUM.getWidth(" " + server, 7.0F);
-        float dotsW = 4 * 10.0F;
-        return 12.0F + userW + dotsW + fpsW + pingW + tpsW + srvW + 12.0F;
+        if (!showSubIsland) return 0.0F;
+
+        int activeItems = 0;
+        float totalW = 12.0F;
+
+        if (showAvatar) {
+            totalW += HEAD_SIZE;
+            activeItems++;
+        }
+        if (showFps) {
+            float fpsW = Fonts.ICONS.getWidth(IconUse.FPS.glyph, 7.0F) + Fonts.SF_MEDIUM.getWidth(" " + mc.getFps() + "fps", 7.0F);
+            totalW += fpsW;
+            activeItems++;
+        }
+        if (showPing) {
+            float pingW = Fonts.ICONS.getWidth(IconUse.PING.glyph, 7.0F) + Fonts.SF_MEDIUM.getWidth(" " + getPingText() + "ms", 7.0F);
+            totalW += pingW;
+            activeItems++;
+        }
+        if (showTps) {
+            float tpsW = Fonts.ICONS.getWidth(IconUse.TPS.glyph, 7.0F) + Fonts.SF_MEDIUM.getWidth(" 20tps", 7.0F);
+            totalW += tpsW;
+            activeItems++;
+        }
+        if (showServer) {
+            String server = getServerAddress();
+            float srvW = Fonts.ICONS.getWidth(IconUse.GLOBE.glyph, 7.0F) + Fonts.SF_MEDIUM.getWidth(" " + server, 7.0F);
+            totalW += srvW;
+            activeItems++;
+        }
+
+        if (activeItems == 0) return 0.0F;
+        totalW += (activeItems - 1) * 10.0F;
+        return totalW;
     }
 
     @Override
@@ -336,19 +407,32 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
         float targetIslandW = getTargetWidth(this.displayedState);
         float targetIslandH = getTargetHeight(this.displayedState);
         float infoW = calculateInfoWidth();
+        infoWidthAnimation.setTarget(infoW);
+        infoWidthAnimation.update();
+        float animatedInfoW = infoWidthAnimation.getValue();
 
-        float maxTotalW = Math.max(targetIslandW, infoW);
-        float totalH = targetIslandH + GAP_BETWEEN + INFO_HEIGHT;
+        subIslandAlphaAnim.setTarget(infoW > 0.0F ? 1.0F : 0.0F);
+        subIslandAlphaAnim.update();
+        float subIslandAlpha = alpha * subIslandAlphaAnim.getValue();
+
+        float maxTotalW = Math.max(targetIslandW, Math.max(infoW, animatedInfoW));
+        float totalH = targetIslandH + (subIslandAlpha > 0.01F ? (GAP_BETWEEN + INFO_HEIGHT) : 0.0F);
 
         if (!layoutInitialized) {
             widthAnimation.setValue(targetIslandW);
             heightAnimation.setValue(targetIslandH);
+            infoWidthAnimation.setValue(infoW);
             layoutInitialized = true;
         }
 
-        if (!positionCentered && mc.getWindow() != null) {
+        float defaultY = 8.0F;
+        float targetY = (activeBossBarCount > 0 && !dragging) ? (8.0F + (activeBossBarCount * 12.0F)) : defaultY;
+        yAnimation.setTarget(targetY);
+        yAnimation.update();
+
+        if (mc.getWindow() != null) {
             this.x = (mc.getWindow().getGuiScaledWidth() - maxTotalW) / 2.0F;
-            this.y = 8.0F;
+            this.y = yAnimation.getValue();
             positionCentered = true;
         }
 
@@ -364,7 +448,7 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
         this.height = totalH;
 
         float boundsX = getX();
-        float boundsY = getY();
+        float boundsY = dragging ? getY() : yAnimation.getValue();
         float centerX = boundsX + (this.width / 2.0F);
 
         float islandX = centerX - (curIslandW / 2.0F);
@@ -381,111 +465,125 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
         Render2D.pushScissor(islandX, islandY, curIslandW, curIslandH);
         if (transitioning) {
             float slide = easeOutCubic(progress);
-            drawStateContent(this.previousState, islandX - curIslandW * slide, islandY, curIslandW, curIslandH, themeAccent, alpha, now);
-            drawStateContent(this.displayedState, islandX + curIslandW * (1.0F - slide), islandY, curIslandW, curIslandH, themeAccent, alpha, now);
+            float prevAlpha = alpha * (1.0F - slide);
+            float curAlpha = alpha * slide;
+            drawStateContent(this.previousState, islandX - curIslandW * slide * 0.4F, islandY, curIslandW, curIslandH, themeAccent, prevAlpha, now);
+            drawStateContent(this.displayedState, islandX + curIslandW * (1.0F - slide) * 0.4F, islandY, curIslandW, curIslandH, themeAccent, curAlpha, now);
         } else {
             drawStateContent(this.displayedState, islandX, islandY, curIslandW, curIslandH, themeAccent, alpha, now);
         }
         Render2D.popScissor();
 
-        // 2. RENDER SUB-ISLAND INFORMATION BAR (Lumen-Style Info Bar Under the Island)
-        float infoX = centerX - (infoW / 2.0F);
-        float infoY = islandY + curIslandH + GAP_BETWEEN;
-        renderSubIslandInfoBar(infoX, infoY, infoW, INFO_HEIGHT, themeAccent, alpha, now);
+        // 2. RENDER SUB-ISLAND INFORMATION BAR (Smoothly animated width and alpha)
+        if (subIslandAlpha > 0.01F && animatedInfoW > 1.0F) {
+            float infoX = centerX - (animatedInfoW / 2.0F);
+            float infoY = islandY + curIslandH + GAP_BETWEEN;
+            renderSubIslandInfoBar(infoX, infoY, animatedInfoW, INFO_HEIGHT, themeAccent, subIslandAlpha, now);
+        }
     }
 
     private void renderIslandShell(float x, float y, float w, float h, int themeAccent, float alpha) {
+        float radius = h / 2.0F;
+        float shadowBlur = y < 15.0F ? Math.max(0.0F, Math.min(y - 1.0F, 12.0F)) : 12.0F;
+
         if (this.displayedState == IslandState.PVP) {
             int pvpGlow = ColorUtil.rgba(255, 45, 65, (int) (125 * alpha));
             int pvpFill = ColorUtil.rgba(28, 8, 14, (int) (225 * alpha));
             int pvpBorder = ColorUtil.rgba(255, 75, 95, (int) (180 * alpha));
 
-            Render2D.drawShadow(x, y, w, h, RADIUS, 12.0F, ColorUtil.rgba(0, 0, 0, (int) (160 * alpha)));
-            Render2D.drawShadow(x, y, w, h, RADIUS, 8.0F, pvpGlow);
-            Render2D.drawBlur(x, y, w, h, RADIUS, 16.0F, pvpFill, alpha);
-            Render2D.drawRoundedRect(x, y, w, h, RADIUS, pvpFill);
-            Render2D.drawRoundedOutline(x, y, w, h, RADIUS, 1.0F, pvpBorder);
+            if (shadowBlur > 1.0F) {
+                Render2D.drawShadow(x, y, w, h, radius, shadowBlur, ColorUtil.rgba(0, 0, 0, (int) (160 * alpha)));
+                Render2D.drawShadow(x, y, w, h, radius, Math.min(shadowBlur, 8.0F), pvpGlow);
+            }
+            Render2D.drawBlur(x, y, w, h, radius, 16.0F, pvpFill, alpha);
+            Render2D.drawRoundedRect(x, y, w, h, radius, pvpFill);
+            Render2D.drawRoundedOutline(x, y, w, h, radius, 1.0F, pvpBorder);
         } else {
             int shadowCol = ColorUtil.rgba(0, 0, 0, (int) (150 * alpha));
             int haloCol = ColorUtil.rgba(ColorUtil.red(themeAccent), ColorUtil.green(themeAccent), ColorUtil.blue(themeAccent), (int) (35 * alpha));
             int glassFill = ColorUtil.rgba(20, 18, 28, (int) (225 * alpha));
             int glassBorder = ColorUtil.rgba(255, 255, 255, (int) (40 * alpha));
 
-            Render2D.drawShadow(x, y, w, h, RADIUS, 12.0F, shadowCol);
-            Render2D.drawShadow(x, y, w, h, RADIUS, 6.0F, haloCol);
-            Render2D.drawBlur(x, y, w, h, RADIUS, 18.0F, glassFill, alpha);
-            Render2D.drawRoundedRect(x, y, w, h, RADIUS, glassFill);
-            Render2D.drawRoundedOutline(x, y, w, h, RADIUS, 1.0F, glassBorder);
-
-            // Specular top gloss
-            Render2D.drawRoundedRect(x + 6.0F, y + 1.0F, w - 12.0F, 1.0F, 0.5F, ColorUtil.rgba(255, 255, 255, (int) (30 * alpha)));
+            if (shadowBlur > 1.0F) {
+                Render2D.drawShadow(x, y, w, h, radius, shadowBlur, shadowCol);
+                Render2D.drawShadow(x, y, w, h, radius, Math.min(shadowBlur, 6.0F), haloCol);
+            }
+            Render2D.glass(null, x, y, w, h, radius, 32.0F, alpha, 26.0F, 0.0F);
+            Render2D.drawRoundedRect(x, y, w, h, radius, glassFill);
+            Render2D.drawRoundedOutline(x, y, w, h, radius, 1.0F, glassBorder);
         }
     }
 
     private void renderSubIslandInfoBar(float x, float y, float w, float h, int themeAccent, float alpha, long now) {
+        if (w <= 0.0F) return;
+
+        float subRadius = h / 2.0F;
+
         int shadowCol = ColorUtil.rgba(0, 0, 0, (int) (130 * alpha));
         int glassFill = ColorUtil.rgba(18, 16, 24, (int) (210 * alpha));
         int glassBorder = ColorUtil.rgba(255, 255, 255, (int) (30 * alpha));
 
-        Render2D.drawShadow(x, y, w, h, 5.0F, 8.0F, shadowCol);
-        Render2D.drawBlur(x, y, w, h, 5.0F, 14.0F, glassFill, alpha);
-        Render2D.drawRoundedRect(x, y, w, h, 5.0F, glassFill);
-        Render2D.drawRoundedOutline(x, y, w, h, 5.0F, 1.0F, glassBorder);
+        Render2D.drawShadow(x, y, w, h, subRadius, 8.0F, shadowCol);
+        Render2D.glass(null, x, y, w, h, subRadius, 32.0F, alpha, 26.0F, 0.0F);
+        Render2D.drawRoundedRect(x, y, w, h, subRadius, glassFill);
+        Render2D.drawRoundedOutline(x, y, w, h, subRadius, 1.0F, glassBorder);
 
         float curX = x + 6.0F;
         float textY = y + (h - 7.0F) / 2.0F;
         float dotY = y + (h - 2.4F) / 2.0F;
+        boolean drawnAny = false;
 
-        // Player Head
-        if (mc.player instanceof AbstractClientPlayer clientPlayer) {
-            float headY = y + (h - HEAD_SIZE) / 2.0F;
-            Render2D.drawHead(clientPlayer, curX, headY, HEAD_SIZE, HEAD_RADIUS, alpha);
-            curX += HEAD_SIZE + 3.0F;
+        // Custom Profile Avatar (D:\Без названия (2).jpg or fallback player head)
+        if (showAvatar) {
+            float avatarY = y + (h - HEAD_SIZE) / 2.0F;
+            Render2D.drawCustomAvatar(curX, avatarY, HEAD_SIZE, HEAD_SIZE / 2.0F, alpha);
+            curX += HEAD_SIZE;
+            drawnAny = true;
         }
 
-        // Username
-        String username = mc.player != null ? mc.player.getScoreboardName() : "User";
-        Fonts.drawString(Fonts.SF_MEDIUM, username, curX, textY, 7.0F, ColorUtil.rgba(255, 255, 255, (int) (235 * alpha)));
-        curX += Fonts.SF_MEDIUM.getWidth(username, 7.0F) + 5.0F;
-
-        // Separator Dot
-        curX = drawDot(curX, dotY, themeAccent, alpha);
-
         // FPS Metric
-        Fonts.drawIcon(IconUse.FPS, curX, textY - 0.5F, 7.0F, themeAccent);
-        curX += Fonts.ICONS.getWidth(IconUse.FPS.glyph, 7.0F);
-        String fps = " " + mc.getFps() + "fps";
-        Fonts.drawString(Fonts.SF_MEDIUM, fps, curX, textY, 7.0F, ColorUtil.rgba(215, 215, 230, (int) (210 * alpha)));
-        curX += Fonts.SF_MEDIUM.getWidth(fps, 7.0F) + 5.0F;
-
-        // Separator Dot
-        curX = drawDot(curX, dotY, themeAccent, alpha);
+        if (showFps) {
+            if (drawnAny) curX = drawDot(curX, dotY, themeAccent, alpha);
+            Fonts.drawIcon(IconUse.FPS, curX, textY - 0.5F, 7.0F, themeAccent);
+            curX += Fonts.ICONS.getWidth(IconUse.FPS.glyph, 7.0F);
+            String fps = " " + mc.getFps() + "fps";
+            Fonts.drawString(Fonts.SF_MEDIUM, fps, curX, textY, 7.0F, ColorUtil.rgba(215, 215, 230, (int) (210 * alpha)));
+            curX += Fonts.SF_MEDIUM.getWidth(fps, 7.0F);
+            drawnAny = true;
+        }
 
         // Ping Metric
-        Fonts.drawIcon(IconUse.PING, curX, textY - 0.5F, 7.0F, themeAccent);
-        curX += Fonts.ICONS.getWidth(IconUse.PING.glyph, 7.0F);
-        String ping = " " + getPingText() + "ms";
-        Fonts.drawString(Fonts.SF_MEDIUM, ping, curX, textY, 7.0F, ColorUtil.rgba(215, 215, 230, (int) (210 * alpha)));
-        curX += Fonts.SF_MEDIUM.getWidth(ping, 7.0F) + 5.0F;
-
-        // Separator Dot
-        curX = drawDot(curX, dotY, themeAccent, alpha);
+        if (showPing) {
+            if (drawnAny) curX = drawDot(curX, dotY, themeAccent, alpha);
+            Fonts.drawIcon(IconUse.PING, curX, textY - 0.5F, 7.0F, themeAccent);
+            curX += Fonts.ICONS.getWidth(IconUse.PING.glyph, 7.0F);
+            String ping = " " + getPingText() + "ms";
+            Fonts.drawString(Fonts.SF_MEDIUM, ping, curX, textY, 7.0F, ColorUtil.rgba(215, 215, 230, (int) (210 * alpha)));
+            curX += Fonts.SF_MEDIUM.getWidth(ping, 7.0F);
+            drawnAny = true;
+        }
 
         // Server / TPS Metric
-        Fonts.drawIcon(IconUse.TPS, curX, textY - 0.5F, 7.0F, themeAccent);
-        curX += Fonts.ICONS.getWidth(IconUse.TPS.glyph, 7.0F);
-        String tps = " 20tps";
-        Fonts.drawString(Fonts.SF_MEDIUM, tps, curX, textY, 7.0F, ColorUtil.rgba(215, 215, 230, (int) (210 * alpha)));
-        curX += Fonts.SF_MEDIUM.getWidth(tps, 7.0F) + 5.0F;
-
-        // Separator Dot
-        curX = drawDot(curX, dotY, themeAccent, alpha);
+        if (showTps) {
+            if (drawnAny) curX = drawDot(curX, dotY, themeAccent, alpha);
+            Fonts.drawIcon(IconUse.TPS, curX, textY - 0.5F, 7.0F, themeAccent);
+            curX += Fonts.ICONS.getWidth(IconUse.TPS.glyph, 7.0F);
+            String tps = " 20tps";
+            Fonts.drawString(Fonts.SF_MEDIUM, tps, curX, textY, 7.0F, ColorUtil.rgba(215, 215, 230, (int) (210 * alpha)));
+            curX += Fonts.SF_MEDIUM.getWidth(tps, 7.0F);
+            drawnAny = true;
+        }
 
         // Server IP Metric
-        Fonts.drawIcon(IconUse.GLOBE, curX, textY - 0.5F, 7.0F, themeAccent);
-        curX += Fonts.ICONS.getWidth(IconUse.GLOBE.glyph, 7.0F);
-        String srv = " " + getServerAddress();
-        Fonts.drawString(Fonts.SF_MEDIUM, srv, curX, textY, 7.0F, ColorUtil.rgba(215, 215, 230, (int) (210 * alpha)));
+        if (showServer) {
+            if (drawnAny) curX = drawDot(curX, dotY, themeAccent, alpha);
+            Fonts.drawIcon(IconUse.GLOBE, curX, textY - 0.5F, 7.0F, themeAccent);
+            curX += Fonts.ICONS.getWidth(IconUse.GLOBE.glyph, 7.0F);
+            String srv = " " + getServerAddress();
+            Fonts.drawString(Fonts.SF_MEDIUM, srv, curX, textY, 7.0F, ColorUtil.rgba(215, 215, 230, (int) (210 * alpha)));
+            curX += Fonts.SF_MEDIUM.getWidth(srv, 7.0F);
+            drawnAny = true;
+        }
     }
 
     private void drawStateContent(IslandState state, float x, float y, float width, float height, int themeAccent, float alpha, long now) {
@@ -539,22 +637,37 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
                 ? ColorUtil.rgba(85, 255, 135, (int) (245 * alpha))
                 : ColorUtil.rgba(255, 80, 100, (int) (245 * alpha));
 
+        float totalDuration = Math.max(100L, notificationDuration);
+        float elapsed = now - notificationScrollStarted;
+        float remainingRatio = Math.max(0.0F, Math.min(1.0F, 1.0F - (elapsed / totalDuration)));
+
         float dotSize = 5.0F;
         float dotX = x + 10.0F;
         float dotY = y + (height - dotSize) / 2.0F;
-        Render2D.drawShadow(dotX, dotY, dotSize, dotSize, dotSize / 2.0F, 4.0F, dotColor);
-        Render2D.drawRoundedRect(dotX, dotY, dotSize, dotSize, dotSize / 2.0F, dotColor);
+        float dotRadius = dotSize / 2.0F;
 
-        float textX = x + 22.0F;
+        // Fill dot
+        Render2D.drawShadow(dotX, dotY, dotSize, dotSize, dotRadius, 4.0F, dotColor);
+        Render2D.drawRoundedRect(dotX, dotY, dotSize, dotSize, dotRadius, dotColor);
+
+        // Circular timer outline ring that winds down to 0
+        if (remainingRatio > 0.001F) {
+            float ringRadius = dotRadius + 1.8F;
+            float sweepAngle = 360.0F * remainingRatio;
+            int ringColor = ColorUtil.rgba(ColorUtil.red(dotColor), ColorUtil.green(dotColor), ColorUtil.blue(dotColor), (int) (230 * alpha));
+            Render2D.drawArc(dotX + dotRadius, dotY + dotRadius, ringRadius, 1.2F, -90.0F, sweepAngle, ringColor);
+        }
+
+        float textX = x + 23.0F;
         float textY = y + (height - 8.0F) / 2.0F;
-        float availableW = width - 30.0F;
+        float availableW = width - 31.0F;
 
-        drawMarquee(Fonts.SF_MEDIUM, notificationText, textX, textY, availableW, 8.0F, ColorUtil.rgba(255, 255, 255, (int) (240 * alpha)), now - notificationScrollStarted, true);
+        drawMarquee(Fonts.SF_MEDIUM, notificationText, textX, textY, availableW, 8.0F, ColorUtil.rgba(255, 255, 255, (int) (240 * alpha)), now - notificationScrollStarted, false);
     }
 
     private void drawMusic(float x, float y, float width, float height, int themeAccent, float alpha, long now) {
         boolean chatOpen = mc.gui.screen() instanceof ChatScreen;
-        float artSize = chatOpen ? 24.0F : EXPANDED_ART_SIZE;
+        float artSize = chatOpen ? 22.0F : EXPANDED_ART_SIZE;
         float artX = x + 8.0F;
         float artY = y + (height - artSize) / 2.0F;
 
@@ -568,21 +681,17 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
         }
 
         float textX = artX + artSize + 8.0F;
-        float controlsW = chatOpen ? 46.0F : 24.0F;
-        float availableTextW = Math.max(50.0F, width - (textX - x) - controlsW - 6.0F);
+        float controlsW = 48.0F;
+        float availableTextW = Math.max(40.0F, width - (textX - x) - controlsW - 6.0F);
 
-        float titleY = y + (chatOpen ? 6.5F : 5.0F);
-        float artistY = y + (chatOpen ? 18.5F : 16.5F);
+        float titleY = y + (height - 18.0F) / 2.0F;
+        float artistY = titleY + 10.0F;
 
         drawMarquee(Fonts.SF_MEDIUM, trackTitle, textX, titleY, availableTextW, 8.0F, ColorUtil.rgba(255, 255, 255, (int) (245 * alpha)), now - contentTransitionStarted, false);
         String artist = trackArtist.isBlank() ? (trackPlaying ? "Воспроизведение" : "Пауза") : trackArtist;
         drawMarquee(Fonts.SF_MEDIUM, artist, textX, artistY, availableTextW, 6.5F, ColorUtil.rgba(180, 180, 205, (int) (200 * alpha)), now - contentTransitionStarted + 350L, false);
 
-        if (chatOpen) {
-            drawMusicControls(x + width - 48.0F, y + (height - 12.0F) / 2.0F, alpha);
-        } else {
-            drawEqualizer(x + width - 20.0F, y + height / 2.0F, 5, 2.5F, 1.4F, themeAccent, alpha, now);
-        }
+        drawMusicControls(x + width - 48.0F, y + (height - 12.0F) / 2.0F, alpha);
     }
 
     private void drawMusicControls(float x, float y, float alpha) {
@@ -595,19 +704,26 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
         this.musicButtonY = y;
         this.musicButtonSize = btnSize;
 
+        int iconCol = ColorUtil.rgba(240, 240, 255, (int) (230 * alpha));
+
         // Previous Button
         drawButtonBg(prevButtonX, y, btnSize, alpha);
-        Fonts.drawString(Fonts.SF_MEDIUM, "«", prevButtonX + 2.5F, y + 1.0F, 8.0F, ColorUtil.rgba(240, 240, 255, (int) (230 * alpha)));
+        Render2D.drawRoundedRect(prevButtonX + 3.0F, y + 3.0F, 1.5F, 6.0F, 0.5F, iconCol);
+        Render2D.drawRoundedRect(prevButtonX + 6.0F, y + 3.0F, 1.5F, 6.0F, 0.5F, iconCol);
 
         // Play/Pause Button
         drawButtonBg(playButtonX, y, btnSize, alpha);
-        String playGlyph = trackPlaying ? "❚❚" : "▶";
-        float glyphOffX = trackPlaying ? 2.5F : 3.5F;
-        Fonts.drawString(Fonts.SF_MEDIUM, playGlyph, playButtonX + glyphOffX, y + (trackPlaying ? 2.0F : 1.5F), 6.5F, ColorUtil.rgba(255, 255, 255, (int) (245 * alpha)));
+        if (trackPlaying) {
+            Render2D.drawRoundedRect(playButtonX + 3.5F, y + 3.0F, 1.8F, 6.0F, 0.5F, iconCol);
+            Render2D.drawRoundedRect(playButtonX + 6.7F, y + 3.0F, 1.8F, 6.0F, 0.5F, iconCol);
+        } else {
+            Render2D.drawRoundedRect(playButtonX + 4.0F, y + 3.0F, 4.0F, 6.0F, 1.0F, iconCol);
+        }
 
         // Next Button
         drawButtonBg(nextButtonX, y, btnSize, alpha);
-        Fonts.drawString(Fonts.SF_MEDIUM, "»", nextButtonX + 3.0F, y + 1.0F, 8.0F, ColorUtil.rgba(240, 240, 255, (int) (230 * alpha)));
+        Render2D.drawRoundedRect(nextButtonX + 4.5F, y + 3.0F, 1.5F, 6.0F, 0.5F, iconCol);
+        Render2D.drawRoundedRect(nextButtonX + 7.5F, y + 3.0F, 1.5F, 6.0F, 0.5F, iconCol);
     }
 
     private void drawButtonBg(float bx, float by, float size, float alpha) {
@@ -619,11 +735,14 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
         float curX = x + 8.0F;
         float textY = y + (height - 8.0F) / 2.0F;
 
-        // Error DLC 26.2 Client Branding
-        Fonts.drawIcon(IconUse.LOGO, curX, textY + 0.5F, 9.0F, themeAccent);
-        curX += Fonts.ICONS.getWidth(IconUse.LOGO.glyph, 9.0F) + 4.0F;
+        // Client PNG Logo & Title
+        float logoSize = 10.0F;
+        Render2D.drawTexture(LOGO_TEX, curX, y + (height - logoSize) / 2.0F, logoSize, logoSize, ColorUtil.rgba(255, 255, 255, (int) (245 * alpha)));
+        curX += logoSize + 4.0F;
 
-        Fonts.drawString(Fonts.SF_MEDIUM, "Error DLC 26.2", curX, textY, 8.0F, ColorUtil.rgba(255, 255, 255, (int) (245 * alpha)));
+        Fonts.drawString(Fonts.SF_MEDIUM, "Error DLC ", curX, textY, 8.0F, ColorUtil.rgba(255, 255, 255, (int) (245 * alpha)));
+        curX += Fonts.SF_MEDIUM.getWidth("Error DLC ", 8.0F);
+        Fonts.drawString(Fonts.SF_MEDIUM, "26.2", curX, textY, 8.0F, ColorUtil.rgba(150, 150, 165, (int) (220 * alpha)));
 
         // If music playing: mini album art & wave equalizer on right edge
         if (hasTrack()) {
@@ -637,10 +756,81 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
         }
     }
 
+    @Override
+    public float drawContextMenu(float menuX, float menuY, double mouseX, double mouseY, float alpha) {
+        float width = 145.0F;
+        String[] options = {
+            "Под-островок: " + (showSubIsland ? "ВКЛ" : "ВЫКЛ"),
+            "Аватарка: " + (showAvatar ? "ВКЛ" : "ВЫКЛ"),
+            "FPS: " + (showFps ? "ВКЛ" : "ВЫКЛ"),
+            "Ping: " + (showPing ? "ВКЛ" : "ВЫКЛ"),
+            "TPS: " + (showTps ? "ВКЛ" : "ВЫКЛ"),
+            "Сервер: " + (showServer ? "ВКЛ" : "ВЫКЛ")
+        };
+        float height = options.length * 18.0F + 8.0F;
+
+        int shadowCol = ColorUtil.rgba(0, 0, 0, (int) (180 * alpha));
+        int glassFill = ColorUtil.rgba(20, 18, 28, (int) (235 * alpha));
+        int glassBorder = ColorUtil.rgba(255, 255, 255, (int) (45 * alpha));
+        int themeAccent = Theme.getAccentColor();
+
+        Render2D.drawShadow(menuX, menuY, width, height, 7.0F, 10.0F, shadowCol);
+        Render2D.drawBlur(menuX, menuY, width, height, 7.0F, 16.0F, glassFill, alpha);
+        Render2D.drawRoundedRect(menuX, menuY, width, height, 7.0F, glassFill);
+        Render2D.drawRoundedOutline(menuX, menuY, width, height, 7.0F, 1.0F, glassBorder);
+
+        float itemY = menuY + 4.0F;
+        for (int i = 0; i < options.length; i++) {
+            boolean active = switch (i) {
+                case 0 -> showSubIsland;
+                case 1 -> showAvatar;
+                case 2 -> showFps;
+                case 3 -> showPing;
+                case 4 -> showTps;
+                case 5 -> showServer;
+                default -> false;
+            };
+            boolean hovered = mouseX >= menuX && mouseX <= menuX + width && mouseY >= itemY && mouseY <= itemY + 18.0F;
+
+            if (hovered) {
+                Render2D.drawRoundedRect(menuX + 4.0F, itemY, width - 8.0F, 17.0F, 4.0F, ColorUtil.rgba(255, 255, 255, (int) (20 * alpha)));
+            }
+
+            int textColor = active ? themeAccent : ColorUtil.rgba(220, 220, 235, (int) (220 * alpha));
+            Fonts.drawString(Fonts.SF_MEDIUM, options[i], menuX + 10.0F, itemY + 4.0F, 7.5F, textColor);
+            itemY += 18.0F;
+        }
+
+        return height;
+    }
+
+    @Override
+    public boolean handleContextMenuClick(float menuX, float menuY, double mouseX, double mouseY, int button) {
+        if (button != 0) return false;
+        float width = 145.0F;
+        float itemY = menuY + 4.0F;
+        for (int i = 0; i < 6; i++) {
+            if (mouseX >= menuX && mouseX <= menuX + width && mouseY >= itemY && mouseY <= itemY + 18.0F) {
+                switch (i) {
+                    case 0 -> showSubIsland = !showSubIsland;
+                    case 1 -> showAvatar = !showAvatar;
+                    case 2 -> showFps = !showFps;
+                    case 3 -> showPing = !showPing;
+                    case 4 -> showTps = !showTps;
+                    case 5 -> showServer = !showServer;
+                }
+                return true;
+            }
+            itemY += 18.0F;
+        }
+        return false;
+    }
+
     private float drawDot(float cx, float cy, int color, float alpha) {
         int dotCol = ColorUtil.rgba(ColorUtil.red(color), ColorUtil.green(color), ColorUtil.blue(color), (int) (180 * alpha));
-        Render2D.drawRoundedRect(cx, cy, 2.2F, 2.2F, 1.1F, dotCol);
-        return cx + 2.2F + 5.0F;
+        float startX = cx + 4.0F;
+        Render2D.drawRoundedRect(startX, cy, 2.0F, 2.0F, 1.0F, dotCol);
+        return startX + 2.0F + 4.0F;
     }
 
     private void drawEqualizer(float x, float centerY, int barCount, float gap, float barWidth, int color, float alpha, long now) {
@@ -672,7 +862,7 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
     }
 
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (button != GLFW.GLFW_MOUSE_BUTTON_LEFT || !(mc.gui.screen() instanceof ChatScreen)) return false;
+        if (button != GLFW.GLFW_MOUSE_BUTTON_LEFT) return false;
         if (this.displayedState != IslandState.MUSIC || this.activeMediaSession == null) return false;
 
         if (isHovered(mouseX, mouseY, prevButtonX, musicButtonY, musicButtonSize, musicButtonSize)) {
@@ -712,9 +902,15 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
     }
 
     private String getPingText() {
-        if (mc.getConnection() == null || mc.player == null) return "0";
+        if (mc.getConnection() == null || mc.player == null) return "--";
         var entry = mc.getConnection().getPlayerInfo(mc.player.getUUID());
-        return entry != null ? String.valueOf(entry.getLatency()) : "0";
+        if (entry == null || entry.getLatency() <= 0) return "--";
+        return String.valueOf(entry.getLatency());
+    }
+
+    @Override
+    public void startDragging(double mouseX, double mouseY) {
+        this.dragging = false;
     }
 
     private String getServerAddress() {
@@ -722,9 +918,14 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
             if (mc.getConnection() != null && mc.getConnection().getConnection() != null) {
                 if (mc.getSingleplayerServer() != null) return "Singleplayer";
                 String addr = mc.getConnection().getConnection().getRemoteAddress().toString();
-                return addr.split(":")[0].replace("/", "");
+                String host = addr.split(":")[0].replace("/", "");
+                if (host.matches("\\d+\\.\\d+\\.\\d+\\.\\d+") || host.equalsIgnoreCase("127.0.0.1") || host.equalsIgnoreCase("localhost") || host.toLowerCase().contains("connecting")) {
+                    return "Connecting...";
+                }
+                return host;
             }
         } catch (Exception ignored) {}
-        return "localhost";
+        return "Connecting...";
     }
 }
+

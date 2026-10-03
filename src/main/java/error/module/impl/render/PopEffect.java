@@ -19,7 +19,6 @@ import error.util.client.clients.Theme;
 import error.util.render.world.module.PopEffectRenderer;
 
 /**
- * Create by daun kvass
  */
 public final class PopEffect extends Module {
 

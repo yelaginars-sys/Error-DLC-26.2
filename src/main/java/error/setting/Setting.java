@@ -6,7 +6,6 @@ import lombok.Setter;
 import java.util.function.Supplier;
 
 /**
- * Create by daun kvass
  */
 @Getter
 @Setter
@@ -18,6 +17,13 @@ public abstract class Setting<T> {
     public Setting(String name, T defaultValue) {
         this.name = name;
         this.value = defaultValue;
+    }
+
+    public void setValue(T value) {
+        this.value = value;
+        if (error.Client.INSTANCE != null && error.Client.INSTANCE.configManager != null) {
+            error.Client.INSTANCE.configManager.autoSave();
+        }
     }
 
     @SuppressWarnings("unchecked")

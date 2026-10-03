@@ -14,7 +14,6 @@ import error.util.render.renders.MenuBacks;
 import error.util.render.renders.MenuCompanionRenderState;
 
 /**
- * Create by daun kvass
  */
 public final class BlurRectRenderState extends MenuCompanionRenderState {
     private final float x0, y0, x1, y1;

@@ -17,7 +17,6 @@ import error.event.list.Render2DEvent;
 import error.util.render.Render2DUtil;
 
 /**
- * Create by daun kvass
  */
 @Mixin(Hud.class)
 public abstract class HudMixin {

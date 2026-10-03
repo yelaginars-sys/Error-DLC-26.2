@@ -10,7 +10,6 @@ import error.Client;
 import error.event.list.EventFirework;
 
 /**
- * Create by daun kvass
  */
 @Mixin(FireworkRocketEntity.class)
 public abstract class FireworkRocketEntityMixin {

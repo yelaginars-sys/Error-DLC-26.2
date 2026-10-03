@@ -10,7 +10,6 @@ import error.util.client.clients.ColorUtil;
 import error.util.client.clients.Theme;
 
 /**
- * Create by daun kvass
  */
 public final class BlockHighlight extends Module {
     public static final String VARIANT_CAUSTICS = "Water Caustics";

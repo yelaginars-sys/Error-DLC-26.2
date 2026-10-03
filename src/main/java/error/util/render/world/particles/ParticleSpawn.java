@@ -35,7 +35,6 @@ import java.util.OptionalDouble;
 import java.util.Random;
 
 /**
- * Create by daun kvass
  */
 public class ParticleSpawn {
     private static final int INSTANCE_STRIDE = 16 * Float.BYTES;

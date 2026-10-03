@@ -18,7 +18,6 @@ import error.module.impl.combat.AuraModule;
 import static error.IMinecraft.mc;
 
 /**
- * Create by daun kvass
  */
 public class AttackHandler {
 

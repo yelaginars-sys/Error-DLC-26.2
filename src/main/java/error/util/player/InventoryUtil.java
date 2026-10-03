@@ -10,7 +10,6 @@ import error.InventoryProvider;
 import java.util.function.Predicate;
 
 /**
- * Create by daun kvass
  */
 public final class InventoryUtil implements InventoryProvider {
     private static final InventoryUtil CONTEXT = new InventoryUtil();

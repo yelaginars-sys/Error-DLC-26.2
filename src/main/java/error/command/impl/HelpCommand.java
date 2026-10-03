@@ -10,7 +10,6 @@ import error.util.client.persiki.ChatUtil;
 import java.util.List;
 
 /**
- * Create by daun kvass
  */
 public class HelpCommand extends Command {
 

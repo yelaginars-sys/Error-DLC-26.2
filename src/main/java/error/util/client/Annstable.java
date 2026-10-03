@@ -6,7 +6,6 @@ import net.minecraft.world.entity.LivingEntity;
 import error.util.client.clients.ColorUtil;
 
 /**
- * Create by daun kvass
  */
 public final class Annstable {
     private static final int HURT_COLOR = 0xFFFF5255;

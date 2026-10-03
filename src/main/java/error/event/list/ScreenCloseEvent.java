@@ -6,7 +6,6 @@ import net.minecraft.client.gui.screens.Screen;
 import error.event.Event;
 
 /**
- * Create by daun kvass
  */
 @Getter
 public final class ScreenCloseEvent extends Event {

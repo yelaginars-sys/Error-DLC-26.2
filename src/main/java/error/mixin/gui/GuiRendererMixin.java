@@ -8,6 +8,7 @@ import com.mojang.blaze3d.pipeline.RenderTarget;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import net.minecraft.client.gui.render.GuiRenderer;
+import net.minecraft.client.renderer.CubeMap;
 import net.minecraft.client.renderer.state.gui.GuiElementRenderState;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -23,7 +24,6 @@ import java.util.List;
 import java.util.function.Supplier;
 
 /**
- * Create by daun kvass
  */
 @Mixin(GuiRenderer.class)
 public abstract class GuiRendererMixin {
@@ -85,8 +85,32 @@ public abstract class GuiRendererMixin {
         }
     }
 
+    /**
+     * Block CubeMap.render calls that crash when the panorama texture hasn't been
+     * initialized yet (e.g. during recovery reload after a shader compile failure).
+     */
+    @WrapOperation(
+            method = "render",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lnet/minecraft/client/renderer/CubeMap;render(FF)V"
+            )
+    )
+    private void error$safeCubeMapRender(
+            CubeMap cubeMap,
+            float f1, float f2,
+            Operation<Void> original
+    ) {
+        try {
+            original.call(cubeMap, f1, f2);
+        } catch (IllegalStateException ignored) {
+            // Panorama texture not yet initialized (shader compile failure during startup recovery)
+            // Silently skip to prevent crash; custom menu renders its own background
+        }
+    }
+
     @Unique
     private static boolean error$isGlassPipeline(RenderPipeline pipeline) {
         return pipeline == Pipelines.BLUR_RECT;
     }
-}
+}

@@ -1,7 +1,6 @@
 package error.event;
 
 /**
- * Create by daun kvass
  */
 public abstract class Event {
     private boolean cancelled;

@@ -4,7 +4,6 @@ import net.minecraft.client.Minecraft;
 import org.lwjgl.glfw.GLFW;
 
 /**
- * Create by daun kvass
  */
 public final class KeyUtil {
     public static final int UNBOUND = -1;
@@ -52,11 +51,17 @@ public final class KeyUtil {
             };
         }
 
+        if (code >= GLFW.GLFW_KEY_A && code <= GLFW.GLFW_KEY_Z) {
+            return String.valueOf((char) ('A' + (code - GLFW.GLFW_KEY_A)));
+        }
+        if (code >= GLFW.GLFW_KEY_0 && code <= GLFW.GLFW_KEY_9) {
+            return String.valueOf((char) ('0' + (code - GLFW.GLFW_KEY_0)));
+        }
         if (code >= GLFW.GLFW_KEY_F1 && code <= GLFW.GLFW_KEY_F25) {
             return "F" + (code - GLFW.GLFW_KEY_F1 + 1);
         }
         if (code >= GLFW.GLFW_KEY_KP_0 && code <= GLFW.GLFW_KEY_KP_9) {
-            return "NUM " + (code - GLFW.GLFW_KEY_KP_0);
+            return "NUM" + (code - GLFW.GLFW_KEY_KP_0);
         }
 
         return switch (code) {
@@ -82,9 +87,51 @@ public final class KeyUtil {
             case GLFW.GLFW_KEY_DOWN -> "DOWN";
             case GLFW.GLFW_KEY_LEFT -> "LEFT";
             case GLFW.GLFW_KEY_RIGHT -> "RIGHT";
+            case GLFW.GLFW_KEY_GRAVE_ACCENT -> "`";
+            case GLFW.GLFW_KEY_MINUS -> "-";
+            case GLFW.GLFW_KEY_EQUAL -> "=";
+            case GLFW.GLFW_KEY_LEFT_BRACKET -> "[";
+            case GLFW.GLFW_KEY_RIGHT_BRACKET -> "]";
+            case GLFW.GLFW_KEY_BACKSLASH -> "\\";
+            case GLFW.GLFW_KEY_SEMICOLON -> ";";
+            case GLFW.GLFW_KEY_APOSTROPHE -> "'";
+            case GLFW.GLFW_KEY_COMMA -> ",";
+            case GLFW.GLFW_KEY_PERIOD -> ".";
+            case GLFW.GLFW_KEY_SLASH -> "/";
             default -> {
                 String name = GLFW.glfwGetKeyName(code, 0);
-                yield name != null ? name.toUpperCase() : "KEY " + code;
+                if (name != null && !name.isBlank()) {
+                    name = name.toUpperCase();
+                    // Replace Cyrillic letters with English equivalents if returned by OS
+                    if ("Ф".equals(name)) yield "A";
+                    if ("И".equals(name)) yield "B";
+                    if ("С".equals(name)) yield "C";
+                    if ("В".equals(name)) yield "D";
+                    if ("У".equals(name)) yield "E";
+                    if ("А".equals(name)) yield "F";
+                    if ("П".equals(name)) yield "G";
+                    if ("Р".equals(name)) yield "H";
+                    if ("Ш".equals(name)) yield "I";
+                    if ("О".equals(name)) yield "J";
+                    if ("Л".equals(name)) yield "K";
+                    if ("Д".equals(name)) yield "L";
+                    if ("Ь".equals(name)) yield "M";
+                    if ("Т".equals(name)) yield "N";
+                    if ("Щ".equals(name)) yield "O";
+                    if ("З".equals(name)) yield "P";
+                    if ("Й".equals(name)) yield "Q";
+                    if ("К".equals(name)) yield "R";
+                    if ("Ы".equals(name)) yield "S";
+                    if ("Е".equals(name)) yield "T";
+                    if ("Г".equals(name)) yield "U";
+                    if ("М".equals(name)) yield "V";
+                    if ("Ц".equals(name)) yield "W";
+                    if ("Ч".equals(name)) yield "X";
+                    if ("Н".equals(name)) yield "Y";
+                    if ("Я".equals(name)) yield "Z";
+                    yield name;
+                }
+                yield "KEY " + code;
             }
         };
     }

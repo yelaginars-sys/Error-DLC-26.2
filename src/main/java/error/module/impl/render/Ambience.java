@@ -11,7 +11,6 @@ import error.util.client.clients.ColorUtil;
 import error.util.client.clients.Theme;
 
 /**
- * Create by daun kvass
  */
 public class Ambience extends Module {
     public static final String SKY_STARRY_SKY = "Starry Sky";

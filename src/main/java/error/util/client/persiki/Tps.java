@@ -6,7 +6,6 @@ import error.event.EventTarget;
 import error.event.list.PacketEvent;
 
 /**
- * Create by daun kvass
  */
 public final class Tps {
     public static final Tps INSTANCE =new Tps();

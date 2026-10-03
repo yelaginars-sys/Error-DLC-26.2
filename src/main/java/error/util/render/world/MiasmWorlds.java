@@ -11,7 +11,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Create by daun kvass
  */
 public final class MiasmWorlds {
     private static final List<AffectedWorlds> Affected = new ArrayList<>();

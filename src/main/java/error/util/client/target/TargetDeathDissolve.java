@@ -13,7 +13,6 @@ import java.util.List;
 import java.util.Random;
 
 /**
- * Create by daun kvass
  */
 final class TargetDeathDissolve {
     private static final int MAX_FRAGMENTS = 240;

@@ -7,7 +7,6 @@ import error.setting.impl.ModeSetting;
 import error.setting.impl.MultiModeSetting;
 
 /**
- * Create by daun kvass
  */
 public final class AntiPush extends Module {
 

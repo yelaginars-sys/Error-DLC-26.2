@@ -1,64 +1,60 @@
 package error.config;
 
-import com.google.gson.*;
-import lombok.Getter;
-import lombok.Setter;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import error.Client;
-import error.ui.hud.HudElement;
-import error.ui.hud.HudManager;
 import error.module.Module;
 import error.setting.Setting;
 import error.setting.impl.*;
+import error.ui.hud.HudElement;
+import error.ui.hud.HudManager;
 import error.util.client.persiki.ChatUtil;
 import error.util.client.clients.Theme;
 
+import java.io.File;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.prefs.Preferences;
 
-@Getter
 public class ConfigManager {
 
-    private final Preferences baseNode = Preferences.userRoot().node("ErrorDLC/configs");
-    private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
-    private final ScheduledExecutorService autoSaveExecutor = Executors.newSingleThreadScheduledExecutor(r -> {
-        Thread thread = new Thread(r, "Config-AutoSave-Thread");
-        thread.setDaemon(true);
-        return thread;
-    });
+    public static boolean isLoadingConfig = false;
 
-    @Setter
+    private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
+    private final File configDir;
     private String currentConfig = "default";
 
     public ConfigManager() {
-        autoSaveExecutor.scheduleAtFixedRate(() -> {
-            try {
-                saveConfig(this.currentConfig, false);
-            } catch (Throwable t) {
-                System.err.println("[ConfigManager] Ошибка при фоновом автосохранении:");
-                t.printStackTrace();
-            }
-        }, 2, 2, TimeUnit.MINUTES);
+        this.configDir = new File(error.IMinecraft.mc.gameDirectory, "error/configs");
+        if (!this.configDir.exists()) {
+            this.configDir.mkdirs();
+        }
+    }
 
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            try {
-                saveConfig(this.currentConfig, false);
-            } catch (Throwable t) {
-                t.printStackTrace();
-            }
-        }, "Config-Shutdown-Save"));
+    public File getConfigDir() {
+        return configDir;
+    }
+
+    public String getCurrentConfig() {
+        return currentConfig;
+    }
+
+    public File getConfigFile(String name) {
+        String cleanName = name.endsWith(".json") ? name : name + ".json";
+        return new File(configDir, cleanName);
+    }
+
+    public synchronized void autoSave() {
+        if (isLoadingConfig) return;
+        saveConfig(currentConfig, false);
     }
 
     public synchronized boolean saveConfig(String name, boolean notify) {
-        if (name == null || name.trim().isEmpty()) {
-            name = "default";
-        }
-
-        String cleanName = name.replace(".ww", "").replace(".json", "");
+        if (name == null || name.trim().isEmpty()) name = "default";
+        String cleanName = name.replace(".json", "").trim();
 
         try {
             JsonObject root = new JsonObject();
@@ -66,6 +62,7 @@ public class ConfigManager {
             JsonObject themeJson = new JsonObject();
             themeJson.addProperty("accentColor", Theme.getAccentColor());
             themeJson.addProperty("backgroundMode", Theme.getBackgroundMode());
+            themeJson.addProperty("glassStyle", Theme.getGlassStyle());
             themeJson.addProperty("bgColor1", Theme.getBgColor1());
             themeJson.addProperty("bgColor2", Theme.getBgColor2());
             themeJson.addProperty("panelAlpha", Theme.getPanelAlpha());
@@ -79,11 +76,12 @@ public class ConfigManager {
                     moduleData.addProperty("enabled", module.isEnabled());
 
                     if (module.getBind() != null) {
-                        JsonArray bindsArray = new JsonArray();
-                        for (int code : module.getBind().getValue()) {
-                            bindsArray.add(code);
+                        List<Integer> binds = module.getBind().getValue();
+                        com.google.gson.JsonArray bindArr = new com.google.gson.JsonArray();
+                        if (binds != null) {
+                            for (int b : binds) bindArr.add(b);
                         }
-                        moduleData.add("bind", bindsArray);
+                        moduleData.add("bind", bindArr);
                     }
 
                     JsonObject settingsJson = new JsonObject();
@@ -91,28 +89,27 @@ public class ConfigManager {
                         if (setting == null) continue;
 
                         if (setting instanceof CheckBox cb) {
-                            settingsJson.addProperty(cb.getName(), cb.getValue());
+                            settingsJson.addProperty(setting.getName(), cb.getValue());
                         } else if (setting instanceof SliderSetting slider) {
-                            settingsJson.addProperty(slider.getName(), slider.getValue());
+                            settingsJson.addProperty(setting.getName(), slider.getValue());
                         } else if (setting instanceof ModeSetting mode) {
-                            settingsJson.addProperty(mode.getName(), mode.getValue());
+                            settingsJson.addProperty(setting.getName(), mode.getValue());
                         } else if (setting instanceof MultiModeSetting multi) {
-                            JsonArray activeModes = new JsonArray();
-                            for (String m : multi.getValue()) {
-                                activeModes.add(m);
-                            }
-                            settingsJson.add(multi.getName(), activeModes);
+                            com.google.gson.JsonArray array = new com.google.gson.JsonArray();
+                            for (String val : multi.getValue()) array.add(val);
+                            settingsJson.add(setting.getName(), array);
                         } else if (setting instanceof ColorSetting color) {
-                            settingsJson.addProperty(color.getName(), color.getValue());
+                            settingsJson.addProperty(setting.getName(), color.getValue());
                         } else if (setting instanceof BindSetting bind) {
-                            JsonArray bindsArray = new JsonArray();
-                            for (int code : bind.getValue()) {
-                                bindsArray.add(code);
+                            com.google.gson.JsonArray array = new com.google.gson.JsonArray();
+                            if (bind.getValue() != null) {
+                                for (int val : bind.getValue()) array.add(val);
                             }
-                            settingsJson.add(bind.getName(), bindsArray);
+                            settingsJson.add(setting.getName(), array);
                         }
                     }
                     moduleData.add("settings", settingsJson);
+
                     modulesJson.add(module.getName(), moduleData);
                 }
             }
@@ -132,15 +129,13 @@ public class ConfigManager {
             }
             root.add("hud", hudJson);
 
-            String jsonString = gson.toJson(root);
-            Preferences configNode = baseNode.node(cleanName);
-            configNode.put("data", jsonString);
-            configNode.flush();
+            File targetFile = getConfigFile(cleanName);
+            java.nio.file.Files.writeString(targetFile.toPath(), gson.toJson(root), StandardCharsets.UTF_8);
 
             this.currentConfig = cleanName;
 
             if (notify) {
-                ChatUtil.success("Конфигурация '" + cleanName + "' успешно сохранена в Реестр!");
+                ChatUtil.success("Конфигурация '" + cleanName + "' успешно сохранена!");
             }
             return true;
         } catch (Exception e) {
@@ -152,30 +147,28 @@ public class ConfigManager {
         }
     }
 
-    @SuppressWarnings("unchecked")
     public synchronized boolean loadConfig(String name, boolean notify) {
-        if (name == null || name.trim().isEmpty()) {
-            name = "default";
-        }
-
-        String cleanName = name.replace(".ww", "").replace(".json", "");
-
+        isLoadingConfig = true;
         try {
-            Preferences configNode = baseNode.node(cleanName);
-            String jsonString = configNode.get("data", null);
-            if (jsonString == null || jsonString.isEmpty()) {
+            if (name == null || name.trim().isEmpty()) name = "default";
+            String cleanName = name.replace(".json", "").trim();
+
+            File configFile = getConfigFile(cleanName);
+            if (!configFile.exists()) {
                 if (notify) {
-                    ChatUtil.error("Конфигурация '" + cleanName + "' не найдена в Реестре!");
+                    ChatUtil.error("Конфигурация '" + cleanName + "' не найдена!");
                 }
                 return false;
             }
 
+            String jsonString = java.nio.file.Files.readString(configFile.toPath(), StandardCharsets.UTF_8);
             JsonObject root = JsonParser.parseString(jsonString).getAsJsonObject();
 
             if (root.has("theme")) {
                 JsonObject themeJson = root.getAsJsonObject("theme");
                 if (themeJson.has("accentColor")) Theme.setAccentColor(themeJson.get("accentColor").getAsInt());
                 if (themeJson.has("backgroundMode")) Theme.setBackgroundMode(themeJson.get("backgroundMode").getAsString());
+                if (themeJson.has("glassStyle")) Theme.setGlassStyle(themeJson.get("glassStyle").getAsString());
                 if (themeJson.has("bgColor1")) Theme.setBgColor1(themeJson.get("bgColor1").getAsInt());
                 if (themeJson.has("bgColor2")) Theme.setBgColor2(themeJson.get("bgColor2").getAsInt());
                 if (themeJson.has("panelAlpha")) Theme.setPanelAlpha(themeJson.get("panelAlpha").getAsFloat());
@@ -270,30 +263,46 @@ public class ConfigManager {
             }
             e.printStackTrace();
             return false;
+        } finally {
+            isLoadingConfig = false;
         }
     }
 
-    public List<String> getAvailableConfigs() {
-        try {
-            return Arrays.asList(baseNode.childrenNames());
-        } catch (Exception e) {
-            return new ArrayList<>();
+    public synchronized boolean deleteConfig(String name) {
+        if (name == null) return false;
+        File file = getConfigFile(name);
+        if (file.exists()) {
+            return file.delete();
         }
-    }
-
-    public void deleteConfig(String name) {
-        try {
-            String cleanName = name.replace(".ww", "").replace(".json", "");
-            baseNode.node(cleanName).removeNode();
-            baseNode.flush();
-            ChatUtil.success("Конфигурация '" + cleanName + "' удалена из Реестра.");
-        } catch (Exception e) {
-            ChatUtil.error("Не удалось удалить конфигурацию: " + e.getMessage());
-        }
+        return false;
     }
 
     public void openFolder() {
-        ChatUtil.info("Конфиги сохраняются напрямую в Реестр Windows:");
-        ChatUtil.entry("Путь:", "HKEY_CURRENT_USER\\Software\\JavaSoft\\Prefs\\errordlc\\configs");
+        try {
+            if (configDir.exists() && java.awt.Desktop.isDesktopSupported()) {
+                java.awt.Desktop.getDesktop().open(configDir);
+            }
+        } catch (Exception ignored) {}
+    }
+
+    public String createShareCode(String configName, int usages) {
+        return "ERROR-" + System.currentTimeMillis();
+    }
+
+    public boolean loadShareCode(String code, boolean notify) {
+        return false;
+    }
+
+    public List<String> getAvailableConfigs() {
+        List<String> list = new ArrayList<>();
+        if (configDir.exists() && configDir.isDirectory()) {
+            File[] files = configDir.listFiles((dir, name1) -> name1.endsWith(".json"));
+            if (files != null) {
+                for (File file : files) {
+                    list.add(file.getName().replace(".json", ""));
+                }
+            }
+        }
+        return list;
     }
 }

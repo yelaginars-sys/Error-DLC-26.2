@@ -4,7 +4,6 @@ import lombok.Getter;
 import lombok.Setter;
 
 /**
- * Create by daun kvass
  */
 public final class Theme {
     @Getter @Setter
@@ -12,6 +11,9 @@ public final class Theme {
 
     @Getter @Setter
     private static String backgroundMode = "Blur";
+
+    @Getter @Setter
+    private static String glassStyle = "Liquid Glass";
 
     @Getter @Setter
     private static int bgColor1 = ColorUtil.rgba(18, 18, 24, 255);

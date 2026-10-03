@@ -16,7 +16,6 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Create by daun kvass
  */
 public class BetterMinecraft extends Module {
 

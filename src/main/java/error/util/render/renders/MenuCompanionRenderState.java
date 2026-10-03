@@ -5,7 +5,6 @@ import net.minecraft.client.renderer.state.gui.GuiElementRenderState;
 import org.joml.Matrix3x2fc;
 
 /**
- * Create by daun kvass
  */
 public abstract class MenuCompanionRenderState implements GuiElementRenderState {
     private final float m00, m01, m10, m11, m20, m21;

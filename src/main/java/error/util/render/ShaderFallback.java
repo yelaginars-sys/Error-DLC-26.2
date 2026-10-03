@@ -9,7 +9,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Create by daun kvass
  */
 public final class ShaderFallback {
     private static final Pattern MOJ_IMPORT = Pattern.compile("^\\s*#moj_import\\s+<(\\w+):([\\w./]+)>\\s*$", Pattern.MULTILINE);

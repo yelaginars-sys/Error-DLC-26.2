@@ -4,7 +4,6 @@ import lombok.Getter;
 import error.event.Event;
 
 /**
- * Create by daun kvass
  */
 @Getter
 public final class MouseInputEvent extends Event {

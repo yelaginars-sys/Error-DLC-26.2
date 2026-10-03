@@ -9,7 +9,6 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.MeshData;
 
 /**
- * Create by daun kvass
  */
 public final class FullscreenQuad {
     private static GpuBuffer buffer;

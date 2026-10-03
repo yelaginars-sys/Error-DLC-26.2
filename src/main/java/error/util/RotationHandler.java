@@ -7,7 +7,6 @@ import net.minecraft.util.Mth;
 
 
 /**
- * Create by daun kvass
  */
 public final class RotationHandler {
     private static final Minecraft mc = Minecraft.getInstance();

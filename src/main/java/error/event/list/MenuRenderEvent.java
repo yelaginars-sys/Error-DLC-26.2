@@ -9,7 +9,6 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import error.event.Event;
 
 /**
- * Create by daun kvass
  */
 @Getter
 public final class MenuRenderEvent extends Event {

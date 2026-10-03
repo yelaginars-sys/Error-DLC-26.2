@@ -26,7 +26,6 @@ import error.util.render.world.RendererWorldProvider;
 import error.util.render.world.MiasmWorlds;
 
 /**
- * Create by daun kvass
  */
 @Mixin(LevelRenderer.class)
 public abstract class LevelRendererMixin {

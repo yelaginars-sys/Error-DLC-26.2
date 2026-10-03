@@ -15,7 +15,6 @@ import error.util.render.world.module.HandShaderRenderer;
 import java.util.List;
 
 /**
- * Create by daun kvass
  */
 public final class HandShader extends Module {
 

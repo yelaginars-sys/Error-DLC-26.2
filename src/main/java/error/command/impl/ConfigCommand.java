@@ -43,7 +43,7 @@ public class ConfigCommand extends Command {
 
         builder.executes(context -> {
             String prefix = getPrefix();
-            ChatUtil.info("Хуй");
+            ChatUtil.info("Использование команды " + prefix + "cfg:");
             ChatUtil.entry(prefix + "cfg save <название>", "Сохранить текущую конфигурацию");
             ChatUtil.entry(prefix + "cfg load <название>", "Загрузить конфигурацию");
             ChatUtil.entry(prefix + "cfg list", "Список всех сохраненных конфигураций");
@@ -52,27 +52,27 @@ public class ConfigCommand extends Command {
         });
 
         builder.then(LiteralArgumentBuilder.literal("save")
-                .then(RequiredArgumentBuilder.<Object, String>argument("name", StringArgumentType.word())
+                .then(RequiredArgumentBuilder.<Object, String>argument("name", StringArgumentType.greedyString())
                         .executes(context -> {
                             if (Client.INSTANCE.configManager == null) {
                                 ChatUtil.error("ConfigManager не инициализирован!");
                                 return 0;
                             }
-                            String name = StringArgumentType.getString(context, "name");
+                            String name = StringArgumentType.getString(context, "name").trim();
                             Client.INSTANCE.configManager.saveConfig(name, true);
                             return 1;
                         }))
         );
 
         builder.then(LiteralArgumentBuilder.literal("load")
-                .then(RequiredArgumentBuilder.<Object, String>argument("name", StringArgumentType.word())
+                .then(RequiredArgumentBuilder.<Object, String>argument("name", StringArgumentType.greedyString())
                         .suggests(configSuggestions)
                         .executes(context -> {
                             if (Client.INSTANCE.configManager == null) {
                                 ChatUtil.error("ConfigManager не инициализирован!");
                                 return 0;
                             }
-                            String name = StringArgumentType.getString(context, "name");
+                            String name = StringArgumentType.getString(context, "name").trim();
                             Client.INSTANCE.configManager.loadConfig(name, true);
                             return 1;
                         }))

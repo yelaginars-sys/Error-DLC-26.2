@@ -8,7 +8,6 @@ import net.minecraft.client.multiplayer.MultiPlayerGameMode;
 import net.minecraft.client.player.LocalPlayer;
 
 /**
- * Create by daun kvass
  */
 public interface IMinecraft {
     Minecraft mc = Minecraft.getInstance();

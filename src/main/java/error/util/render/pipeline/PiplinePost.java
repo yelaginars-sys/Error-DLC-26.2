@@ -11,7 +11,6 @@ import net.minecraft.resources.Identifier;
 import java.util.Optional;
 
 /**
- * Create by daun kvass
  */
 public class PiplinePost {
     private static final BindGroupLayout PUDDLES_LAYOUT = BindGroupLayout.builder().withSampler("SceneSampler").withSampler("DepthSampler").withUniform("WorldPuddlesUniforms", UniformType.UNIFORM_BUFFER).build();

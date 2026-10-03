@@ -6,7 +6,6 @@ import net.minecraft.client.input.MouseButtonEvent;
 import error.event.Event;
 
 /**
- * Create by daun kvass
  */
 @Getter
 public final class ScreenMouseButtonEvent extends Event {

@@ -10,7 +10,6 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Create by daun kvass
  */
 @Getter
 public class MultiModeSetting extends Setting<List<String>> {

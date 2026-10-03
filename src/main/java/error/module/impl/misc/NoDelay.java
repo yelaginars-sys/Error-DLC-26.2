@@ -13,7 +13,6 @@ import error.module.Module;
 import error.setting.impl.MultiModeSetting;
 
 /**
- * Create by daun kvass
  */
 public class NoDelay extends Module {
     public NoDelay() {

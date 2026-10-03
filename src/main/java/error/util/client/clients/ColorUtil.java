@@ -1,7 +1,6 @@
 package error.util.client.clients;
 
 /**
- * Create by daun kvass
  */
 public class ColorUtil {
     public static final int TRANSPARENT = 0x00000000;

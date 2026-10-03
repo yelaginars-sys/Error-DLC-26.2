@@ -4,7 +4,6 @@ import error.module.Category;
 import error.module.Module;
 
 /**
- * Create by daun kvass
  */
 public class WaterSpeed extends Module {
     public static WaterSpeed INSTANCE;

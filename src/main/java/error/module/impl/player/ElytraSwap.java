@@ -11,7 +11,7 @@ import error.event.EventTarget;
 import error.event.list.KeyboardInputEvent;
 import error.event.list.MouseInputEvent;
 import error.event.list.PlayerTickEvent;
-import error.ui.hud.impl.NotificationHud;
+
 import error.module.Category;
 import error.module.Module;
 import error.module.impl.combat.AutoTotem;
@@ -23,7 +23,6 @@ import error.util.player.InventoryUtil;
 import error.util.player.MoveBlockUtility;
 
 /**
- * Create by daun kvass
  */
 public final class ElytraSwap extends Module {
 
@@ -136,13 +135,9 @@ public final class ElytraSwap extends Module {
             int targetSlot = findSwapTargetSlot(player);
 
             if (targetSlot == -1) {
-                if (NotificationHud.isNotifyElytraSwapEnabled()) {
                     Notify.error("ElytraSwap", wearingElytra ? "нету Нагрудника" : "нету Элитры");
-                }
             } else {
-                if (NotificationHud.isNotifyElytraSwapEnabled()) {
                     Notify.info("ElytraSwap", wearingElytra ? "свапнул на Нагрудник" : "свапнул на Элитру");
-                }
 
                 if (mode.is("Packet")) {
                     InventorySwaps.grimSwapsArmor(player, targetSlot);

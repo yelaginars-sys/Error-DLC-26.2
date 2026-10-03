@@ -1,0 +1,17 @@
+{
+    "vertex": "isle-client:core/block_outline",
+    "fragment": "isle-client:core/block_outline",
+    "uniforms": [
+        { "name": "ModelViewMat", "type": "matrix4x4", "count": 16, "values": [ 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0 ] },
+        { "name": "ProjMat", "type": "matrix4x4", "count": 16, "values": [ 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0 ] },
+        { "name": "iTime", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "uAlpha", "type": "float", "count": 1, "values": [ 1.0 ] },
+        { "name": "uColor1", "type": "float", "count": 3, "values": [ 0.71, 0.48, 1.0 ] },
+        { "name": "uColor2", "type": "float", "count": 3, "values": [ 0.38, 0.85, 1.0 ] },
+        { "name": "uParticles", "type": "float", "count": 1, "values": [ 1.0 ] },
+        { "name": "uThickness", "type": "float", "count": 1, "values": [ 0.005 ] },
+        { "name": "uMode", "type": "int", "count": 1, "values": [ 1 ] },
+        { "name": "uIterA", "type": "int", "count": 1, "values": [ 50 ] },
+        { "name": "uIterB", "type": "int", "count": 1, "values": [ 40 ] }
+    ]
+}

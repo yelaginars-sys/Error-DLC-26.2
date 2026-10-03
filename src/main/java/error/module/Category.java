@@ -4,7 +4,6 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 /**
- * Create by daun kvass
  */
 
 @Getter
@@ -14,7 +13,9 @@ public enum Category {
     MOVEMENT("Movement"),
     RENDER("Render"),
     PLAYER("Player"),
-    MISC("Misc");
+    MISC("Misc"),
+    CONFIGS("Configs"),
+    FRIENDS("Friends");
 
     private final String displayName;
 }

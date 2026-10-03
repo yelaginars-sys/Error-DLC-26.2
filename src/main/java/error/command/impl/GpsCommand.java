@@ -4,41 +4,17 @@ import com.mojang.brigadier.arguments.DoubleArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
-import net.minecraft.client.Minecraft;
-import net.minecraft.resources.Identifier;
-import net.minecraft.world.phys.Vec3;
-import org.joml.Matrix3x2fStack;
 import error.Client;
-import error.event.EventManager;
-import error.event.EventTarget;
-import error.event.list.Render2DEvent;
 import error.command.Command;
+import error.ui.hud.impl.GpsHud;
 import error.util.client.persiki.ChatUtil;
-import error.util.client.clients.ColorUtil;
-import error.util.render.Render2D;
-import error.util.render.Render3DUtil;
-import error.util.render.font.Fonts;
-import error.util.render.font.MsdfFont;
 
 import java.util.List;
 
-/**
- * Create by daun kvass
- */
 public class GpsCommand extends Command {
 
-    private static final Identifier POINTER_TEXTURE = Identifier.fromNamespaceAndPath("error", "images/ui/pointer.png");
-    private static final float POINTER_SIZE = 15.0F;
-    private static final float TOP_OFFSET = 85.0F;
-
-    private static boolean active = false;
-    private static String targetName = null;
-    private static double targetX = 0;
-    private static double targetZ = 0;
-
     public GpsCommand() {
-        super("gps", "Установка метки навигатора");
-        EventManager.register(this);
+        super("gps", "Установка метки навигатора в HUD");
     }
 
     @Override
@@ -57,8 +33,9 @@ public class GpsCommand extends Command {
     public void build(LiteralArgumentBuilder<Object> builder) {
         builder.executes(context -> {
             String prefix = getPrefix();
-            ChatUtil.info("Инфа GPs");
-            ChatUtil.entry(prefix + "gps x z", "Поставить метку на координаты");
+            ChatUtil.info("Управление GPS меткой в HUD:");
+            ChatUtil.entry(prefix + "gps x z", "Поставить метку на X Z");
+            ChatUtil.entry(prefix + "gps x y z", "Поставить метку на X Y Z");
             ChatUtil.entry(prefix + "gps название x z", "Поставить именованную метку");
             ChatUtil.entry(prefix + "gps off / clear", "Отключить GPS");
             return 1;
@@ -76,16 +53,43 @@ public class GpsCommand extends Command {
         stopArg.executes(context -> clearGps());
         builder.then(stopArg);
 
+        // .gps <x> <z>  OR  .gps <x> <y> <z>
         builder.then(RequiredArgumentBuilder.<Object, Double>argument("x", DoubleArgumentType.doubleArg())
                 .then(RequiredArgumentBuilder.<Object, Double>argument("z", DoubleArgumentType.doubleArg())
                         .executes(context -> {
                             double x = DoubleArgumentType.getDouble(context, "x");
                             double z = DoubleArgumentType.getDouble(context, "z");
-                            setGps(null, x, z);
-                            return 1;
-                        }))
+                            return setGps(null, x, Double.NaN, z);
+                        })
+                        .then(RequiredArgumentBuilder.<Object, String>argument("name", StringArgumentType.greedyString())
+                                .executes(context -> {
+                                    double x = DoubleArgumentType.getDouble(context, "x");
+                                    double z = DoubleArgumentType.getDouble(context, "z");
+                                    String name = StringArgumentType.getString(context, "name");
+                                    return setGps(name, x, Double.NaN, z);
+                                }))
+                )
+                .then(RequiredArgumentBuilder.<Object, Double>argument("y", DoubleArgumentType.doubleArg())
+                        .then(RequiredArgumentBuilder.<Object, Double>argument("z", DoubleArgumentType.doubleArg())
+                                .executes(context -> {
+                                    double x = DoubleArgumentType.getDouble(context, "x");
+                                    double y = DoubleArgumentType.getDouble(context, "y");
+                                    double z = DoubleArgumentType.getDouble(context, "z");
+                                    return setGps(null, x, y, z);
+                                })
+                                .then(RequiredArgumentBuilder.<Object, String>argument("name", StringArgumentType.greedyString())
+                                        .executes(context -> {
+                                            double x = DoubleArgumentType.getDouble(context, "x");
+                                            double y = DoubleArgumentType.getDouble(context, "y");
+                                            double z = DoubleArgumentType.getDouble(context, "z");
+                                            String name = StringArgumentType.getString(context, "name");
+                                            return setGps(name, x, y, z);
+                                        }))
+                        )
+                )
         );
 
+        // .gps <name> <x> <z>
         builder.then(RequiredArgumentBuilder.<Object, String>argument("name", StringArgumentType.word())
                 .then(RequiredArgumentBuilder.<Object, Double>argument("x", DoubleArgumentType.doubleArg())
                         .then(RequiredArgumentBuilder.<Object, Double>argument("z", DoubleArgumentType.doubleArg())
@@ -93,86 +97,42 @@ public class GpsCommand extends Command {
                                     String name = StringArgumentType.getString(context, "name");
                                     double x = DoubleArgumentType.getDouble(context, "x");
                                     double z = DoubleArgumentType.getDouble(context, "z");
-                                    setGps(name, x, z);
-                                    return 1;
-                                })))
+                                    return setGps(name, x, Double.NaN, z);
+                                })
+                                .then(RequiredArgumentBuilder.<Object, Double>argument("y", DoubleArgumentType.doubleArg())
+                                        .executes(context -> {
+                                            String name = StringArgumentType.getString(context, "name");
+                                            double x = DoubleArgumentType.getDouble(context, "x");
+                                            double z = DoubleArgumentType.getDouble(context, "z");
+                                            double y = DoubleArgumentType.getDouble(context, "y");
+                                            return setGps(name, x, y, z);
+                                        }))
+                        )
+                )
         );
     }
 
-    private static int setGps(String name, double x, double z) {
-        targetName = name;
-        targetX = x;
-        targetZ = z;
-        active = true;
-
-        if (name != null) {
-            ChatUtil.info("GPS установлен на §a" + name + " §7(X: " + (int) x + ", Z: " + (int) z + ")");
+    private static int setGps(String name, double x, double y, double z) {
+        GpsHud.setTarget(name, x, y, z);
+        if (name != null && !name.isEmpty()) {
+            if (!Double.isNaN(y)) {
+                ChatUtil.success("GPS навигирует к '" + name + "' (X: " + (int) x + ", Y: " + (int) y + ", Z: " + (int) z + ")");
+            } else {
+                ChatUtil.success("GPS навигирует к '" + name + "' (X: " + (int) x + ", Z: " + (int) z + ")");
+            }
         } else {
-            ChatUtil.info("GPS установлен на §7(X: " + (int) x + ", Z: " + (int) z + ")");
+            if (!Double.isNaN(y)) {
+                ChatUtil.success("GPS установлен на (X: " + (int) x + ", Y: " + (int) y + ", Z: " + (int) z + ")");
+            } else {
+                ChatUtil.success("GPS установлен на (X: " + (int) x + ", Z: " + (int) z + ")");
+            }
         }
         return 1;
     }
 
     private static int clearGps() {
-        active = false;
-        targetName = null;
-        ChatUtil.info("GPS навигатор §cотключен§7.");
+        GpsHud.clearGps();
+        ChatUtil.info("GPS навигатор отключен.");
         return 1;
-    }
-
-    @EventTarget
-    public void onRender2D(Render2DEvent event) {
-        if (!active) {
-            return;
-        }
-
-        Minecraft mc = event.getClient();
-        if (mc == null || mc.level == null || mc.player == null) {
-            return;
-        }
-
-        var extractor = event.getGuiGraphicsExtractor();
-        if (extractor == null) {
-            return;
-        }
-
-        float tickDelta = event.getDeltaTracker().getGameTimeDeltaPartialTick(false);
-        Vec3 playerPos = Render3DUtil.interpolatedPosition(mc.player, tickDelta);
-        float playerYaw = mc.player.getViewYRot(tickDelta);
-
-        double dx = targetX - playerPos.x;
-        double dz = targetZ - playerPos.z;
-
-        double yawToPoint = Math.toDegrees(Math.atan2(dz, dx)) - 90.0;
-        double relativeYawRad = Math.toRadians(yawToPoint - playerYaw);
-
-        float centerX = mc.getWindow().getGuiScaledWidth() / 2.0F;
-        float centerY = TOP_OFFSET;
-        float halfSize = POINTER_SIZE / 2.0F;
-
-        Matrix3x2fStack pose = extractor.pose();
-
-        pose.pushMatrix();
-        pose.translate(centerX, centerY);
-        pose.rotate((float) relativeYawRad);
-
-        Render2D.drawTexture(POINTER_TEXTURE, -halfSize, -halfSize, POINTER_SIZE, POINTER_SIZE, 0.0F, 0xFFFFFFFF);
-
-        pose.popMatrix();
-
-        MsdfFont font = Fonts.SF_MEDIUM;
-
-        if (targetName != null && !targetName.isEmpty()) {
-            float nameSize = 9.0F;
-            float nameWidth = font.getWidth(targetName, nameSize);
-            Fonts.drawString(font, targetName, centerX - nameWidth / 2.0F, centerY - halfSize - 9.0F, nameSize, ColorUtil.rgba(220, 220, 220, 255));
-        }
-
-        double distance2D = Math.hypot(dx, dz);
-        String distText = (int) Math.round(distance2D) + "m";
-
-        float distSize = 9.0F;
-        float distWidth = font.getWidth(distText, distSize);
-        Fonts.drawString(font, distText, centerX - distWidth / 2.0F, centerY + halfSize + 3.0F, distSize, ColorUtil.rgba(255, 255, 255, 255));
     }
 }

@@ -36,6 +36,33 @@ public abstract class LivingEntityRendererMixin<T extends LivingEntity, S extend
     @Unique private float elytraVisualHeadYaw;
     @Unique private long elytraLastFrameTime = System.currentTimeMillis();
 
+    @org.spongepowered.asm.mixin.injection.Redirect(
+            method = "submit(Lnet/minecraft/client/renderer/entity/state/LivingEntityRenderState;Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;Lnet/minecraft/client/renderer/state/level/CameraRenderState;)V",
+            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/SubmitNodeCollector;submitModel(Lnet/minecraft/client/model/Model;Ljava/lang/Object;Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/rendertype/RenderType;IIILnet/minecraft/client/renderer/texture/TextureAtlasSprite;ILnet/minecraft/client/renderer/feature/ModelFeatureRenderer$CrumblingOverlay;)V"))
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private void submitCustomModel(net.minecraft.client.renderer.SubmitNodeCollector collector,
+                                   net.minecraft.client.model.Model<?> model, Object state,
+                                   com.mojang.blaze3d.vertex.PoseStack pose,
+                                   net.minecraft.client.renderer.rendertype.RenderType renderType,
+                                   int light, int overlay, int color,
+                                   net.minecraft.client.renderer.texture.TextureAtlasSprite sprite,
+                                   int outlineColor,
+                                   net.minecraft.client.renderer.feature.ModelFeatureRenderer.CrumblingOverlay crumbling) {
+        String custom = state instanceof error.interfaces.CustomModelCarrier carrier ? carrier.error$customModel() : null;
+        if (custom != null && state instanceof net.minecraft.client.renderer.entity.state.AvatarRenderState avatarState) {
+            error.module.impl.render.CustomModels models = error.module.impl.render.CustomModels.INSTANCE;
+            if (error.module.impl.render.CustomModels.RABBIT.equals(custom) && model instanceof net.minecraft.client.model.player.PlayerModel playerModel) {
+                error.util.render.model.RabbitModel.of(avatarState.id).submit(playerModel, avatarState, pose, collector, light, overlay, color, outlineColor);
+            } else if (error.module.impl.render.CustomModels.VERITY.equals(custom) && models != null) {
+                error.util.render.model.VerityMesh.submit(avatarState, pose, collector, light, overlay, models.verityTexture(), models.size());
+            } else {
+                error.util.render.model.ChickenMesh.submit(avatarState, pose, collector, light, overlay);
+            }
+            return;
+        }
+        collector.submitModel((net.minecraft.client.model.Model) model, state, pose, renderType, light, overlay, color, sprite, outlineColor, crumbling);
+    }
+
     @Inject(method = "extractRenderState", at = @At("TAIL"))
     private void applyElytraVisualRotation(T livingEntity, S renderState, float partialTicks, CallbackInfo ci) {
         LocalPlayer self = Minecraft.getInstance().player;

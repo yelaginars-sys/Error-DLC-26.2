@@ -32,7 +32,6 @@ import java.util.Optional;
 import java.util.OptionalDouble;
 
 /**
- * Create by daun kvass
  */
 public final class BlockHighlightRenderer {
     private static final float BOX_EPSILON = 0.0025F;

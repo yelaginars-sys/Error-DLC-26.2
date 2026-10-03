@@ -6,7 +6,6 @@ import error.setting.SettingRenderer;
 import error.setting.render.SliderRenderer;
 
 /**
- * Create by daun kvass
  */
 @Getter
 public class SliderSetting extends Setting<Float> {

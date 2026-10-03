@@ -12,7 +12,6 @@ import error.Client;
 import error.module.impl.render.NameTags;
 
 /**
- * Create by daun kvass
  */
 @Mixin(EntityRenderer.class)
 public abstract class EntityRendererMixin {

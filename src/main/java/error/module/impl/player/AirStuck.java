@@ -10,7 +10,6 @@ import error.module.Module;
 import error.setting.impl.ModeSetting;
 
 /**
- * Create by daun kvass
  */
 @Getter
 public class AirStuck extends Module {

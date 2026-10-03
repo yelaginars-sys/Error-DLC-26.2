@@ -11,7 +11,6 @@ import error.util.render.Render2D;
 import error.util.render.font.Fonts;
 
 /**
- * Create by daun kvass
  */
 public class BindRenderer extends SettingRenderer<BindSetting> {
     private boolean listening;

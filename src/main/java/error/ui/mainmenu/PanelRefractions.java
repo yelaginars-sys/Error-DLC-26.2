@@ -5,7 +5,6 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import error.ui.mainmenu.popup.Modal;
 
 /**
- * Create by daun kvass
  */
 public final class PanelRefractions {
     private static final PanelLapState STATE = new PanelLapState();
@@ -45,7 +44,7 @@ public final class PanelRefractions {
     }
 
     public static boolean isTyping() {
-        return STATE.isInteractive() && (STATE.isSearchFocused() || STATE.isAccountAddOpen() || STATE.getActiveModal() != null);
+        return STATE.isInteractive() && (STATE.isSearchFocused() || STATE.isAccountAddOpen() || STATE.isConfigInputFocused() || STATE.isShareCodeInputFocused() || STATE.isFriendInputFocused() || STATE.getActiveModal() != null);
     }
 
     public static boolean blocksInput() {

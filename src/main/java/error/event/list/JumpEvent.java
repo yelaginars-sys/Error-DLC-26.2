@@ -6,7 +6,6 @@ import net.minecraft.world.entity.player.Player;
 import error.event.Event;
 
 /**
- * Create by daun kvass
  */
 @Getter
 @AllArgsConstructor

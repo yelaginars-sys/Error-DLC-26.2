@@ -31,7 +31,6 @@ import java.util.Optional;
 import java.util.OptionalDouble;
 
 /**
- * Create by daun kvass
  */
 public final class Render3D {
 
@@ -265,7 +264,6 @@ public final class Render3D {
             if (vertexCount == 0) return;
 
             ensureVertexCapacity(remainingBytes);
-            device.createCommandEncoder().writeToBuffer(vertexGpuBuffer.slice(0, remainingBytes), vertexData);
 
             ensureUniformCapacity();
             try (MemoryStack stack = MemoryStack.stackPush()) {
@@ -276,7 +274,7 @@ public final class Render3D {
             }
 
             try (RenderPass pass = device.createCommandEncoder().createRenderPass(
-                    () -> "Godweer 3D World Render",
+                    () -> "Error 3D World Render",
                     target.getColorTextureView(),
                     Optional.empty(),
                     target.getDepthTextureView(),
@@ -295,7 +293,7 @@ public final class Render3D {
     private static void ensureUniformCapacity() {
         if (transformUniform != null) return;
         transformUniform = RenderSystem.getDevice().createBuffer(
-                () -> "Godweer World3D Transform UBO",
+                () -> "Error World3D Transform UBO",
                 GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_COPY_DST,
                 TRANSFORM_SIZE
         );
@@ -305,7 +303,7 @@ public final class Render3D {
         if (vertexGpuBuffer != null && vertexGpuBuffer.size() >= byteSize) return;
         if (vertexGpuBuffer != null) vertexGpuBuffer.close();
         vertexGpuBuffer = RenderSystem.getDevice().createBuffer(
-                () -> "Godweer World3D Vertex Buffer",
+                () -> "Error World3D Vertex Buffer",
                 GpuBuffer.USAGE_VERTEX | GpuBuffer.USAGE_COPY_DST,
                 Math.max(byteSize + 1024, 64 * 1024)
         );

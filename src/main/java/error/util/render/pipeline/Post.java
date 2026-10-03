@@ -16,7 +16,6 @@ import java.util.Optional;
 import java.util.function.Consumer;
 
 /**
- * Create by daun kvass
  */
 public class Post {
     private Post() {

@@ -5,14 +5,15 @@ import error.ui.mainmenu.PanelRefractions;
 import error.module.Category;
 import error.module.Module;
 import error.setting.impl.BindSetting;
+import error.setting.impl.ModeSetting;
 
 /**
- * Create by daun kvass
  */
 public class ClickGui extends Module {
 
     public static ClickGui INSTANCE;
 
+    public final ModeSetting mode = mode("Style", "Modern CS", "Modern CS", "Dimasik Concept");
     public final BindSetting holdKey = bind("Bind", GLFW.GLFW_KEY_LEFT_ALT);
 
     public ClickGui() {
@@ -23,7 +24,11 @@ public class ClickGui extends Module {
     @Override
     protected void onEnable() {
         error.util.client.ClientSoundPlayer.playGuiOpen();
-        PanelRefractions.open(mc);
+        if ("Modern CS".equalsIgnoreCase(mode.getValue())) {
+            mc.setScreenAndShow(new error.ui.csgui.CsClickGui());
+        } else {
+            PanelRefractions.open(mc);
+        }
         this.setState(false);
     }
 

@@ -27,6 +27,7 @@
     "client.AbstractClientPlayerMixin",
     "accessor.LivingEntityAccessor",
     "accessor.MinecraftAccessor",
+    "accessor.ItemInHandRendererAccessor",
     "render.DeltaTrackerTimerMixin",
     "render.ChatComponentMixin",
     "render.BossHealthOverlayMixin",
@@ -46,6 +47,8 @@
     "render.MobEffectFogEnvironmentMixin",
     "client.LivingEntityMixin",
     "render.AvatarRendererMixin",
+    "render.CapeLayerMixin",
+    "render.EntityRenderStateMixin",
     "render.LevelMixin",
     "render.FogRendererMixin",
     "render.ClientLevelDataMixin",
@@ -56,7 +59,8 @@
     "render.GuiGraphicsExtractorMixin",
     "render.LevelRendererMixin",
     "render.GameRendererMixin",
-    "render.ItemInHandRendererMixin"
+    "render.ItemInHandRendererMixin",
+    "render.ShaderManagerMixin"
   ],
   "injectors": {
     "defaultRequire": 1

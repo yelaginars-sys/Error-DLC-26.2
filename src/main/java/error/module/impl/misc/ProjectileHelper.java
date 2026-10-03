@@ -57,7 +57,6 @@ import java.util.Optional;
 import java.util.OptionalDouble;
 
 /**
- * Create by daun kvass
  */
 public final class ProjectileHelper extends Module {
 
@@ -350,10 +349,9 @@ public final class ProjectileHelper extends Module {
             ByteBuffer vertexData = meshData.vertexBuffer();
             int remainingBytes = vertexData.remaining();
             ensureVertexCapacity(remainingBytes);
-            device.createCommandEncoder().writeToBuffer(this.vertexBuffer.slice(0, remainingBytes), vertexData);
 
             try (RenderPass pass = device.createCommandEncoder().createRenderPass(
-                    () -> "Godweer Projectile Helper Trajectory",
+                    () -> "Error Projectile Helper Trajectory",
                     target.getColorTextureView(),
                     Optional.empty(),
                     target.getDepthTextureView(),

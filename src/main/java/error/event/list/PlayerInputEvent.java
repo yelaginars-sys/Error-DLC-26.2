@@ -8,7 +8,6 @@ import net.minecraft.world.phys.Vec2;
 import error.event.Event;
 
 /**
- * Create by daun kvass
  */
 @Getter
 @Setter

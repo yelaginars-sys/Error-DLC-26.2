@@ -7,7 +7,6 @@ import net.minecraft.world.entity.LivingEntity;
 import error.event.Event;
 
 /**
- * Create by daun kvass
  */
 @Getter
 @Setter

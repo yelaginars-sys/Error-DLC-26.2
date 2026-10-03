@@ -17,7 +17,6 @@ import error.util.RenderExtend;
 import error.event.Events;
 
 /**
- * Create by daun kvass
  */
 @Mixin(Gui.class)
 public abstract class GuiMixin {

@@ -1,0 +1,8 @@
+{
+    "vertex": "isle-client:core/hud_fade",
+    "fragment": "isle-client:core/hud_fade",
+    "samplers": [{ "name": "Sampler0" }],
+    "uniforms": [
+        { "name": "Opacity", "type": "float", "count": 1, "values": [0.0] }
+    ]
+}

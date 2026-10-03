@@ -24,7 +24,6 @@ import error.module.Module;
 import error.setting.impl.CheckBox;
 
 /**
- * Create by daun kvass
  */
 public final class AutoExplosion extends Module {
 

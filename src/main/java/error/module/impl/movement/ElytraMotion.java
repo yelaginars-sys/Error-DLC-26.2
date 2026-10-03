@@ -10,7 +10,6 @@ import error.module.Category;
 import error.module.Module;
 
 /**
- * Create by daun kvass
  */
 @Getter
 public class ElytraMotion extends Module {

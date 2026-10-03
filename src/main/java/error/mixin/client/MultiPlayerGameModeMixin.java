@@ -17,7 +17,6 @@ import error.Client;
 import error.event.list.AttackEvent;
 
 /**
- * Create by daun kvass
  */
 @Mixin(MultiPlayerGameMode.class)
 public abstract class MultiPlayerGameModeMixin {

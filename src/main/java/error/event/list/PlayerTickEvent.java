@@ -5,7 +5,6 @@ import net.minecraft.client.player.LocalPlayer;
 import error.event.Event;
 
 /**
- * Create by daun kvass
  */
 @Getter
 public final class PlayerTickEvent extends Event {

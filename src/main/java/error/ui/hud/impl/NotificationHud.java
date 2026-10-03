@@ -2,217 +2,118 @@ package error.ui.hud.impl;
 
 import error.IMinecraft;
 import error.event.list.Render2DEvent;
-import error.ui.hud.HudElement;
+import error.module.impl.render.Notification;
 import error.util.client.clients.ColorUtil;
 import error.util.client.clients.Theme;
+import error.util.math.Animation;
 import error.util.render.Render2D;
 import error.util.render.font.Fonts;
 import error.util.render.font.IconUse;
-import net.minecraft.util.Mth;
+import net.minecraft.client.gui.screens.ChatScreen;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
-public final class NotificationHud extends HudElement implements IMinecraft {
+public final class NotificationHud implements IMinecraft {
+    private static final List<Toast> toasts = new ArrayList<>();
 
-    public static final int ACCENT_PURPLE = ColorUtil.rgba(166, 130, 255, 255);
+    public static class Toast {
+        public String title;
+        public String description;
+        public IconUse icon;
+        public int iconColor;
+        public long durationMs;
+        public long createdTime;
+        public Animation alphaAnim = new Animation(0.0F, 0.25F);
 
-    public enum Type { ON, OFF, INFO }
-
-    public static class Note {
-        final String title;
-        final String message;
-        final Type type;
-        final long bornAt = System.currentTimeMillis();
-        final long duration;
-
-        public Note(String title, String message, Type type, long duration) {
+        public Toast(String title, String description, IconUse icon, int iconColor, long durationMs) {
             this.title = title;
-            this.message = message;
-            this.type = type;
-            this.duration = duration;
+            this.description = description;
+            this.icon = icon;
+            this.iconColor = iconColor;
+            this.durationMs = durationMs;
+            this.createdTime = System.currentTimeMillis();
         }
-    }
 
-    private static final ConcurrentLinkedQueue<Note> QUEUE = new ConcurrentLinkedQueue<>();
-    private static final List<Note> ACTIVE_NOTES = new ArrayList<>();
-
-    // Settings Toggles (Photo 2 UI)
-    public static boolean moduleState = true;
-    public static boolean totemPop = true;
-    public static boolean shieldBreak = false;
-    public static boolean lowDurability = false;
-
-    private static boolean settingsOpen = false;
-    private float settingsAnim = 0.0F;
-
-    public NotificationHud() {
-        super("notifications", "Notifications", 6.0F, 300.0F, 180.0F, 24.0F, false);
-    }
-
-    public static void notify(String title, String message, Type type) {
-        if (error.module.impl.misc.UnHook.unhooked) return;
-        if (type == Type.ON || type == Type.OFF) {
-            if (!moduleState) return;
+        public boolean isExpired(long now) {
+            return now - createdTime > durationMs;
         }
-        DynamicIslandHud.postNotification(title + (message.isEmpty() ? "" : ": " + message), type == Type.ON);
-        QUEUE.add(new Note(title, message, type, 3000L));
-    }
-
-    public static void post(String title, String description, IconUse icon, int iconColor, long durationMs) {
-        if (error.module.impl.misc.UnHook.unhooked) return;
-        Type type = Type.INFO;
-        if (iconColor == error.util.client.persiki.Notify.COLOR_SUCCESS) type = Type.ON;
-        else if (iconColor == error.util.client.persiki.Notify.COLOR_ERROR) type = Type.OFF;
-        DynamicIslandHud.postNotification(title + (description.isEmpty() ? "" : ": " + description), type == Type.ON);
-        QUEUE.add(new Note(title, description, type, durationMs));
     }
 
     public static boolean isNotifyElytraSwapEnabled() {
-        return moduleState;
+        return true;
     }
 
-    public static void onModuleToggle(String moduleName, boolean state) {
-        if (error.module.impl.misc.UnHook.unhooked || !moduleState) return;
-        notify(moduleName, state ? "включен" : "выключен", state ? Type.ON : Type.OFF);
-    }
-
-    public com.google.gson.JsonObject writeConfig() {
-        com.google.gson.JsonObject obj = new com.google.gson.JsonObject();
-        obj.addProperty("moduleState", moduleState);
-        obj.addProperty("totemPop", totemPop);
-        obj.addProperty("shieldBreak", shieldBreak);
-        obj.addProperty("lowDurability", lowDurability);
-        return obj;
-    }
-
-    public void readConfig(com.google.gson.JsonObject json) {
-        if (json == null) return;
-        if (json.has("moduleState")) moduleState = json.get("moduleState").getAsBoolean();
-        if (json.has("totemPop")) totemPop = json.get("totemPop").getAsBoolean();
-        if (json.has("shieldBreak")) shieldBreak = json.get("shieldBreak").getAsBoolean();
-        if (json.has("lowDurability")) lowDurability = json.get("lowDurability").getAsBoolean();
-    }
-
-    public static boolean isSettingsOpen() {
-        return settingsOpen;
-    }
-
-    public static void toggleSettings() {
-        settingsOpen = !settingsOpen;
-    }
-
-    @Override
-    public void draw(Render2DEvent event) {
-        if (error.module.impl.misc.UnHook.unhooked) return;
-
-        while (!QUEUE.isEmpty()) {
-            Note n = QUEUE.poll();
-            if (n != null) ACTIVE_NOTES.add(n);
+    public static void post(String title, String description, IconUse icon, int iconColor, long durationMs) {
+        if (Notification.INSTANCE != null && !Notification.INSTANCE.isEnabled()) {
+            String fullText = (title + " " + description).trim();
+            DynamicIslandHud.showNotification(fullText, iconColor != ColorUtil.rgba(235, 75, 75, 255), durationMs);
+            return;
         }
+
+        Toast toast = new Toast(title, description, icon, iconColor, durationMs);
+        toasts.add(toast);
+    }
+
+    public static void onModuleToggle(String name, boolean state) {
+        String msg = name + (state ? " enabled" : " disabled");
+        IconUse icon = state ? IconUse.CHECK : IconUse.CROSS;
+        int col = state ? ColorUtil.rgba(85, 255, 135, 255) : ColorUtil.rgba(255, 80, 100, 255);
+        post(msg, "", icon, col, 2200L);
+    }
+
+    public static void renderToasts(Render2DEvent event) {
+        if (toasts.isEmpty() || IMinecraft.mc.player == null) return;
 
         long now = System.currentTimeMillis();
-        ACTIVE_NOTES.removeIf(note -> (now - note.bornAt) > note.duration + 400L);
+        int screenW = IMinecraft.mc.getWindow().getGuiScaledWidth();
+        int screenH = IMinecraft.mc.getWindow().getGuiScaledHeight();
 
-        boolean editing = isDragging();
-        if (ACTIVE_NOTES.isEmpty() && editing) {
-            ACTIVE_NOTES.add(new Note("Это уведомление", "кликни на меня для настройки", Type.INFO, 5000L));
-        }
+        boolean chatOpen = IMinecraft.mc.gui.screen() instanceof ChatScreen;
+        float startY = screenH - (chatOpen ? 60.0F : 35.0F);
 
-        float drawX = getX();
-        float currentY = getY();
+        Iterator<Toast> it = toasts.iterator();
+        float currentY = startY;
 
-        for (Note note : ACTIVE_NOTES) {
-            long elapsed = now - note.bornAt;
-            float alpha = 1.0F;
-            if (elapsed < 300L) {
-                alpha = elapsed / 300.0F;
-            } else if (elapsed > note.duration) {
-                alpha = Math.max(0.0F, (note.duration + 400L - elapsed) / 400.0F);
+        while (it.hasNext()) {
+            Toast t = it.next();
+            if (t.isExpired(now)) {
+                t.alphaAnim.setTarget(0.0F);
+            } else {
+                t.alphaAnim.setTarget(1.0F);
             }
-            if (alpha <= 0.01F) continue;
+            t.alphaAnim.update();
 
-            IconUse icon = note.type == Type.ON ? IconUse.CHECK : (note.type == Type.OFF ? IconUse.CROSS : IconUse.INFO);
-            int primaryColor = Theme.getAccentColor();
-
-            String textStr = note.title + (note.message.isEmpty() ? "" : ", " + note.message);
-            float textW = Fonts.SF_MEDIUM.getWidth(textStr, 6.5F);
-            float noteWidth = Math.max(160.0F, textW + 30.0F);
-            float noteHeight = 20.0F;
-
-            // Liquid glass background with blur and specular outline
-            Render2D.drawShadow(drawX, currentY, noteWidth, noteHeight, 8.0F, 6.0F, ColorUtil.rgba(0, 0, 0, (int) (140 * alpha)));
-            int glassFill = ColorUtil.rgba(20, 18, 28, (int) (160 * alpha));
-            Render2D.drawBlur(drawX, currentY, noteWidth, noteHeight, 8.0F, 12.0F, glassFill, alpha);
-            Render2D.drawRoundedRect(drawX, currentY, noteWidth, noteHeight, 8.0F, glassFill);
-            Render2D.drawRoundedOutline(drawX, currentY, noteWidth, noteHeight, 8.0F, 1.0F, ColorUtil.rgba(255, 255, 255, (int) (28 * alpha)));
-
-            Fonts.drawIcon(icon, drawX + 6.0F, currentY + 5.5F, 8.0F, ColorUtil.applyAlpha(primaryColor, alpha));
-            Fonts.drawString(Fonts.SF_MEDIUM, note.title, drawX + 18.0F, currentY + 5.5F, 6.5F, ColorUtil.applyAlpha(-1, alpha));
-            if (!note.message.isEmpty()) {
-                Fonts.drawString(Fonts.SF_MEDIUM, ", " + note.message, drawX + 18.0F + Fonts.SF_MEDIUM.getWidth(note.title, 6.5F), currentY + 5.5F, 6.5F, ColorUtil.applyAlpha(ColorUtil.rgba(180, 180, 190, 255), alpha));
+            float alpha = t.alphaAnim.getValue();
+            if (alpha <= 0.01F && t.isExpired(now)) {
+                it.remove();
+                continue;
             }
 
-            currentY -= (noteHeight + 6.0F);
-        }
+            String text = (t.title + " " + t.description).trim();
+            float fontW = Fonts.SF_MEDIUM.getWidth(text, 7.5F);
+            float toastW = Math.max(120.0F, fontW + 28.0F);
+            float toastH = 18.0F;
 
-        // Render Settings Window (Photo 2 UI) if open
-        settingsAnim = Mth.clamp(settingsAnim + (settingsOpen ? 0.12F : -0.12F), 0.0F, 1.0F);
-        if (settingsAnim > 0.001F) {
-            renderSettingsModal(drawX, getY() - 110.0F, settingsAnim);
+            float toastX = (screenW - toastW) / 2.0F;
+            float toastY = currentY;
+
+            int shadowCol = ColorUtil.rgba(0, 0, 0, (int) (140 * alpha));
+            int glassFill = ColorUtil.rgba(20, 22, 32, (int) (215 * alpha));
+            int glassBorder = ColorUtil.rgba(255, 255, 255, (int) (40 * alpha));
+
+            Render2D.drawShadow(toastX, toastY, toastW, toastH, 6.0F, 6.0F, shadowCol);
+            Render2D.drawBlur(toastX, toastY, toastW, toastH, 6.0F, 12.0F, glassFill, alpha);
+            Render2D.drawRoundedRect(toastX, toastY, toastW, toastH, 6.0F, glassFill);
+            Render2D.drawRoundedOutline(toastX, toastY, toastW, toastH, 6.0F, 1.0F, glassBorder);
+
+            Fonts.drawIcon(t.icon == null ? IconUse.INFO : t.icon, toastX + 8.0F, toastY + 4.5F, 7.5F, ColorUtil.multiplyAlpha(t.iconColor, alpha));
+            Fonts.drawString(Fonts.SF_MEDIUM, text, toastX + 22.0F, toastY + 4.5F, 7.5F, ColorUtil.rgba(255, 255, 255, (int) (245 * alpha)));
+
+            currentY -= (toastH + 4.0F) * alpha;
         }
     }
 
-    private void renderSettingsModal(float modalX, float modalY, float alpha) {
-        float width = 160.0F;
-        float height = 95.0F;
-        float radius = 8.0F;
-
-        int primaryColor = Theme.getAccentColor();
-        int glowColor = ColorUtil.applyAlpha(primaryColor, (int) (alpha * 20));
-        int borderColor = ColorUtil.applyAlpha(primaryColor, (int) (alpha * 50));
-        int bgColor = ColorUtil.rgba(0, 0, 0, (int) (200 * alpha));
-        int headerBg = ColorUtil.rgba(0, 0, 0, (int) (180 * alpha));
-
-        // Window Frame with blur and theme accent glow
-        Render2D.drawShadow(modalX, modalY, width, height, radius, 8.0F, ColorUtil.rgba(0, 0, 0, (int) (160 * alpha)));
-        Render2D.drawRoundedRect(modalX - 2.0F, modalY - 2.0F, width + 4.0F, height + 4.0F, radius + 2.0F, glowColor);
-        Render2D.drawRoundedRect(modalX - 0.5F, modalY - 0.5F, width + 1.0F, height + 1.0F, radius + 0.5F, borderColor);
-        Render2D.drawBlur(modalX, modalY, width, height, radius, 12.0F, bgColor, alpha);
-        Render2D.drawRoundedRect(modalX, modalY, width, height, radius, bgColor);
-
-        // Header "Настройки"
-        Render2D.drawRoundedRect(modalX, modalY, width, 16.0F, radius, headerBg);
-        Fonts.drawString(Fonts.SF_MEDIUM, "Настройки", modalX + 8.0F, modalY + 3.5F, 7.5F, ColorUtil.applyAlpha(primaryColor, alpha));
-
-        // Options List (Photo 2 items)
-        String[] titles = {"Состояние модулей", "Поп тотема", "Ломание щита", "Низкая прочность"};
-        boolean[] states = {moduleState, totemPop, shieldBreak, lowDurability};
-
-        float optY = modalY + 20.0F;
-        float optH = 17.0F;
-
-        for (int i = 0; i < titles.length; i++) {
-            Fonts.drawString(Fonts.SF_MEDIUM, titles[i], modalX + 8.0F, optY + 3.5F, 6.5F, ColorUtil.applyAlpha(ColorUtil.WHITE, alpha));
-
-            // Switch Pill
-            float switchW = 22.0F;
-            float switchH = 10.0F;
-            float switchX = modalX + width - 12.0F - switchW;
-            float switchY = optY + 2.0F;
-
-            boolean active = states[i];
-            int switchBg = active ? ColorUtil.applyAlpha(ACCENT_PURPLE, (int) (220 * alpha)) : ColorUtil.rgba(35, 37, 48, (int) (200 * alpha));
-            Render2D.drawRoundedRect(switchX, switchY, switchW, switchH, 5.0F, switchBg);
-
-            // Circle Knob inside switch
-            float knobSize = 8.0F;
-            float knobX = active ? (switchX + switchW - knobSize - 1.0F) : (switchX + 1.0F);
-            float knobY = switchY + 1.0F;
-            Render2D.drawRoundedRect(knobX, knobY, knobSize, knobSize, 4.0F, ColorUtil.applyAlpha(ColorUtil.WHITE, alpha));
-
-            optY += optH;
-        }
-    }
+    private NotificationHud() {}
 }

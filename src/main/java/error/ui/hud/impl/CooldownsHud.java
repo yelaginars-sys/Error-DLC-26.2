@@ -5,121 +5,115 @@ import error.event.list.Render2DEvent;
 import error.ui.hud.HudElement;
 import error.util.client.clients.ColorUtil;
 import error.util.client.clients.Theme;
+import error.util.math.Animation;
 import error.util.render.Render2D;
 import error.util.render.font.Fonts;
 import error.util.render.font.IconUse;
-import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
-import java.util.Map;
 
 public final class CooldownsHud extends HudElement implements IMinecraft {
+    private final Animation heightAnim = new Animation(0.0F, 0.22F);
+    private final Animation chatOffsetAnim = new Animation(0.0F, 0.22F);
 
-    private static final float HEADER_HEIGHT = 15.0F;
-
-    public record CooldownEntry(String name, String time, Item item) {}
+    public record CooldownItem(String name, ItemStack stack, float remainingSeconds) {}
 
     public CooldownsHud() {
-        super("cooldowns", "Cooldowns", 95.0F, 38.0F, 85.0F, HEADER_HEIGHT + 14.0F, false);
-    }
-
-    private List<CooldownEntry> getActiveCooldowns() {
-        List<CooldownEntry> list = new ArrayList<>();
-        if (mc.player == null) return list;
-
-        Item[] trackedItems = new Item[]{
-                Items.ENDER_PEARL,
-                Items.CHORUS_FRUIT,
-                Items.SHIELD,
-                Items.ENCHANTED_GOLDEN_APPLE,
-                Items.GOLDEN_APPLE,
-                Items.WIND_CHARGE
-        };
-
-        for (Item item : trackedItems) {
-            if (mc.player.getCooldowns().isOnCooldown(new ItemStack(item))) {
-                float percent = mc.player.getCooldowns().getCooldownPercent(new ItemStack(item), 0.0F);
-                if (percent > 0.001F) {
-                    float secs = percent * 15.0F;
-                    String timeStr = String.format(Locale.US, "%.1fs", secs);
-                    String name = item.getName(new ItemStack(item)).getString();
-                    list.add(new CooldownEntry(name, timeStr, item));
-                }
-            }
-        }
-        return list;
+        super("cooldowns", "Cooldowns", 200.0F, 200.0F, 125.0F, 30.0F, true);
     }
 
     @Override
     public void draw(Render2DEvent event) {
-        List<CooldownEntry> cds = getActiveCooldowns();
-        boolean editing = isDragging();
+        if (!isEnabled() || mc.player == null) return;
 
-        fadeAnim.setTarget((!cds.isEmpty() || editing) ? 1.0F : 0.0F);
+        List<CooldownItem> activeCooldowns = getActiveCooldowns();
+        fadeAnim.setTarget(activeCooldowns.isEmpty() ? 0.0F : 1.0F);
         fadeAnim.update();
-
         float alpha = fadeAnim.getValue();
         if (alpha <= 0.01F) return;
 
-        float drawX = getX();
-        float drawY = getY();
+        float headerH = 18.0F;
+        float itemH = 13.0F;
+        float targetH = headerH + (activeCooldowns.size() * itemH) + 4.0F;
 
-        float padX = 4.5F;
-        float headerH = HEADER_HEIGHT;
-        float itemH = 11.0F;
-        float radius = 6.0F;
+        heightAnim.setTarget(targetH);
+        heightAnim.update();
+        this.height = heightAnim.getValue();
 
-        String title = "Cooldowns";
-        float maxNameW = Fonts.SF_MEDIUM.getWidth(title, 7.5F);
-        float maxCdW = 0.0F;
+        boolean chatOpen = mc.gui.screen() instanceof ChatScreen;
+        chatOffsetAnim.setTarget(chatOpen ? -20.0F : 0.0F);
+        chatOffsetAnim.update();
 
-        if (cds.isEmpty() && editing) {
-            cds.add(new CooldownEntry("Ender Pearl", "8.4s", Items.ENDER_PEARL));
-            cds.add(new CooldownEntry("Chorus Fruit", "1.2s", Items.CHORUS_FRUIT));
+        float renderY = (dragging ? getY() : getY()) + chatOffsetAnim.getValue();
+        float renderX = getX();
+
+        int accent = Theme.getAccentColor();
+        int shadowCol = ColorUtil.rgba(0, 0, 0, (int) (140 * alpha));
+        int glassFill = ColorUtil.rgba(16, 18, 26, (int) (205 * alpha));
+        int glassBorder = ColorUtil.rgba(255, 255, 255, (int) (35 * alpha));
+
+        Render2D.drawShadow(renderX, renderY, width, height, 8.0F, 8.0F, shadowCol);
+        Render2D.drawBlur(renderX, renderY, width, height, 8.0F, 14.0F, glassFill, alpha);
+        Render2D.drawRoundedRect(renderX, renderY, width, height, 8.0F, glassFill);
+        Render2D.drawRoundedOutline(renderX, renderY, width, height, 8.0F, 1.0F, glassBorder);
+
+        // Header: Cooldowns Title + Hourglass Icon
+        Fonts.drawString(Fonts.SF_MEDIUM, "Cooldowns", renderX + 8.0F, renderY + 4.5F, 7.5F, ColorUtil.rgba(255, 255, 255, (int) (240 * alpha)));
+        Fonts.drawIcon(IconUse.CLOCK, renderX + width - 16.0F, renderY + 4.5F, 7.5F, ColorUtil.multiplyAlpha(accent, alpha));
+
+        // Line Divider
+        Render2D.drawRoundedRect(renderX + 6.0F, renderY + headerH, width - 12.0F, 1.0F, 0.5F, ColorUtil.rgba(255, 255, 255, (int) (20 * alpha)));
+
+        float curY = renderY + headerH + 3.0F;
+        Render2D.pushScissor(renderX, renderY + headerH, width, height - headerH);
+        for (CooldownItem cd : activeCooldowns) {
+            Fonts.drawIcon(IconUse.CLOCK, renderX + 8.0F, curY + 1.0F, 6.5F, ColorUtil.multiplyAlpha(accent, alpha));
+            Fonts.drawString(Fonts.SF_MEDIUM, cd.name(), renderX + 18.0F, curY + 1.0F, 6.5F, ColorUtil.rgba(240, 240, 255, (int) (230 * alpha)));
+
+            String timeStr = String.format("0:%02ds", Math.round(cd.remainingSeconds()));
+            float timeW = Fonts.SF_MEDIUM.getWidth(timeStr, 6.0F);
+            Fonts.drawString(Fonts.SF_MEDIUM, timeStr, renderX + width - timeW - 8.0F, curY + 1.0F, 6.0F, ColorUtil.rgba(180, 185, 205, (int) (190 * alpha)));
+
+            curY += itemH;
         }
+        Render2D.popScissor();
+    }
 
-        for (CooldownEntry e : cds) {
-            maxNameW = Math.max(maxNameW, Fonts.SF_MEDIUM.getWidth(e.name(), 6.0F));
-            maxCdW = Math.max(maxCdW, Fonts.SF_MEDIUM.getWidth(e.time(), 6.0F));
-        }
+    private List<CooldownItem> getActiveCooldowns() {
+        List<CooldownItem> list = new ArrayList<>();
+        if (mc.player == null) return list;
 
-        float width = Math.max(85.0F, padX * 2.0F + maxNameW + maxCdW + 16.0F);
-        int itemCount = cds.isEmpty() ? 1 : cds.size();
-        float height = headerH + itemCount * itemH + 3.0F;
+        Item[] trackedItems = {
+                Items.FIREWORK_ROCKET,
+                Items.ENDER_PEARL,
+                Items.CHORUS_FRUIT,
+                Items.GOLDEN_APPLE,
+                Items.ENCHANTED_GOLDEN_APPLE
+        };
 
-        this.width = width;
-        this.height = height;
+        String[] names = {
+                "Фейерверк",
+                "Эндер-жемчуг",
+                "Хорус",
+                "Золотое яблоко",
+                "Зач. яблоко"
+        };
 
-        int primaryColor = Theme.getAccentColor();
-
-        // Liquid glass background with blur and specular outline
-        Render2D.drawShadow(drawX, drawY, width, height, radius, 6.0F, ColorUtil.rgba(0, 0, 0, (int) (140 * alpha)));
-        int glassFill = ColorUtil.rgba(20, 18, 28, (int) (160 * alpha));
-        Render2D.drawBlur(drawX, drawY, width, height, radius, 12.0F, glassFill, alpha);
-        Render2D.drawRoundedRect(drawX, drawY, width, height, radius, glassFill);
-        Render2D.drawRoundedOutline(drawX, drawY, width, height, radius, 1.0F, ColorUtil.rgba(255, 255, 255, (int) (28 * alpha)));
-
-        // Header
-        Render2D.drawRoundedRect(drawX, drawY, width, headerH, radius, ColorUtil.rgba(255, 255, 255, (int) (10 * alpha)));
-        Fonts.drawString(Fonts.SF_MEDIUM, title, drawX + padX, drawY + 4.0F, 7.5F, ColorUtil.applyAlpha(primaryColor, alpha));
-
-        // Rows
-        float currentY = drawY + headerH + 1.5F;
-        if (cds.isEmpty()) {
-            Fonts.drawString(Fonts.SF_MEDIUM, "No cooldowns", drawX + padX, currentY + 2.5F, 6.0F, ColorUtil.applyAlpha(ColorUtil.rgba(150, 150, 160, 255), alpha));
-        } else {
-            for (CooldownEntry e : cds) {
-                Fonts.drawString(Fonts.SF_MEDIUM, e.name(), drawX + padX, currentY + 2.5F, 6.0F, ColorUtil.applyAlpha(ColorUtil.rgba(235, 235, 235, 255), alpha));
-                float cdW = Fonts.SF_MEDIUM.getWidth(e.time(), 6.0F);
-                Fonts.drawString(Fonts.SF_MEDIUM, e.time(), drawX + width - padX - cdW, currentY + 2.5F, 6.0F, ColorUtil.applyAlpha(ColorUtil.rgba(180, 180, 180, 255), alpha));
-                currentY += itemH;
+        var cooldowns = mc.player.getCooldowns();
+        for (int i = 0; i < trackedItems.length; i++) {
+            Item item = trackedItems[i];
+            ItemStack stack = new ItemStack(item);
+            if (cooldowns.isOnCooldown(stack)) {
+                float pct = cooldowns.getCooldownPercent(stack, 0.0F);
+                float remSecs = pct * 15.0F;
+                list.add(new CooldownItem(names[i], stack, remSecs));
             }
         }
+        return list;
     }
 }

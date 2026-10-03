@@ -26,7 +26,6 @@ import error.util.player.MoveBlockUtility;
 import java.util.List;
 
 /**
- * Create by daun kvass
  */
 public final class AutoTotem extends Module {
 

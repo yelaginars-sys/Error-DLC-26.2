@@ -5,7 +5,6 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * Create by daun kvass
  */
 public interface AffectedWorlds {
 

@@ -4,7 +4,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Create by daun kvass
  */
 public class MoveBlockUtility {
 

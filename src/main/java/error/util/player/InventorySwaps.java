@@ -10,7 +10,6 @@ import error.util.network.NetworkUtils;
 import static error.IMinecraft.mc;
 
 /**
- * Create by daun kvass
  */
 public class InventorySwaps {
     private static final int INVENTORY_SLOTS_START = 9;

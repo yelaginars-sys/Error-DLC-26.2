@@ -1,7 +1,6 @@
 package error.ui.mainmenu.popup;
 
 /**
- * Create by daun kvass
  */
 public interface Modal {
     void render(int mouseX, int mouseY, float screenWidth, float screenHeight, float alpha);
