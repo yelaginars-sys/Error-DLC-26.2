@@ -18,9 +18,13 @@ public class CustomModels extends Module {
     public static final String RABBIT = "Rabbit";
     public static final String CHICKEN = "Chicken";
     public static final String VERITY = "Verity";
+    public static final String AMOGUS = "Amogus";
+    public static final String FREDDY = "Freddy";
+    public static final String RED_DEMON = "RedDemon";
+    public static final String WHITE_DEMON = "WhiteDemon";
     public static final String NONE = "None";
 
-    public final ModeSetting model = mode("Модель", NONE, NONE, RABBIT, CHICKEN, VERITY);
+    public final ModeSetting model = mode("Модель", NONE, NONE, RABBIT, CHICKEN, VERITY, AMOGUS, FREDDY, RED_DEMON, WHITE_DEMON);
     public final CheckBox self = checkbox("Себя", true);
     public final CheckBox friends = checkbox("Друзей", true);
     public final CheckBox ircUsers = checkbox("IRC Игроков", true);

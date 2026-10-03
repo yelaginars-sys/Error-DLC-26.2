@@ -74,6 +74,10 @@ public class Modules {
     public HoldMyItems holdMyItems;
     public Notification notification;
     public CustomModels customModels;
+    public MaceHelper maceHelper;
+    public WindCharge windCharge;
+    public AutoCaptcha autoCaptcha;
+    public IRC irc;
 
     public void init() {
         register(
@@ -81,6 +85,10 @@ public class Modules {
                 this.notification = new Notification(),
                 this.customModels = new CustomModels(),
                 this.holdMyItems = new HoldMyItems(),
+                this.maceHelper = new MaceHelper(),
+                this.windCharge = new WindCharge(),
+                this.autoCaptcha = new AutoCaptcha(),
+                this.irc = new IRC(),
                 this.sprint = new Sprint(),
                 this.elytraSwap = new ElytraSwap(),
                 this.fullBright = new FullBright(),
