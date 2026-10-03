@@ -241,6 +241,8 @@ public final class PanelLapSuperimposition {
             renderConfigs(state, contentX + 8.0F, contentY + slideY, contentW - 16.0F, contentH, mouseX, mouseY, contentAlpha);
         } else if (state.getCurrentCategory() == Category.FRIENDS) {
             renderFriends(state, contentX + 8.0F, contentY + slideY, contentW - 16.0F, contentH, mouseX, mouseY, contentAlpha);
+        } else if (state.getCurrentCategory() == Category.COSMETICS) {
+            renderCosmetics(state, extractor, contentX + 8.0F, contentY + slideY, contentW - 16.0F, contentH, mouseX, mouseY, contentAlpha);
         } else {
             renderModules(state, contentX + 8.0F, contentY + slideY, contentW - 16.0F, contentH, mouseX, mouseY, contentAlpha);
         }
@@ -707,12 +709,94 @@ public final class PanelLapSuperimposition {
         return true;
     }
 
+    private static float previewYaw = 0.0F;
+    private static float previewPitch = 0.0F;
+    private static boolean previewDragging = false;
+    private static float dragStartX, dragStartY;
+
+    private void renderCosmetics(PanelLapState state, GuiGraphicsExtractor extractor, float startX, float startY, float totalWidth, float totalHeight, int mouseX, int mouseY, float alpha) {
+        float previewW = 140.0F;
+        float previewH = totalHeight;
+        float previewX = startX + totalWidth - previewW;
+        float modulesW = totalWidth - previewW - 12.0F;
+
+        // Render Modules on the left side of Cosmetics tab
+        renderModules(state, startX, startY, modulesW, totalHeight, mouseX, mouseY, alpha);
+
+        // Render 3D Player Preview Card on the right side
+        int previewBg = ColorUtil.rgba(255, 255, 255, (int) (10 * alpha));
+        int previewOutline = ColorUtil.rgba(255, 255, 255, (int) (24 * alpha));
+        int accent = Theme.getAccentColor();
+
+        Render2D.drawRoundedRect(previewX, startY, previewW, previewH, 8.0F, previewBg);
+        Render2D.drawRoundedOutline(previewX, startY, previewW, previewH, 8.0F, 1.0F, previewOutline);
+
+        // Header Title
+        Fonts.drawString(Fonts.SF_MEDIUM, "Предпросмотр", previewX + 10.0F, startY + 8.0F, 8.5F, ColorUtil.rgba(255, 255, 255, (int) (230 * alpha)));
+        Fonts.drawString(Fonts.SF_MEDIUM, "Зажмите ЛКМ для вращения", previewX + 10.0F, startY + 20.0F, 6.5F, ColorUtil.rgba(170, 165, 185, (int) (170 * alpha)));
+
+        // Handle Mouse Dragging Rotation
+        boolean hovered = mouseX >= previewX && mouseX <= previewX + previewW && mouseY >= startY + 30.0F && mouseY <= startY + previewH - 20.0F;
+        if (org.lwjgl.glfw.GLFW.glfwGetMouseButton(Minecraft.getInstance().getWindow().handle(), GLFW.GLFW_MOUSE_BUTTON_LEFT) == GLFW.GLFW_PRESS) {
+            if (!previewDragging && hovered) {
+                previewDragging = true;
+                dragStartX = mouseX;
+                dragStartY = mouseY;
+            } else if (previewDragging) {
+                previewYaw += (mouseX - dragStartX) * 1.2F;
+                previewPitch = Math.max(-45.0F, Math.min(45.0F, previewPitch + (mouseY - dragStartY) * 0.8F));
+                dragStartX = mouseX;
+                dragStartY = mouseY;
+            }
+        } else {
+            previewDragging = false;
+        }
+
+        // 3D Player Model Rendering inside GUI
+        if (Minecraft.getInstance().player != null) {
+            int playerScale = 50;
+
+            try {
+                net.minecraft.client.gui.screens.inventory.InventoryScreen.extractEntityInInventoryFollowsMouse(
+                        extractor,
+                        (int) (previewX + 10.0F),
+                        (int) (startY + 30.0F),
+                        (int) (previewX + previewW - 10.0F),
+                        (int) (startY + previewH - 25.0F),
+                        playerScale,
+                        0.06F,
+                        previewYaw + mouseX,
+                        previewPitch + mouseY,
+                        Minecraft.getInstance().player
+                );
+            } catch (Throwable ignored) {}
+        }
+
+        // Reset rotation button
+        float resetBtnW = 60.0F;
+        float resetBtnH = 14.0F;
+        float resetBtnX = previewX + (previewW - resetBtnW) / 2.0F;
+        float resetBtnY = startY + previewH - 18.0F;
+
+        boolean resetHovered = mouseX >= resetBtnX && mouseX <= resetBtnX + resetBtnW && mouseY >= resetBtnY && mouseY <= resetBtnY + resetBtnH;
+        int resetBg = resetHovered ? ColorUtil.rgba(ColorUtil.red(accent), ColorUtil.green(accent), ColorUtil.blue(accent), (int) (120 * alpha)) : ColorUtil.rgba(255, 255, 255, (int) (18 * alpha));
+        Render2D.drawRoundedRect(resetBtnX, resetBtnY, resetBtnW, resetBtnH, 4.0F, resetBg);
+        Render2D.drawRoundedOutline(resetBtnX, resetBtnY, resetBtnW, resetBtnH, 4.0F, 1.0F, resetHovered ? accent : ColorUtil.rgba(255, 255, 255, (int) (30 * alpha)));
+        Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Сброс", resetBtnX + resetBtnW / 2.0F, resetBtnY + 3.0F, 6.5F, ColorUtil.rgba(255, 255, 255, (int) (240 * alpha)));
+
+        if (resetHovered && org.lwjgl.glfw.GLFW.glfwGetMouseButton(Minecraft.getInstance().getWindow().handle(), GLFW.GLFW_MOUSE_BUTTON_LEFT) == GLFW.GLFW_PRESS) {
+            previewYaw = 0.0F;
+            previewPitch = 0.0F;
+        }
+    }
+
     private IconUse getCategoryIcon(Category category) {
         return switch (category) {
             case COMBAT -> IconUse.FIGHT;
             case MOVEMENT -> IconUse.MOVEMENT;
             case PLAYER -> IconUse.PLAYER;
             case RENDER -> IconUse.RENDER;
+            case COSMETICS -> IconUse.STAR;
             case MISC -> IconUse.MISC;
             case CONFIGS -> IconUse.GEAR;
             case FRIENDS -> IconUse.GROUP;

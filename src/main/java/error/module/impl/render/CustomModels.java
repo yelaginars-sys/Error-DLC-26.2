@@ -36,7 +36,7 @@ public class CustomModels extends Module {
             "veritydisturbingyell", "veritybad", "verityverybad");
 
     public CustomModels() {
-        super("CustomModels", "Отображение кастомных 3D моделей игроков и синхра по IRC", Category.RENDER);
+        super("CustomModels", "Отображение кастомных 3D моделей игроков и синхра по IRC", Category.COSMETICS);
         INSTANCE = this;
     }
 

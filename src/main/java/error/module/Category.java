@@ -12,6 +12,7 @@ public enum Category {
     COMBAT("Combat"),
     MOVEMENT("Movement"),
     RENDER("Render"),
+    COSMETICS("Cosmetics"),
     PLAYER("Player"),
     MISC("Misc"),
     CONFIGS("Configs"),

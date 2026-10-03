@@ -18,6 +18,7 @@ public final class CsClickGuiModel {
                 case "MOVEMENT" -> "Параметры скорости, полёта и перемещения.";
                 case "PLAYER" -> "Автоматизация инвентаря, использования предметов и игрока.";
                 case "RENDER" -> "Отображение HUD, шейдеров, визуалов и анимаций.";
+                case "COSMETICS" -> "Кастомные 3D модели, крылья, маски и украшения игрока.";
                 case "MISC" -> "Вспомогательные функции, звуки и настройки клиента.";
                 default -> "Настройки функций и возможностей клиента.";
             };
@@ -154,6 +155,7 @@ public final class CsClickGuiModel {
                 case "MOVEMENT" -> 0xE5C4;
                 case "PLAYER" -> 0xE5C5;
                 case "RENDER" -> 0xE5C6;
+                case "COSMETICS" -> 0xE5C8;
                 default -> 0xE5C7;
             };
 
