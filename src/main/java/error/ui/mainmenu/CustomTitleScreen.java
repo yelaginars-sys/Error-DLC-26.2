@@ -141,12 +141,28 @@ public class CustomTitleScreen extends Screen {
         float logoY = centerY - 152.0F + logoFloat;
         float logoX = centerX - logoSize / 2.0F;
 
-        // Subtle Logo Halo & Backing Glow (Reduced size and opacity)
-        Render2D.drawShadow(logoX - 4.0F, logoY - 4.0F, logoSize + 8.0F, logoSize + 8.0F, logoSize / 2.0F, 10.0F,
-                ColorUtil.rgba(ColorUtil.red(accent), ColorUtil.green(accent), ColorUtil.blue(accent), (int) (35 * this.screenAlpha)));
+        // Super Smooth Soft Radial Glow (Multi-layered exponential falloff into background)
+        int ar = ColorUtil.red(accent);
+        int ag = ColorUtil.green(accent);
+        int ab = ColorUtil.blue(accent);
 
-        Render2D.drawBlur(logoX - 2.0F, logoY - 2.0F, logoSize + 4.0F, logoSize + 4.0F, (logoSize + 4.0F) / 2.0F, 6.0F,
-                ColorUtil.rgba(10, 10, 15, (int) (180 * this.screenAlpha)), this.screenAlpha);
+        for (int i = 6; i >= 1; i--) {
+            float sizeOffset = i * 16.0F;
+            float radius = (logoSize + sizeOffset * 2.0F) / 2.0F;
+            float shadowRadius = i * 14.0F;
+            int layerAlpha = (int) ((14.0F / (i * i)) * this.screenAlpha);
+            if (layerAlpha > 0) {
+                Render2D.drawShadow(
+                        logoX - sizeOffset,
+                        logoY - sizeOffset,
+                        logoSize + sizeOffset * 2.0F,
+                        logoSize + sizeOffset * 2.0F,
+                        radius,
+                        shadowRadius,
+                        ColorUtil.rgba(ar, ag, ab, layerAlpha)
+                );
+            }
+        }
 
         Render2D.drawTexture(LOGO_TEXTURE, logoX, logoY, logoSize, logoSize,
                 ColorUtil.rgba(255, 255, 255, (int) (255 * this.screenAlpha)));

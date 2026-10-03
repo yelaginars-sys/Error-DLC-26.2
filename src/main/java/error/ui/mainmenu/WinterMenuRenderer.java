@@ -155,21 +155,6 @@ public final class WinterMenuRenderer {
         int blackSky = ColorUtil.rgba(0, 0, 0, (int)(255 * alpha));
         Render2D.drawRect(0, cameraYOffset, width, height, blackSky);
 
-        // ── 2. Subtle ambient glow (Reduced intensity & size) ─────────────────
-        int accentColor = Theme.getAccentColor();
-        float pulse = 0.85F + 0.15F * (float) Math.sin(timeSec * 0.8F);
-        int ar = ColorUtil.red(accentColor);
-        int ag = ColorUtil.green(accentColor);
-        int ab = ColorUtil.blue(accentColor);
-
-        float glowW = width * 0.35F;
-        float glowH = height * 0.25F;
-        float glowX = (width - glowW) / 2.0F;
-        float glowY = (height * 0.22F) - (glowH / 2.0F) + cameraYOffset;
-
-        Render2D.drawShadow(glowX, glowY, glowW, glowH, glowH * 0.5F, 25.0F,
-                ColorUtil.rgba(ar, ag, ab, (int) (15 * alpha * pulse)));
-
         // ── 5. Twinkling stars ──────────────────────────────────────────────
         for (Star star : STARS) {
             float sx         = star.xRatio * width;
