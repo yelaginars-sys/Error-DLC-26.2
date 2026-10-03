@@ -13,7 +13,6 @@ public class ClickGui extends Module {
 
     public static ClickGui INSTANCE;
 
-    public final ModeSetting mode = mode("Style", "New Concept", "New Concept", "Modern CS");
     public final BindSetting holdKey = bind("Bind", GLFW.GLFW_KEY_LEFT_ALT);
 
     public ClickGui() {
@@ -24,11 +23,7 @@ public class ClickGui extends Module {
     @Override
     protected void onEnable() {
         error.util.client.ClientSoundPlayer.playGuiOpen();
-        if ("Modern CS".equalsIgnoreCase(mode.getValue())) {
-            mc.setScreenAndShow(new error.ui.csgui.CsClickGui());
-        } else {
-            PanelRefractions.open(mc);
-        }
+        PanelRefractions.open(mc);
         this.setState(false);
     }
 
