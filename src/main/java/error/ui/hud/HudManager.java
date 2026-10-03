@@ -6,8 +6,7 @@ import error.IMinecraft;
 import error.event.EventTarget;
 import error.event.list.MouseInputEvent;
 import error.event.list.Render2DEvent;
-import error.ui.hud.impl.DynamicIslandHud;
-import error.ui.hud.impl.GpsHud;
+import error.ui.hud.impl.*;
 
 import error.util.client.clients.ColorUtil;
 import error.util.math.Animation;
@@ -42,6 +41,12 @@ public final class HudManager implements IMinecraft {
     private final Animation menuFadeAnim = new Animation(0.0F, 0.22F);
 
     private HudManager() {
+        register(new WatermarkHudElement());
+        register(new PotionHudElement());
+        register(new CooldownsHudElement());
+        register(new KeybindsHudElement());
+        register(new TargetHudElement());
+        register(new ArmorHudElement());
         register(new DynamicIslandHud());
         register(new GpsHud());
     }

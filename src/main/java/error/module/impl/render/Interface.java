@@ -18,6 +18,12 @@ public final class Interface extends Module {
 
     public final ModeSetting style         = mode("Style", "Liquid Glass", "Liquid Glass", "Default Black");
     public final ColorSetting accentColor  = color("Accent Color", ColorUtil.rgba(75, 124, 248, 255));
+    public final CheckBox watermark        = checkbox("Watermark", true);
+    public final CheckBox targetHud        = checkbox("Target HUD", true);
+    public final CheckBox potionHud        = checkbox("Potions", true);
+    public final CheckBox cooldownsHud     = checkbox("Cooldowns", true);
+    public final CheckBox keybindsHud      = checkbox("Keybinds", true);
+    public final CheckBox armorHud         = checkbox("Armor HUD", true);
     public final CheckBox blurBackground   = checkbox("Blur Background", true);
     public final CheckBox dynamicIsland    = checkbox("Dynamic Island", true);
     public final CheckBox gps              = checkbox("GPS Navigation", true);
@@ -67,7 +73,19 @@ public final class Interface extends Module {
 
         boolean active = this.isEnabled();
         for (HudElement el : manager.getElements()) {
-            if (el instanceof error.ui.hud.impl.DynamicIslandHud) {
+            if (el instanceof error.ui.hud.impl.WatermarkHudElement) {
+                el.setEnabled(active && this.watermark.getValue());
+            } else if (el instanceof error.ui.hud.impl.TargetHudElement) {
+                el.setEnabled(active && this.targetHud.getValue());
+            } else if (el instanceof error.ui.hud.impl.PotionHudElement) {
+                el.setEnabled(active && this.potionHud.getValue());
+            } else if (el instanceof error.ui.hud.impl.CooldownsHudElement) {
+                el.setEnabled(active && this.cooldownsHud.getValue());
+            } else if (el instanceof error.ui.hud.impl.KeybindsHudElement) {
+                el.setEnabled(active && this.keybindsHud.getValue());
+            } else if (el instanceof error.ui.hud.impl.ArmorHudElement) {
+                el.setEnabled(active && this.armorHud.getValue());
+            } else if (el instanceof error.ui.hud.impl.DynamicIslandHud) {
                 el.setEnabled(active && this.dynamicIsland.getValue());
             } else if (el instanceof error.ui.hud.impl.GpsHud) {
                 el.setEnabled(active && this.gps.getValue());
