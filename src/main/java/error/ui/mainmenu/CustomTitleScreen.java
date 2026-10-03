@@ -6,6 +6,7 @@ import error.util.client.clients.ColorUtil;
 import error.util.client.clients.Theme;
 import error.util.render.Render2D;
 import error.util.render.Render2DUtil;
+import error.ui.nova.NovaShader;
 import error.util.render.font.Fonts;
 import error.util.render.font.IconUse;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -105,8 +106,8 @@ public class CustomTitleScreen extends Screen {
         try {
             Render2DUtil.beginFrame();
 
-            // 1. Solid Pure Black Background
-            Render2D.drawRect(0, 0, screenWidth, screenHeight, ColorUtil.rgba(0, 0, 0, 255));
+            // 1. Liquid Glass Gradient Background
+            NovaShader.drawBackdropWithAlpha(this.screenAlpha, 0, 0, screenWidth, screenHeight, 0.0F);
 
             // Animated Night Sky Background (Procedural Stars, Nebula, Aurora, Snow)
             WinterMenuRenderer.render(screenWidth, screenHeight, this.screenAlpha, 0.0F);
