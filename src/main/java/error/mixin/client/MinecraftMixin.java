@@ -59,13 +59,4 @@ public class MinecraftMixin {
             org.lwjgl.glfw.GLFW.glfwSetWindowTitle(windowHandle, "Error DLC 26.2");
         } catch (Throwable t) {}
     }
-
-    @Inject(method = "setScreenAndShow", at = @At("HEAD"), cancellable = true)
-    private void onSetScreen(net.minecraft.client.gui.screens.Screen screen, CallbackInfo ci) {
-        if (error.module.impl.misc.UnHook.unhooked) return;
-        if (screen != null && screen.getClass() == net.minecraft.client.gui.screens.TitleScreen.class) {
-            ci.cancel();
-            ((Minecraft) (Object) this).setScreenAndShow(new error.ui.mainmenu.CustomTitleScreen());
-        }
-    }
 }

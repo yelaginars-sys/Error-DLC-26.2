@@ -1,0 +1,4 @@
+{
+  "skycore.options.pack_custom_sky": "Custom sky (resource pack)",
+  "skycore.options.pack_custom_sky.tooltip": "Uses OptiFine-format sky from the pack (assets/.../optifine/sky/world0). Requires F3+T after changing packs."
+}

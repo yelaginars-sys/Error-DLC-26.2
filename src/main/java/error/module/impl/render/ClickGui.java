@@ -1,14 +1,11 @@
 package error.module.impl.render;
 
 import org.lwjgl.glfw.GLFW;
-import error.ui.mainmenu.PanelRefractions;
 import error.module.Category;
 import error.module.Module;
 import error.setting.impl.BindSetting;
-import error.setting.impl.ModeSetting;
+import error.ui.nova.NovaGui;
 
-/**
- */
 public class ClickGui extends Module {
 
     public static ClickGui INSTANCE;
@@ -22,11 +19,13 @@ public class ClickGui extends Module {
 
     @Override
     protected void onEnable() {
-        error.util.client.ClientSoundPlayer.playGuiOpen();
-        PanelRefractions.open(mc);
+        if (screen() instanceof NovaGui) {
+            mc.setScreenAndShow(null);
+        } else {
+            mc.setScreenAndShow(new NovaGui());
+        }
         this.setState(false);
     }
-
 
     public boolean isHoldKeyPressed(long windowHandle) {
         if (holdKey == null || holdKey.isEmpty()) return false;

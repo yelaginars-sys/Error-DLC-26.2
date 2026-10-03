@@ -3,6 +3,10 @@ package error.cosmetic;
 public enum CosmeticType {
     WINGS("Крылья"),
     HAT("Шляпа"),
+    MASK("Маска"),
+    BACKPACK("Рюкзак"),
+    PET("Питомец"),
+    MODEL("3D Модель"),
     CAPE("Плащ"),
     BADGE("Значок"),
     AURA("Аура");

@@ -1,0 +1,4 @@
+{
+  "skycore.options.pack_custom_sky": "Кастомное небо (ресурс-пак)",
+  "skycore.options.pack_custom_sky.tooltip": "Небо в формате OptiFine из пака (optifine/sky/world0). После смены пака — F3+T."
+}

@@ -165,7 +165,7 @@ public class CustomTitleScreen extends Screen {
         }
 
         Render2D.drawTexture(LOGO_TEXTURE, logoX, logoY, logoSize, logoSize,
-                ColorUtil.rgba(255, 255, 255, (int) (255 * this.screenAlpha)));
+                ColorUtil.withAlpha(accent, (int) (255 * this.screenAlpha)));
 
         // Client Name & Version
         Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Error DLC", centerX, logoY + logoSize + 10.0F, 14.0F,
@@ -228,24 +228,8 @@ public class CustomTitleScreen extends Screen {
         // Animated elevation on hover
         float drawY = y - 3.0F * hoverAnim;
 
-        int liquidGlassFill = ColorUtil.rgba(18, 16, 28, (int) ((200 + 25 * hoverAnim) * this.screenAlpha));
-        int glassBorder = ColorUtil.lerp(
-                ColorUtil.rgba(255, 255, 255, (int) (35 * this.screenAlpha)),
-                ColorUtil.rgba(ColorUtil.red(accent), ColorUtil.green(accent), ColorUtil.blue(accent), (int) (180 * this.screenAlpha)),
-                hoverAnim
-        );
-        int shadowCol = ColorUtil.rgba(0, 0, 0, (int) (160 * this.screenAlpha));
-
-        // Authentic Liquid Glass Blur & Background Container
-        Render2D.drawShadow(x, drawY, w, h, 12.0F, 12.0F, shadowCol);
-        if (hoverAnim > 0.01F) {
-            Render2D.drawShadow(x, drawY, w, h, 12.0F, 12.0F,
-                    ColorUtil.rgba(ColorUtil.red(accent), ColorUtil.green(accent), ColorUtil.blue(accent), (int) (50 * hoverAnim * this.screenAlpha)));
-        }
-
-        Render2D.glass(x, drawY, w, h, this.screenAlpha, 12.0F, 32.0F, 26.0F);
-        Render2D.drawRoundedRect(x, drawY, w, h, 12.0F, liquidGlassFill);
-        Render2D.drawRoundedOutline(x, drawY, w, h, 12.0F, 1.0F, glassBorder);
+        // Authentic Liquid Glass Container
+        Render2D.drawLiquidGlass(x, drawY, w, h, 12.0F, this.screenAlpha, accent);
 
         // Header: Title & Icon
         Fonts.drawString(Fonts.SF_MEDIUM, title, x + 12.0F, drawY + 10.0F, 9.0F, ColorUtil.rgba(250, 250, 255, (int) (250 * this.screenAlpha)));
@@ -276,23 +260,8 @@ public class CustomTitleScreen extends Screen {
     private void renderRowButton(float x, float y, float w, float h, String title, IconUse icon, float hoverAnim, int accent) {
         float drawY = y - 2.0F * hoverAnim;
 
-        int liquidGlassFill = ColorUtil.rgba(18, 16, 28, (int) ((200 + 25 * hoverAnim) * this.screenAlpha));
-        int glassBorder = ColorUtil.lerp(
-                ColorUtil.rgba(255, 255, 255, (int) (35 * this.screenAlpha)),
-                ColorUtil.rgba(ColorUtil.red(accent), ColorUtil.green(accent), ColorUtil.blue(accent), (int) (180 * this.screenAlpha)),
-                hoverAnim
-        );
-        int shadowCol = ColorUtil.rgba(0, 0, 0, (int) (150 * this.screenAlpha));
-
-        Render2D.drawShadow(x, drawY, w, h, 9.0F, 9.0F, shadowCol);
-        if (hoverAnim > 0.01F) {
-            Render2D.drawShadow(x, drawY, w, h, 9.0F, 8.0F,
-                    ColorUtil.rgba(ColorUtil.red(accent), ColorUtil.green(accent), ColorUtil.blue(accent), (int) (45 * hoverAnim * this.screenAlpha)));
-        }
-
-        Render2D.glass(x, drawY, w, h, this.screenAlpha, 9.0F, 32.0F, 26.0F);
-        Render2D.drawRoundedRect(x, drawY, w, h, 9.0F, liquidGlassFill);
-        Render2D.drawRoundedOutline(x, drawY, w, h, 9.0F, 1.0F, glassBorder);
+        // Authentic Liquid Glass Container
+        Render2D.drawLiquidGlass(x, drawY, w, h, 9.0F, this.screenAlpha, accent);
 
         float textY = drawY + (h - 8.0F) / 2.0F - 0.5F;
         Fonts.drawString(Fonts.SF_MEDIUM, title, x + 14.0F, textY, 8.5F, ColorUtil.rgba(250, 250, 255, (int) (250 * this.screenAlpha)));

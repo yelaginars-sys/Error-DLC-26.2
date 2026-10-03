@@ -28,6 +28,9 @@ public abstract class Module implements EventListener<Event>, IMinecraft {
     private boolean expanded;
     private boolean binding;
 
+    @Getter @Setter private boolean hiddenFromHud = false;
+    @Getter @Setter private String  bindType      = "Toggle"; // "Toggle" or "Hold"
+
     private final Animation expandAnim = new Animation(0.0F, 0.16F);
     private final Animation bindAnim = new Animation(0.0F, 0.14F);
     @Getter private final Animation posXAnim = new Animation(0.0F, 0.22F);

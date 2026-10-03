@@ -1,0 +1,15 @@
+{
+  "vertex": "minecraft:post/sobel",
+  "fragment": "zenith:post/projectile_fire",
+  "samplers": [
+    { "name": "InSampler" }
+  ],
+  "uniforms": [
+    { "name": "ProjMat", "type": "matrix4x4", "count": 16, "values": [ 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0 ] },
+    { "name": "InSize", "type": "float", "count": 2, "values": [ 1.0, 1.0 ] },
+    { "name": "OutSize", "type": "float", "count": 2, "values": [ 1.0, 1.0 ] },
+    { "name": "FireColor", "type": "float", "count": 4, "values": [ 1.0, 0.55, 0.12, 0.95 ] },
+    { "name": "EmberColor", "type": "float", "count": 4, "values": [ 1.0, 0.92, 0.55, 0.95 ] },
+    { "name": "Time", "type": "float", "count": 1, "values": [ 0.0 ] }
+  ]
+}

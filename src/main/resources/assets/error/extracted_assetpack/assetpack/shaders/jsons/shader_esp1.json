@@ -1,0 +1,36 @@
+{
+  "targets": {
+    "swap": {}
+  },
+  "passes": [
+    {
+      "vertex_shader": "minecraft:core/screenquad",
+      "fragment_shader": "zenith:post/shader_esp",
+      "inputs": [
+        { "sampler_name": "In", "target": "minecraft:entity_outline" }
+      ],
+      "output": "swap",
+      "uniforms": {
+        "ZenithData": [
+          { "name": "OutlineColor", "type": "vec4", "value": [1.0, 1.0, 1.0, 1.0] },
+          { "name": "FirstFillColor", "type": "vec4", "value": [0.67, 0.47, 1.0, 0.43] },
+          { "name": "SecondFillColor", "type": "vec4", "value": [0.24, 0.82, 1.0, 0.43] },
+          { "name": "Time", "type": "float", "value": 0.0 }
+        ]
+      }
+    },
+    {
+      "vertex_shader": "minecraft:core/screenquad",
+      "fragment_shader": "minecraft:post/blit",
+      "inputs": [
+        { "sampler_name": "In", "target": "swap" }
+      ],
+      "output": "minecraft:entity_outline",
+      "uniforms": {
+        "BlitConfig": [
+          { "name": "ColorModulate", "type": "vec4", "value": [1.0, 1.0, 1.0, 1.0] }
+        ]
+      }
+    }
+  ]
+}

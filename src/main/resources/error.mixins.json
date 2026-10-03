@@ -33,6 +33,7 @@
     "render.BossHealthOverlayMixin",
     "render.EditBoxMixin",
     "client.MinecraftMixin",
+    "client.SoundManagerMixin",
     "client.FireworkRocketEntityMixin",
     "input.KeyboardHandlerMixin",
     "input.MouseHandlerMixin",

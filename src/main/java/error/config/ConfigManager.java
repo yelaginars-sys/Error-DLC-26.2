@@ -61,6 +61,8 @@ public class ConfigManager {
 
             JsonObject themeJson = new JsonObject();
             themeJson.addProperty("accentColor", Theme.getAccentColor());
+            themeJson.addProperty("secondaryColor", Theme.getSecondaryColor());
+            themeJson.addProperty("accentMode", Theme.getAccentMode());
             themeJson.addProperty("backgroundMode", Theme.getBackgroundMode());
             themeJson.addProperty("glassStyle", Theme.getGlassStyle());
             themeJson.addProperty("bgColor1", Theme.getBgColor1());
@@ -167,6 +169,8 @@ public class ConfigManager {
             if (root.has("theme")) {
                 JsonObject themeJson = root.getAsJsonObject("theme");
                 if (themeJson.has("accentColor")) Theme.setAccentColor(themeJson.get("accentColor").getAsInt());
+                if (themeJson.has("secondaryColor")) Theme.setSecondaryColor(themeJson.get("secondaryColor").getAsInt());
+                if (themeJson.has("accentMode")) Theme.setAccentMode(themeJson.get("accentMode").getAsString());
                 if (themeJson.has("backgroundMode")) Theme.setBackgroundMode(themeJson.get("backgroundMode").getAsString());
                 if (themeJson.has("glassStyle")) Theme.setGlassStyle(themeJson.get("glassStyle").getAsString());
                 if (themeJson.has("bgColor1")) Theme.setBgColor1(themeJson.get("bgColor1").getAsInt());

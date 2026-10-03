@@ -1,0 +1,126 @@
+{
+    "targets":  {
+                    "swap":  {
+
+                             }
+                },
+    "passes":  [
+                   {
+                       "vertex_shader":  "minecraft:core/screenquad",
+                       "fragment_shader":  "zenith:post/shader_fog_gradient",
+                       "inputs":  [
+                                      {
+                                          "sampler_name":  "In",
+                                          "target":  "minecraft:main"
+                                      }
+                                  ],
+                       "output":  "swap",
+                       "uniforms":  {
+                                        "ZenithData":  [
+                                                           {
+                                                               "name":  "FirstColor",
+                                                               "type":  "vec4",
+                                                               "value":  [
+                                                                             0.34,
+                                                                             0.64,
+                                                                             1,
+                                                                             0.5
+                                                                         ]
+                                                           },
+                                                           {
+                                                               "name":  "SecondColor",
+                                                               "type":  "vec4",
+                                                               "value":  [
+                                                                             0.75,
+                                                                             0.44,
+                                                                             1,
+                                                                             0.46
+                                                                         ]
+                                                           },
+                                                           {
+                                                               "name":  "PurpleColor",
+                                                               "type":  "vec4",
+                                                               "value":  [
+                                                                             0.727,
+                                                                             0.221,
+                                                                             0.765,
+                                                                             1
+                                                                         ]
+                                                           },
+                                                           {
+                                                               "name":  "Intensity",
+                                                               "type":  "float",
+                                                               "value":  0.65
+                                                           },
+                                                           {
+                                                               "name":  "time",
+                                                               "type":  "float",
+                                                               "value":  0
+                                                           },
+                                                           {
+                                                               "name":  "resolution",
+                                                               "type":  "vec2",
+                                                               "value":  [
+                                                                             1,
+                                                                             1
+                                                                         ]
+                                                           },
+                                                           {
+                                                               "name":  "CameraPosition",
+                                                               "type":  "vec3",
+                                                               "value":  [
+                                                                             0,
+                                                                             0,
+                                                                             0
+                                                                         ]
+                                                           },
+                                                           {
+                                                               "name":  "SkyPitch",
+                                                               "type":  "float",
+                                                               "value":  0
+                                                           },
+                                                           {
+                                                               "name":  "SkyYaw",
+                                                               "type":  "float",
+                                                               "value":  0
+                                                           },
+                                                           {
+                                                               "name":  "TanHalfFov",
+                                                               "type":  "float",
+                                                               "value":  0.7
+                                                           },
+                                                           {
+                                                               "name":  "Aspect",
+                                                               "type":  "float",
+                                                               "value":  1
+                                                           }
+                                                       ]
+                                    }
+                   },
+                   {
+                       "vertex_shader":  "minecraft:core/screenquad",
+                       "fragment_shader":  "minecraft:post/blit",
+                       "inputs":  [
+                                      {
+                                          "sampler_name":  "In",
+                                          "target":  "swap"
+                                      }
+                                  ],
+                       "output":  "minecraft:main",
+                       "uniforms":  {
+                                        "BlitConfig":  [
+                                                           {
+                                                               "name":  "ColorModulate",
+                                                               "type":  "vec4",
+                                                               "value":  [
+                                                                             1,
+                                                                             1,
+                                                                             1,
+                                                                             1
+                                                                         ]
+                                                           }
+                                                       ]
+                                    }
+                   }
+               ]
+}

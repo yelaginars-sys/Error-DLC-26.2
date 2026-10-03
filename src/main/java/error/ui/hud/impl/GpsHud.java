@@ -68,27 +68,27 @@ public class GpsHud extends HudElement {
         var extractor = event.getGuiGraphicsExtractor();
         if (extractor == null) return;
 
-        int themeAccent = Theme.getAccentColor();
-        int ar = ColorUtil.red(themeAccent);
-        int ag = ColorUtil.green(themeAccent);
-        int ab = ColorUtil.blue(themeAccent);
+        int primaryAccent = Theme.getAccentColor();
+        int secondaryAccent = Theme.getSecondaryColor();
 
-        int bgFill = ColorUtil.rgba(18, 14, 26, (int) (210 * alpha));
+        int bgFill = ColorUtil.rgba(16, 18, 28, (int) (210 * alpha));
         int shadowCol = ColorUtil.rgba(0, 0, 0, (int) (140 * alpha));
-        int glassBorder = ColorUtil.rgba(255, 255, 255, (int) (40 * alpha));
-        int accentGlow = ColorUtil.rgba(ar, ag, ab, (int) (50 * alpha));
+        int accentGlow = ColorUtil.withAlpha(primaryAccent, (int) (55 * alpha));
 
-        // 2.5x smaller compact dimensions
-        float w = 88.0F;
-        float h = 18.0F;
+        float w = 92.0F;
+        float h = 19.0F;
         this.width = w;
         this.height = h;
 
         Render2D.drawShadow(x, y, w, h, 6.0F, 6.0F, shadowCol);
-        Render2D.drawShadow(x, y, w, h, 6.0F, 3.0F, accentGlow);
-        Render2D.drawBlur(x, y, w, h, 6.0F, 12.0F, bgFill, alpha);
-        Render2D.drawRoundedRect(x, y, w, h, 6.0F, bgFill);
-        Render2D.drawRoundedOutline(x, y, w, h, 6.0F, 1.0F, active ? ColorUtil.multiplyAlpha(themeAccent, alpha) : glassBorder);
+        Render2D.drawShadow(x, y, w, h, 6.0F, 4.0F, accentGlow);
+
+        Render2D.drawGradientRound(x, y, w, h, 6.0F,
+                ColorUtil.withAlpha(primaryAccent, (int)(150 * alpha)),
+                ColorUtil.withAlpha(secondaryAccent, (int)(150 * alpha)),
+                ColorUtil.withAlpha(primaryAccent, (int)(150 * alpha)),
+                ColorUtil.withAlpha(secondaryAccent, (int)(150 * alpha)));
+        Render2D.drawRoundedRect(x + 0.8F, y + 0.8F, w - 1.6F, h - 1.6F, 5.2F, bgFill);
 
         float arrowSize = 9.0F;
         float arrowCenterX = x + 8.0F;
@@ -113,7 +113,7 @@ public class GpsHud extends HudElement {
             pose.translate(arrowCenterX, arrowCenterY);
             pose.rotate(relativeYawRad);
 
-            Render2D.drawTexture(POINTER_TEX, -arrowSize / 2.0F, -arrowSize / 2.0F, arrowSize, arrowSize, 0.0F, ColorUtil.multiplyAlpha(themeAccent, alpha));
+            Render2D.drawTexture(POINTER_TEX, -arrowSize / 2.0F, -arrowSize / 2.0F, arrowSize, arrowSize, 0.0F, ColorUtil.multiplyAlpha(primaryAccent, alpha));
             pose.popMatrix();
 
             String displayTitle = distStr + ((targetName != null && !targetName.isEmpty()) ? " • " + targetName : "");
@@ -127,7 +127,7 @@ public class GpsHud extends HudElement {
             }
             Fonts.drawString(Fonts.SF_MEDIUM, coordsStr, x + 16.0F, y + 9.5F, 5.5F, ColorUtil.rgba(180, 180, 195, (int) (200 * alpha)));
         } else {
-            Render2D.drawTexture(POINTER_TEX, arrowCenterX - arrowSize / 2.0F, arrowCenterY - arrowSize / 2.0F, arrowSize, arrowSize, 0.0F, ColorUtil.multiplyAlpha(themeAccent, alpha));
+            Render2D.drawTexture(POINTER_TEX, arrowCenterX - arrowSize / 2.0F, arrowCenterY - arrowSize / 2.0F, arrowSize, arrowSize, 0.0F, ColorUtil.multiplyAlpha(primaryAccent, alpha));
 
             String displayTitle = "150m • GPS";
             Fonts.drawString(Fonts.SF_MEDIUM, displayTitle, x + 16.0F, y + 2.5F, 6.5F, ColorUtil.rgba(255, 255, 255, (int) (245 * alpha)));

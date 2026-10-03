@@ -222,6 +222,10 @@ public final class BindSetting extends Setting<List<Integer>> {
         return isBound() ? getDisplayValue(0) : "NONE";
     }
 
+    public String getDisplayString() {
+        return isBound() ? getDisplayValue(0) : "";
+    }
+
     public String getDisplayValue(int index) {
         if (!hasIndex(index)) {
             return "NONE";

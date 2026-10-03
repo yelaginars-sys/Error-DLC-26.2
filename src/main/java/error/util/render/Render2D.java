@@ -10,6 +10,8 @@ import error.util.render.menu.CircleArcRenderState;
 import error.util.render.renders.MenuBacks;
 import error.util.render.menu.RectRenderState;
 import error.util.render.menu.TextureRenderState;
+import error.util.client.clients.ColorUtil;
+import error.util.client.clients.Theme;
 
 /**
  */
@@ -268,5 +270,45 @@ public class Render2D {
         float maxX = Math.max(x1 + width1, x2 + width2);
         float maxY = Math.max(y1 + height1, y2 + height2);
         glass(null, minX, minY, maxX - minX, maxY - minY, radius, 32.0F, alpha, 26.0F, 0.0F);
+    }
+
+    // ===================== LIQUID GLASS =====================
+
+    public static void drawLiquidGlass(float x, float y, float width, float height, float radius, float alpha) {
+        drawLiquidGlass(x, y, width, height, radius, alpha, Theme.getAccentColor());
+    }
+
+    public static void drawLiquidGlass(float x, float y, float width, float height, float radius, float alpha, int accentColor) {
+        if (alpha <= 0.001F || width <= 0.0F || height <= 0.0F) return;
+
+        // 1. Soft Drop Shadow
+        int shadowCol = ColorUtil.rgba(0, 0, 0, (int) (130 * alpha));
+        drawShadow(x, y, width, height, radius, 12.0F, shadowCol);
+
+        // 2. Real Backdrop Blur
+        int blurTint = ColorUtil.rgba(14, 16, 24, (int) (140 * alpha));
+        drawBlur(x, y, width, height, radius, 24.0F, blurTint, alpha);
+
+        // 3. Clean Translucent Acrylic Dark Body
+        int cTL = ColorUtil.rgba(18, 20, 28, (int) (200 * alpha));
+        int cTR = ColorUtil.rgba(14, 16, 24, (int) (195 * alpha));
+        int cBL = ColorUtil.rgba(10, 12, 18, (int) (210 * alpha));
+        int cBR = ColorUtil.rgba(8, 10, 15, (int) (215 * alpha));
+        drawGradientRound(x, y, width, height, radius, cTL, cTR, cBL, cBR);
+
+        // 4. Subtle Specular Top Reflection
+        float shineH = Math.max(3.0F, height * 0.30F);
+        pushScissor(x, y, width, height);
+        int shineTop = ColorUtil.rgba(255, 255, 255, (int) (12 * alpha));
+        int shineBottom = ColorUtil.rgba(255, 255, 255, 0);
+        drawGradientRound(x, y, width, shineH, radius, shineTop, shineTop, shineBottom, shineBottom);
+        popScissor();
+
+        // 5. Sleek Dark Glass Outline + Soft Accent Glow Edge
+        int glassOutline = ColorUtil.rgba(36, 42, 58, (int) (170 * alpha));
+        drawRoundedOutline(x, y, width, height, radius, 1.0F, glassOutline);
+
+        int innerAccent = ColorUtil.withAlpha(accentColor, (int) (40 * alpha));
+        drawRoundedOutline(x + 0.5F, y + 0.5F, width - 1.0F, height - 1.0F, Math.max(0.0F, radius - 0.5F), 0.8F, innerAccent);
     }
 }

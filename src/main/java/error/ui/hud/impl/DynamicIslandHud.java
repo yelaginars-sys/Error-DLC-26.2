@@ -495,22 +495,28 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
                 Render2D.drawShadow(x, y, w, h, radius, shadowBlur, ColorUtil.rgba(0, 0, 0, (int) (160 * alpha)));
                 Render2D.drawShadow(x, y, w, h, radius, Math.min(shadowBlur, 8.0F), pvpGlow);
             }
-            Render2D.drawBlur(x, y, w, h, radius, 16.0F, pvpFill, alpha);
             Render2D.drawRoundedRect(x, y, w, h, radius, pvpFill);
             Render2D.drawRoundedOutline(x, y, w, h, radius, 1.0F, pvpBorder);
         } else {
-            int shadowCol = ColorUtil.rgba(0, 0, 0, (int) (150 * alpha));
-            int haloCol = ColorUtil.rgba(ColorUtil.red(themeAccent), ColorUtil.green(themeAccent), ColorUtil.blue(themeAccent), (int) (35 * alpha));
-            int glassFill = ColorUtil.rgba(20, 18, 28, (int) (225 * alpha));
-            int glassBorder = ColorUtil.rgba(255, 255, 255, (int) (40 * alpha));
+            int shadowCol = ColorUtil.rgba(0, 0, 0, (int) (140 * alpha));
+            int primaryAccent = Theme.getAccentColor();
+            int secondaryAccent = Theme.getSecondaryColor();
+
+            int haloCol = ColorUtil.rgba(ColorUtil.red(primaryAccent), ColorUtil.green(primaryAccent), ColorUtil.blue(primaryAccent), (int) (45 * alpha));
+            int glassFill = ColorUtil.rgba(14, 16, 24, (int) (200 * alpha));
+            int glassBorder = ColorUtil.withAlpha(primaryAccent, (int) (130 * alpha));
 
             if (shadowBlur > 1.0F) {
                 Render2D.drawShadow(x, y, w, h, radius, shadowBlur, shadowCol);
-                Render2D.drawShadow(x, y, w, h, radius, Math.min(shadowBlur, 6.0F), haloCol);
+                Render2D.drawShadow(x, y, w, h, radius, Math.min(shadowBlur, 8.0F), haloCol);
             }
-            Render2D.glass(null, x, y, w, h, radius, 32.0F, alpha, 26.0F, 0.0F);
             Render2D.drawRoundedRect(x, y, w, h, radius, glassFill);
-            Render2D.drawRoundedOutline(x, y, w, h, radius, 1.0F, glassBorder);
+            Render2D.drawGradientRound(x, y, w, h, radius,
+                    ColorUtil.withAlpha(primaryAccent, (int)(140 * alpha)),
+                    ColorUtil.withAlpha(secondaryAccent, (int)(140 * alpha)),
+                    ColorUtil.withAlpha(primaryAccent, (int)(140 * alpha)),
+                    ColorUtil.withAlpha(secondaryAccent, (int)(140 * alpha)));
+            Render2D.drawRoundedRect(x + 0.8F, y + 0.8F, w - 1.6F, h - 1.6F, radius - 0.8F, glassFill);
         }
     }
 
@@ -518,15 +524,19 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
         if (w <= 0.0F) return;
 
         float subRadius = h / 2.0F;
+        int primaryAccent = Theme.getAccentColor();
+        int secondaryAccent = Theme.getSecondaryColor();
 
         int shadowCol = ColorUtil.rgba(0, 0, 0, (int) (130 * alpha));
         int glassFill = ColorUtil.rgba(18, 16, 24, (int) (210 * alpha));
-        int glassBorder = ColorUtil.rgba(255, 255, 255, (int) (30 * alpha));
 
         Render2D.drawShadow(x, y, w, h, subRadius, 8.0F, shadowCol);
-        Render2D.glass(null, x, y, w, h, subRadius, 32.0F, alpha, 26.0F, 0.0F);
-        Render2D.drawRoundedRect(x, y, w, h, subRadius, glassFill);
-        Render2D.drawRoundedOutline(x, y, w, h, subRadius, 1.0F, glassBorder);
+        Render2D.drawGradientRound(x, y, w, h, subRadius,
+                ColorUtil.withAlpha(primaryAccent, (int)(130 * alpha)),
+                ColorUtil.withAlpha(secondaryAccent, (int)(130 * alpha)),
+                ColorUtil.withAlpha(primaryAccent, (int)(130 * alpha)),
+                ColorUtil.withAlpha(secondaryAccent, (int)(130 * alpha)));
+        Render2D.drawRoundedRect(x + 0.8F, y + 0.8F, w - 1.6F, h - 1.6F, subRadius - 0.8F, glassFill);
 
         float curX = x + 6.0F;
         float textY = y + (h - 7.0F) / 2.0F;
@@ -737,7 +747,7 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
 
         // Client PNG Logo & Title
         float logoSize = 10.0F;
-        Render2D.drawTexture(LOGO_TEX, curX, y + (height - logoSize) / 2.0F, logoSize, logoSize, ColorUtil.rgba(255, 255, 255, (int) (245 * alpha)));
+        Render2D.drawTexture(LOGO_TEX, curX, y + (height - logoSize) / 2.0F, logoSize, logoSize, ColorUtil.multiplyAlpha(themeAccent, alpha));
         curX += logoSize + 4.0F;
 
         Fonts.drawString(Fonts.SF_MEDIUM, "Error DLC ", curX, textY, 8.0F, ColorUtil.rgba(255, 255, 255, (int) (245 * alpha)));

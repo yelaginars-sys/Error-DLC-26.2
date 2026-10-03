@@ -76,6 +76,20 @@ public final class ClientSoundPlayer {
             return open ? "MODULE_ON3.wav" : "MODULE_OFF3.wav";
          case "Шестой":
             return open ? "Function_ON.wav" : "Function_OFF.wav";
+         case "Celestial":
+            return open ? "celestial_enable.wav" : "celestial_disable.wav";
+         case "Bubble":
+            return open ? "bubble_enable.wav" : "bubble_disable.wav";
+         case "Heavy":
+            return open ? "heavyenable.wav" : "heavydisable.wav";
+         case "Droplet":
+            return open ? "droplet_enable.wav" : "droplet_disable.wav";
+         case "Pop":
+            return open ? "popenable.wav" : "popdisable.wav";
+         case "Slide":
+            return open ? "slideenable.wav" : "slidedisable.wav";
+         case "Win":
+            return open ? "winenable.wav" : "windisable.wav";
          default:
             return open ? "guiopen.wav" : "guiclose.wav";
       }
