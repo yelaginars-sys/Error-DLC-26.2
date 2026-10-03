@@ -73,17 +73,22 @@ public final class RabbitModel {
     }
 
     public void submit(PlayerModel vanilla, AvatarRenderState state, PoseStack pose,
-                       SubmitNodeCollector collector, int light, int overlay, int color, int outlineColor) {
+                       SubmitNodeCollector collector, int light, int overlay, int color, int outlineColor, Identifier texture) {
         vanilla.setupAnim(state);
         copyAngles(vanilla);
 
         pose.pushPose();
         pose.scale(1.25f, 1.25f, 1.25f);
         pose.translate(0.0f, -0.3f, 0.0f);
-        RenderType layer = RenderTypes.entityTranslucent(TEXTURE);
+        RenderType layer = RenderTypes.entityTranslucent(texture != null ? texture : TEXTURE);
         collector.submitModelPart(this.root, pose, layer, light, overlay, (TextureAtlasSprite) null, color,
                 (ModelFeatureRenderer.CrumblingOverlay) null, outlineColor);
         pose.popPose();
+    }
+
+    public void submit(PlayerModel vanilla, AvatarRenderState state, PoseStack pose,
+                       SubmitNodeCollector collector, int light, int overlay, int color, int outlineColor) {
+        submit(vanilla, state, pose, collector, light, overlay, color, outlineColor, TEXTURE);
     }
 
     private void copyAngles(PlayerModel vanilla) {

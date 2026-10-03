@@ -49,16 +49,33 @@ public abstract class LivingEntityRendererMixin<T extends LivingEntity, S extend
                                    int outlineColor,
                                    net.minecraft.client.renderer.feature.ModelFeatureRenderer.CrumblingOverlay crumbling) {
         String custom = state instanceof error.interfaces.CustomModelCarrier carrier ? carrier.error$customModel() : null;
-        if (custom != null && state instanceof net.minecraft.client.renderer.entity.state.AvatarRenderState avatarState) {
+        if (custom != null && !error.module.impl.render.CustomModels.NONE.equalsIgnoreCase(custom) && state instanceof net.minecraft.client.renderer.entity.state.AvatarRenderState avatarState) {
             error.module.impl.render.CustomModels models = error.module.impl.render.CustomModels.INSTANCE;
-            if (error.module.impl.render.CustomModels.RABBIT.equals(custom) && model instanceof net.minecraft.client.model.player.PlayerModel playerModel) {
-                error.util.render.model.RabbitModel.of(avatarState.id).submit(playerModel, avatarState, pose, collector, light, overlay, color, outlineColor);
-            } else if (error.module.impl.render.CustomModels.VERITY.equals(custom) && models != null) {
-                error.util.render.model.VerityMesh.submit(avatarState, pose, collector, light, overlay, models.verityTexture(), models.size());
-            } else {
-                error.util.render.model.ChickenMesh.submit(avatarState, pose, collector, light, overlay);
+            if (model instanceof net.minecraft.client.model.player.PlayerModel playerModel) {
+                if (error.module.impl.render.CustomModels.RABBIT.equalsIgnoreCase(custom)) {
+                    error.util.render.model.RabbitModel.of(avatarState.id).submit(playerModel, avatarState, pose, collector, light, overlay, color, outlineColor, net.minecraft.resources.Identifier.fromNamespaceAndPath("error", "models/skycore/rabbit.png"));
+                    return;
+                } else if (error.module.impl.render.CustomModels.AMOGUS.equalsIgnoreCase(custom)) {
+                    error.util.render.model.RabbitModel.of(avatarState.id).submit(playerModel, avatarState, pose, collector, light, overlay, color, outlineColor, net.minecraft.resources.Identifier.fromNamespaceAndPath("error", "models/skycore/amogus.png"));
+                    return;
+                } else if (error.module.impl.render.CustomModels.FREDDY.equalsIgnoreCase(custom)) {
+                    error.util.render.model.RabbitModel.of(avatarState.id).submit(playerModel, avatarState, pose, collector, light, overlay, color, outlineColor, net.minecraft.resources.Identifier.fromNamespaceAndPath("error", "models/skycore/freddy.png"));
+                    return;
+                } else if (error.module.impl.render.CustomModels.RED_DEMON.equalsIgnoreCase(custom)) {
+                    error.util.render.model.RabbitModel.of(avatarState.id).submit(playerModel, avatarState, pose, collector, light, overlay, color, outlineColor, net.minecraft.resources.Identifier.fromNamespaceAndPath("error", "models/skycore/reddemon.png"));
+                    return;
+                } else if (error.module.impl.render.CustomModels.WHITE_DEMON.equalsIgnoreCase(custom)) {
+                    error.util.render.model.RabbitModel.of(avatarState.id).submit(playerModel, avatarState, pose, collector, light, overlay, color, outlineColor, net.minecraft.resources.Identifier.fromNamespaceAndPath("error", "models/skycore/whitedemon.png"));
+                    return;
+                }
             }
-            return;
+            if (error.module.impl.render.CustomModels.VERITY.equalsIgnoreCase(custom) && models != null) {
+                error.util.render.model.VerityMesh.submit(avatarState, pose, collector, light, overlay, models.verityTexture(), models.size());
+                return;
+            } else if (error.module.impl.render.CustomModels.CHICKEN.equalsIgnoreCase(custom)) {
+                error.util.render.model.ChickenMesh.submit(avatarState, pose, collector, light, overlay);
+                return;
+            }
         }
         collector.submitModel((net.minecraft.client.model.Model) model, state, pose, renderType, light, overlay, color, sprite, outlineColor, crumbling);
     }
