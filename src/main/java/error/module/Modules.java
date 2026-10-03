@@ -78,6 +78,9 @@ public class Modules {
     public WindCharge windCharge;
     public AutoCaptcha autoCaptcha;
     public IRC irc;
+    public ExpThrow expThrow;
+    public AspectRatio aspectRatio;
+    public BlockOutline blockOutline;
 
     public void init() {
         register(
@@ -89,6 +92,9 @@ public class Modules {
                 this.windCharge = new WindCharge(),
                 this.autoCaptcha = new AutoCaptcha(),
                 this.irc = new IRC(),
+                this.expThrow = new ExpThrow(),
+                this.aspectRatio = new AspectRatio(),
+                this.blockOutline = new BlockOutline(),
                 this.sprint = new Sprint(),
                 this.elytraSwap = new ElytraSwap(),
                 this.fullBright = new FullBright(),
