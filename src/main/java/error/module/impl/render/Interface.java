@@ -18,7 +18,6 @@ public final class Interface extends Module {
 
     public Interface() {
         super("HUD", "Отображение ХУДа и элементов интерфейса", Category.RENDER);
-        setState(true);
     }
 
     @Override

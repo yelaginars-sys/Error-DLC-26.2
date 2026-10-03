@@ -46,7 +46,6 @@ public class PotionTracker extends Module {
     public PotionTracker() {
         super("PotionTracker", "Отслеживание брошенных зелий, % попадания и наложенных эффектов", Category.MISC);
         INSTANCE = this;
-        setState(true);
     }
 
     @Override

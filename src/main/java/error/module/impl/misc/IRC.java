@@ -13,6 +13,5 @@ public final class IRC extends Module {
     public IRC() {
         super("IRC", "Чат и передача выбранной косметики между пользователями клиента", Category.MISC);
         INSTANCE = this;
-        setState(true);
     }
 }

@@ -9,6 +9,5 @@ public class Notification extends Module {
     public Notification() {
         super("Notification", "Выводит всплывающие уведомления вместо Dynamic Island", Category.RENDER);
         INSTANCE = this;
-        setState(true);
     }
 }

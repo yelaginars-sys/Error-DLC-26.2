@@ -62,7 +62,6 @@ public class UseTracker extends Module {
     public UseTracker() {
         super("UseTracker", "Отслеживание использования тотемов, зелий, яблок и предметов анархий", Category.MISC);
         INSTANCE = this;
-        setState(true);
     }
 
     @Override
