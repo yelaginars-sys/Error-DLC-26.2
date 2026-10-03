@@ -75,6 +75,7 @@ public class Modules {
     public AutoEvent autoEvent;
     public AutoSell autoSell;
     public AutoMsg autoMsg;
+    public FunPay funPay;
     public HoldMyItems holdMyItems;
     public Notification notification;
     public CustomModels customModels;
@@ -107,6 +108,7 @@ public class Modules {
                 this.autoEvent = new AutoEvent(),
                 this.autoSell = new AutoSell(),
                 this.autoMsg = new AutoMsg(),
+                this.funPay = new FunPay(),
                 this.autoAccept = new AutoAccept(),
                 this.triggerBot = new TriggerBot(),
                 this.criticals = new Criticals(),
