@@ -90,7 +90,7 @@ public abstract class Module implements EventListener<Event>, IMinecraft {
 
             if (!error.config.ConfigManager.isLoadingConfig && !this.name.equalsIgnoreCase("ClickGui") && !this.name.equalsIgnoreCase("Interface") && !this.name.equalsIgnoreCase("HUD") && !error.module.impl.misc.UnHook.unhooked) {
                 error.ui.hud.impl.DynamicIslandHud.postNotification(this.name + " " + (state ? "ВКЛ" : "ВЫКЛ"), state);
-                error.ui.hud.impl.NotificationHud.onModuleToggle(this.name, state);
+
                 error.util.client.ClientSoundPlayer.playModuleToggle(state);
             }
             if (Client.INSTANCE != null && Client.INSTANCE.configManager != null) {

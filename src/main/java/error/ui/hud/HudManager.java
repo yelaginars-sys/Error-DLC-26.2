@@ -6,15 +6,8 @@ import error.IMinecraft;
 import error.event.EventTarget;
 import error.event.list.MouseInputEvent;
 import error.event.list.Render2DEvent;
-import error.ui.hud.impl.CooldownsHud;
 import error.ui.hud.impl.DynamicIslandHud;
 import error.ui.hud.impl.GpsHud;
-import error.ui.hud.impl.HotkeysHud;
-import error.ui.hud.impl.PotionsHud;
-import error.ui.hud.impl.StaffsHud;
-import error.ui.hud.impl.ScoreboardHud;
-import error.ui.hud.impl.HelperBindsHud;
-import error.ui.hud.impl.TargetHud;
 
 import error.util.client.clients.ColorUtil;
 import error.util.math.Animation;
@@ -51,13 +44,6 @@ public final class HudManager implements IMinecraft {
     private HudManager() {
         register(new DynamicIslandHud());
         register(new GpsHud());
-        register(new HotkeysHud());
-        register(new StaffsHud());
-        register(new CooldownsHud());
-        register(new HelperBindsHud());
-        register(new TargetHud());
-        register(new PotionsHud());
-        register(new ScoreboardHud());
     }
 
     public static HudManager getInstance() {
@@ -172,7 +158,7 @@ public final class HudManager implements IMinecraft {
             contextMenuElement = null;
         }
 
-        error.ui.hud.impl.NotificationHud.renderToasts(event);
+
     }
 
     public List<HudElement.Box> getAllCollisionBoxesExcept(Object excludeHandle) {
