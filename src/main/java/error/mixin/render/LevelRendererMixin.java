@@ -20,6 +20,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import error.Client;
 import error.module.impl.render.BlockHighlight;
+import error.module.impl.render.BlockOutline;
 import error.module.impl.render.PopEffect;
 import error.module.impl.render.Removals;
 import error.util.render.world.RendererWorldProvider;
@@ -54,8 +55,9 @@ public abstract class LevelRendererMixin {
     }
     @Inject(method = "submitBlockOutline", at = @At("HEAD"), cancellable = true)
     private void replaceVanillaBlockOutline(PoseStack poseStack, SubmitNodeCollector collector, LevelRenderState levelRenderState, CallbackInfo ci) {
-        BlockHighlight blockOutline = Client.INSTANCE.moduleManager.getModule(BlockHighlight.class);
-        if (blockOutline != null && blockOutline.enables()) {
+        BlockHighlight highlight = Client.INSTANCE.moduleManager.getModule(BlockHighlight.class);
+        BlockOutline outline = Client.INSTANCE.moduleManager.getModule(BlockOutline.class);
+        if ((highlight != null && highlight.enables()) || (outline != null && outline.isState())) {
             ci.cancel();
         }
     }

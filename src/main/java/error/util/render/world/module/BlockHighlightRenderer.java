@@ -21,6 +21,7 @@ import net.minecraft.world.phys.HitResult;
 import org.joml.Matrix4f;
 import org.lwjgl.system.MemoryStack;
 import error.module.impl.render.BlockHighlight;
+import error.module.impl.render.BlockOutline;
 import error.util.client.clients.ColorUtil;
 import error.util.render.Render3DUtil;
 import error.util.render.pipeline.PiplinePost;
@@ -52,8 +53,13 @@ public final class BlockHighlightRenderer {
     private GpuBuffer cachedVertexBuffer;
     private int cachedVertexCount;
 
-    public void render(BlockHighlight module, CameraRenderState cameraState) {
+    public void render(error.module.Module moduleObj, CameraRenderState cameraState) {
         Minecraft mc = Minecraft.getInstance();
+        if (moduleObj == null) return;
+
+        BlockHighlight highlight = moduleObj instanceof BlockHighlight bh ? bh : null;
+        BlockOutline outline = moduleObj instanceof BlockOutline bo ? bo : null;
+        if (highlight == null && outline == null) return;
 
         long now = System.nanoTime();
         float deltaSeconds = (this.lastFrameNanos == 0L) ? 0.016F : Math.min(0.1F, (float) ((now - this.lastFrameNanos) / 1.0E9D));
@@ -73,7 +79,7 @@ public final class BlockHighlightRenderer {
             validHit = false;
         }
 
-        float animSpeed = module.animationSpeed.getValue();
+        float animSpeed = outline != null ? outline.animSpeed.getValue() * 10.0F : (highlight != null ? highlight.animationSpeed.getValue() : 12.0F);
         float factor = 1.0F - (float) Math.exp(-animSpeed * deltaSeconds);
 
         if (validHit) {
@@ -105,6 +111,32 @@ public final class BlockHighlightRenderer {
             }
         }
 
+        int color;
+        if (outline != null) {
+            int col1 = outline.color1.getValue();
+            int col2 = outline.color2.getValue();
+            float t = (float) (Math.sin((System.currentTimeMillis() * 0.003 * outline.animSpeed.getValue())) * 0.5 + 0.5);
+            color = ColorUtil.lerp(col1, col2, t);
+        } else {
+            color = highlight.getColors();
+        }
+
+        if (outline != null && this.hasTarget && this.selectedPos != null && this.selectedState != null) {
+            boolean full = outline.fullBlock.getValue();
+            List<AABB> boxes = this.selectedState.getShape(mc.level, this.selectedPos).toAabbs();
+            if (boxes.isEmpty()) {
+                boxes = List.of(new AABB(0.0, 0.0, 0.0, 1.0, 1.0, 1.0));
+            }
+            int outlineColor = ColorUtil.multiplyAlpha(color, this.alpha);
+            int fillColor = ColorUtil.rgba(ColorUtil.red(color), ColorUtil.green(color), ColorUtil.blue(color), (int) (70 * this.alpha));
+
+            for (AABB box : boxes) {
+                AABB animatedBox = box.move(this.currentX - this.selectedPos.getX(), this.currentY - this.selectedPos.getY(), this.currentZ - this.selectedPos.getZ())
+                        .move(this.selectedPos.getX(), this.selectedPos.getY(), this.selectedPos.getZ());
+                error.util.render.Render3D.drawBox(animatedBox, new java.awt.Color(fillColor, true), new java.awt.Color(outlineColor, true), full, true, false);
+            }
+        }
+
         if (this.cachedVertexBuffer == null || this.cachedVertexCount == 0) {
             return;
         }
@@ -128,7 +160,7 @@ public final class BlockHighlightRenderer {
                 )
                 .translate(-0.5F, -0.5F, -0.5F);
 
-        writeUniforms(module, modelViewProjection, target.width, target.height, this.alpha);
+        writeUniforms(moduleObj, modelViewProjection, target.width, target.height, this.alpha, color);
 
         RenderPass pass = RenderSystem.getDevice().createCommandEncoder().createRenderPass(
                 () -> "Block HighLight",
@@ -139,7 +171,7 @@ public final class BlockHighlightRenderer {
         );
 
         try {
-            pass.setPipeline(pipeline(module));
+            pass.setPipeline(pipeline(moduleObj));
             RenderSystem.bindDefaultUniforms(pass);
             pass.setUniform("BlockHighLightTransform", this.transformUniforms);
             pass.setUniform("BlockHighLightStyle", this.styleUniforms);
@@ -194,7 +226,7 @@ public final class BlockHighlightRenderer {
         this.styleUniforms.close();
     }
 
-    private void writeUniforms(BlockHighlight module, Matrix4f modelViewProjection, int width, int height, float alpha) {
+    private void writeUniforms(error.module.Module moduleObj, Matrix4f modelViewProjection, int width, int height, float alpha, int tint) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             ByteBuffer transform = Std140Builder.onStack(stack, TRANSFORM_SIZE)
                     .putMat4f(modelViewProjection)
@@ -204,10 +236,19 @@ public final class BlockHighlightRenderer {
                     transform
             );
 
-            int tint = module.getColors();
+            float speed = 1.0F;
+            float intensity = 1.4F;
+            if (moduleObj instanceof BlockHighlight bh) {
+                speed = bh.shaderSpeed.getValue();
+                intensity = bh.shaderIntensity.getValue();
+            } else if (moduleObj instanceof BlockOutline bo) {
+                speed = bo.animSpeed.getValue();
+                intensity = bo.particlesForce.getValue();
+            }
+
             ByteBuffer style = Std140Builder.onStack(stack, STYLE_SIZE)
                     .putVec4(ColorUtil.red(tint) / 255.0F, ColorUtil.green(tint) / 255.0F, ColorUtil.blue(tint) / 255.0F, alpha * 0.85F)
-                    .putVec4((float) width, (float) height, Post.shaderTime() * module.shaderSpeed.getValue(), module.shaderIntensity.getValue())
+                    .putVec4((float) width, (float) height, Post.shaderTime() * speed, intensity)
                     .get();
             RenderSystem.getDevice().createCommandEncoder().writeToBuffer(
                     this.styleUniforms.slice(),
@@ -216,13 +257,24 @@ public final class BlockHighlightRenderer {
         }
     }
 
-    private RenderPipeline pipeline(BlockHighlight module) {
-        boolean through = module.ignoreDepth.getValue();
-        return switch (module.modes.getValue()) {
-            case BlockHighlight.VARIANT_CAUSTICS -> through ? PiplinePost.BLOCK_HIGHLIGHT_CAUSTICS_THROUGH : PiplinePost.BLOCK_HIGHLIGHT_CAUSTICS;
-            case BlockHighlight.VARIANT_DEEP_SPACE -> through ? PiplinePost.BLOCK_HIGHLIGHT_DEEP_SPACE_THROUGH : PiplinePost.BLOCK_HIGHLIGHT_DEEP_SPACE;
-            default -> through ? PiplinePost.BLOCK_HIGHLIGHT_GLOSSY_THROUGH : PiplinePost.BLOCK_HIGHLIGHT_GLOSSY;
-        };
+    private RenderPipeline pipeline(error.module.Module moduleObj) {
+        if (moduleObj instanceof BlockOutline bo) {
+            String mode = bo.shaderMode.getValue();
+            if ("Частицы".equalsIgnoreCase(mode) || "Octgrams".equalsIgnoreCase(mode)) {
+                return PiplinePost.BLOCK_HIGHLIGHT_DEEP_SPACE;
+            } else if ("Облака".equalsIgnoreCase(mode)) {
+                return PiplinePost.BLOCK_HIGHLIGHT_CAUSTICS;
+            }
+            return PiplinePost.BLOCK_HIGHLIGHT_GLOSSY;
+        } else if (moduleObj instanceof BlockHighlight bh) {
+            boolean through = bh.ignoreDepth.getValue();
+            return switch (bh.modes.getValue()) {
+                case BlockHighlight.VARIANT_CAUSTICS -> through ? PiplinePost.BLOCK_HIGHLIGHT_CAUSTICS_THROUGH : PiplinePost.BLOCK_HIGHLIGHT_CAUSTICS;
+                case BlockHighlight.VARIANT_DEEP_SPACE -> through ? PiplinePost.BLOCK_HIGHLIGHT_DEEP_SPACE_THROUGH : PiplinePost.BLOCK_HIGHLIGHT_DEEP_SPACE;
+                default -> through ? PiplinePost.BLOCK_HIGHLIGHT_GLOSSY_THROUGH : PiplinePost.BLOCK_HIGHLIGHT_GLOSSY;
+            };
+        }
+        return PiplinePost.BLOCK_HIGHLIGHT_GLOSSY;
     }
 
     private MeshData buildMesh(List<AABB> boxes) {

@@ -44,7 +44,12 @@ public final class MiasmWorlds {
         ));
 
         register(AffectedWorlds.lazy(
-                () -> {BlockHighlight blockOutline = Client.INSTANCE.moduleManager.getModule(BlockHighlight.class);return (blockOutline != null && blockOutline.enables()) ? blockOutline : null;},
+                () -> {
+                    BlockOutline outline = Client.INSTANCE.moduleManager.getModule(BlockOutline.class);
+                    if (outline != null && outline.isState()) return outline;
+                    BlockHighlight highlight = Client.INSTANCE.moduleManager.getModule(BlockHighlight.class);
+                    return (highlight != null && highlight.enables()) ? highlight : null;
+                },
                 BlockHighlightRenderer::new,
                 (module, renderer, context) -> renderer.render(module, context.cameraRenderState()),
                 BlockHighlightRenderer::release
