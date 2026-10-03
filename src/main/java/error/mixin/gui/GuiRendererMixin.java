@@ -36,10 +36,14 @@ public abstract class GuiRendererMixin {
     @Unique
     private boolean error$previousElementWasGlass;
 
+    @Unique
+    private boolean error$backdropCaptured;
+
     @Inject(method = "prepare", at = @At("HEAD"))
     private void error$resetGlassSplits(CallbackInfo ci) {
         this.error$glassSplits.clear();
         this.error$previousElementWasGlass = false;
+        this.error$backdropCaptured = false;
     }
 
     @Inject(method = "addElementToMesh", at = @At("HEAD"))
@@ -77,7 +81,10 @@ public abstract class GuiRendererMixin {
                 original.call(instance, label, mainRenderTarget, dynamicTransforms, cursor, split);
             }
 
-            MenuBacks.captureNow(mainRenderTarget);
+            if (!this.error$backdropCaptured) {
+                MenuBacks.captureNow(mainRenderTarget);
+                this.error$backdropCaptured = true;
+            }
             cursor = split;
         }
         if (cursor < endIndex) {

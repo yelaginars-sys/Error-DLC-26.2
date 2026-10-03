@@ -15,6 +15,12 @@ flat in float overallAlpha;
 
 out vec4 fragColor;
 
+float hash12(vec2 p) {
+    vec3 p3 = fract(vec3(p.xyx) * 0.1031);
+    p3 += dot(p3, p3.yzx + 33.33);
+    return fract((p3.x + p3.y) * p3.z);
+}
+
 void main() {
     vec2 half_ = max(halfSize, vec2(0.5));
     float radius = clamp(cornerRadius, 0.0, min(half_.x, half_.y));
@@ -24,11 +30,14 @@ void main() {
         discard;
     }
 
-
     vec3 blurred = texture(Sampler0, clamp(screenUv, vec2(0.0), vec2(1.0))).rgb;
     vec4 tint = tintColor * ColorModulator;
-    vec3 panel = mix(blurred, tint.rgb, clamp(tint.a, 0.0, 1.0));
-    panel += vec3(ui_dither(gl_FragCoord.xy));
+
+    // Authentic Nursultan frosted acrylic blur:
+    // Blurred world shines through tinted and textured with fine dither grain
+    float dither = (hash12(gl_FragCoord.xy) - 0.5) / 64.0;
+    vec3 panel = (blurred + vec3(dither)) * (tint.rgb * 1.55);
+    panel = mix(panel, tint.rgb, clamp(tint.a * 0.25, 0.0, 1.0));
 
     float alpha = mask * overallAlpha;
     if (alpha <= 0.003) {

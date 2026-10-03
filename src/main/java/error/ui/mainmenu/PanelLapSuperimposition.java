@@ -92,13 +92,13 @@ public final class PanelLapSuperimposition {
         float scale = 0.95F + (0.05F * easeProgress);
         float alpha = easeProgress;
 
-        // 1. Fullscreen Gaussian world blur + gentle dark vignette
-        Render2D.drawBlur(0, 0, screenWidth, screenHeight, 0.0F, 20.0F, ColorUtil.rgba(10, 12, 18, (int) (80 * alpha)), alpha);
-        int dimCol = ColorUtil.rgba(0, 0, 0, (int) (65 * alpha));
+        // 1. Fullscreen Gaussian world blur + gentle dark vignette (Nursultan style)
+        Render2D.drawBlur(0, 0, screenWidth, screenHeight, 0.0F, 16.0F, ColorUtil.rgba(20, 24, 35, (int) (60 * alpha)), alpha);
+        int dimCol = ColorUtil.rgba(0, 0, 0, (int) (35 * alpha));
         Render2D.drawRect(0, 0, screenWidth, screenHeight, dimCol);
 
         // 2. Centered "Меню" title above the ClickGUI window
-        Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Меню", centerX, y - 22.0F, 11.0F, ColorUtil.rgba(255, 255, 255, (int) (245 * alpha)));
+        Fonts.drawCenteredString(Fonts.SF_MEDIUM, "\u041C\u0435\u043D\u044E", centerX, y - 18.0F, 9.5F, ColorUtil.rgba(255, 255, 255, (int) (240 * alpha)));
 
         extractor.pose().pushMatrix();
         extractor.pose().translate(centerX, centerY);
@@ -106,14 +106,14 @@ public final class PanelLapSuperimposition {
         extractor.pose().translate(-centerX, -centerY);
 
         // 3. Authentic Nursultan Frosted Acrylic Glass Window
-        int shadowCol = ColorUtil.rgba(0, 0, 0, (int) (180 * alpha));
-        Render2D.drawShadow(x, y, winW, winH, 10.0F, 16.0F, shadowCol);
+        int shadowCol = ColorUtil.rgba(0, 0, 0, (int) (140 * alpha));
+        Render2D.drawShadow(x, y, winW, winH, 12.0F, 18.0F, shadowCol);
 
-        int windowTint = ColorUtil.rgba(12, 14, 20, (int) (110 * alpha));
-        Render2D.drawBlur(x, y, winW, winH, 8.0F, 24.0F, windowTint, alpha);
-        Render2D.drawRoundedRect(x, y, winW, winH, 8.0F, ColorUtil.rgba(12, 14, 20, (int) (70 * alpha)));
-        int mainBorder = ColorUtil.rgba(36, 42, 58, (int) (160 * alpha));
-        Render2D.drawRoundedOutline(x, y, winW, winH, 8.0F, 1.0F, mainBorder);
+        // Authentic Nursultan frosted acrylic window
+        int windowTint = ColorUtil.rgba(40, 44, 58, (int) (150 * alpha));
+        Render2D.drawBlur(x, y, winW, winH, 10.0F, 24.0F, windowTint, alpha);
+        int mainBorder = ColorUtil.rgba(25, 27, 36, (int) (220 * alpha));
+        Render2D.drawRoundedOutline(x, y, winW, winH, 10.0F, 1.0F, mainBorder);
 
         float sideW = 114.0F;
         float headerH = 32.0F;
@@ -123,7 +123,7 @@ public final class PanelLapSuperimposition {
         float contentH = winH - headerH;
 
         // Vertical sidebar separator line
-        Render2D.drawRoundedRect(x + sideW - 1.0F, y, 1.0F, winH, 0.0F, ColorUtil.rgba(32, 38, 52, (int) (140 * alpha)));
+        Render2D.drawRoundedRect(x + sideW - 1.0F, y, 1.0F, winH, 0.0F, ColorUtil.rgba(25, 27, 36, (int) (180 * alpha)));
 
         // 1. SIDEBAR
         renderSidebar(state, x, y, sideW, winH, mouseX, mouseY, alpha);
@@ -156,11 +156,11 @@ public final class PanelLapSuperimposition {
         float curY = y + 42.0F;
 
         // Section: ФУНКЦИИ
-        Fonts.drawString(Fonts.SF_MEDIUM, "ФУНКЦИИ", x + 12.0F, curY, 5.5F, ColorUtil.rgba(78, 84, 102, (int) (220 * alpha)));
+        Fonts.drawString(Fonts.SF_MEDIUM, "\u0424\u0423\u041D\u041A\u0426\u0418\u0418", x + 12.0F, curY, 5.5F, ColorUtil.rgba(78, 84, 102, (int) (220 * alpha)));
         curY += 11.0F;
 
         Category[] funcCats = {Category.COMBAT, Category.MOVEMENT, Category.RENDER, Category.PLAYER, Category.MISC};
-        String[] funcNames = {"Бой", "Движение", "Визуалы", "Игрок", "Разное"};
+        String[] funcNames = {"\u0411\u043E\u0439", "\u0414\u0432\u0438\u0436\u0435\u043D\u0438\u0435", "\u0412\u0438\u0437\u0443\u0430\u043B\u044B", "\u0418\u0433\u0440\u043E\u043A", "\u0420\u0430\u0437\u043D\u043E\u0435"};
         String[] funcGlyphs = {Fonts.NURIK_COMBAT, Fonts.NURIK_MOVEMENT, Fonts.NURIK_VISUALS, Fonts.NURIK_PLAYER, Fonts.NURIK_MISC};
 
         for (int i = 0; i < funcCats.length; i++) {
@@ -169,16 +169,16 @@ public final class PanelLapSuperimposition {
             boolean hovered = mouseX >= itemX && mouseX <= itemX + itemW && mouseY >= curY && mouseY <= curY + itemH;
 
             if (active) {
-                int activeBg = ColorUtil.rgba(75, 124, 248, (int) (40 * alpha));
-                int activeBorder = ColorUtil.rgba(75, 124, 248, (int) (120 * alpha));
+                int activeBg = ColorUtil.rgba(24, 38, 70, (int) (180 * alpha));
+                int activeBorder = ColorUtil.rgba(45, 75, 140, (int) (130 * alpha));
                 Render2D.drawRoundedRect(itemX, curY, itemW, itemH, 4.5F, activeBg);
                 Render2D.drawRoundedOutline(itemX, curY, itemW, itemH, 4.5F, 1.0F, activeBorder);
             } else if (hovered) {
-                int hovBg = ColorUtil.rgba(255, 255, 255, (int) (15 * alpha));
+                int hovBg = ColorUtil.rgba(255, 255, 255, (int) (12 * alpha));
                 Render2D.drawRoundedRect(itemX, curY, itemW, itemH, 4.5F, hovBg);
             }
 
-            int iconCol = active ? ColorUtil.rgba(75, 124, 248, (int) (255 * alpha)) : ColorUtil.rgba(90, 98, 118, (int) (200 * alpha));
+            int iconCol = active ? ColorUtil.rgba(255, 255, 255, (int) (255 * alpha)) : ColorUtil.rgba(90, 98, 118, (int) (200 * alpha));
             int textCol = active ? ColorUtil.rgba(255, 255, 255, (int) (255 * alpha)) : ColorUtil.rgba(110, 118, 136, (int) (210 * alpha));
 
             Fonts.drawString(Fonts.NURIK_MENU, funcGlyphs[i], itemX + 7.5F, curY + 6.0F, 7.5F, iconCol);
@@ -190,11 +190,11 @@ public final class PanelLapSuperimposition {
         curY += 8.0F;
 
         // Section: УПРАВЛЕНИЕ
-        Fonts.drawString(Fonts.SF_MEDIUM, "УПРАВЛЕНИЕ", x + 12.0F, curY, 5.5F, ColorUtil.rgba(78, 84, 102, (int) (220 * alpha)));
+        Fonts.drawString(Fonts.SF_MEDIUM, "\u0423\u041F\u0420\u0410\u0412\u041B\u0415\u041D\u0418\u0415", x + 12.0F, curY, 5.5F, ColorUtil.rgba(78, 84, 102, (int) (220 * alpha)));
         curY += 11.0F;
 
         Category[] ctrlCats = {Category.CONFIGS, Category.EVENTS, Category.FRIENDS, Category.COSMETICS};
-        String[] ctrlNames = {"Пресеты", "Авто покупка", "Аккаунты", "Скрипты"};
+        String[] ctrlNames = {"\u041F\u0440\u0435\u0441\u0435\u0442\u044B", "\u0410\u0432\u0442\u043E \u043F\u043E\u043A\u0443\u043F\u043A\u0430", "\u0410\u043A\u043A\u0430\u0443\u043D\u0442\u044B", "\u0421\u043A\u0440\u0438\u043F\u0442\u044B"};
         String[] ctrlGlyphs = {Fonts.NURIK_PRESETS, Fonts.NURIK_AUTOBUY, Fonts.NURIK_ACCOUNTS, Fonts.NURIK_SCRIPTS};
 
         for (int i = 0; i < ctrlCats.length; i++) {
@@ -203,16 +203,16 @@ public final class PanelLapSuperimposition {
             boolean hovered = mouseX >= itemX && mouseX <= itemX + itemW && mouseY >= curY && mouseY <= curY + itemH;
 
             if (active) {
-                int activeBg = ColorUtil.rgba(75, 124, 248, (int) (40 * alpha));
-                int activeBorder = ColorUtil.rgba(75, 124, 248, (int) (120 * alpha));
+                int activeBg = ColorUtil.rgba(24, 38, 70, (int) (180 * alpha));
+                int activeBorder = ColorUtil.rgba(45, 75, 140, (int) (130 * alpha));
                 Render2D.drawRoundedRect(itemX, curY, itemW, itemH, 4.5F, activeBg);
                 Render2D.drawRoundedOutline(itemX, curY, itemW, itemH, 4.5F, 1.0F, activeBorder);
             } else if (hovered) {
-                int hovBg = ColorUtil.rgba(255, 255, 255, (int) (15 * alpha));
+                int hovBg = ColorUtil.rgba(255, 255, 255, (int) (12 * alpha));
                 Render2D.drawRoundedRect(itemX, curY, itemW, itemH, 4.5F, hovBg);
             }
 
-            int iconCol = active ? ColorUtil.rgba(75, 124, 248, (int) (255 * alpha)) : ColorUtil.rgba(90, 98, 118, (int) (200 * alpha));
+            int iconCol = active ? ColorUtil.rgba(255, 255, 255, (int) (255 * alpha)) : ColorUtil.rgba(90, 98, 118, (int) (200 * alpha));
             int textCol = active ? ColorUtil.rgba(255, 255, 255, (int) (255 * alpha)) : ColorUtil.rgba(110, 118, 136, (int) (210 * alpha));
 
             Fonts.drawString(Fonts.NURIK_MENU, ctrlGlyphs[i], itemX + 7.5F, curY + 6.0F, 7.5F, iconCol);
@@ -228,14 +228,14 @@ public final class PanelLapSuperimposition {
         float avatarY = y + 7.0F;
         float avatarSize = 18.0F;
 
-        int circleBg = ColorUtil.rgba(24, 28, 38, (int) (255 * alpha));
+        int circleBg = ColorUtil.rgba(20, 22, 30, (int) (240 * alpha));
         Render2D.drawRoundedRect(avatarX, avatarY, avatarSize, avatarSize, avatarSize / 2.0F, circleBg);
-        Render2D.drawRoundedOutline(avatarX, avatarY, avatarSize, avatarSize, avatarSize / 2.0F, 1.0F, ColorUtil.rgba(36, 42, 58, (int) (200 * alpha)));
+        Render2D.drawRoundedOutline(avatarX, avatarY, avatarSize, avatarSize, avatarSize / 2.0F, 1.0F, ColorUtil.rgba(30, 34, 46, (int) (180 * alpha)));
         Fonts.drawString(Fonts.SF_MEDIUM, "?", avatarX + 6.5F, avatarY + 4.5F, 7.5F, ColorUtil.rgba(140, 150, 175, (int) (240 * alpha)));
 
         float textX = avatarX + avatarSize + 7.0F;
         Fonts.drawString(Fonts.SF_MEDIUM, "walfini", textX, avatarY + 1.5F, 7.5F, ColorUtil.rgba(255, 255, 255, (int) (245 * alpha)));
-        Fonts.drawString(Fonts.SF_MEDIUM, "До 18 января 2038", textX, avatarY + 10.0F, 5.5F, ColorUtil.rgba(92, 99, 118, (int) (220 * alpha)));
+        Fonts.drawString(Fonts.SF_MEDIUM, "\u0414\u043E 18 \u044F\u043D\u0432\u0430\u044F 2038", textX, avatarY + 10.0F, 5.5F, ColorUtil.rgba(92, 99, 118, (int) (220 * alpha)));
 
         // Search Input
         float searchW = 125.0F;
@@ -243,8 +243,8 @@ public final class PanelLapSuperimposition {
         float searchX = x + w - searchW - 28.0F;
         float searchY = y + 7.5F;
 
-        int searchBg = ColorUtil.rgba(16, 20, 30, (int) (100 * alpha));
-        int searchBorder = state.isSearchFocused() ? ColorUtil.rgba(75, 124, 248, (int) (220 * alpha)) : ColorUtil.rgba(36, 44, 62, (int) (140 * alpha));
+        int searchBg = ColorUtil.rgba(14, 16, 24, (int) (140 * alpha));
+        int searchBorder = state.isSearchFocused() ? ColorUtil.rgba(75, 124, 248, (int) (220 * alpha)) : ColorUtil.rgba(30, 34, 46, (int) (160 * alpha));
 
         Render2D.drawRoundedRect(searchX, searchY, searchW, searchH, 4.0F, searchBg);
         Render2D.drawRoundedOutline(searchX, searchY, searchW, searchH, 4.0F, 1.0F, searchBorder);
@@ -252,7 +252,7 @@ public final class PanelLapSuperimposition {
         Fonts.drawString(Fonts.NURIK_MENU, Fonts.NURIK_SEARCH, searchX + 5.0F, searchY + 4.5F, 6.5F, ColorUtil.rgba(100, 108, 128, (int) (220 * alpha)));
 
         String q = state.getSearchQuery();
-        String displaySearch = q.isEmpty() ? (state.isSearchFocused() ? "" : "Поиск") : q;
+        String displaySearch = q.isEmpty() ? (state.isSearchFocused() ? "" : "\u041F\u043E\u0438\u0441\u043A") : q;
         Fonts.drawString(Fonts.SF_MEDIUM, displaySearch, searchX + 17.0F, searchY + 4.5F, 6.5F, q.isEmpty() ? ColorUtil.rgba(82, 88, 105, (int) (220 * alpha)) : ColorUtil.rgba(255, 255, 255, (int) (255 * alpha)));
 
         // Badge CTRL+F
@@ -289,7 +289,7 @@ public final class PanelLapSuperimposition {
             return;
         }
 
-        // Two columns of stacked cards
+        // Two columns of stacked cards (exact Nursultan proportions)
         float colGap = 8.0F;
         float colW = (w - 16.0F - colGap) / 2.0F;
 
@@ -298,7 +298,7 @@ public final class PanelLapSuperimposition {
 
         if (cat == Category.COMBAT) {
             // Left Column
-            CardGroup draka = new CardGroup("Драка");
+            CardGroup draka = new CardGroup("\u0414\u0440\u0430\u043A\u0430");
             addItem(draka, "Attack Aura", findMod("Attack Aura", "AuraModule", "Aura"));
             addItem(draka, "No Velocity", findMod("AntiPush", "NoVelocity", "Velocity"));
             addItem(draka, "Trigger Bot", findMod("TriggerBot", "Trigger"));
@@ -307,13 +307,13 @@ public final class PanelLapSuperimposition {
             addItem(draka, "Crystal Aura", findMod("CrystalAura"));
             leftGroups.add(draka);
 
-            CardGroup bazovye = new CardGroup("Базовые");
+            CardGroup bazovye = new CardGroup("\u0411\u0430\u0437\u043E\u0432\u044B\u0435");
             addItem(bazovye, "Auto Swap", findMod("AutoSwap"));
             addItem(bazovye, "Item Release", findMod("ExpThrow", "ItemRelease"));
             leftGroups.add(bazovye);
 
             // Right Column
-            CardGroup instr = new CardGroup("Инструменты");
+            CardGroup instr = new CardGroup("\u0418\u043D\u0441\u0442\u0440\u0443\u043C\u0435\u043D\u0442\u044B");
             addItem(instr, "Sprint Reset", findMod("MaceHelper", "SprintReset"));
             addItem(instr, "Tape Mouse", findMod("NoDelay", "TapeMouse"));
             addItem(instr, "Backtrack", findMod("Predictions", "Backtrack"));
@@ -321,20 +321,20 @@ public final class PanelLapSuperimposition {
             addItem(instr, "Knockback Swap", findMod("WindCharge", "KnockbackSwap"));
             rightGroups.add(instr);
 
-            CardGroup ostalnoe = new CardGroup("Остальное");
+            CardGroup ostalnoe = new CardGroup("\u041E\u0441\u0442\u0430\u043B\u044C\u043D\u043E\u0435");
             addItem(ostalnoe, "No Slot Change", findMod("Hold My Items", "HoldMyItems", "NoSlotChange"));
             addItem(ostalnoe, "Anti Bot", findMod("Friends", "ClickFriend", "AntiBot"));
             addItem(ostalnoe, "No Friend Damage", findMod("Criticals", "NoFriendDamage"));
             rightGroups.add(ostalnoe);
 
         } else if (cat == Category.RENDER) {
-            CardGroup iface = new CardGroup("Интерфейс");
+            CardGroup iface = new CardGroup("\u0418\u043D\u0442\u0435\u0440\u0444\u0435\u0439\u0441");
             addItem(iface, "HUD", findMod("Interface", "HUD"));
             addItem(iface, "Notifications", findMod("Notification"));
             addItem(iface, "ClickGUI", findMod("ClickGui"));
             leftGroups.add(iface);
 
-            CardGroup mir = new CardGroup("Мир");
+            CardGroup mir = new CardGroup("\u041C\u0438\u0440");
             addItem(mir, "Ambience", findMod("Ambience"));
             addItem(mir, "Better Minecraft", findMod("BetterMinecraft"));
             addItem(mir, "Block Highlight", findMod("BlockHighlight"));
@@ -348,20 +348,20 @@ public final class PanelLapSuperimposition {
             rightGroups.add(mir);
 
         } else if (cat == Category.MOVEMENT) {
-            CardGroup speed = new CardGroup("Скорость");
+            CardGroup speed = new CardGroup("\u041F\u0435\u0440\u0435\u0434\u0432\u0438\u0436\u0435\u043D\u0438\u0435");
             addItem(speed, "Sprint", findMod("Sprint"));
             addItem(speed, "Water Speed", findMod("WaterSpeed"));
             addItem(speed, "Timer", findMod("Timer"));
             leftGroups.add(speed);
 
-            CardGroup flight = new CardGroup("Полёт");
+            CardGroup flight = new CardGroup("\u0412\u0441\u043F\u043E\u043C\u043E\u0433\u0430\u0442\u0435\u043B\u044C\u043D\u043E\u0435");
             addItem(flight, "Elytra Booster", findMod("ElytraBooster"));
             addItem(flight, "Elytra Motion", findMod("ElytraMotion"));
             addItem(flight, "No Fall", findMod("NoFall"));
             rightGroups.add(flight);
 
         } else if (cat == Category.PLAYER) {
-            CardGroup inv = new CardGroup("Инвентарь");
+            CardGroup inv = new CardGroup("\u0418\u0433\u0440\u043E\u043A");
             addItem(inv, "Auto Swap", findMod("AutoSwap"));
             addItem(inv, "Auto Tool", findMod("AutoTool"));
             addItem(inv, "Click Pearl", findMod("ClickPearl"));
@@ -369,14 +369,14 @@ public final class PanelLapSuperimposition {
             addItem(inv, "Hold My Items", findMod("Hold My Items", "HoldMyItems"));
             leftGroups.add(inv);
 
-            CardGroup acts = new CardGroup("Действия");
+            CardGroup acts = new CardGroup("\u041C\u0435\u043D\u0435\u0434\u0436\u043C\u0435\u043D\u0442");
             addItem(acts, "Anti Push", findMod("AntiPush"));
             addItem(acts, "Gui Walk", findMod("GuiWalk"));
             addItem(acts, "Air Stuck", findMod("AirStuck"));
             rightGroups.add(acts);
 
         } else {
-            CardGroup helpers = new CardGroup("Помощники");
+            CardGroup helpers = new CardGroup("\u0410\u0432\u0442\u043E\u043C\u0430\u0442\u0438\u0437\u0430\u0446\u0438\u044F");
             addItem(helpers, "AH Helper", findMod("AHHelper"));
             addItem(helpers, "Server Helper", findMod("ServerHelper"));
             addItem(helpers, "Auto Accept", findMod("AutoAccept"));
@@ -385,7 +385,7 @@ public final class PanelLapSuperimposition {
             addItem(helpers, "Auto Sell", findMod("AutoSell"));
             leftGroups.add(helpers);
 
-            CardGroup utils = new CardGroup("Утилиты");
+            CardGroup utils = new CardGroup("\u0423\u0442\u0438\u043B\u0438\u0442\u044B");
             addItem(utils, "Free Cam", findMod("FreeCam"));
             addItem(utils, "Full Bright", findMod("FullBright"));
             addItem(utils, "Click Friend", findMod("Friends", "ClickFriend"));
@@ -432,11 +432,10 @@ public final class PanelLapSuperimposition {
     }
 
     private void renderSingleCard(PanelLapState state, String title, List<DisplayItem> items, float x, float y, float w, float h, int mouseX, int mouseY, float alpha) {
-        int cardTint = ColorUtil.rgba(16, 20, 30, (int) (80 * alpha));
-        int cardBorder = ColorUtil.rgba(38, 46, 64, (int) (140 * alpha));
+        int cardBg = ColorUtil.rgba(12, 14, 18, (int) (150 * alpha));
+        int cardBorder = ColorUtil.rgba(24, 26, 34, (int) (190 * alpha));
 
-        Render2D.drawBlur(x, y, w, h, 6.0F, 16.0F, cardTint, alpha);
-        Render2D.drawRoundedRect(x, y, w, h, 6.0F, ColorUtil.rgba(16, 20, 30, (int) (50 * alpha)));
+        Render2D.drawRoundedRect(x, y, w, h, 6.0F, cardBg);
         Render2D.drawRoundedOutline(x, y, w, h, 6.0F, 1.0F, cardBorder);
 
         // Header
@@ -452,7 +451,7 @@ public final class PanelLapSuperimposition {
         float rowH = 19.0F;
 
         if (items.isEmpty()) {
-            Fonts.drawString(Fonts.SF_MEDIUM, "Нет модулей", x + 10.0F, rowY + 5.0F, 6.5F, ColorUtil.rgba(85, 92, 110, (int) (180 * alpha)));
+            Fonts.drawString(Fonts.SF_MEDIUM, "\u041D\u0435\u0442 \u043C\u043E\u0434\u0443\u043B\u0435\u0439", x + 10.0F, rowY + 5.0F, 6.5F, ColorUtil.rgba(85, 92, 110, (int) (180 * alpha)));
             return;
         }
 
@@ -462,7 +461,7 @@ public final class PanelLapSuperimposition {
             Module mod = item.module;
             boolean hovered = mouseX >= x && mouseX <= x + w && mouseY >= rowY && mouseY <= rowY + rowH;
             if (hovered) {
-                Render2D.drawRoundedRect(x + 3.0F, rowY, w - 6.0F, rowH, 3.5F, ColorUtil.rgba(23, 26, 36, (int) (160 * alpha)));
+                Render2D.drawRoundedRect(x + 3.0F, rowY, w - 6.0F, rowH, 3.5F, ColorUtil.rgba(255, 255, 255, (int) (12 * alpha)));
             }
 
             int nameCol = mod.isState() ? ColorUtil.rgba(255, 255, 255, (int) (255 * alpha)) : ColorUtil.rgba(120, 128, 146, (int) (220 * alpha));
@@ -473,21 +472,21 @@ public final class PanelLapSuperimposition {
             float toggleX = x + w - toggleW - 8.0F;
             float toggleY = rowY + 5.0F;
 
-            // Sub-settings dots `•••`
+            // Sub-settings dots
             float dotsX = toggleX - 13.0F;
             float dotsY = rowY + 7.0F;
             boolean dotsHover = mouseX >= dotsX - 3.0F && mouseX <= dotsX + 10.0F && mouseY >= dotsY - 3.0F && mouseY <= dotsY + 9.0F;
             int dotsCol = dotsHover ? ColorUtil.rgba(255, 255, 255, (int) (255 * alpha)) : ColorUtil.rgba(80, 88, 105, (int) (200 * alpha));
             Fonts.drawString(Fonts.NURIK_MENU, Fonts.NURIK_DOTS, dotsX, dotsY - 1.0F, 6.0F, dotsCol);
 
-            // Keyboard bind badge
+            // Keyboard bind badge (only if actually bound)
             boolean hasBind = mod.getBind().isBound();
-            if (hasBind || item.displayName.equals("Auto Swap") || item.displayName.equals("Item Release") || item.displayName.equals("Attack Aura")) {
+            if (hasBind) {
                 float bW = 10.0F;
                 float bX = dotsX - bW - 4.0F;
-                int badgeBg = hasBind ? ColorUtil.rgba(30, 38, 56, (int) (230 * alpha)) : ColorUtil.rgba(22, 25, 34, (int) (200 * alpha));
+                int badgeBg = ColorUtil.rgba(30, 38, 56, (int) (230 * alpha));
                 Render2D.drawRoundedRect(bX, rowY + 5.0F, bW, 8.5F, 2.5F, badgeBg);
-                int iconCol = hasBind ? ColorUtil.rgba(75, 124, 248, (int) (240 * alpha)) : ColorUtil.rgba(100, 108, 128, (int) (200 * alpha));
+                int iconCol = ColorUtil.rgba(75, 124, 248, (int) (240 * alpha));
                 Fonts.drawString(Fonts.NURIK_MENU, Fonts.NURIK_BIND, bX + 2.0F, rowY + 5.5F, 5.0F, iconCol);
             }
 
@@ -502,12 +501,12 @@ public final class PanelLapSuperimposition {
         if (state) {
             int onBg = ColorUtil.rgba(75, 124, 248, (int) (255 * alpha));
             Render2D.drawRoundedRect(tx, ty, tw, th, th / 2.0F, onBg);
-            Render2D.drawCircle(tx + tw - th / 2.0F, ty + th / 2.0F, 2.8F, ColorUtil.rgba(255, 255, 255, (int) (255 * alpha)));
+            Render2D.drawCircle(tx + tw - th / 2.0F, ty + th / 2.0F, 2.6F, ColorUtil.rgba(255, 255, 255, (int) (255 * alpha)));
         } else {
-            int offBg = ColorUtil.rgba(24, 26, 35, (int) (240 * alpha));
+            int offBg = ColorUtil.rgba(34, 36, 45, (int) (240 * alpha));
             Render2D.drawRoundedRect(tx, ty, tw, th, th / 2.0F, offBg);
-            Render2D.drawRoundedOutline(tx, ty, tw, th, th / 2.0F, 0.8F, ColorUtil.rgba(36, 40, 52, (int) (200 * alpha)));
-            Render2D.drawCircle(tx + th / 2.0F, ty + th / 2.0F, 2.5F, ColorUtil.rgba(65, 72, 92, (int) (240 * alpha)));
+            Render2D.drawRoundedOutline(tx, ty, tw, th, th / 2.0F, 0.8F, ColorUtil.rgba(25, 27, 36, (int) (200 * alpha)));
+            Render2D.drawCircle(tx + th / 2.0F, ty + th / 2.0F, 2.4F, ColorUtil.rgba(62, 66, 82, (int) (240 * alpha)));
         }
     }
 
@@ -546,7 +545,6 @@ public final class PanelLapSuperimposition {
 
         Render2D.drawShadow(popX, popY, popW, popH, 10.0F, 16.0F, ColorUtil.rgba(0, 0, 0, (int) (220 * alpha)));
         Render2D.drawBlur(popX, popY, popW, popH, 6.0F, 16.0F, bg, alpha);
-        Render2D.drawRoundedRect(popX, popY, popW, popH, 6.0F, bg);
         Render2D.drawRoundedOutline(popX, popY, popW, popH, 6.0F, 1.0F, border);
 
         // Header: :: Module Name + Subtitle (Category) + Close ✕
@@ -589,69 +587,69 @@ public final class PanelLapSuperimposition {
     private void renderAuraExactSettings(PanelLapState state, AuraModule aura, float popX, float startY, float popW, float rowH, int mouseX, int mouseY, float alpha) {
         float curY = startY;
 
-        // 1. Цели [ Игроки Мобы ⌵ ]
-        drawMultiModeRow(state, "aura_targets", "Цели", Arrays.asList("Игроки", "Мобы"), popX, curY, popW, false, alpha);
+        // 1. Цели [ Игроки  Мобы ▼ ]
+        drawMultiModeRow(state, "aura_targets", "\u0426\u0435\u043B\u0438", Arrays.asList("\u0418\u0433\u0440\u043E\u043A\u0438", "\u041C\u043E\u0431\u044B"), popX, curY, popW, false, alpha);
         curY += rowH;
 
-        // 2. Дополнительные [ Невидимые Голы... ⌵ ]
-        drawMultiModeRow(state, "aura_extra", "Дополнительные", Arrays.asList("Невидимые", "Голые"), popX, curY, popW, false, alpha);
+        // 2. Дополнительные [ Невидимые  Голые ▼ ]
+        drawMultiModeRow(state, "aura_extra", "\u0414\u043E\u043F\u043E\u043B\u043D\u0438\u0442\u0435\u043B\u044C\u043D\u044B\u0435", Arrays.asList("\u041D\u0435\u0432\u0438\u0434\u0438\u043C\u044B\u0435", "\u0413\u043E\u043B\u044B\u0435"), popX, curY, popW, false, alpha);
         curY += rowH;
 
-        // 3. Режим [ Нейро/FunTime ⌵ ]
-        drawModeRow(state, "aura_rot", "Режим", "Нейро/FunTime", popX, curY, popW, false, alpha);
+        // 3. Режим [ Нейро/FunTime ▼ ]
+        drawModeRow(state, "aura_rot", "\u0420\u0435\u0436\u0438\u043C", "\u041D\u0435\u0439\u0440\u043E/FunTime", popX, curY, popW, false, alpha);
         curY += rowH;
 
-        // 4. Версия PvP [ 1.9+ ⌵ ]
-        drawModeRow(state, "aura_pvp", "Версия PvP", "1.9+", popX, curY, popW, false, alpha);
+        // 4. Версия PvP [ 1.9+ ▼ ]
+        drawModeRow(state, "aura_pvp", "\u0412\u0435\u0440\u0441\u0438\u044F PvP", "1.9+", popX, curY, popW, false, alpha);
         curY += rowH;
 
-        // 5. Сортировка [ Всё сразу ⌵ ]
-        drawModeRow(state, "aura_sort", "Сортировка", "Всё сразу", popX, curY, popW, false, alpha);
+        // 5. Сортировка [ Всё сразу ▼ ]
+        drawModeRow(state, "aura_sort", "\u0421\u043E\u0440\u0442\u0438\u0440\u043E\u0432\u043A\u0430", "\u0412\u0441\u0451 \u0441\u0440\u0430\u0437\u0443", popX, curY, popW, false, alpha);
         curY += rowH;
 
-        // 6. Коррекция движения [ Лёгкая ⌵ ]
-        drawModeRow(state, "aura_movefix", "Коррекция движения", "Лёгкая", popX, curY, popW, false, alpha);
+        // 6. Коррекция движения [ Лёгкая ▼ ]
+        drawModeRow(state, "aura_movefix", "\u041A\u043E\u0440\u0440\u0435\u043A\u0446\u0438\u044F \u0434\u0432\u0438\u0436\u0435\u043D\u0438\u044F", "\u041B\u0451\u0433\u043A\u0430\u044F", popX, curY, popW, false, alpha);
         curY += rowH;
 
-        // 7. Не бить если [ — ⌵ ]
-        drawModeRow(state, "aura_dont_hit", "Не бить если", "—", popX, curY, popW, false, alpha);
+        // 7. Не бить если [ — ▼ ]
+        drawModeRow(state, "aura_dont_hit", "\u041D\u0435 \u0431\u0438\u0442\u044C \u0435\u0441\u043B\u0438", "\u2014", popX, curY, popW, false, alpha);
         curY += rowH;
 
-        // 8. Критические удары ••• [ Только при зажатом... ⌵ ]
-        drawModeRow(state, "aura_crits", "Критические удары", "Только при зажатом...", popX, curY, popW, true, alpha);
+        // 8. Критические удары [ Только при нажатом... ▼ ]
+        drawModeRow(state, "aura_crits", "\u041A\u0440\u0438\u0442\u0438\u0447\u0435\u0441\u043A\u0438\u0435 \u0443\u0434\u0430\u0440\u044B", "\u0422\u043E\u043B\u044C\u043A\u043E \u043F\u0440\u0438 \u043D\u0430\u0436\u0430\u0442\u043E\u043C...", popX, curY, popW, true, alpha);
         curY += rowH;
 
         // 9. Поле зрения (slider 180°)
-        drawSliderRow(state, "aura_fov", "Поле зрения", 180.0F, 10.0F, 360.0F, "°", popX, curY, popW, mouseX, mouseY, alpha);
+        drawSliderRow(state, "aura_fov", "\u041F\u043E\u043B\u0435 \u0437\u0440\u0435\u043D\u0438\u044F", 180.0F, 10.0F, 360.0F, "\u00B0", popX, curY, popW, mouseX, mouseY, alpha);
         curY += rowH;
 
         // 10. Дополнительное расстояние (slider 0b)
-        drawSliderRow(state, "aura_extradist", "Дополнительное расстояние", 0.0F, 0.0F, 3.0F, "b", popX, curY, popW, mouseX, mouseY, alpha);
+        drawSliderRow(state, "aura_extradist", "\u0414\u043E\u043F\u043E\u043B\u043D\u0438\u0442\u0435\u043B\u044C\u043D\u043E\u0435 \u0440\u0430\u0441\u0441\u0442\u043E\u044F\u043D\u0438\u0435", 0.0F, 0.0F, 3.0F, "b", popX, curY, popW, mouseX, mouseY, alpha);
         curY += rowH;
 
         // 11. Расстояние наводки (slider 4.5b)
         float aimDist = aura != null ? aura.getAimRange().getValue() : 4.5F;
-        drawSliderRow(state, "aura_aimdist", "Расстояние наводки", aimDist, 1.0F, 8.0F, "b", popX, curY, popW, mouseX, mouseY, alpha);
+        drawSliderRow(state, "aura_aimdist", "\u0420\u0430\u0441\u0441\u0442\u043E\u044F\u043D\u0438\u0435 \u043D\u0430\u0432\u043E\u0434\u043A\u0438", aimDist, 1.0F, 8.0F, "b", popX, curY, popW, mouseX, mouseY, alpha);
         curY += rowH;
 
-        // 12. Бить через стены [ Всегда ⌵ ]
-        drawModeRow(state, "aura_walls", "Бить через стены", "Всегда", popX, curY, popW, false, alpha);
+        // 12. Бить через стены [ Всегда ▼ ]
+        drawModeRow(state, "aura_walls", "\u0411\u0438\u0442\u044C \u0447\u0435\u0440\u0435\u0437 \u0441\u0442\u0435\u043D\u044B", "\u0412\u0441\u0435\u0433\u0434\u0430", popX, curY, popW, false, alpha);
         curY += rowH;
 
         // 13. Ломать щит [Toggle ON]
-        drawToggleRow(state, "aura_shield", "Ломать щит", true, false, popX, curY, popW, alpha);
+        drawToggleRow(state, "aura_shield", "\u041B\u043E\u043C\u0430\u0442\u044C \u0449\u0438\u0442", true, false, popX, curY, popW, alpha);
         curY += rowH;
 
         // 14. Камера в ротацию при потере цели [Toggle OFF]
-        drawToggleRow(state, "aura_cam_lost", "Камера в ротацию при потере цели", false, false, popX, curY, popW, alpha);
+        drawToggleRow(state, "aura_cam_lost", "\u041A\u0430\u043C\u0435\u0440\u0430 \u0432 \u0440\u043E\u0442\u0430\u0446\u0438\u044E \u043F\u0440\u0438 \u043F\u043E\u0442\u0435\u0440\u0435 \u0446\u0435\u043B\u0438", false, false, popX, curY, popW, alpha);
         curY += rowH;
 
         // 15. Рандомизировать задержку атаки [Toggle OFF]
-        drawToggleRow(state, "aura_rand_delay", "Рандомизировать задержку атаки", false, false, popX, curY, popW, alpha);
+        drawToggleRow(state, "aura_rand_delay", "\u0420\u0430\u043D\u0434\u043E\u043C\u0438\u0437\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u0437\u0430\u0434\u0435\u0440\u0436\u043A\u0443 \u0430\u0442\u0430\u043A\u0438", false, false, popX, curY, popW, alpha);
         curY += rowH;
 
-        // 16. Автоматически брать булаву во время удара ••• [Toggle ON]
-        drawToggleRow(state, "aura_mace", "Автоматически брать булаву во время удара", true, true, popX, curY, popW, alpha);
+        // 16. Автоматически брать булаву во время удара [Toggle ON]
+        drawToggleRow(state, "aura_mace", "\u0410\u0432\u0442\u043E\u043C\u0430\u0442\u0438\u0447\u0435\u0441\u043A\u0438 \u0431\u0440\u0430\u0442\u044C \u0431\u0443\u043B\u0430\u0432\u0443 \u0432\u043E \u0432\u0440\u0435\u043C\u044F \u0443\u0434\u0430\u0440\u0430", true, true, popX, curY, popW, alpha);
     }
 
     private void renderGenericModuleSettings(PanelLapState state, Module mod, float popX, float startY, float popW, float rowH, int mouseX, int mouseY, float alpha) {
@@ -804,18 +802,17 @@ public final class PanelLapSuperimposition {
         float popX = state.getPanelX() + state.getPanelWidth() - popW - 10.0F;
         float popY = state.getPanelY() + 38.0F;
 
-        int bg = ColorUtil.rgba(13, 14, 20, (int) (215 * alpha));
-        int border = ColorUtil.rgba(26, 28, 38, (int) (240 * alpha));
+        int bg = ColorUtil.rgba(20, 24, 34, (int) (180 * alpha));
+        int border = ColorUtil.rgba(28, 32, 44, (int) (220 * alpha));
 
-        Render2D.drawShadow(popX, popY, popW, popH, 10.0F, 16.0F, ColorUtil.rgba(0, 0, 0, (int) (220 * alpha)));
+        Render2D.drawShadow(popX, popY, popW, popH, 10.0F, 16.0F, ColorUtil.rgba(0, 0, 0, (int) (200 * alpha)));
         Render2D.drawBlur(popX, popY, popW, popH, 6.0F, 16.0F, bg, alpha);
-        Render2D.drawRoundedRect(popX, popY, popW, popH, 6.0F, bg);
         Render2D.drawRoundedOutline(popX, popY, popW, popH, 6.0F, 1.0F, border);
 
         // Header: :: Настройки клиента + subtitle + ✕
         Fonts.drawString(Fonts.NURIK_MENU, Fonts.NURIK_DOTS, popX + 8.0F, popY + 7.5F, 6.5F, ColorUtil.rgba(130, 138, 155, (int) (220 * alpha)));
-        Fonts.drawString(Fonts.SF_MEDIUM, "Настройки клиента", popX + 20.0F, popY + 6.5F, 7.5F, ColorUtil.rgba(255, 255, 255, (int) (250 * alpha)));
-        Fonts.drawString(Fonts.SF_MEDIUM, "Настройка клиента", popX + 20.0F, popY + 16.0F, 5.5F, ColorUtil.rgba(102, 108, 126, (int) (220 * alpha)));
+        Fonts.drawString(Fonts.SF_MEDIUM, "\u041D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438 \u043A\u043B\u0438\u0435\u043D\u0442\u0430", popX + 20.0F, popY + 6.5F, 7.5F, ColorUtil.rgba(255, 255, 255, (int) (250 * alpha)));
+        Fonts.drawString(Fonts.SF_MEDIUM, "\u041D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0430 \u043A\u043B\u0438\u0435\u043D\u0442\u0430", popX + 20.0F, popY + 16.0F, 5.5F, ColorUtil.rgba(102, 108, 126, (int) (220 * alpha)));
 
         float closeX = popX + popW - 16.0F;
         float closeY = popY + 8.0F;
@@ -829,44 +826,41 @@ public final class PanelLapSuperimposition {
         float rowH = 22.0F;
 
         // 1. Клавиша меню [ RShift ]
-        Fonts.drawString(Fonts.SF_MEDIUM, "Клавиша меню", popX + 8.0F, rowY + 5.0F, 6.2F, ColorUtil.rgba(185, 190, 205, (int) (240 * alpha)));
+        Fonts.drawString(Fonts.SF_MEDIUM, "\u041A\u043B\u0430\u0432\u0438\u0448\u0430 \u043C\u0435\u043D\u044E", popX + 8.0F, rowY + 5.0F, 6.2F, ColorUtil.rgba(185, 190, 205, (int) (240 * alpha)));
         float rshiftW = 28.0F;
         Render2D.drawRoundedRect(popX + popW - rshiftW - 8.0F, rowY + 3.0F, rshiftW, 11.5F, 3.0F, ColorUtil.rgba(75, 124, 248, (int) (240 * alpha)));
         Fonts.drawCenteredString(Fonts.SF_MEDIUM, "RShift", popX + popW - rshiftW / 2.0F - 8.0F, rowY + 5.5F, 5.5F, ColorUtil.rgba(255, 255, 255, (int) (255 * alpha)));
         rowY += rowH;
 
-        // 2. Язык [ Русский ⌵ ]
-        drawModeRow(state, "client_lang", "Язык", "Русский", popX, rowY, popW, false, alpha);
+        // 2. Язык [ Русский ▼ ]
+        drawModeRow(state, "client_lang", "\u042F\u0437\u044B\u043A", "\u0420\u0443\u0441\u0441\u043A\u0438\u0439", popX, rowY, popW, false, alpha);
         rowY += rowH;
 
-        // 3. Масштаб меню [ 100% ⌵ ]
-        drawModeRow(state, "client_menu_scale", "Масштаб меню", "100%", popX, rowY, popW, false, alpha);
+        // 3. Масштаб меню [ 100% ▼ ]
+        drawModeRow(state, "client_menu_scale", "\u041C\u0430\u0441\u0448\u0442\u0430\u0431 \u043C\u0435\u043D\u044E", "100%", popX, rowY, popW, false, alpha);
         rowY += rowH;
 
-        // 4. Масштаб HUD [ 100% ⌵ ]
-        drawModeRow(state, "client_hud_scale", "Масштаб HUD", "100%", popX, rowY, popW, false, alpha);
+        // 4. Масштаб HUD [ 100% ▼ ]
+        drawModeRow(state, "client_hud_scale", "\u041C\u0430\u0441\u0448\u0442\u0430\u0431 HUD", "100%", popX, rowY, popW, false, alpha);
         rowY += rowH;
 
-        // 5. Акцентный цвет ●
-        Fonts.drawString(Fonts.SF_MEDIUM, "Акцентный цвет", popX + 8.0F, rowY + 5.0F, 6.2F, ColorUtil.rgba(185, 190, 205, (int) (240 * alpha)));
+        // 5. Акцентный цвет
+        Fonts.drawString(Fonts.SF_MEDIUM, "\u0410\u043A\u0446\u0435\u043D\u0442\u043D\u044B\u0439 \u0446\u0432\u0435\u0442", popX + 8.0F, rowY + 5.0F, 6.2F, ColorUtil.rgba(185, 190, 205, (int) (240 * alpha)));
         Render2D.drawCircle(popX + popW - 14.0F, rowY + 8.5F, 4.0F, ColorUtil.rgba(75, 124, 248, (int) (255 * alpha)));
         rowY += rowH;
 
         // 6. Описания модулей [Toggle ON]
-        drawToggleRow(state, "client_desc", "Описания модулей", state.isClientDesc(), false, popX, rowY, popW, alpha);
+        drawToggleRow(state, "client_desc", "\u041E\u043F\u0438\u0441\u0430\u043D\u0438\u044F \u043C\u043E\u0434\u0443\u043B\u0435\u0439", state.isClientDesc(), false, popX, rowY, popW, alpha);
         rowY += rowH;
 
         // 7. Автосохранение пресета [Toggle ON]
-        drawToggleRow(state, "client_autosave", "Автосохранение пресета", state.isClientAutoSave(), false, popX, rowY, popW, alpha);
+        drawToggleRow(state, "client_autosave", "\u0410\u0432\u0442\u043E\u0441\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u0438\u0435 \u043F\u0440\u0435\u0441\u0435\u0442\u0430", state.isClientAutoSave(), false, popX, rowY, popW, alpha);
         rowY += rowH;
 
         // 8. Режим разработки [Toggle OFF]
-        drawToggleRow(state, "client_devmode", "Режим разработки", state.isClientDevMode(), false, popX, rowY, popW, alpha);
+        drawToggleRow(state, "client_dev", "\u0420\u0435\u0436\u0438\u043C \u0440\u0430\u0437\u0440\u0430\u0431\u043E\u0442\u043A\u0438", false, false, popX, rowY, popW, alpha);
     }
 
-    // ==========================================
-    // 3. KEYBIND MODAL (Middle mouse click)
-    // ==========================================
     private void renderModuleBindModal(PanelLapState state, Module mod, int mouseX, int mouseY, float alpha) {
         float popW = 155.0F;
         float popH = 88.0F;
@@ -881,7 +875,6 @@ public final class PanelLapSuperimposition {
 
         Render2D.drawShadow(popX, popY, popW, popH, 8.0F, 12.0F, ColorUtil.rgba(0, 0, 0, (int) (200 * alpha)));
         Render2D.drawBlur(popX, popY, popW, popH, 6.0F, 16.0F, bg, alpha);
-        Render2D.drawRoundedRect(popX, popY, popW, popH, 6.0F, bg);
         Render2D.drawRoundedOutline(popX, popY, popW, popH, 6.0F, 1.0F, border);
 
         Fonts.drawString(Fonts.NURIK_MENU, Fonts.NURIK_DOTS, popX + 8.0F, popY + 7.5F, 6.5F, ColorUtil.rgba(130, 138, 155, (int) (220 * alpha)));
