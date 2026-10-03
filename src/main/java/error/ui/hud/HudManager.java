@@ -51,6 +51,13 @@ public final class HudManager implements IMinecraft {
     private HudManager() {
         register(new DynamicIslandHud());
         register(new GpsHud());
+        register(new HotkeysHud());
+        register(new StaffsHud());
+        register(new CooldownsHud());
+        register(new HelperBindsHud());
+        register(new TargetHud());
+        register(new PotionsHud());
+        register(new ScoreboardHud());
     }
 
     public static HudManager getInstance() {
