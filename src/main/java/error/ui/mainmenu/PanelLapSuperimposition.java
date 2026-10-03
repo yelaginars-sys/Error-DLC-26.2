@@ -92,14 +92,21 @@ public final class PanelLapSuperimposition {
         float scale = 0.95F + (0.05F * easeProgress);
         float alpha = easeProgress;
 
-        // Dark background dimming
+        // 1. Fullscreen Gaussian world blur + dark vignette (Nursultan authentic background)
+        Render2D.drawBlur(0, 0, screenWidth, screenHeight, 0.0F, 18.0F, ColorUtil.rgba(6, 8, 14, (int) (140 * alpha)), alpha);
         int dimCol = ColorUtil.rgba(6, 8, 12, (int) (165 * alpha));
         Render2D.drawRect(0, 0, screenWidth, screenHeight, dimCol);
+
+        // 2. Centered "Меню" title above the ClickGUI window
+        Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Меню", centerX, y - 22.0F, 11.0F, ColorUtil.rgba(255, 255, 255, (int) (245 * alpha)));
 
         extractor.pose().pushMatrix();
         extractor.pose().translate(centerX, centerY);
         extractor.pose().scale(scale, scale);
         extractor.pose().translate(-centerX, -centerY);
+
+        // 3. Acrylic frosted glass blur under the main window
+        Render2D.drawBlur(x, y, winW, winH, 8.0F, 24.0F, ColorUtil.rgba(14, 15, 20, (int) (180 * alpha)), alpha);
 
         // Main outer frame
         int mainBg = ColorUtil.rgba(14, 15, 20, (int) (248 * alpha));
@@ -156,7 +163,7 @@ public final class PanelLapSuperimposition {
 
         Category[] funcCats = {Category.COMBAT, Category.MOVEMENT, Category.RENDER, Category.PLAYER, Category.MISC};
         String[] funcNames = {"Бой", "Движение", "Визуалы", "Игрок", "Разное"};
-        Identifier[] funcIcons = {COMBAT_TEX, MOVEMENT_TEX, VISUALS_TEX, PLAYER_TEX, MISC_TEX};
+        String[] funcGlyphs = {"#", "$", "T", "W", "M"};
 
         for (int i = 0; i < funcCats.length; i++) {
             Category cat = funcCats[i];
@@ -176,7 +183,7 @@ public final class PanelLapSuperimposition {
             int iconCol = active ? ColorUtil.rgba(75, 124, 248, (int) (255 * alpha)) : ColorUtil.rgba(90, 98, 118, (int) (200 * alpha));
             int textCol = active ? ColorUtil.rgba(255, 255, 255, (int) (255 * alpha)) : ColorUtil.rgba(110, 118, 136, (int) (210 * alpha));
 
-            Render2D.drawTexture(funcIcons[i], itemX + 7.0F, curY + 5.5F, 9.0F, 9.0F, iconCol);
+            Fonts.drawString(Fonts.ICONS_NURIK, funcGlyphs[i], itemX + 7.5F, curY + 6.0F, 7.5F, iconCol);
             Fonts.drawString(Fonts.SF_MEDIUM, funcNames[i], itemX + 21.0F, curY + 6.0F, 7.0F, textCol);
 
             curY += itemH + 2.5F;
@@ -190,7 +197,7 @@ public final class PanelLapSuperimposition {
 
         Category[] ctrlCats = {Category.CONFIGS, Category.EVENTS, Category.FRIENDS, Category.COSMETICS};
         String[] ctrlNames = {"Пресеты", "Авто покупка", "Аккаунты", "Скрипты"};
-        Identifier[] ctrlIcons = {PRESETS_TEX, AUTOBUY_TEX, ACCOUNTS_TEX, SCRIPTS_TEX};
+        String[] ctrlGlyphs = {"Z", "S", "E", "X"};
 
         for (int i = 0; i < ctrlCats.length; i++) {
             Category cat = ctrlCats[i];
@@ -210,7 +217,7 @@ public final class PanelLapSuperimposition {
             int iconCol = active ? ColorUtil.rgba(75, 124, 248, (int) (255 * alpha)) : ColorUtil.rgba(90, 98, 118, (int) (200 * alpha));
             int textCol = active ? ColorUtil.rgba(255, 255, 255, (int) (255 * alpha)) : ColorUtil.rgba(110, 118, 136, (int) (210 * alpha));
 
-            Render2D.drawTexture(ctrlIcons[i], itemX + 7.0F, curY + 5.5F, 9.0F, 9.0F, iconCol);
+            Fonts.drawString(Fonts.ICONS_NURIK, ctrlGlyphs[i], itemX + 7.5F, curY + 6.0F, 7.5F, iconCol);
             Fonts.drawString(Fonts.SF_MEDIUM, ctrlNames[i], itemX + 21.0F, curY + 6.0F, 7.0F, textCol);
 
             curY += itemH + 2.5F;
@@ -263,7 +270,7 @@ public final class PanelLapSuperimposition {
         float gearY = y + 10.0F;
         boolean gearHover = mouseX >= gearX - 3.0F && mouseX <= gearX + 13.0F && mouseY >= gearY - 3.0F && mouseY <= gearY + 13.0F;
         int gearCol = (gearHover || state.isClientSettingsOpen()) ? ColorUtil.rgba(255, 255, 255, (int) (255 * alpha)) : ColorUtil.rgba(90, 96, 115, (int) (220 * alpha));
-        Render2D.drawTexture(GEAR_TEX, gearX, gearY, 10.5F, 10.5F, gearCol);
+        Fonts.drawString(Fonts.ICONS_NURIK, "D", gearX, gearY + 0.5F, 8.0F, gearCol);
     }
 
     private void renderContent(PanelLapState state, float x, float y, float w, float h, int mouseX, int mouseY, float alpha) {
@@ -426,9 +433,10 @@ public final class PanelLapSuperimposition {
     }
 
     private void renderSingleCard(PanelLapState state, String title, List<DisplayItem> items, float x, float y, float w, float h, int mouseX, int mouseY, float alpha) {
-        int cardBg = ColorUtil.rgba(18, 19, 26, (int) (248 * alpha));
-        int cardBorder = ColorUtil.rgba(27, 29, 38, (int) (255 * alpha));
+        int cardBg = ColorUtil.rgba(16, 17, 24, (int) (185 * alpha));
+        int cardBorder = ColorUtil.rgba(28, 30, 42, (int) (200 * alpha));
 
+        Render2D.drawBlur(x, y, w, h, 6.0F, 14.0F, cardBg, alpha);
         Render2D.drawRoundedRect(x, y, w, h, 6.0F, cardBg);
         Render2D.drawRoundedOutline(x, y, w, h, 6.0F, 1.0F, cardBorder);
 
@@ -436,10 +444,10 @@ public final class PanelLapSuperimposition {
         float headH = 20.0F;
         Fonts.drawString(Fonts.SF_MEDIUM, title, x + 9.0F, y + 6.0F, 7.0F, ColorUtil.rgba(225, 230, 245, (int) (245 * alpha)));
 
-        // Double chevron angles icon
+        // Double chevron angles icon (blue in Nursultan)
         float cx = x + w - 14.0F;
         float cy = y + 5.5F;
-        Render2D.drawTexture(ANGLES_TEX, cx, cy, 6.5F, 9.0F, ColorUtil.rgba(100, 108, 128, (int) (220 * alpha)));
+        Render2D.drawTexture(ANGLES_TEX, cx, cy, 6.5F, 9.0F, ColorUtil.rgba(75, 124, 248, (int) (230 * alpha)));
 
         float rowY = y + headH + 1.0F;
         float rowH = 19.0F;
@@ -473,13 +481,15 @@ public final class PanelLapSuperimposition {
             int dotsCol = dotsHover ? ColorUtil.rgba(255, 255, 255, (int) (255 * alpha)) : ColorUtil.rgba(80, 88, 105, (int) (200 * alpha));
             Render2D.drawTexture(DOTS_TEX, dotsX, dotsY, 7.0F, 5.0F, dotsCol);
 
-            // Keyboard bind badge if bound
-            if (mod.getBind().isBound()) {
-                String bName = mod.getBind().getDisplayValue();
-                float bW = Fonts.SF_MEDIUM.getWidth(bName, 4.5F) + 5.0F;
+            // Keyboard bind badge
+            boolean hasBind = mod.getBind().isBound();
+            if (hasBind || item.displayName.equals("Auto Swap") || item.displayName.equals("Item Release") || item.displayName.equals("Attack Aura")) {
+                float bW = 10.0F;
                 float bX = dotsX - bW - 4.0F;
-                Render2D.drawRoundedRect(bX, rowY + 4.5F, bW, 9.5F, 2.5F, ColorUtil.rgba(26, 32, 46, (int) (220 * alpha)));
-                Fonts.drawString(Fonts.SF_MEDIUM, bName, bX + 2.5F, rowY + 6.0F, 4.5F, ColorUtil.rgba(75, 124, 248, (int) (240 * alpha)));
+                int badgeBg = hasBind ? ColorUtil.rgba(30, 38, 56, (int) (230 * alpha)) : ColorUtil.rgba(22, 25, 34, (int) (200 * alpha));
+                Render2D.drawRoundedRect(bX, rowY + 5.0F, bW, 8.5F, 2.5F, badgeBg);
+                int iconCol = hasBind ? ColorUtil.rgba(75, 124, 248, (int) (240 * alpha)) : ColorUtil.rgba(100, 108, 128, (int) (200 * alpha));
+                Fonts.drawString(Fonts.ICONS_NURIK, "C", bX + 2.0F, rowY + 6.0F, 4.5F, iconCol);
             }
 
             // Toggle switch pill

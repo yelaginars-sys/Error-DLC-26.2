@@ -233,6 +233,10 @@ public class Modules {
                 this.clientSounds,
                 this.unHook
         );
+
+        if (this.maceHelper != null) this.maceHelper.setState(true);
+        if (this.autoSwap != null) this.autoSwap.setState(true);
+        if (this.criticals != null) this.criticals.setState(true);
     }
 
     public void register(Module... mods) {
