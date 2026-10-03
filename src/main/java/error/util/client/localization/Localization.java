@@ -70,6 +70,7 @@ public final class Localization {
         RU_DICT.put("ActionTracker", "Трекер Действий");
         RU_DICT.put("UseTracker", "Трекер Предметов");
         RU_DICT.put("PotionTracker", "Трекер Зелий");
+        RU_DICT.put("AutoEvent", "Авто Ивенты");
         RU_DICT.put("AutoAccept", "Авто Приём");
         RU_DICT.put("TriggerBot", "Триггер Бот");
         RU_DICT.put("Criticals", "Критический Удар");
@@ -309,6 +310,7 @@ public final class Localization {
         RU_DICT.put("ActionTracker.desc", "Отслеживает и показывает использование предметов врагами");
         RU_DICT.put("UseTracker.desc", "Отслеживает использование предметов, тотемов, зелий и предметов анархий");
         RU_DICT.put("PotionTracker.desc", "Отслеживает брошенные зелья, процент попадания и наложенные эффекты");
+        RU_DICT.put("AutoEvent.desc", "Автоматический парсинг сообщений об ивентах в чате и навигация по GPS");
         RU_DICT.put("AHHelper.desc", "Помогает находить и покупать выгодные лоты на аукционе");
         RU_DICT.put("AutoAccept.desc", "Автоматически принимает запросы на телепортацию и в клан");
         RU_DICT.put("ClickFriend.desc", "Позволяет добавлять игроков в друзья кликом колесика мыши");

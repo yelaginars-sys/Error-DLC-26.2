@@ -72,6 +72,7 @@ public class Modules {
     public AutoAccept autoAccept;
     public PotionTracker potionTracker;
     public UseTracker useTracker;
+    public AutoEvent autoEvent;
     public HoldMyItems holdMyItems;
     public Notification notification;
     public CustomModels customModels;
@@ -101,6 +102,7 @@ public class Modules {
                 this.fullBright = new FullBright(),
                 this.potionTracker = new PotionTracker(),
                 this.useTracker = new UseTracker(),
+                this.autoEvent = new AutoEvent(),
                 this.autoAccept = new AutoAccept(),
                 this.triggerBot = new TriggerBot(),
                 this.criticals = new Criticals(),
