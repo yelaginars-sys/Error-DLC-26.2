@@ -163,7 +163,7 @@ public final class PanelLapSuperimposition {
 
         Category[] funcCats = {Category.COMBAT, Category.MOVEMENT, Category.RENDER, Category.PLAYER, Category.MISC};
         String[] funcNames = {"Бой", "Движение", "Визуалы", "Игрок", "Разное"};
-        String[] funcGlyphs = {"#", "$", "T", "W", "M"};
+        String[] funcGlyphs = {Fonts.NURIK_COMBAT, Fonts.NURIK_MOVEMENT, Fonts.NURIK_VISUALS, Fonts.NURIK_PLAYER, Fonts.NURIK_MISC};
 
         for (int i = 0; i < funcCats.length; i++) {
             Category cat = funcCats[i];
@@ -183,7 +183,7 @@ public final class PanelLapSuperimposition {
             int iconCol = active ? ColorUtil.rgba(75, 124, 248, (int) (255 * alpha)) : ColorUtil.rgba(90, 98, 118, (int) (200 * alpha));
             int textCol = active ? ColorUtil.rgba(255, 255, 255, (int) (255 * alpha)) : ColorUtil.rgba(110, 118, 136, (int) (210 * alpha));
 
-            Fonts.drawString(Fonts.ICONS_NURIK, funcGlyphs[i], itemX + 7.5F, curY + 6.0F, 7.5F, iconCol);
+            Fonts.drawString(Fonts.NURIK_MENU, funcGlyphs[i], itemX + 7.5F, curY + 6.0F, 7.5F, iconCol);
             Fonts.drawString(Fonts.SF_MEDIUM, funcNames[i], itemX + 21.0F, curY + 6.0F, 7.0F, textCol);
 
             curY += itemH + 2.5F;
@@ -197,7 +197,7 @@ public final class PanelLapSuperimposition {
 
         Category[] ctrlCats = {Category.CONFIGS, Category.EVENTS, Category.FRIENDS, Category.COSMETICS};
         String[] ctrlNames = {"Пресеты", "Авто покупка", "Аккаунты", "Скрипты"};
-        String[] ctrlGlyphs = {"Z", "S", "E", "X"};
+        String[] ctrlGlyphs = {Fonts.NURIK_PRESETS, Fonts.NURIK_AUTOBUY, Fonts.NURIK_ACCOUNTS, Fonts.NURIK_SCRIPTS};
 
         for (int i = 0; i < ctrlCats.length; i++) {
             Category cat = ctrlCats[i];
@@ -217,7 +217,7 @@ public final class PanelLapSuperimposition {
             int iconCol = active ? ColorUtil.rgba(75, 124, 248, (int) (255 * alpha)) : ColorUtil.rgba(90, 98, 118, (int) (200 * alpha));
             int textCol = active ? ColorUtil.rgba(255, 255, 255, (int) (255 * alpha)) : ColorUtil.rgba(110, 118, 136, (int) (210 * alpha));
 
-            Fonts.drawString(Fonts.ICONS_NURIK, ctrlGlyphs[i], itemX + 7.5F, curY + 6.0F, 7.5F, iconCol);
+            Fonts.drawString(Fonts.NURIK_MENU, ctrlGlyphs[i], itemX + 7.5F, curY + 6.0F, 7.5F, iconCol);
             Fonts.drawString(Fonts.SF_MEDIUM, ctrlNames[i], itemX + 21.0F, curY + 6.0F, 7.0F, textCol);
 
             curY += itemH + 2.5F;
@@ -251,7 +251,7 @@ public final class PanelLapSuperimposition {
         Render2D.drawRoundedRect(searchX, searchY, searchW, searchH, 4.0F, searchBg);
         Render2D.drawRoundedOutline(searchX, searchY, searchW, searchH, 4.0F, 1.0F, searchBorder);
 
-        Render2D.drawTexture(SEARCH_TEX, searchX + 5.0F, searchY + 4.0F, 9.0F, 9.0F, ColorUtil.rgba(100, 108, 128, (int) (220 * alpha)));
+        Fonts.drawString(Fonts.NURIK_MENU, Fonts.NURIK_SEARCH, searchX + 5.0F, searchY + 4.5F, 6.5F, ColorUtil.rgba(100, 108, 128, (int) (220 * alpha)));
 
         String q = state.getSearchQuery();
         String displaySearch = q.isEmpty() ? (state.isSearchFocused() ? "" : "Поиск") : q;
@@ -263,14 +263,15 @@ public final class PanelLapSuperimposition {
         float badgeX = searchX + searchW - badgeW - 3.5F;
         float badgeY = searchY + 3.0F;
         Render2D.drawRoundedRect(badgeX, badgeY, badgeW, badgeH, 2.5F, ColorUtil.rgba(26, 29, 39, (int) (240 * alpha)));
-        Fonts.drawString(Fonts.SF_MEDIUM, "CTRL+F ⌕", badgeX + 2.5F, badgeY + 2.5F, 4.5F, ColorUtil.rgba(110, 118, 138, (int) (220 * alpha)));
+        Fonts.drawString(Fonts.SF_MEDIUM, "CTRL+F", badgeX + 2.5F, badgeY + 2.5F, 4.5F, ColorUtil.rgba(110, 118, 138, (int) (220 * alpha)));
+        Fonts.drawString(Fonts.NURIK_MENU, Fonts.NURIK_BIND, badgeX + 22.0F, badgeY + 2.5F, 4.0F, ColorUtil.rgba(110, 118, 138, (int) (220 * alpha)));
 
         // Gear icon (Client Settings)
         float gearX = x + w - 20.0F;
         float gearY = y + 10.0F;
         boolean gearHover = mouseX >= gearX - 3.0F && mouseX <= gearX + 13.0F && mouseY >= gearY - 3.0F && mouseY <= gearY + 13.0F;
         int gearCol = (gearHover || state.isClientSettingsOpen()) ? ColorUtil.rgba(255, 255, 255, (int) (255 * alpha)) : ColorUtil.rgba(90, 96, 115, (int) (220 * alpha));
-        Fonts.drawString(Fonts.ICONS_NURIK, "D", gearX, gearY + 0.5F, 8.0F, gearCol);
+        Fonts.drawString(Fonts.NURIK_MENU, Fonts.NURIK_GEAR, gearX, gearY + 0.5F, 8.5F, gearCol);
     }
 
     private void renderContent(PanelLapState state, float x, float y, float w, float h, int mouseX, int mouseY, float alpha) {
@@ -447,7 +448,7 @@ public final class PanelLapSuperimposition {
         // Double chevron angles icon (blue in Nursultan)
         float cx = x + w - 14.0F;
         float cy = y + 5.5F;
-        Render2D.drawTexture(ANGLES_TEX, cx, cy, 6.5F, 9.0F, ColorUtil.rgba(75, 124, 248, (int) (230 * alpha)));
+        Fonts.drawString(Fonts.NURIK_MENU, Fonts.NURIK_ANGLES, cx - 1.0F, cy + 0.5F, 6.5F, ColorUtil.rgba(75, 124, 248, (int) (230 * alpha)));
 
         float rowY = y + headH + 1.0F;
         float rowH = 19.0F;
@@ -479,7 +480,7 @@ public final class PanelLapSuperimposition {
             float dotsY = rowY + 7.0F;
             boolean dotsHover = mouseX >= dotsX - 3.0F && mouseX <= dotsX + 10.0F && mouseY >= dotsY - 3.0F && mouseY <= dotsY + 9.0F;
             int dotsCol = dotsHover ? ColorUtil.rgba(255, 255, 255, (int) (255 * alpha)) : ColorUtil.rgba(80, 88, 105, (int) (200 * alpha));
-            Render2D.drawTexture(DOTS_TEX, dotsX, dotsY, 7.0F, 5.0F, dotsCol);
+            Fonts.drawString(Fonts.NURIK_MENU, Fonts.NURIK_DOTS, dotsX, dotsY - 1.0F, 6.0F, dotsCol);
 
             // Keyboard bind badge
             boolean hasBind = mod.getBind().isBound();
@@ -489,7 +490,7 @@ public final class PanelLapSuperimposition {
                 int badgeBg = hasBind ? ColorUtil.rgba(30, 38, 56, (int) (230 * alpha)) : ColorUtil.rgba(22, 25, 34, (int) (200 * alpha));
                 Render2D.drawRoundedRect(bX, rowY + 5.0F, bW, 8.5F, 2.5F, badgeBg);
                 int iconCol = hasBind ? ColorUtil.rgba(75, 124, 248, (int) (240 * alpha)) : ColorUtil.rgba(100, 108, 128, (int) (200 * alpha));
-                Fonts.drawString(Fonts.ICONS_NURIK, "C", bX + 2.0F, rowY + 6.0F, 4.5F, iconCol);
+                Fonts.drawString(Fonts.NURIK_MENU, Fonts.NURIK_BIND, bX + 2.0F, rowY + 5.5F, 5.0F, iconCol);
             }
 
             // Toggle switch pill
@@ -551,7 +552,7 @@ public final class PanelLapSuperimposition {
         Render2D.drawRoundedOutline(popX, popY, popW, popH, 6.0F, 1.0F, border);
 
         // Header: :: Module Name + Subtitle (Category) + Close ✕
-        Render2D.drawTexture(DOTS_TEX, popX + 8.0F, popY + 9.5F, 8.0F, 6.0F, ColorUtil.rgba(130, 138, 155, (int) (220 * alpha)));
+        Fonts.drawString(Fonts.NURIK_MENU, Fonts.NURIK_DOTS, popX + 8.0F, popY + 7.5F, 6.5F, ColorUtil.rgba(130, 138, 155, (int) (220 * alpha)));
 
         String title = mod.getName();
         if (mod instanceof AuraModule || title.equalsIgnoreCase("Aura")) title = "Attack Aura";
@@ -562,7 +563,8 @@ public final class PanelLapSuperimposition {
         float closeX = popX + popW - 16.0F;
         float closeY = popY + 8.0F;
         boolean closeHover = mouseX >= closeX - 2.0F && mouseX <= closeX + 10.0F && mouseY >= closeY - 2.0F && mouseY <= closeY + 10.0F;
-        Render2D.drawTexture(XMARK_TEX, closeX, closeY, 8.0F, 8.0F, closeHover ? ColorUtil.rgba(255, 90, 90, (int) (255 * alpha)) : ColorUtil.rgba(110, 118, 136, (int) (200 * alpha)));
+        int closeCol = closeHover ? ColorUtil.rgba(255, 90, 90, (int) (255 * alpha)) : ColorUtil.rgba(110, 118, 136, (int) (200 * alpha));
+        Fonts.drawString(Fonts.NURIK_MENU, Fonts.NURIK_XMARK, closeX, closeY, 7.0F, closeCol);
 
         // Divider
         Render2D.drawRoundedRect(popX + 8.0F, popY + 25.5F, popW - 16.0F, 1.0F, 0.5F, ColorUtil.rgba(22, 24, 32, (int) (200 * alpha)));
@@ -813,14 +815,15 @@ public final class PanelLapSuperimposition {
         Render2D.drawRoundedOutline(popX, popY, popW, popH, 6.0F, 1.0F, border);
 
         // Header: :: Настройки клиента + subtitle + ✕
-        Render2D.drawTexture(DOTS_TEX, popX + 8.0F, popY + 9.5F, 8.0F, 6.0F, ColorUtil.rgba(130, 138, 155, (int) (220 * alpha)));
+        Fonts.drawString(Fonts.NURIK_MENU, Fonts.NURIK_DOTS, popX + 8.0F, popY + 7.5F, 6.5F, ColorUtil.rgba(130, 138, 155, (int) (220 * alpha)));
         Fonts.drawString(Fonts.SF_MEDIUM, "Настройки клиента", popX + 20.0F, popY + 6.5F, 7.5F, ColorUtil.rgba(255, 255, 255, (int) (250 * alpha)));
         Fonts.drawString(Fonts.SF_MEDIUM, "Настройка клиента", popX + 20.0F, popY + 16.0F, 5.5F, ColorUtil.rgba(102, 108, 126, (int) (220 * alpha)));
 
         float closeX = popX + popW - 16.0F;
         float closeY = popY + 8.0F;
         boolean closeHover = mouseX >= closeX - 2.0F && mouseX <= closeX + 10.0F && mouseY >= closeY - 2.0F && mouseY <= closeY + 10.0F;
-        Render2D.drawTexture(XMARK_TEX, closeX, closeY, 8.0F, 8.0F, closeHover ? ColorUtil.rgba(255, 90, 90, (int) (255 * alpha)) : ColorUtil.rgba(110, 118, 136, (int) (200 * alpha)));
+        int closeCol = closeHover ? ColorUtil.rgba(255, 90, 90, (int) (255 * alpha)) : ColorUtil.rgba(110, 118, 136, (int) (200 * alpha));
+        Fonts.drawString(Fonts.NURIK_MENU, Fonts.NURIK_XMARK, closeX, closeY, 7.0F, closeCol);
 
         Render2D.drawRoundedRect(popX + 8.0F, popY + 25.5F, popW - 16.0F, 1.0F, 0.5F, ColorUtil.rgba(22, 24, 32, (int) (200 * alpha)));
 
@@ -883,13 +886,14 @@ public final class PanelLapSuperimposition {
         Render2D.drawRoundedRect(popX, popY, popW, popH, 6.0F, bg);
         Render2D.drawRoundedOutline(popX, popY, popW, popH, 6.0F, 1.0F, border);
 
-        Render2D.drawTexture(DOTS_TEX, popX + 8.0F, popY + 9.5F, 8.0F, 6.0F, ColorUtil.rgba(130, 138, 155, (int) (220 * alpha)));
+        Fonts.drawString(Fonts.NURIK_MENU, Fonts.NURIK_DOTS, popX + 8.0F, popY + 7.5F, 6.5F, ColorUtil.rgba(130, 138, 155, (int) (220 * alpha)));
         Fonts.drawString(Fonts.SF_MEDIUM, mod.getName(), popX + 20.0F, popY + 7.5F, 7.5F, ColorUtil.rgba(255, 255, 255, (int) (245 * alpha)));
 
         float closeX = popX + popW - 16.0F;
         float closeY = popY + 8.0F;
         boolean closeHover = mouseX >= closeX - 2.0F && mouseX <= closeX + 10.0F && mouseY >= closeY - 2.0F && mouseY <= closeY + 10.0F;
-        Render2D.drawTexture(XMARK_TEX, closeX, closeY, 8.0F, 8.0F, closeHover ? ColorUtil.rgba(255, 90, 90, (int) (255 * alpha)) : ColorUtil.rgba(100, 108, 126, (int) (200 * alpha)));
+        int closeCol = closeHover ? ColorUtil.rgba(255, 90, 90, (int) (255 * alpha)) : ColorUtil.rgba(100, 108, 126, (int) (200 * alpha));
+        Fonts.drawString(Fonts.NURIK_MENU, Fonts.NURIK_XMARK, closeX, closeY, 7.0F, closeCol);
 
         Render2D.drawRoundedRect(popX + 8.0F, popY + 22.0F, popW - 16.0F, 1.0F, 0.5F, ColorUtil.rgba(22, 24, 32, (int) (200 * alpha)));
 

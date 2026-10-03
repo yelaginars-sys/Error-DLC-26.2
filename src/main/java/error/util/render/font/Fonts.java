@@ -14,6 +14,25 @@ public final class Fonts {
     public static final MsdfFont EMOJIS = MsdfFont.load(Identifier.parse("error:fonts/emojis.json"));
     public static final MsdfFont ENERGY = MsdfFont.load(Identifier.parse("error:fonts/energy.json"));
     public static final MsdfFont ICONS_NURIK = MsdfFont.load(Identifier.parse("error:fonts/icons_nurik.json"));
+    public static final MsdfFont NURIK_MENU = MsdfFont.load(Identifier.parse("error:fonts/nurik_menu.json"));
+
+    public static final String NURIK_COMBAT = "\uEA07";
+    public static final String NURIK_MOVEMENT = "\uEA0F";
+    public static final String NURIK_VISUALS = "\uEA1D";
+    public static final String NURIK_PLAYER = "\uEA12";
+    public static final String NURIK_MISC = "\uEA0E";
+    public static final String NURIK_PRESETS = "\uEA14";
+    public static final String NURIK_AUTOBUY = "\uEA03";
+    public static final String NURIK_ACCOUNTS = "\uEA01";
+    public static final String NURIK_SCRIPTS = "\uEA11";
+    public static final String NURIK_GEAR = "\uEA06";
+    public static final String NURIK_ANGLES = "\uEA02";
+    public static final String NURIK_BIND = "\uEA04";
+    public static final String NURIK_DOTS = "\uEA0A";
+    public static final String NURIK_SEARCH = "\uEA17";
+    public static final String NURIK_XMARK = "\uEA1E";
+    public static final String NURIK_CHECK = "\uEA05";
+    public static final String NURIK_LOGO = "\uEA10";
 
     public static void drawString(MsdfFont font, String text, float x, float y, float size, int color) {
         draw(font, text, x, y, size, color, TextAlign.LEFT);
