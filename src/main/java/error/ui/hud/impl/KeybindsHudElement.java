@@ -27,13 +27,14 @@ public final class KeybindsHudElement extends HudElement implements IMinecraft {
     );
 
     public KeybindsHudElement() {
-        super("keybinds", "Keybinds", 710.0F, 340.0F, 135.0F, 100.0F, true);
+        super("keybinds", "Keybinds", 710.0F, 340.0F, 140.0F, 100.0F, true);
     }
 
     @Override
     public void draw(Render2DEvent event) {
         MsdfFont font = Fonts.SF_MEDIUM;
-        float fontUnit = 0.44F;
+        float headerSize = 7.5F;
+        float itemSize = 6.5F;
 
         List<PreviewBind> activeBinds = new ArrayList<>();
 
@@ -70,18 +71,18 @@ public final class KeybindsHudElement extends HudElement implements IMinecraft {
         Render2D.drawRoundedRectWithOutline(x, y, width, height, 8.0F, bgColor, 1.0F, outlineColor);
 
         // Header
-        Fonts.drawString(font, "Keybinds", x + 10.0F, y + 5.0F, 0.48F, ColorUtil.rgba(240, 240, 250, 255));
+        Fonts.drawString(font, "Keybinds", x + 10.0F, y + 4.0F, headerSize, ColorUtil.rgba(240, 240, 250, 255));
         Render2D.drawRect(x + 10.0F, y + headerH - 2.0F, width - 20.0F, 1.0F, ColorUtil.rgba(255, 255, 255, 30));
 
         float curY = y + headerH + 2.0F;
         for (PreviewBind bind : activeBinds) {
             // Module Name
-            Fonts.drawString(font, bind.name(), x + 10.0F, curY + (itemH - font.lineHeight(fontUnit)) / 2.0F, fontUnit, ColorUtil.rgba(230, 230, 230, 255));
+            Fonts.drawString(font, bind.name(), x + 10.0F, curY + (itemH - font.lineHeight(itemSize)) / 2.0F, itemSize, ColorUtil.rgba(230, 230, 230, 255));
 
             // Key + badge
             String keyStr = bind.key() + "  [x]";
-            float keyW = font.getWidth(keyStr, fontUnit);
-            Fonts.drawString(font, keyStr, x + width - 10.0F - keyW, curY + (itemH - font.lineHeight(fontUnit)) / 2.0F, fontUnit, ColorUtil.rgba(180, 180, 200, 255));
+            float keyW = font.getWidth(keyStr, itemSize);
+            Fonts.drawString(font, keyStr, x + width - 10.0F - keyW, curY + (itemH - font.lineHeight(itemSize)) / 2.0F, itemSize, ColorUtil.rgba(180, 180, 200, 255));
 
             curY += itemH;
         }

@@ -27,7 +27,7 @@ public final class TargetHudElement extends HudElement implements IMinecraft {
     private final Animation hpAnimation = new Animation(20.0F, 0.25F);
 
     public TargetHudElement() {
-        super("targethud", "Target HUD", 350.0F, 220.0F, 180.0F, 48.0F, true);
+        super("targethud", "Target HUD", 350.0F, 220.0F, 185.0F, 48.0F, true);
     }
 
     @Override
@@ -42,7 +42,7 @@ public final class TargetHudElement extends HudElement implements IMinecraft {
             return;
         }
 
-        this.width = 180.0F;
+        this.width = 185.0F;
         this.height = 48.0F;
 
         MsdfFont font = Fonts.SF_MEDIUM;
@@ -79,15 +79,15 @@ public final class TargetHudElement extends HudElement implements IMinecraft {
         if (name.length() > 12) name = name.substring(0, 12) + "...";
 
         float nameX = x + 48.0F;
-        Fonts.drawString(font, name, nameX, y + 7.0F, 0.48F, ColorUtil.rgba(240, 240, 250, 255));
+        Fonts.drawString(font, name, nameX, y + 6.0F, 7.5F, ColorUtil.rgba(240, 240, 250, 255));
 
         String hpText = String.format("hp %.1f", hp);
-        float hpTextW = font.getWidth(hpText, 0.42F);
-        Fonts.drawString(font, hpText, x + width - 8.0F - hpTextW, y + 8.0F, 0.42F, ColorUtil.rgba(255, 120, 120, 255));
+        float hpTextW = font.getWidth(hpText, 6.5F);
+        Fonts.drawString(font, hpText, x + width - 8.0F - hpTextW, y + 7.0F, 6.5F, ColorUtil.rgba(255, 120, 120, 255));
 
         // Animated Health Bar
         float barX = nameX;
-        float barY = y + 23.0F;
+        float barY = y + 21.0F;
         float barW = width - 56.0F;
         float barH = 5.0F;
 
@@ -114,7 +114,7 @@ public final class TargetHudElement extends HudElement implements IMinecraft {
             equip.add(target.getOffhandItem());
 
             float equipX = barX;
-            float equipY = y + 31.0F;
+            float equipY = y + 30.0F;
             float itemSize = 13.0F;
             float itemScale = itemSize / 16.0F;
 

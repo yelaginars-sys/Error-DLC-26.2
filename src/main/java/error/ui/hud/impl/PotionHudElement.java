@@ -70,13 +70,14 @@ public final class PotionHudElement extends HudElement implements IMinecraft {
     );
 
     public PotionHudElement() {
-        super("potions", "Potions", 10.0F, 38.0F, 140.0F, 180.0F, true);
+        super("potions", "Potions", 10.0F, 38.0F, 140.0F, 220.0F, true);
     }
 
     @Override
     public void draw(Render2DEvent event) {
         MsdfFont font = Fonts.SF_MEDIUM;
-        float fontUnit = 0.44F;
+        float headerSize = 7.5F;
+        float itemSize = 6.5F;
 
         List<SamplePotion> activeList = new ArrayList<>();
 
@@ -125,7 +126,7 @@ public final class PotionHudElement extends HudElement implements IMinecraft {
         Render2D.drawRoundedRectWithOutline(x, y, width, height, 8.0F, bgColor, 1.0F, outlineColor);
 
         // Header
-        Fonts.drawString(font, "Potions", x + 10.0F, y + 5.0F, 0.48F, ColorUtil.rgba(240, 240, 250, 255));
+        Fonts.drawString(font, "Potions", x + 10.0F, y + 4.0F, headerSize, ColorUtil.rgba(240, 240, 250, 255));
         Render2D.drawRect(x + 10.0F, y + headerH - 2.0F, width - 20.0F, 1.0F, ColorUtil.rgba(255, 255, 255, 30));
 
         float curY = y + headerH + 2.0F;
@@ -135,11 +136,11 @@ public final class PotionHudElement extends HudElement implements IMinecraft {
 
             // Name + level
             String label = p.name() + (p.level().isEmpty() ? "" : " " + p.level());
-            Fonts.drawString(font, label, x + 20.0F, curY + (itemH - font.lineHeight(fontUnit)) / 2.0F, fontUnit, ColorUtil.rgba(230, 230, 230, 255));
+            Fonts.drawString(font, label, x + 20.0F, curY + (itemH - font.lineHeight(itemSize)) / 2.0F, itemSize, ColorUtil.rgba(230, 230, 230, 255));
 
             // Duration
-            float durW = font.getWidth(p.duration(), fontUnit);
-            Fonts.drawString(font, p.duration(), x + width - 10.0F - durW, curY + (itemH - font.lineHeight(fontUnit)) / 2.0F, fontUnit, ColorUtil.rgba(170, 170, 180, 255));
+            float durW = font.getWidth(p.duration(), itemSize);
+            Fonts.drawString(font, p.duration(), x + width - 10.0F - durW, curY + (itemH - font.lineHeight(itemSize)) / 2.0F, itemSize, ColorUtil.rgba(170, 170, 180, 255));
 
             curY += itemH;
         }

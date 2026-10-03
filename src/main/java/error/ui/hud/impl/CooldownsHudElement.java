@@ -31,13 +31,14 @@ public final class CooldownsHudElement extends HudElement implements IMinecraft 
     }
 
     public CooldownsHudElement() {
-        super("cooldowns", "Cooldowns", 680.0F, 10.0F, 175.0F, 120.0F, true);
+        super("cooldowns", "Cooldowns", 680.0F, 10.0F, 180.0F, 120.0F, true);
     }
 
     @Override
     public void draw(Render2DEvent event) {
         MsdfFont font = Fonts.SF_MEDIUM;
-        float fontUnit = 0.42F;
+        float headerSize = 7.5F;
+        float itemSize = 6.5F;
 
         long now = System.currentTimeMillis();
         ACTIVE_COOLDOWNS.entrySet().removeIf(entry -> entry.getValue().expireTime() <= now);
@@ -68,7 +69,7 @@ public final class CooldownsHudElement extends HudElement implements IMinecraft 
         Render2D.drawRoundedRectWithOutline(x, y, width, height, 8.0F, bgColor, 1.0F, outlineColor);
 
         // Header
-        Fonts.drawString(font, "Cooldowns", x + 10.0F, y + 5.0F, 0.48F, ColorUtil.rgba(240, 240, 250, 255));
+        Fonts.drawString(font, "Cooldowns", x + 10.0F, y + 4.0F, headerSize, ColorUtil.rgba(240, 240, 250, 255));
         Render2D.drawRect(x + 10.0F, y + headerH - 2.0F, width - 20.0F, 1.0F, ColorUtil.rgba(255, 255, 255, 30));
 
         float curY = y + headerH + 2.0F;
@@ -87,14 +88,14 @@ public final class CooldownsHudElement extends HudElement implements IMinecraft 
 
             // Item Name
             String name = entry.name();
-            if (font.getWidth(name, fontUnit) > 105.0F) {
+            if (font.getWidth(name, itemSize) > 105.0F) {
                 name = name.substring(0, Math.min(name.length(), 14)) + "...";
             }
-            Fonts.drawString(font, name, x + 20.0F, curY + (itemH - font.lineHeight(fontUnit)) / 2.0F, fontUnit, ColorUtil.rgba(230, 230, 230, 255));
+            Fonts.drawString(font, name, x + 20.0F, curY + (itemH - font.lineHeight(itemSize)) / 2.0F, itemSize, ColorUtil.rgba(230, 230, 230, 255));
 
             // Time
-            float timeW = font.getWidth(timeStr, fontUnit);
-            Fonts.drawString(font, timeStr, x + width - 10.0F - timeW, curY + (itemH - font.lineHeight(fontUnit)) / 2.0F, fontUnit, ColorUtil.rgba(180, 180, 190, 255));
+            float timeW = font.getWidth(timeStr, itemSize);
+            Fonts.drawString(font, timeStr, x + width - 10.0F - timeW, curY + (itemH - font.lineHeight(itemSize)) / 2.0F, itemSize, ColorUtil.rgba(180, 180, 190, 255));
 
             curY += itemH;
         }
