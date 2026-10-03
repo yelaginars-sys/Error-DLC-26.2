@@ -92,9 +92,9 @@ public final class PanelLapSuperimposition {
         float scale = 0.95F + (0.05F * easeProgress);
         float alpha = easeProgress;
 
-        // 1. Fullscreen Gaussian world blur + dark vignette (Nursultan authentic background)
-        Render2D.drawBlur(0, 0, screenWidth, screenHeight, 0.0F, 18.0F, ColorUtil.rgba(6, 8, 14, (int) (140 * alpha)), alpha);
-        int dimCol = ColorUtil.rgba(6, 8, 12, (int) (165 * alpha));
+        // 1. Fullscreen Gaussian world blur + gentle dark vignette
+        Render2D.drawBlur(0, 0, screenWidth, screenHeight, 0.0F, 20.0F, ColorUtil.rgba(10, 12, 18, (int) (80 * alpha)), alpha);
+        int dimCol = ColorUtil.rgba(0, 0, 0, (int) (65 * alpha));
         Render2D.drawRect(0, 0, screenWidth, screenHeight, dimCol);
 
         // 2. Centered "Меню" title above the ClickGUI window
@@ -105,16 +105,14 @@ public final class PanelLapSuperimposition {
         extractor.pose().scale(scale, scale);
         extractor.pose().translate(-centerX, -centerY);
 
-        // 3. Acrylic frosted glass blur under the main window
-        Render2D.drawBlur(x, y, winW, winH, 8.0F, 24.0F, ColorUtil.rgba(14, 15, 20, (int) (180 * alpha)), alpha);
+        // 3. Authentic Nursultan Frosted Acrylic Glass Window
+        int shadowCol = ColorUtil.rgba(0, 0, 0, (int) (180 * alpha));
+        Render2D.drawShadow(x, y, winW, winH, 10.0F, 16.0F, shadowCol);
 
-        // Main outer frame
-        int mainBg = ColorUtil.rgba(12, 13, 18, (int) (215 * alpha));
-        int mainBorder = ColorUtil.rgba(24, 26, 36, (int) (240 * alpha));
-        int shadowCol = ColorUtil.rgba(0, 0, 0, (int) (210 * alpha));
-
-        Render2D.drawShadow(x, y, winW, winH, 8.0F, 12.0F, shadowCol);
-        Render2D.drawRoundedRect(x, y, winW, winH, 8.0F, mainBg);
+        int windowTint = ColorUtil.rgba(12, 14, 20, (int) (110 * alpha));
+        Render2D.drawBlur(x, y, winW, winH, 8.0F, 24.0F, windowTint, alpha);
+        Render2D.drawRoundedRect(x, y, winW, winH, 8.0F, ColorUtil.rgba(12, 14, 20, (int) (70 * alpha)));
+        int mainBorder = ColorUtil.rgba(36, 42, 58, (int) (160 * alpha));
         Render2D.drawRoundedOutline(x, y, winW, winH, 8.0F, 1.0F, mainBorder);
 
         float sideW = 114.0F;
@@ -125,7 +123,7 @@ public final class PanelLapSuperimposition {
         float contentH = winH - headerH;
 
         // Vertical sidebar separator line
-        Render2D.drawRoundedRect(x + sideW - 1.0F, y, 1.0F, winH, 0.0F, ColorUtil.rgba(22, 24, 32, (int) (220 * alpha)));
+        Render2D.drawRoundedRect(x + sideW - 1.0F, y, 1.0F, winH, 0.0F, ColorUtil.rgba(32, 38, 52, (int) (140 * alpha)));
 
         // 1. SIDEBAR
         renderSidebar(state, x, y, sideW, winH, mouseX, mouseY, alpha);
@@ -171,12 +169,12 @@ public final class PanelLapSuperimposition {
             boolean hovered = mouseX >= itemX && mouseX <= itemX + itemW && mouseY >= curY && mouseY <= curY + itemH;
 
             if (active) {
-                int activeBg = ColorUtil.rgba(23, 32, 54, (int) (240 * alpha));
-                int activeBorder = ColorUtil.rgba(37, 52, 86, (int) (220 * alpha));
+                int activeBg = ColorUtil.rgba(75, 124, 248, (int) (40 * alpha));
+                int activeBorder = ColorUtil.rgba(75, 124, 248, (int) (120 * alpha));
                 Render2D.drawRoundedRect(itemX, curY, itemW, itemH, 4.5F, activeBg);
                 Render2D.drawRoundedOutline(itemX, curY, itemW, itemH, 4.5F, 1.0F, activeBorder);
             } else if (hovered) {
-                int hovBg = ColorUtil.rgba(18, 21, 30, (int) (180 * alpha));
+                int hovBg = ColorUtil.rgba(255, 255, 255, (int) (15 * alpha));
                 Render2D.drawRoundedRect(itemX, curY, itemW, itemH, 4.5F, hovBg);
             }
 
@@ -205,12 +203,12 @@ public final class PanelLapSuperimposition {
             boolean hovered = mouseX >= itemX && mouseX <= itemX + itemW && mouseY >= curY && mouseY <= curY + itemH;
 
             if (active) {
-                int activeBg = ColorUtil.rgba(23, 32, 54, (int) (240 * alpha));
-                int activeBorder = ColorUtil.rgba(37, 52, 86, (int) (220 * alpha));
+                int activeBg = ColorUtil.rgba(75, 124, 248, (int) (40 * alpha));
+                int activeBorder = ColorUtil.rgba(75, 124, 248, (int) (120 * alpha));
                 Render2D.drawRoundedRect(itemX, curY, itemW, itemH, 4.5F, activeBg);
                 Render2D.drawRoundedOutline(itemX, curY, itemW, itemH, 4.5F, 1.0F, activeBorder);
             } else if (hovered) {
-                int hovBg = ColorUtil.rgba(18, 21, 30, (int) (180 * alpha));
+                int hovBg = ColorUtil.rgba(255, 255, 255, (int) (15 * alpha));
                 Render2D.drawRoundedRect(itemX, curY, itemW, itemH, 4.5F, hovBg);
             }
 
@@ -245,8 +243,8 @@ public final class PanelLapSuperimposition {
         float searchX = x + w - searchW - 28.0F;
         float searchY = y + 7.5F;
 
-        int searchBg = ColorUtil.rgba(19, 21, 28, (int) (240 * alpha));
-        int searchBorder = state.isSearchFocused() ? ColorUtil.rgba(75, 124, 248, (int) (255 * alpha)) : ColorUtil.rgba(29, 32, 42, (int) (200 * alpha));
+        int searchBg = ColorUtil.rgba(16, 20, 30, (int) (100 * alpha));
+        int searchBorder = state.isSearchFocused() ? ColorUtil.rgba(75, 124, 248, (int) (220 * alpha)) : ColorUtil.rgba(36, 44, 62, (int) (140 * alpha));
 
         Render2D.drawRoundedRect(searchX, searchY, searchW, searchH, 4.0F, searchBg);
         Render2D.drawRoundedOutline(searchX, searchY, searchW, searchH, 4.0F, 1.0F, searchBorder);
@@ -262,7 +260,7 @@ public final class PanelLapSuperimposition {
         float badgeH = 11.0F;
         float badgeX = searchX + searchW - badgeW - 3.5F;
         float badgeY = searchY + 3.0F;
-        Render2D.drawRoundedRect(badgeX, badgeY, badgeW, badgeH, 2.5F, ColorUtil.rgba(26, 29, 39, (int) (240 * alpha)));
+        Render2D.drawRoundedRect(badgeX, badgeY, badgeW, badgeH, 2.5F, ColorUtil.rgba(24, 30, 44, (int) (120 * alpha)));
         Fonts.drawString(Fonts.SF_MEDIUM, "CTRL+F", badgeX + 2.5F, badgeY + 2.5F, 4.5F, ColorUtil.rgba(110, 118, 138, (int) (220 * alpha)));
         Fonts.drawString(Fonts.NURIK_MENU, Fonts.NURIK_BIND, badgeX + 22.0F, badgeY + 2.5F, 4.0F, ColorUtil.rgba(110, 118, 138, (int) (220 * alpha)));
 
@@ -434,11 +432,11 @@ public final class PanelLapSuperimposition {
     }
 
     private void renderSingleCard(PanelLapState state, String title, List<DisplayItem> items, float x, float y, float w, float h, int mouseX, int mouseY, float alpha) {
-        int cardBg = ColorUtil.rgba(16, 17, 24, (int) (185 * alpha));
-        int cardBorder = ColorUtil.rgba(28, 30, 42, (int) (200 * alpha));
+        int cardTint = ColorUtil.rgba(16, 20, 30, (int) (80 * alpha));
+        int cardBorder = ColorUtil.rgba(38, 46, 64, (int) (140 * alpha));
 
-        Render2D.drawBlur(x, y, w, h, 6.0F, 14.0F, cardBg, alpha);
-        Render2D.drawRoundedRect(x, y, w, h, 6.0F, cardBg);
+        Render2D.drawBlur(x, y, w, h, 6.0F, 16.0F, cardTint, alpha);
+        Render2D.drawRoundedRect(x, y, w, h, 6.0F, ColorUtil.rgba(16, 20, 30, (int) (50 * alpha)));
         Render2D.drawRoundedOutline(x, y, w, h, 6.0F, 1.0F, cardBorder);
 
         // Header
