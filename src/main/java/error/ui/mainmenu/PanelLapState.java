@@ -2,6 +2,7 @@ package error.ui.mainmenu;
 
 import lombok.Getter;
 import lombok.Setter;
+import java.util.List;
 import error.ui.mainmenu.popup.Modal;
 import error.module.Category;
 import error.module.Module;
@@ -61,6 +62,19 @@ public final class PanelLapState {
     private boolean clientSettingsOpen;
     private float popupX;
     private float popupY;
+
+    private float moduleSettingsScroll = 0.0F;
+    private String activeDropdownKey = null;
+    private List<String> activeDropdownOptions = null;
+    private java.util.function.Consumer<String> activeDropdownCallback = null;
+    private float dropdownX, dropdownY, dropdownW;
+    private error.setting.impl.SliderSetting draggingSlider = null;
+    private boolean clientDesc = true;
+    private boolean clientAutoSave = true;
+    private boolean clientDevMode = false;
+    private int clientLanguageIndex = 0;
+    private int clientMenuScaleIndex = 0;
+    private int clientHudScaleIndex = 0;
 
     private float panelX = 140;
     private float panelY = 90;
@@ -134,6 +148,26 @@ public final class PanelLapState {
     public void resetScroll() {
         this.scrollOffset = 0.0F;
         this.targetScroll = 0.0F;
+        this.moduleSettingsScroll = 0.0F;
+    }
+
+    public void openDropdown(String key, List<String> options, float x, float y, float w, java.util.function.Consumer<String> callback) {
+        this.activeDropdownKey = key;
+        this.activeDropdownOptions = options;
+        this.dropdownX = x;
+        this.dropdownY = y;
+        this.dropdownW = w;
+        this.activeDropdownCallback = callback;
+    }
+
+    public void closeDropdown() {
+        this.activeDropdownKey = null;
+        this.activeDropdownOptions = null;
+        this.activeDropdownCallback = null;
+    }
+
+    public boolean isDropdownOpen() {
+        return this.activeDropdownKey != null && this.activeDropdownOptions != null && !this.activeDropdownOptions.isEmpty();
     }
 
     public void switchCategory(Category cat) {
