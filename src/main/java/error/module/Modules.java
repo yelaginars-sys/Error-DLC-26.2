@@ -90,9 +90,81 @@ public class Modules {
     public BlockOutline blockOutline;
 
     public void init() {
+        this.clickGui = new ClickGui();
+        this.anInterface = new Interface();
+        this.notification = new Notification();
+        this.customModels = new CustomModels();
+        this.holdMyItems = new HoldMyItems();
+        this.maceHelper = new MaceHelper();
+        this.maceSounds = new MaceSounds();
+        this.windCharge = new WindCharge();
+        this.autoCaptcha = new AutoCaptcha();
+        this.irc = new IRC();
+        this.expThrow = new ExpThrow();
+        this.aspectRatio = new AspectRatio();
+        this.blockOutline = new BlockOutline();
+        this.sprint = new Sprint();
+        this.elytraSwap = new ElytraSwap();
+        this.fullBright = new FullBright();
+        this.potionTracker = new PotionTracker();
+        this.useTracker = new UseTracker();
+        this.autoEvent = new AutoEvent();
+        this.autoSell = new AutoSell();
+        this.autoMsg = new AutoMsg();
+        this.funPay = new FunPay();
+        this.specScan = new SpecScan();
+        this.autoAccept = new AutoAccept();
+        this.triggerBot = new TriggerBot();
+        this.criticals = new Criticals();
+        this.crystalAura = new CrystalAura();
+        this.ahHelper = new AHHelper();
+        this.antiPush = new AntiPush();
+        this.projectileHelper = new ProjectileHelper();
+        this.autoTool = new AutoTool();
+        this.clickFriend = new ClickFriend();
+        this.autoExplosion = new AutoExplosion();
+        this.popEffect = new PopEffect();
+        this.fireworkESP = new FireworkESP();
+        this.aimAssistant = new AimAssistant();
+        this.itemScroller = new ItemScroller();
+        this.waterSpeed = new WaterSpeed();
+        this.jumpCircles = new JumpCircles();
+        this.freeCam = new FreeCam();
+        this.swingAnimation = new SwingAnimation();
+        this.predictions = new Predictions();
+        this.webTrap = new WebTrap();
+        this.viewModel = new ViewModel();
+        this.blockHighlight = new BlockHighlight();
+        this.autoSwap = new AutoSwap();
+        this.hitEffect = new HitEffect();
+        this.autoTotem = new AutoTotem();
+        this.noFall = new NoFall();
+        this.handShader = new HandShader();
+        this.betterMinecraft = new BetterMinecraft();
+        this.guiWalk = new GuiWalk();
+        this.removals = new Removals();
+        this.noDelay = new NoDelay();
+        this.arrows = new Arrows();
+        this.freeLook = new FreeLook();
+        this.serverHelper = new ServerHelper();
+        this.clickPearl = new ClickPearl();
+        this.timer = new Timer();
+        this.elytraBooster = new ElytraBooster();
+        this.airStuck = new AirStuck();
+        this.fakePlayer = new FakePlayer();
+        this.elytraMotion = new ElytraMotion();
+        this.ambience = new Ambience();
+        this.nameTags = new NameTags();
+        this.auraModule = new AuraModule();
+        this.worldParticles = new WorldParticles();
+        this.particles = new Particles();
+        this.clientSounds = new ClientSounds();
+        this.unHook = new UnHook();
+
+        // Only register ClickGui and Interface in the active modules list
         register(
-                this.clickGui = new ClickGui(),
-                this.anInterface = new Interface()
+                this.clickGui,
+                this.anInterface
         );
     }
 
