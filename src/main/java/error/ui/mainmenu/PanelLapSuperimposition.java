@@ -186,7 +186,9 @@ public final class PanelLapSuperimposition {
 
             // 2. RIGHT MAIN CONTENT AREA INSIDE UNIFIED CONTAINER
             float breadY = y + 10.0F;
-            Fonts.drawString(Fonts.SF_MEDIUM, "ERROR DLC  /  " + state.getCurrentCategory().name(), contentX + 14.0F, breadY + 2.0F, 8.5F, ColorUtil.rgba(230, 225, 245, (int) (240 * mainGuiAlpha)));
+            float logoIconSize = 12.0F;
+            Render2D.drawTexture(LOGO_TEX, contentX + 14.0F, breadY + 1.0F, logoIconSize, logoIconSize, ColorUtil.rgba(255, 255, 255, (int) (255 * mainGuiAlpha)));
+            Fonts.drawString(Fonts.SF_MEDIUM, "Error DLC  /  " + state.getCurrentCategory().name(), contentX + 14.0F + logoIconSize + 6.0F, breadY + 2.5F, 8.5F, ColorUtil.rgba(230, 225, 245, (int) (240 * mainGuiAlpha)));
 
             float themeBtnW = 68.0F;
             float themeBtnH = 17.0F;
