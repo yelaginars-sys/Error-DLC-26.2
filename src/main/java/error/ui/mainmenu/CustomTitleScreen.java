@@ -105,8 +105,8 @@ public class CustomTitleScreen extends Screen {
         try {
             Render2DUtil.beginFrame();
 
-            // 1. Solid Dark Glass Background (prevents black screen on frame 1)
-            Render2D.drawRect(0, 0, screenWidth, screenHeight, ColorUtil.rgba(10, 8, 18, 255));
+            // 1. Solid Pure Black Background
+            Render2D.drawRect(0, 0, screenWidth, screenHeight, ColorUtil.rgba(0, 0, 0, 255));
 
             // Animated Night Sky Background (Procedural Stars, Nebula, Aurora, Snow)
             WinterMenuRenderer.render(screenWidth, screenHeight, this.screenAlpha, 0.0F);
@@ -141,12 +141,12 @@ public class CustomTitleScreen extends Screen {
         float logoY = centerY - 152.0F + logoFloat;
         float logoX = centerX - logoSize / 2.0F;
 
-        // Logo Halo & Liquid Glass Backing Glow
-        Render2D.drawShadow(logoX - 8.0F, logoY - 8.0F, logoSize + 16.0F, logoSize + 16.0F, logoSize / 2.0F, 24.0F,
-                ColorUtil.rgba(ColorUtil.red(accent), ColorUtil.green(accent), ColorUtil.blue(accent), (int) (85 * this.screenAlpha)));
+        // Subtle Logo Halo & Backing Glow (Reduced size and opacity)
+        Render2D.drawShadow(logoX - 4.0F, logoY - 4.0F, logoSize + 8.0F, logoSize + 8.0F, logoSize / 2.0F, 10.0F,
+                ColorUtil.rgba(ColorUtil.red(accent), ColorUtil.green(accent), ColorUtil.blue(accent), (int) (35 * this.screenAlpha)));
 
-        Render2D.drawBlur(logoX - 4.0F, logoY - 4.0F, logoSize + 8.0F, logoSize + 8.0F, (logoSize + 8.0F) / 2.0F, 14.0F,
-                ColorUtil.rgba(20, 18, 30, (int) (210 * this.screenAlpha)), this.screenAlpha);
+        Render2D.drawBlur(logoX - 2.0F, logoY - 2.0F, logoSize + 4.0F, logoSize + 4.0F, (logoSize + 4.0F) / 2.0F, 6.0F,
+                ColorUtil.rgba(10, 10, 15, (int) (180 * this.screenAlpha)), this.screenAlpha);
 
         Render2D.drawTexture(LOGO_TEXTURE, logoX, logoY, logoSize, logoSize,
                 ColorUtil.rgba(255, 255, 255, (int) (255 * this.screenAlpha)));

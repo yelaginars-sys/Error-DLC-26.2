@@ -151,28 +151,24 @@ public final class WinterMenuRenderer {
         long  now     = System.currentTimeMillis();
         float timeSec = (now - startTime) / 1000.0f;
 
-        // ── 1. Deep space dark background ────────────────────────────────────
-        int topSky    = ColorUtil.rgba(6, 5, 12, (int)(255 * alpha));
-        int bottomSky = ColorUtil.rgba(8, 7, 16, (int)(255 * alpha));
-        Render2D.drawGradientRound(0, cameraYOffset, width, height, 0.0f,
-                topSky, topSky, bottomSky, bottomSky);
+        // ── 1. Pure Black Background ──────────────────────────────────────────
+        int blackSky = ColorUtil.rgba(0, 0, 0, (int)(255 * alpha));
+        Render2D.drawRect(0, cameraYOffset, width, height, blackSky);
 
-        // ── 2. Central top ambient glow in Theme Accent Color ────────────────
+        // ── 2. Subtle ambient glow (Reduced intensity & size) ─────────────────
         int accentColor = Theme.getAccentColor();
         float pulse = 0.85F + 0.15F * (float) Math.sin(timeSec * 0.8F);
         int ar = ColorUtil.red(accentColor);
         int ag = ColorUtil.green(accentColor);
         int ab = ColorUtil.blue(accentColor);
 
-        float glowW = width * 0.55F;
-        float glowH = height * 0.42F;
+        float glowW = width * 0.35F;
+        float glowH = height * 0.25F;
         float glowX = (width - glowW) / 2.0F;
         float glowY = (height * 0.22F) - (glowH / 2.0F) + cameraYOffset;
 
-        Render2D.drawShadow(glowX, glowY, glowW, glowH, glowH * 0.5F, 70.0F,
-                ColorUtil.rgba(ar, ag, ab, (int) (65 * alpha * pulse)));
-        Render2D.drawShadow(glowX + glowW * 0.15F, glowY + glowH * 0.15F, glowW * 0.70F, glowH * 0.70F, glowH * 0.35F, 45.0F,
-                ColorUtil.rgba(ar, ag, ab, (int) (85 * alpha * pulse)));
+        Render2D.drawShadow(glowX, glowY, glowW, glowH, glowH * 0.5F, 25.0F,
+                ColorUtil.rgba(ar, ag, ab, (int) (15 * alpha * pulse)));
 
         // ── 5. Twinkling stars ──────────────────────────────────────────────
         for (Star star : STARS) {
