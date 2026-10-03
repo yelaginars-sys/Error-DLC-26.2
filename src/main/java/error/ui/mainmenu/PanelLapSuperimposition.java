@@ -109,9 +109,9 @@ public final class PanelLapSuperimposition {
         Render2D.drawBlur(x, y, winW, winH, 8.0F, 24.0F, ColorUtil.rgba(14, 15, 20, (int) (180 * alpha)), alpha);
 
         // Main outer frame
-        int mainBg = ColorUtil.rgba(14, 15, 20, (int) (248 * alpha));
-        int mainBorder = ColorUtil.rgba(24, 26, 34, (int) (255 * alpha));
-        int shadowCol = ColorUtil.rgba(0, 0, 0, (int) (190 * alpha));
+        int mainBg = ColorUtil.rgba(12, 13, 18, (int) (215 * alpha));
+        int mainBorder = ColorUtil.rgba(24, 26, 36, (int) (240 * alpha));
+        int shadowCol = ColorUtil.rgba(0, 0, 0, (int) (210 * alpha));
 
         Render2D.drawShadow(x, y, winW, winH, 8.0F, 12.0F, shadowCol);
         Render2D.drawRoundedRect(x, y, winW, winH, 8.0F, mainBg);
@@ -542,10 +542,11 @@ public final class PanelLapSuperimposition {
         popX = Math.max(state.getPanelX() + 10.0F, Math.min(popX, state.getPanelX() + state.getPanelWidth() - popW - 10.0F));
         popY = Math.max(state.getPanelY() + 8.0F, Math.min(popY, state.getPanelY() + state.getPanelHeight() - popH - 8.0F));
 
-        int bg = ColorUtil.rgba(14, 15, 20, (int) (252 * alpha));
-        int border = ColorUtil.rgba(24, 26, 34, (int) (255 * alpha));
+        int bg = ColorUtil.rgba(13, 14, 20, (int) (215 * alpha));
+        int border = ColorUtil.rgba(26, 28, 38, (int) (240 * alpha));
 
-        Render2D.drawShadow(popX, popY, popW, popH, 10.0F, 12.0F, ColorUtil.rgba(0, 0, 0, (int) (210 * alpha)));
+        Render2D.drawShadow(popX, popY, popW, popH, 10.0F, 16.0F, ColorUtil.rgba(0, 0, 0, (int) (220 * alpha)));
+        Render2D.drawBlur(popX, popY, popW, popH, 6.0F, 16.0F, bg, alpha);
         Render2D.drawRoundedRect(popX, popY, popW, popH, 6.0F, bg);
         Render2D.drawRoundedOutline(popX, popY, popW, popH, 6.0F, 1.0F, border);
 
@@ -803,10 +804,11 @@ public final class PanelLapSuperimposition {
         float popX = state.getPanelX() + state.getPanelWidth() - popW - 10.0F;
         float popY = state.getPanelY() + 38.0F;
 
-        int bg = ColorUtil.rgba(14, 15, 20, (int) (252 * alpha));
-        int border = ColorUtil.rgba(24, 26, 34, (int) (255 * alpha));
+        int bg = ColorUtil.rgba(13, 14, 20, (int) (215 * alpha));
+        int border = ColorUtil.rgba(26, 28, 38, (int) (240 * alpha));
 
-        Render2D.drawShadow(popX, popY, popW, popH, 10.0F, 12.0F, ColorUtil.rgba(0, 0, 0, (int) (210 * alpha)));
+        Render2D.drawShadow(popX, popY, popW, popH, 10.0F, 16.0F, ColorUtil.rgba(0, 0, 0, (int) (220 * alpha)));
+        Render2D.drawBlur(popX, popY, popW, popH, 6.0F, 16.0F, bg, alpha);
         Render2D.drawRoundedRect(popX, popY, popW, popH, 6.0F, bg);
         Render2D.drawRoundedOutline(popX, popY, popW, popH, 6.0F, 1.0F, border);
 
@@ -873,10 +875,11 @@ public final class PanelLapSuperimposition {
         popX = Math.max(state.getPanelX() + 10.0F, Math.min(popX, state.getPanelX() + state.getPanelWidth() - popW - 10.0F));
         popY = Math.max(state.getPanelY() + 10.0F, Math.min(popY, state.getPanelY() + state.getPanelHeight() - popH - 10.0F));
 
-        int bg = ColorUtil.rgba(14, 15, 20, (int) (252 * alpha));
-        int border = ColorUtil.rgba(24, 26, 34, (int) (255 * alpha));
+        int bg = ColorUtil.rgba(13, 14, 20, (int) (215 * alpha));
+        int border = ColorUtil.rgba(26, 28, 38, (int) (240 * alpha));
 
-        Render2D.drawShadow(popX, popY, popW, popH, 8.0F, 10.0F, ColorUtil.rgba(0, 0, 0, (int) (180 * alpha)));
+        Render2D.drawShadow(popX, popY, popW, popH, 8.0F, 12.0F, ColorUtil.rgba(0, 0, 0, (int) (200 * alpha)));
+        Render2D.drawBlur(popX, popY, popW, popH, 6.0F, 16.0F, bg, alpha);
         Render2D.drawRoundedRect(popX, popY, popW, popH, 6.0F, bg);
         Render2D.drawRoundedOutline(popX, popY, popW, popH, 6.0F, 1.0F, border);
 
