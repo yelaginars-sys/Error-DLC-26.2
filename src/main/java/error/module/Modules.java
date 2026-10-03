@@ -80,6 +80,7 @@ public class Modules {
     public Notification notification;
     public CustomModels customModels;
     public MaceHelper maceHelper;
+    public MaceSounds maceSounds;
     public WindCharge windCharge;
     public AutoCaptcha autoCaptcha;
     public IRC irc;
@@ -94,6 +95,7 @@ public class Modules {
                 this.customModels = new CustomModels(),
                 this.holdMyItems = new HoldMyItems(),
                 this.maceHelper = new MaceHelper(),
+                this.maceSounds = new MaceSounds(),
                 this.windCharge = new WindCharge(),
                 this.autoCaptcha = new AutoCaptcha(),
                 this.irc = new IRC(),
