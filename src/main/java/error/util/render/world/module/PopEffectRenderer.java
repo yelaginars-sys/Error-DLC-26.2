@@ -22,6 +22,7 @@ import java.util.concurrent.ThreadLocalRandom;
 public final class PopEffectRenderer {
 
     private final ParticlesWorldRenderer particleRenderer = new ParticlesWorldRenderer();
+    private final error.util.render.effects.BloodKillEffect bloodKillEffect = new error.util.render.effects.BloodKillEffect();
     private final List<PopParticle> particles = new ArrayList<>();
     private final List<BeamInstance> beams = new ArrayList<>();
     private final List<LightningBolt> lightnings = new ArrayList<>();
@@ -352,6 +353,12 @@ public final class PopEffectRenderer {
         }
     }
 
+    public synchronized void spawnBloodKill(Vec3 pos, float width, float height, PopEffect module) {
+        int count = (int) module.count.getValue().floatValue();
+        int col = module.getEffectColor();
+        this.bloodKillEffect.burst(pos, width, height, count, 1.2F, module.size.getValue(), col);
+    }
+
 
     public synchronized void submitChams(PoseStack poseStack, SubmitNodeCollector collector, CameraRenderState camera) {
         if (this.chams.isEmpty() || camera == null) return;
@@ -385,6 +392,11 @@ public final class PopEffectRenderer {
     public synchronized void render(PopEffect module, float tickDelta) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null) return;
+
+        if (!this.bloodKillEffect.isEmpty()) {
+            this.bloodKillEffect.tick(module.lifetime.getValue());
+            this.bloodKillEffect.render(mc.gameRenderer.mainCamera(), tickDelta, module.lifetime.getValue());
+        }
 
         long now = System.currentTimeMillis();
         float dt = Math.min(0.1F, (now - this.lastFrameTime) / 1000.0F);
@@ -486,6 +498,7 @@ public final class PopEffectRenderer {
     }
 
     public synchronized void clear() {
+        this.bloodKillEffect.clear();
         this.particles.clear();
         this.beams.clear();
         this.lightnings.clear();

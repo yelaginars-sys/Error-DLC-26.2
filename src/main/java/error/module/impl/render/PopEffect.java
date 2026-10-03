@@ -25,7 +25,7 @@ public final class PopEffect extends Module {
     public final CheckBox onlyPlayers = checkbox("Только игроки", true);
 
     public final ModeSetting totemEffect = mode("Эффект тотема", "Beam", "Beam", "Взрыв", "Выкл");
-    public final ModeSetting killEffect = mode("Эффект убийства", "Beam", "Beam", "Взрыв", "Выкл");
+    public final ModeSetting killEffect = mode("Эффект убийства", "Beam", "Beam", "Взрыв", "Blood", "Выкл");
     public final ModeSetting hitEffect = mode("Эффект при ударе", "Молния", "Лень", "Молния", "Выкл");
 
     public final CheckBox themeColor = checkbox("Цвет от темы", true);
@@ -110,6 +110,8 @@ public final class PopEffect extends Module {
             this.renderer.spawnKillExplosion(pos, this);
         } else if ("Beam".equalsIgnoreCase(mode)) {
             this.renderer.spawnKillBeam(pos, this);
+        } else if ("Blood".equalsIgnoreCase(mode)) {
+            this.renderer.spawnBloodKill(entity.position(), entity.getBbWidth(), entity.getBbHeight(), this);
         }
     }
 

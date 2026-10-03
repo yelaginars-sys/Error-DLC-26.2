@@ -28,7 +28,7 @@ public class AuraModule extends Module {
     private final SliderSetting attackRange = slider("Attack Range", 3.0f, 1.0f, 6.0f, 0.1f);
     private final SliderSetting aimRange = slider("Aim Range", 4.5f, 1.0f, 8.0f, 0.1f);
 
-    private final ModeSetting rotMode = mode("Rotation", RotationRegistry.getNames()[0], RotationRegistry.getNames());
+    private final ModeSetting rotMode = mode("Rotation", "SpookyTime", "SpookyTime", "4pookyTime", "Linear", "Matrix", "Funtime", "Builder");
     private final ModeSetting moveFix = mode("Movement Correction", "Silent", "Silent", "Current");
     private final ModeSetting disengageMode = mode("Disengage", "Smooth", "Smooth", "Instant");
     private final ModeSetting sprintReset = mode("Sprint Reset", "Legit", "None", "Legit", "Packet");

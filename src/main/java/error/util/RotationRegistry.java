@@ -14,6 +14,7 @@ public final class RotationRegistry {
         register(new LinearRotation());
         register(new MatrixRotation());
         register(new SpookyTime());
+        ROTATIONS.put("4pookytime", get("SpookyTime"));
         register(new FuntimeRotation());
         register(new BuilderRotation());
     }
