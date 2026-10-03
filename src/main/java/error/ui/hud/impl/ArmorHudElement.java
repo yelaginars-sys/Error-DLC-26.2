@@ -20,14 +20,21 @@ import java.util.List;
 
 public final class ArmorHudElement extends HudElement implements IMinecraft {
 
-    private static final List<ItemStack> PREVIEW_ARMOR = List.of(
-            new ItemStack(Items.DIAMOND_HELMET),
-            new ItemStack(Items.NETHERITE_CHESTPLATE),
-            new ItemStack(Items.NETHERITE_LEGGINGS),
-            new ItemStack(Items.NETHERITE_BOOTS),
-            new ItemStack(Items.TOTEM_OF_UNDYING),
-            new ItemStack(Items.END_CRYSTAL)
-    );
+    private List<ItemStack> previewArmorCache = null;
+
+    private List<ItemStack> getPreviewArmor() {
+        if (previewArmorCache == null) {
+            previewArmorCache = List.of(
+                    new ItemStack(Items.DIAMOND_HELMET),
+                    new ItemStack(Items.NETHERITE_CHESTPLATE),
+                    new ItemStack(Items.NETHERITE_LEGGINGS),
+                    new ItemStack(Items.NETHERITE_BOOTS),
+                    new ItemStack(Items.TOTEM_OF_UNDYING),
+                    new ItemStack(Items.END_CRYSTAL)
+            );
+        }
+        return previewArmorCache;
+    }
 
     public ArmorHudElement() {
         super("armorhud", "Armor HUD", 380.0F, 430.0F, 120.0F, 28.0F, true);
@@ -48,7 +55,7 @@ public final class ArmorHudElement extends HudElement implements IMinecraft {
 
         boolean hasItems = items.stream().anyMatch(s -> s != null && !s.isEmpty());
         if (!hasItems && HudManager.getInstance().isDraggableScreenOpen()) {
-            items = PREVIEW_ARMOR;
+            items = getPreviewArmor();
             hasItems = true;
         }
 
