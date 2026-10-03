@@ -55,6 +55,12 @@ public final class PanelLapState {
     private String lastDescription = "";
 
     private Modal activeModal;
+    private Module activeModuleSettings;
+    private Module activeModuleBind;
+    private boolean listeningBind;
+    private boolean clientSettingsOpen;
+    private float popupX;
+    private float popupY;
 
     private float panelX = 140;
     private float panelY = 90;
