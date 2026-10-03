@@ -46,6 +46,8 @@ public final class PanelLapState {
     private String friendInput = "";
     private boolean friendInputFocused;
 
+    private String eventServerTab = "HolyWorld";
+
     private boolean accountAddOpen;
     private String accountAddQuery = "";
 

@@ -18,6 +18,7 @@ import error.util.client.localization.Localization;
 import error.util.render.Render2D;
 import error.util.render.font.Fonts;
 import error.util.render.font.IconUse;
+import java.util.ArrayList;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -245,6 +246,8 @@ public final class PanelLapSuperimposition {
             renderCosmetics(state, extractor, contentX + 8.0F, contentY + slideY, contentW - 16.0F, contentH, mouseX, mouseY, contentAlpha);
         } else if (state.getCurrentCategory() == Category.THEMES) {
             renderThemes(state, contentX + 8.0F, contentY + slideY, contentW - 16.0F, contentH, mouseX, mouseY, contentAlpha);
+        } else if (state.getCurrentCategory() == Category.EVENTS) {
+            renderEvents(state, contentX + 8.0F, contentY + slideY, contentW - 16.0F, contentH, mouseX, mouseY, contentAlpha);
         } else {
             renderModules(state, contentX + 8.0F, contentY + slideY, contentW - 16.0F, contentH, mouseX, mouseY, contentAlpha);
         }
@@ -803,7 +806,112 @@ public final class PanelLapSuperimposition {
             case CONFIGS -> IconUse.GEAR;
             case FRIENDS -> IconUse.GROUP;
             case THEMES -> IconUse.SPUTNIK;
+            case EVENTS -> IconUse.COMPASS;
         };
+    }
+
+    private void renderEvents(PanelLapState state, float startX, float startY, float totalWidth, float totalHeight, int mouseX, int mouseY, float alpha) {
+        float currentY = startY - state.getScrollOffset();
+        int accent = Theme.getAccentColor();
+
+        // Server Sub-tabs
+        String[] serverTabs = new String[] {"HolyWorld", "FunTime", "SpookyTime"};
+        float tabW = (totalWidth - 12.0F) / 3.0F;
+        float tabH = 22.0F;
+
+        for (int i = 0; i < serverTabs.length; i++) {
+            float tx = startX + i * (tabW + 6.0F);
+            float ty = currentY;
+            String serverName = serverTabs[i];
+
+            boolean selected = state.getEventServerTab().equalsIgnoreCase(serverName);
+            boolean hovered = mouseX >= tx && mouseX <= tx + tabW && mouseY >= ty && mouseY <= ty + tabH;
+
+            int bg = selected ? ColorUtil.rgba(ColorUtil.red(accent), ColorUtil.green(accent), ColorUtil.blue(accent), (int) (70 * alpha))
+                              : (hovered ? ColorUtil.rgba(255, 255, 255, (int) (18 * alpha)) : ColorUtil.rgba(255, 255, 255, (int) (10 * alpha)));
+            int border = selected ? accent : (hovered ? ColorUtil.rgba(255, 255, 255, (int) (40 * alpha)) : ColorUtil.rgba(255, 255, 255, (int) (20 * alpha)));
+
+            Render2D.drawRoundedRect(tx, ty, tabW, tabH, 5.0F, bg);
+            Render2D.drawRoundedOutline(tx, ty, tabW, ty + tabH, 5.0F, 1.0F, border);
+            Fonts.drawCenteredString(Fonts.SF_MEDIUM, serverName, tx + tabW / 2.0F, ty + 6.0F, 7.5F, selected ? 0xFFFFFFFF : ColorUtil.rgba(200, 200, 220, (int) (200 * alpha)));
+        }
+        currentY += tabH + 16.0F;
+
+        String currentServer = state.getEventServerTab();
+        Fonts.drawString(Fonts.SF_MEDIUM, "Активные ивенты — " + currentServer, startX, currentY, 8.5F, ColorUtil.rgba(240, 240, 255, (int) (240 * alpha)));
+        currentY += 14.0F;
+
+        // Render event cards based on currentServer tab
+        record EventCard(String name, String location, String status, String timer, int statusColor) {}
+        List<EventCard> eventCards = new ArrayList<>();
+
+        if (currentServer.equalsIgnoreCase("HolyWorld")) {
+            eventCards.add(new EventCard("Мистический Сундук", "Анархия #1 (X: 1420, Z: -850)", "АКТИВЕН", "04:12", ColorUtil.rgba(40, 220, 100, 255)));
+            eventCards.add(new EventCard("Упавший Метеорит", "Анархия #3 (X: -610, Z: 1100)", "СПАВН ЧЕРЕЗ", "12:45", ColorUtil.rgba(255, 180, 40, 255)));
+            eventCards.add(new EventCard("Извержение Вулкана", "Анархия #2 (X: 2040, Z: 450)", "ОЖИДАНИЕ", "28:10", ColorUtil.rgba(160, 160, 180, 255)));
+        } else if (currentServer.equalsIgnoreCase("FunTime")) {
+            eventCards.add(new EventCard("Мистический Сундук", "Анархия #102 (X: 890, Z: -1230)", "АКТИВЕН", "02:30", ColorUtil.rgba(40, 220, 100, 255)));
+            eventCards.add(new EventCard("Караван с Наградой", "Анархия #105 (X: -1450, Z: 320)", "СПАВН ЧЕРЕЗ", "08:15", ColorUtil.rgba(255, 180, 40, 255)));
+            eventCards.add(new EventCard("Андайн Босс", "Спавн Анархии #101", "ОЖИДАНИЕ", "45:00", ColorUtil.rgba(160, 160, 180, 255)));
+        } else { // SpookyTime
+            eventCards.add(new EventCard("Тайный Сундук", "Гриф #1 (X: 530, Z: -920)", "АКТИВЕН", "06:40", ColorUtil.rgba(40, 220, 100, 255)));
+            eventCards.add(new EventCard("Сумеречный Босс", "Гриф #2 (X: -340, Z: 1480)", "СПАВН ЧЕРЕЗ", "15:20", ColorUtil.rgba(255, 180, 40, 255)));
+        }
+
+        for (EventCard card : eventCards) {
+            float cardH = 34.0F;
+            boolean hovered = mouseX >= startX && mouseX <= startX + totalWidth && mouseY >= currentY && mouseY <= currentY + cardH;
+
+            int cardBg = hovered ? ColorUtil.rgba(255, 255, 255, (int) (16 * alpha)) : ColorUtil.rgba(255, 255, 255, (int) (8 * alpha));
+            int cardOutline = hovered ? ColorUtil.rgba(255, 255, 255, (int) (35 * alpha)) : ColorUtil.rgba(255, 255, 255, (int) (18 * alpha));
+
+            Render2D.drawRoundedRect(startX, currentY, totalWidth, cardH, 6.0F, cardBg);
+            Render2D.drawRoundedOutline(startX, currentY, totalWidth, cardH, 6.0F, 1.0F, cardOutline);
+
+            // Icon indicator
+            Render2D.drawShadow(startX + 8.0F, currentY + 7.0F, 20.0F, 20.0F, 4.0F, 3.0F, ColorUtil.withAlpha(accent, (int) (100 * alpha)));
+            Render2D.drawRoundedRect(startX + 8.0F, currentY + 7.0F, 20.0F, 20.0F, 5.0F, ColorUtil.multiplyAlpha(accent, 0.4F * alpha));
+            Fonts.drawCenteredIcon(IconUse.COMPASS, startX + 18.0F, currentY + 12.0F, 10.0F, ColorUtil.rgba(240, 240, 255, (int) (240 * alpha)));
+
+            // Event Title & Location
+            Fonts.drawString(Fonts.SF_MEDIUM, card.name(), startX + 34.0F, currentY + 6.0F, 8.0F, ColorUtil.rgba(255, 255, 255, (int) (245 * alpha)));
+            Fonts.drawString(Fonts.SF_MEDIUM, card.location(), startX + 34.0F, currentY + 18.0F, 6.5F, ColorUtil.rgba(170, 170, 190, (int) (200 * alpha)));
+
+            // Status Badge & Timer
+            float statusW = 85.0F;
+            float statusX = startX + totalWidth - statusW - 8.0F;
+            float statusY = currentY + 8.0F;
+
+            Render2D.drawRoundedRect(statusX, statusY, statusW, 18.0F, 4.0F, ColorUtil.multiplyAlpha(card.statusColor(), 0.25F * alpha));
+            Render2D.drawRoundedOutline(statusX, statusY, statusW, 18.0F, 4.0F, 1.0F, ColorUtil.multiplyAlpha(card.statusColor(), 0.7F * alpha));
+            Fonts.drawCenteredString(Fonts.SF_MEDIUM, card.status() + "  " + card.timer(), statusX + statusW / 2.0F, statusY + 4.5F, 6.5F, 0xFFFFFFFF);
+
+            currentY += cardH + 6.0F;
+        }
+
+        float totalContentH = currentY + state.getScrollOffset() - startY;
+        state.setMaxScroll(Math.max(0.0F, totalContentH - totalHeight + 10.0F));
+    }
+
+    private boolean handleEventsClick(PanelLapState state, float startX, float startY, float totalWidth, float totalHeight, int mouseX, int mouseY, int button) {
+        if (button != GLFW.GLFW_MOUSE_BUTTON_LEFT) return false;
+
+        float currentY = startY - state.getScrollOffset();
+
+        String[] serverTabs = new String[] {"HolyWorld", "FunTime", "SpookyTime"};
+        float tabW = (totalWidth - 12.0F) / 3.0F;
+        float tabH = 22.0F;
+
+        for (int i = 0; i < serverTabs.length; i++) {
+            float tx = startX + i * (tabW + 6.0F);
+            float ty = currentY;
+            if (mouseX >= tx && mouseX <= tx + tabW && mouseY >= ty && mouseY <= ty + tabH) {
+                state.setEventServerTab(serverTabs[i]);
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private void renderThemes(PanelLapState state, float startX, float startY, float totalWidth, float totalHeight, int mouseX, int mouseY, float alpha) {
@@ -1132,6 +1240,8 @@ public final class PanelLapSuperimposition {
                 return handleFriendsClick(state, contentX + 8.0F, contentY, contentW - 16.0F, contentH, mouseX, mouseY, button);
             } else if (state.getCurrentCategory() == Category.THEMES) {
                 return handleThemesClick(state, contentX + 8.0F, contentY, contentW - 16.0F, contentH, mouseX, mouseY, button);
+            } else if (state.getCurrentCategory() == Category.EVENTS) {
+                return handleEventsClick(state, contentX + 8.0F, contentY, contentW - 16.0F, contentH, mouseX, mouseY, button);
             }
 
             List<Module> list = getFilteredModules(state);
