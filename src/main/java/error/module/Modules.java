@@ -70,7 +70,8 @@ public class Modules {
     public TriggerBot triggerBot;
     public Criticals criticals;
     public AutoAccept autoAccept;
-    public ActionTracker actionTracker;
+    public PotionTracker potionTracker;
+    public UseTracker useTracker;
     public HoldMyItems holdMyItems;
     public Notification notification;
     public CustomModels customModels;
@@ -98,7 +99,8 @@ public class Modules {
                 this.sprint = new Sprint(),
                 this.elytraSwap = new ElytraSwap(),
                 this.fullBright = new FullBright(),
-                this.actionTracker = new ActionTracker(),
+                this.potionTracker = new PotionTracker(),
+                this.useTracker = new UseTracker(),
                 this.autoAccept = new AutoAccept(),
                 this.triggerBot = new TriggerBot(),
                 this.criticals = new Criticals(),
