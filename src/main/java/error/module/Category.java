@@ -15,6 +15,7 @@ public enum Category {
     COSMETICS("Cosmetics"),
     PLAYER("Player"),
     MISC("Misc"),
+    THEMES("Themes"),
     CONFIGS("Configs"),
     FRIENDS("Friends");
 

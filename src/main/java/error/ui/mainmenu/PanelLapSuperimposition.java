@@ -243,6 +243,8 @@ public final class PanelLapSuperimposition {
             renderFriends(state, contentX + 8.0F, contentY + slideY, contentW - 16.0F, contentH, mouseX, mouseY, contentAlpha);
         } else if (state.getCurrentCategory() == Category.COSMETICS) {
             renderCosmetics(state, extractor, contentX + 8.0F, contentY + slideY, contentW - 16.0F, contentH, mouseX, mouseY, contentAlpha);
+        } else if (state.getCurrentCategory() == Category.THEMES) {
+            renderThemes(state, contentX + 8.0F, contentY + slideY, contentW - 16.0F, contentH, mouseX, mouseY, contentAlpha);
         } else {
             renderModules(state, contentX + 8.0F, contentY + slideY, contentW - 16.0F, contentH, mouseX, mouseY, contentAlpha);
         }
@@ -800,7 +802,226 @@ public final class PanelLapSuperimposition {
             case MISC -> IconUse.MISC;
             case CONFIGS -> IconUse.GEAR;
             case FRIENDS -> IconUse.GROUP;
+            case THEMES -> IconUse.SPUTNIK;
         };
+    }
+
+    private void renderThemes(PanelLapState state, float startX, float startY, float totalWidth, float totalHeight, int mouseX, int mouseY, float alpha) {
+        float currentY = startY - state.getScrollOffset();
+        int accent = Theme.getAccentColor();
+
+        // Section 1: Presets
+        Fonts.drawString(Fonts.SF_MEDIUM, Localization.get("Пресеты тем"), startX, currentY, 8.5F, ColorUtil.rgba(240, 240, 255, (int) (240 * alpha)));
+        currentY += 14.0F;
+
+        record ThemePreset(String name, int color) {}
+        ThemePreset[] presets = new ThemePreset[] {
+            new ThemePreset("Error DLC", ColorUtil.rgba(0, 160, 255, 255)),
+            new ThemePreset("Debuda Violet", ColorUtil.rgba(139, 92, 246, 255)),
+            new ThemePreset("Cyber Rose", ColorUtil.rgba(235, 75, 180, 255)),
+            new ThemePreset("Emerald", ColorUtil.rgba(16, 185, 129, 255)),
+            new ThemePreset("Sunset Amber", ColorUtil.rgba(245, 158, 11, 255)),
+            new ThemePreset("Crimson Red", ColorUtil.rgba(239, 68, 68, 255)),
+            new ThemePreset("Toxic Lime", ColorUtil.rgba(132, 204, 22, 255))
+        };
+
+        float presetW = (totalWidth - 12.0F) / 3.0F;
+        float presetH = 24.0F;
+        for (int i = 0; i < presets.length; i++) {
+            float px = startX + (i % 3) * (presetW + 6.0F);
+            float py = currentY + (i / 3) * (presetH + 6.0F);
+
+            ThemePreset preset = presets[i];
+            boolean selected = (accent == preset.color());
+            boolean hovered = mouseX >= px && mouseX <= px + presetW && mouseY >= py && mouseY <= py + presetH;
+
+            int bg = selected ? ColorUtil.rgba(ColorUtil.red(preset.color()), ColorUtil.green(preset.color()), ColorUtil.blue(preset.color()), (int) (60 * alpha))
+                              : (hovered ? ColorUtil.rgba(255, 255, 255, (int) (18 * alpha)) : ColorUtil.rgba(255, 255, 255, (int) (10 * alpha)));
+            int border = selected ? preset.color() : (hovered ? ColorUtil.rgba(255, 255, 255, (int) (40 * alpha)) : ColorUtil.rgba(255, 255, 255, (int) (20 * alpha)));
+
+            Render2D.drawRoundedRect(px, py, presetW, presetH, 5.0F, bg);
+            Render2D.drawRoundedOutline(px, py, presetW, presetH, 5.0F, 1.0F, border);
+
+            // Color circle dot
+            Render2D.drawShadow(px + 7.0F, py + 7.0F, 10.0F, 10.0F, 4.0F, 3.0F, ColorUtil.withAlpha(preset.color(), (int) (150 * alpha)));
+            Render2D.drawRoundedRect(px + 7.0F, py + 7.0F, 10.0F, 10.0F, 5.0F, preset.color());
+
+            Fonts.drawString(Fonts.SF_MEDIUM, preset.name(), px + 22.0F, py + 7.0F, 7.0F, ColorUtil.rgba(240, 240, 255, (int) (230 * alpha)));
+        }
+        currentY += ((presets.length + 2) / 3) * (presetH + 6.0F) + 10.0F;
+
+        // Section 2: Background Modes
+        Fonts.drawString(Fonts.SF_MEDIUM, Localization.get("Режим фона (Background)"), startX, currentY, 8.5F, ColorUtil.rgba(240, 240, 255, (int) (240 * alpha)));
+        currentY += 14.0F;
+
+        String[] bgModes = new String[] {"Blur", "Dark Glass", "Translucent", "Solid"};
+        float bgW = (totalWidth - 18.0F) / 4.0F;
+        float bgH = 22.0F;
+        for (int i = 0; i < bgModes.length; i++) {
+            float bx = startX + i * (bgW + 6.0F);
+            float by = currentY;
+            String mode = bgModes[i];
+
+            boolean selected = Theme.getBackgroundMode().equalsIgnoreCase(mode);
+            boolean hovered = mouseX >= bx && mouseX <= bx + bgW && mouseY >= by && mouseY <= by + bgH;
+
+            int bg = selected ? ColorUtil.rgba(ColorUtil.red(accent), ColorUtil.green(accent), ColorUtil.blue(accent), (int) (70 * alpha))
+                              : (hovered ? ColorUtil.rgba(255, 255, 255, (int) (18 * alpha)) : ColorUtil.rgba(255, 255, 255, (int) (10 * alpha)));
+            int border = selected ? accent : (hovered ? ColorUtil.rgba(255, 255, 255, (int) (40 * alpha)) : ColorUtil.rgba(255, 255, 255, (int) (20 * alpha)));
+
+            Render2D.drawRoundedRect(bx, by, bgW, bgH, 5.0F, bg);
+            Render2D.drawRoundedOutline(bx, by, bgW, bgH, 5.0F, 1.0F, border);
+            Fonts.drawCenteredString(Fonts.SF_MEDIUM, mode, bx + bgW / 2.0F, by + 6.0F, 7.0F, selected ? 0xFFFFFFFF : ColorUtil.rgba(200, 200, 220, (int) (200 * alpha)));
+        }
+        currentY += bgH + 16.0F;
+
+        // Section 3: Glass Styles
+        Fonts.drawString(Fonts.SF_MEDIUM, Localization.get("Стиль стекла (Glass Style)"), startX, currentY, 8.5F, ColorUtil.rgba(240, 240, 255, (int) (240 * alpha)));
+        currentY += 14.0F;
+
+        String[] glassStyles = new String[] {"Liquid Glass", "Lumen Glow", "Flat Minimal"};
+        float glassW = (totalWidth - 12.0F) / 3.0F;
+        float glassH = 22.0F;
+        for (int i = 0; i < glassStyles.length; i++) {
+            float gx = startX + i * (glassW + 6.0F);
+            float gy = currentY;
+            String style = glassStyles[i];
+
+            boolean selected = Theme.getGlassStyle().equalsIgnoreCase(style);
+            boolean hovered = mouseX >= gx && mouseX <= gx + glassW && mouseY >= gy && mouseY <= gy + glassH;
+
+            int bg = selected ? ColorUtil.rgba(ColorUtil.red(accent), ColorUtil.green(accent), ColorUtil.blue(accent), (int) (70 * alpha))
+                              : (hovered ? ColorUtil.rgba(255, 255, 255, (int) (18 * alpha)) : ColorUtil.rgba(255, 255, 255, (int) (10 * alpha)));
+            int border = selected ? accent : (hovered ? ColorUtil.rgba(255, 255, 255, (int) (40 * alpha)) : ColorUtil.rgba(255, 255, 255, (int) (20 * alpha)));
+
+            Render2D.drawRoundedRect(gx, gy, glassW, glassH, 5.0F, bg);
+            Render2D.drawRoundedOutline(gx, gy, glassW, glassH, 5.0F, 1.0F, border);
+            Fonts.drawCenteredString(Fonts.SF_MEDIUM, style, gx + glassW / 2.0F, gy + 6.0F, 7.0F, selected ? 0xFFFFFFFF : ColorUtil.rgba(200, 200, 220, (int) (200 * alpha)));
+        }
+        currentY += glassH + 16.0F;
+
+        // Section 4: RGB Sliders
+        Fonts.drawString(Fonts.SF_MEDIUM, Localization.get("Кастомный акцент (RGB Sliders)"), startX, currentY, 8.5F, ColorUtil.rgba(240, 240, 255, (int) (240 * alpha)));
+        currentY += 14.0F;
+
+        int r = ColorUtil.red(accent);
+        int g = ColorUtil.green(accent);
+        int b = ColorUtil.blue(accent);
+
+        String[] channelLabels = new String[] {"Red: " + r, "Green: " + g, "Blue: " + b};
+        int[] channelVals = new int[] {r, g, b};
+        int[] channelColors = new int[] {ColorUtil.rgba(239, 68, 68, 255), ColorUtil.rgba(16, 185, 129, 255), ColorUtil.rgba(59, 130, 246, 255)};
+
+        for (int i = 0; i < 3; i++) {
+            float sliderY = currentY;
+            float sliderH = 18.0F;
+            float sliderW = totalWidth;
+
+            Render2D.drawRoundedRect(startX, sliderY, sliderW, sliderH, 4.0F, ColorUtil.rgba(255, 255, 255, (int) (8 * alpha)));
+            Render2D.drawRoundedOutline(startX, sliderY, sliderW, sliderH, 4.0F, 1.0F, ColorUtil.rgba(255, 255, 255, (int) (18 * alpha)));
+
+            float fillW = (channelVals[i] / 255.0F) * sliderW;
+            if (fillW > 0) {
+                Render2D.drawRoundedRect(startX, sliderY, fillW, sliderH, 4.0F, ColorUtil.multiplyAlpha(channelColors[i], 0.45F * alpha));
+            }
+
+            Fonts.drawString(Fonts.SF_MEDIUM, channelLabels[i], startX + 8.0F, sliderY + 5.0F, 7.0F, ColorUtil.rgba(240, 240, 255, (int) (230 * alpha)));
+
+            currentY += sliderH + 6.0F;
+        }
+
+        float totalContentH = currentY + state.getScrollOffset() - startY;
+        state.setMaxScroll(Math.max(0.0F, totalContentH - totalHeight + 10.0F));
+    }
+
+    private boolean handleThemesClick(PanelLapState state, float startX, float startY, float totalWidth, float totalHeight, int mouseX, int mouseY, int button) {
+        if (button != GLFW.GLFW_MOUSE_BUTTON_LEFT) return false;
+
+        float currentY = startY - state.getScrollOffset();
+
+        // Presets header offset
+        currentY += 14.0F;
+
+        record ThemePreset(String name, int color) {}
+        ThemePreset[] presets = new ThemePreset[] {
+            new ThemePreset("Error DLC", ColorUtil.rgba(0, 160, 255, 255)),
+            new ThemePreset("Debuda Violet", ColorUtil.rgba(139, 92, 246, 255)),
+            new ThemePreset("Cyber Rose", ColorUtil.rgba(235, 75, 180, 255)),
+            new ThemePreset("Emerald", ColorUtil.rgba(16, 185, 129, 255)),
+            new ThemePreset("Sunset Amber", ColorUtil.rgba(245, 158, 11, 255)),
+            new ThemePreset("Crimson Red", ColorUtil.rgba(239, 68, 68, 255)),
+            new ThemePreset("Toxic Lime", ColorUtil.rgba(132, 204, 22, 255))
+        };
+
+        float presetW = (totalWidth - 12.0F) / 3.0F;
+        float presetH = 24.0F;
+        for (int i = 0; i < presets.length; i++) {
+            float px = startX + (i % 3) * (presetW + 6.0F);
+            float py = currentY + (i / 3) * (presetH + 6.0F);
+
+            if (mouseX >= px && mouseX <= px + presetW && mouseY >= py && mouseY <= py + presetH) {
+                Theme.setAccentColor(presets[i].color());
+                return true;
+            }
+        }
+        currentY += ((presets.length + 2) / 3) * (presetH + 6.0F) + 10.0F;
+
+        // Background modes
+        currentY += 14.0F;
+        String[] bgModes = new String[] {"Blur", "Dark Glass", "Translucent", "Solid"};
+        float bgW = (totalWidth - 18.0F) / 4.0F;
+        float bgH = 22.0F;
+        for (int i = 0; i < bgModes.length; i++) {
+            float bx = startX + i * (bgW + 6.0F);
+            float by = currentY;
+            if (mouseX >= bx && mouseX <= bx + bgW && mouseY >= by && mouseY <= by + bgH) {
+                Theme.setBackgroundMode(bgModes[i]);
+                return true;
+            }
+        }
+        currentY += bgH + 16.0F;
+
+        // Glass styles
+        currentY += 14.0F;
+        String[] glassStyles = new String[] {"Liquid Glass", "Lumen Glow", "Flat Minimal"};
+        float glassW = (totalWidth - 12.0F) / 3.0F;
+        float glassH = 22.0F;
+        for (int i = 0; i < glassStyles.length; i++) {
+            float gx = startX + i * (glassW + 6.0F);
+            float gy = currentY;
+            if (mouseX >= gx && mouseX <= gx + glassW && mouseY >= gy && mouseY <= gy + glassH) {
+                Theme.setGlassStyle(glassStyles[i]);
+                return true;
+            }
+        }
+        currentY += glassH + 16.0F;
+
+        // RGB Sliders
+        currentY += 14.0F;
+        int accent = Theme.getAccentColor();
+        int r = ColorUtil.red(accent);
+        int g = ColorUtil.green(accent);
+        int b = ColorUtil.blue(accent);
+
+        for (int i = 0; i < 3; i++) {
+            float sliderY = currentY;
+            float sliderH = 18.0F;
+            float sliderW = totalWidth;
+
+            if (mouseX >= startX && mouseX <= startX + sliderW && mouseY >= sliderY && mouseY <= sliderY + sliderH) {
+                float val = Math.max(0.0F, Math.min(1.0F, (mouseX - startX) / sliderW));
+                int newChan = Math.round(val * 255.0F);
+                if (i == 0) r = newChan;
+                else if (i == 1) g = newChan;
+                else if (i == 2) b = newChan;
+
+                Theme.setAccentColor(ColorUtil.rgba(r, g, b, 255));
+                return true;
+            }
+            currentY += sliderH + 6.0F;
+        }
+
+        return false;
     }
 
     public boolean handleMouseButton(PanelLapState state, int mouseX, int mouseY, int button, int action) {
@@ -909,6 +1130,8 @@ public final class PanelLapSuperimposition {
                 return handleConfigsClick(state, contentX + 8.0F, contentY, contentW - 16.0F, contentH, mouseX, mouseY, button);
             } else if (state.getCurrentCategory() == Category.FRIENDS) {
                 return handleFriendsClick(state, contentX + 8.0F, contentY, contentW - 16.0F, contentH, mouseX, mouseY, button);
+            } else if (state.getCurrentCategory() == Category.THEMES) {
+                return handleThemesClick(state, contentX + 8.0F, contentY, contentW - 16.0F, contentH, mouseX, mouseY, button);
             }
 
             List<Module> list = getFilteredModules(state);

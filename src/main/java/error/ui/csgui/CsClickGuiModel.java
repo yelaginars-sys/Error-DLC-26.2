@@ -19,6 +19,7 @@ public final class CsClickGuiModel {
                 case "PLAYER" -> "Автоматизация инвентаря, использования предметов и игрока.";
                 case "RENDER" -> "Отображение HUD, шейдеров, визуалов и анимаций.";
                 case "COSMETICS" -> "Кастомные 3D модели, крылья, маски и украшения игрока.";
+                case "THEMES" -> "Настройка цветовых тем, градиентов, размытия фонов и стилей стекла.";
                 case "MISC" -> "Вспомогательные функции, звуки и настройки клиента.";
                 default -> "Настройки функций и возможностей клиента.";
             };
@@ -156,6 +157,7 @@ public final class CsClickGuiModel {
                 case "PLAYER" -> 0xE5C5;
                 case "RENDER" -> 0xE5C6;
                 case "COSMETICS" -> 0xE5C8;
+                case "THEMES" -> 0xE5C9;
                 default -> 0xE5C7;
             };
 
