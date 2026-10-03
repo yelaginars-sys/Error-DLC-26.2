@@ -82,9 +82,10 @@ public final class PanelLapSuperimposition {
             int spotlightCol = ColorUtil.rgba(ColorUtil.red(Theme.getAccentColor()), ColorUtil.green(Theme.getAccentColor()), ColorUtil.blue(Theme.getAccentColor()), (int) (40 * mainGuiAlpha));
             Render2D.drawRoundedRect(screenWidth * 0.55F, -60.0F, screenWidth * 0.5F, 220.0F, 100.0F, spotlightCol);
 
-            float sideW = 145.0F;
-            float contentX = x + sideW + 12.0F;
-            float contentW = 380.0F;
+            float sideW = 140.0F;
+            float contentW = 385.0F;
+            float totalW = sideW + contentW;
+            float contentX = x + sideW;
 
             int themeAccent = Theme.getAccentColor();
             int ar = ColorUtil.red(themeAccent);
@@ -96,43 +97,44 @@ public final class PanelLapSuperimposition {
 
             renderDescriptionAboveGui(state, centerX, y - 18.0F, mainGuiAlpha);
 
-            // 1. NARROW LEFT SIDEBAR PANEL (sideW = 145.0F, Dynamic Theme Glass)
-            int liquidGlassFill = ColorUtil.rgba((int)(18*0.85F + ar*0.15F), (int)(16*0.85F + ag*0.15F), (int)(24*0.85F + ab*0.15F), (int) (180 * mainGuiAlpha));
-            int shadowColor = ColorUtil.rgba(0, 0, 0, (int) (160 * mainGuiAlpha));
+            // 1. SINGLE UNIFIED CONTAINER WINDOW (Liquid Glass Frame)
+            int liquidGlassFill = ColorUtil.rgba((int)(18*0.85F + ar*0.15F), (int)(16*0.85F + ag*0.15F), (int)(24*0.85F + ab*0.15F), (int) (225 * mainGuiAlpha));
+            int shadowColor = ColorUtil.rgba(0, 0, 0, (int) (180 * mainGuiAlpha));
             int glassBorder = ColorUtil.rgba(255, 255, 255, (int) (55 * mainGuiAlpha));
-            int glassHalo = ColorUtil.rgba(ar, ag, ab, (int) (30 * mainGuiAlpha));
+            int glassHalo = ColorUtil.rgba(ar, ag, ab, (int) (35 * mainGuiAlpha));
 
-            // Real Liquid Glass Blur + Translucent Fill + Glass Border + Glass Halo
-            Render2D.drawShadow(x, y, sideW, h, 14.0F, 12.0F, shadowColor);
-            Render2D.drawShadow(x, y, sideW, h, 14.0F, 6.0F, glassHalo);
-            Render2D.drawBlur(x, y, sideW, h, 14.0F, 22.0F, liquidGlassFill, mainGuiAlpha);
-            Render2D.drawRoundedRect(x, y, sideW, h, 14.0F, liquidGlassFill);
-            Render2D.drawRoundedOutline(x, y, sideW, h, 14.0F, 1.0F, glassBorder);
+            // Single Outer Window Frame (Shadow + Blur + Fill + Glass Border)
+            Render2D.drawShadow(x, y, totalW, h, 14.0F, 14.0F, shadowColor);
+            Render2D.drawShadow(x, y, totalW, h, 14.0F, 8.0F, glassHalo);
+            Render2D.drawBlur(x, y, totalW, h, 14.0F, 24.0F, liquidGlassFill, mainGuiAlpha);
+            Render2D.drawRoundedRect(x, y, totalW, h, 14.0F, liquidGlassFill);
+            Render2D.drawRoundedOutline(x, y, totalW, h, 14.0F, 1.2F, glassBorder);
 
-            // Top Header: Error DLC 26.2 Branding & Client Logo PNG
-            float dropdownY = y + 8.0F;
+            // Top Neon Accent Line Across Entire Header
+            Render2D.drawRoundedRect(x + 12.0F, y + 2.0F, totalW - 24.0F, 2.5F, 1.2F, laserCol);
+            Render2D.drawShadow(x + 12.0F, y + 2.0F, totalW - 24.0F, 2.5F, 1.2F, 4.0F, laserGlow);
+
+            // Subtle Vertical Separator Line between Left Sidebar and Right Content
+            Render2D.drawRoundedRect(x + sideW, y + 36.0F, 1.0F, h - 46.0F, 0.0F, ColorUtil.rgba(255, 255, 255, (int) (22 * mainGuiAlpha)));
+
+            // Top Left Branding Header
+            float dropdownY = y + 10.0F;
             float brandW = sideW - 16.0F;
             int pillGlass = ColorUtil.rgba((int)(30*0.85F + ar*0.15F), (int)(28*0.85F + ag*0.15F), (int)(38*0.85F + ab*0.15F), (int) (140 * mainGuiAlpha));
             int pillBorder = ColorUtil.rgba(255, 255, 255, (int) (30 * mainGuiAlpha));
 
-            Render2D.drawRoundedRect(x + 8.0F, dropdownY, brandW, 19.0F, 6.0F, pillGlass);
-            Render2D.drawRoundedOutline(x + 8.0F, dropdownY, brandW, 19.0F, 6.0F, 1.0F, pillBorder);
+            Render2D.drawTexture(LOGO_TEX, x + 12.0F, dropdownY + 1.0F, 14.0F, 14.0F, ColorUtil.rgba(255, 255, 255, (int) (255 * mainGuiAlpha)));
+            float brandX = x + 12.0F + 14.0F + 6.0F;
+            Fonts.drawString(Fonts.SF_MEDIUM, "Error DLC ", brandX, dropdownY + 3.0F, 8.5F, ColorUtil.rgba(255, 255, 255, (int) (245 * mainGuiAlpha)));
+            brandX += Fonts.SF_MEDIUM.getWidth("Error DLC ", 8.5F);
+            Fonts.drawString(Fonts.SF_MEDIUM, "26.2", brandX, dropdownY + 3.0F, 8.5F, ColorUtil.rgba(ar, ag, ab, (int) (240 * mainGuiAlpha)));
 
-            // Client PNG Logo & Title Text
-            float textY = dropdownY + (19.0F - Fonts.SF_MEDIUM.textHeight(7.5F)) / 2.0F - 0.5F;
-            Render2D.drawTexture(LOGO_TEX, x + 13.0F, dropdownY + 3.5F, 12.0F, 12.0F, ColorUtil.rgba(255, 255, 255, (int) (255 * mainGuiAlpha)));
-            float brandX = x + 13.0F + 12.0F + 6.0F;
-            Fonts.drawString(Fonts.SF_MEDIUM, "Error DLC ", brandX, textY, 7.5F, ColorUtil.rgba(170, 170, 185, (int) (245 * mainGuiAlpha)));
-            brandX += Fonts.SF_MEDIUM.getWidth("Error DLC ", 7.5F);
-            Fonts.drawString(Fonts.SF_MEDIUM, "26.2", brandX, textY, 7.5F, ColorUtil.rgba(150, 150, 165, (int) (210 * mainGuiAlpha)));
-
-            // Categories List
-            float catY = y + 35.0F;
+            // Categories List (Clean English Titles & Neon Active Bar)
+            float catY = y + 38.0F;
             for (Category category : Category.values()) {
                 boolean active = state.getCurrentTab() == PanelLapState.Tab.CATEGORY && category == state.getCurrentCategory();
 
                 if (active) {
-                    // Active category fill with dark sleek glass background and subtle accent tint
                     int activeCatBg = ColorUtil.rgba((int)(40*0.75F + ar*0.25F), (int)(38*0.75F + ag*0.25F), (int)(52*0.75F + ab*0.25F), (int) (180 * mainGuiAlpha));
                     int activeCatBorder = ColorUtil.rgba((int)(80*0.7F + ar*0.3F), (int)(75*0.7F + ag*0.3F), (int)(105*0.7F + ab*0.3F), (int) (160 * mainGuiAlpha));
                     Render2D.drawRoundedRect(x + 8.0F, catY, sideW - 16.0F, 19.0F, 6.0F, activeCatBg);
@@ -143,11 +145,11 @@ public final class PanelLapSuperimposition {
 
                 int col = active ? ColorUtil.rgba(255, 255, 255, 255) : ColorUtil.rgba(200, 195, 215, 180);
                 Fonts.drawIcon(getCategoryIcon(category), x + 18.0F, catY + 4.5F, 9.5F, ColorUtil.multiplyAlpha(col, mainGuiAlpha));
-                Fonts.drawString(Fonts.SF_MEDIUM, Localization.get(category.getDisplayName()), x + 32.0F, catY + 5.0F, 8.5F, ColorUtil.multiplyAlpha(col, mainGuiAlpha));
+                Fonts.drawString(Fonts.SF_MEDIUM, category.name(), x + 32.0F, catY + 5.0F, 8.0F, ColorUtil.multiplyAlpha(col, mainGuiAlpha));
                 catY += 23.0F;
             }
 
-            // Bottom Search Input with Pink Glowing Dot on Right Side
+            // Bottom Search Input
             float searchY = y + h - 50.0F;
             int curSearchBorder = state.isSearchFocused() ? laserCol : pillBorder;
             Render2D.drawRoundedRect(x + 8.0F, searchY, sideW - 16.0F, 18.0F, 6.0F, pillGlass);
@@ -157,26 +159,21 @@ public final class PanelLapSuperimposition {
                     ? ColorUtil.rgba(255, 255, 255, (int) (240 * mainGuiAlpha))
                     : ColorUtil.rgba(180, 180, 200, (int) (160 * mainGuiAlpha));
 
-            // Clean Search Icon (IconUse.SEARCH)
             Fonts.drawIcon(IconUse.SEARCH, x + 14.0F, searchY + 4.5F, 8.0F, ColorUtil.multiplyAlpha(searchTextColor, mainGuiAlpha));
 
             String searchDisplay;
             if (state.getSearchQuery().isEmpty()) {
-                searchDisplay = state.isSearchFocused() ? "|" : "Поиск...";
+                searchDisplay = state.isSearchFocused() ? "|" : "Search...";
             } else {
                 boolean cursorBlink = state.isSearchFocused() && (System.currentTimeMillis() % 1000 > 500);
                 searchDisplay = state.getSearchQuery() + (cursorBlink ? "|" : "");
             }
             Fonts.drawString(Fonts.SF_MEDIUM, searchDisplay, x + 25.0F, searchY + 4.5F, 7.5F, searchTextColor);
 
-            // Accent Glowing Dot on Right Side of Search Bar
-            Render2D.drawRoundedRect(x + sideW - 18.0F, searchY + 5.0F, 6.0F, 8.0F, 4.0F, laserCol);
-
-            // User Profile Footer: Nickname "Walfini Develop" and Custom Avatar (D:\Без названия (2).jpg)
+            // User Profile Footer: Nickname "Walfini Develop" and Avatar
             float userY = y + h - 28.0F;
             String curUser = "Walfini Develop";
 
-            // Circular Avatar with Glowing Ring
             Render2D.drawShadow(x + 10.0F, userY + 1.0F, 18.0F, 18.0F, 9.0F, 6.0F, laserGlow);
             Render2D.drawCustomAvatar(x + 10.0F, userY + 1.0F, 18.0F, 9.0F, mainGuiAlpha);
             Render2D.drawRoundedOutline(x + 10.0F, userY + 1.0F, 18.0F, 18.0F, 9.0F, 1.0F, laserCol);
@@ -187,18 +184,9 @@ public final class PanelLapSuperimposition {
             Render2D.drawRoundedOutline(x + sideW - 36.0F, userY + 4.5F, 24.0F, 11.0F, 3.0F, 1.0F, laserCol);
             Fonts.drawString(Fonts.SF_MEDIUM, "BETA", x + sideW - 34.0F, userY + 6.0F, 6.0F, ColorUtil.rgba(255, 255, 255, (int) (255 * mainGuiAlpha)));
 
-            // 2. EXTRA-WIDE RIGHT MAIN CONTENT PANEL (contentW = 380.0F, Authentic Frosted Liquid Glass)
-
-            // Liquid Glass Blur + Translucent Fill + Specular Gloss + Glass Border + Glass Halo
-            Render2D.drawShadow(contentX, y, contentW, h, 14.0F, 12.0F, shadowColor);
-            Render2D.drawShadow(contentX, y, contentW, h, 14.0F, 6.0F, glassHalo);
-            Render2D.drawBlur(contentX, y, contentW, h, 14.0F, 22.0F, liquidGlassFill, mainGuiAlpha);
-            Render2D.drawRoundedRect(contentX, y, contentW, h, 14.0F, liquidGlassFill);
-            Render2D.drawRoundedOutline(contentX, y, contentW, h, 14.0F, 1.0F, glassBorder);
-
-            // Top Breadcrumb & Theme Settings Dropdown Button
-            float breadY = y + 8.0F;
-            Fonts.drawString(Fonts.SF_MEDIUM, "Error DLC  /  " + Localization.get(state.getCurrentCategory().getDisplayName()), contentX + 14.0F, breadY + 4.0F, 8.0F, ColorUtil.rgba(200, 195, 215, (int) (180 * mainGuiAlpha)));
+            // 2. RIGHT MAIN CONTENT AREA INSIDE UNIFIED CONTAINER
+            float breadY = y + 10.0F;
+            Fonts.drawString(Fonts.SF_MEDIUM, "ERROR DLC  /  " + state.getCurrentCategory().name(), contentX + 14.0F, breadY + 2.0F, 8.5F, ColorUtil.rgba(230, 225, 245, (int) (240 * mainGuiAlpha)));
 
             float themeBtnW = 68.0F;
             float themeBtnH = 17.0F;
@@ -225,10 +213,10 @@ public final class PanelLapSuperimposition {
         }
 
         // Inner Modules Scroll Area
-        float sideW = 145.0F;
-        float contentX = x + sideW + 12.0F;
+        float sideW = 140.0F;
+        float contentX = x + sideW;
         float contentY = y + 32.0F;
-        float contentW = 380.0F;
+        float contentW = 385.0F;
         float contentH = h - 40.0F;
 
         float catProgress = state.getCategoryAnim().getValue();
@@ -1163,9 +1151,9 @@ public final class PanelLapSuperimposition {
         float w = state.getPanelWidth();
         float h = state.getPanelHeight();
 
-        float sideW = 145.0F;
-        float contentX = x + sideW + 12.0F;
-        float contentW = 380.0F;
+        float sideW = 140.0F;
+        float contentX = x + sideW;
+        float contentW = 385.0F;
 
         // Theme Settings button and dropdown popup
         float themeBtnW = 68.0F;
