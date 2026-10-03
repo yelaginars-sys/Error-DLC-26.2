@@ -74,6 +74,7 @@ public class Modules {
     public UseTracker useTracker;
     public AutoEvent autoEvent;
     public AutoSell autoSell;
+    public AutoMsg autoMsg;
     public HoldMyItems holdMyItems;
     public Notification notification;
     public CustomModels customModels;
@@ -105,6 +106,7 @@ public class Modules {
                 this.useTracker = new UseTracker(),
                 this.autoEvent = new AutoEvent(),
                 this.autoSell = new AutoSell(),
+                this.autoMsg = new AutoMsg(),
                 this.autoAccept = new AutoAccept(),
                 this.triggerBot = new TriggerBot(),
                 this.criticals = new Criticals(),
