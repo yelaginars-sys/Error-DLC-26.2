@@ -41,11 +41,19 @@ public class AuraModule extends Module {
 
     private final HeaderSetting dopa = header("Settings");
     private final CheckBox raytrace = checkbox("Raytrace", true);
+    private final ModeSetting blockHitMode = mode("Block Raycast", "Normal", "Normal", "Partial Blocks", "Through Walls");
     private final CheckBox aimThroughWalls = checkbox("Aim Through Walls", false);
     private final CheckBox throughWalls = checkbox("Through Walls", false);
     private final CheckBox onlyCrits = checkbox("Only Crits", true);
     private final CheckBox smartCrits = checkbox("Smart Crits", true).visible(onlyCrits::getValue);
+    private final CheckBox maceCrit = checkbox("Mace Crit Boost", true);
     private final CheckBox randomFallDistance = checkbox("Random Fall Distance", false).visible(onlyCrits::getValue);
+    private final SliderSetting aimAssistForce = slider("AimAssist Force", 0.7f, 0.0f, 1.0f, 0.05f);
+    private final CheckBox maxDamageOffhand = checkbox("Max Damage Offhand", false);
+    private final CheckBox autoJump = checkbox("Auto Jump", false);
+    private final CheckBox autoEat = checkbox("Auto Eat", false);
+    private final SliderSetting eatHealth = slider("Eat Health", 14.0f, 1.0f, 20.0f, 1.0f).visible(autoEat::getValue);
+    private final CheckBox backtrack = checkbox("Backtrack Position History", false);
     private final CheckBox pauseEating = checkbox("Pause while Eating", true);
 
     private final ModeSetting targetEsp = mode("Target ESP", "Marker", "None", "Marker", "Ghosts", "Circle", "Cube");
