@@ -24,7 +24,6 @@ public abstract class AbstractWidgetMixin {
     @Shadow public int height;
     @Shadow public boolean active;
     @Shadow public boolean visible;
-    @Shadow protected boolean hovered;
     @Shadow public abstract int getX();
     @Shadow public abstract int getY();
     @Shadow public abstract Component getMessage();
@@ -49,10 +48,7 @@ public abstract class AbstractWidgetMixin {
             return;
         }
 
-        this.hovered = mouseX >= this.getX() && mouseY >= this.getY()
-                && mouseX < this.getX() + this.width && mouseY < this.getY() + this.height;
-
-        boolean isHover = (this.hovered || this.isFocused()) && this.active;
+        boolean isHover = (this.isHovered() || this.isFocused()) && this.active;
         this.error$hoverAnim = Math.clamp(this.error$hoverAnim + (isHover ? 0.15F : -0.15F), 0.0F, 1.0F);
 
         float x = this.getX();
