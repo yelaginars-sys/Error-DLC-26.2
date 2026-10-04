@@ -180,19 +180,18 @@ public class LiquidClickGui extends Screen {
         }
     }
 
-    private static Identifier getCategoryIcon(Category cat) {
+    private static IconUse getCategoryIconUse(Category cat) {
         return switch (cat) {
-            case COMBAT -> safeId("textures/system/combat.png");
-            case MOVEMENT -> safeId("textures/system/movement.png");
-            case RENDER -> safeId("textures/system/visuals.png");
-            case COSMETICS -> safeId("textures/system/folder2.png");
-            case PLAYER -> safeId("textures/system/player.png");
-            case MISC -> safeId("textures/system/misc.png");
-            case THEMES -> safeId("textures/system/themes.png");
-            case EVENTS -> safeId("textures/system/heartbeat1.png");
-            case CONFIGS -> safeId("textures/system/configs.png");
-            case FRIENDS -> safeId("textures/system/player1.png");
-            default -> null;
+            case COMBAT -> IconUse.FIGHT;
+            case MOVEMENT -> IconUse.MOVEMENT;
+            case RENDER -> IconUse.RENDER;
+            case COSMETICS -> IconUse.POTION;
+            case PLAYER -> IconUse.PLAYER;
+            case MISC -> IconUse.MISC;
+            case EVENTS -> IconUse.SPUTNIK;
+            case CONFIGS -> IconUse.GEAR;
+            case FRIENDS -> IconUse.GROUP;
+            default -> IconUse.LOGO;
         };
     }
 
@@ -267,7 +266,7 @@ public class LiquidClickGui extends Screen {
                     .radius(12)
                     .type(BlurType.KAWASE)
                     .strength(4)
-                    .tint(Color.rgba(0, 0, 0, Math.round(85 * animVal)))
+                    .tint(Color.rgba(0, 0, 0, Math.round(65 * animVal)))
                     .alpha(animVal)
                     .render(extractor);
 
@@ -290,12 +289,30 @@ public class LiquidClickGui extends Screen {
                     .radius(10)
                     .type(BlurType.KAWASE)
                     .strength(4)
-                    .tint(Color.rgba(0, 0, 0, Math.round(90 * animVal)))
+                    .tint(Color.rgba(0, 0, 0, Math.round(65 * animVal)))
                     .alpha(animVal)
                     .render(extractor);
 
             Outline.of(mModalX, mModalY, mModalW, mModalH)
                     .radius(10)
+                    .thickness(1.0F)
+                    .verticalGradient(Color.WHITE, FADE_WHITE)
+                    .alpha(animVal)
+                    .render(extractor);
+        }
+
+        // 5. Active Mode Dropdown Liquid Glass Window
+        if (this.activeDropdownMode != null) {
+            Blur.of(this.dropdownPopupX, this.dropdownPopupY, this.dropdownPopupW, this.dropdownPopupH)
+                    .radius(6)
+                    .type(BlurType.KAWASE)
+                    .strength(4)
+                    .tint(Color.rgba(0, 0, 0, Math.round(65 * animVal)))
+                    .alpha(animVal)
+                    .render(extractor);
+
+            Outline.of(this.dropdownPopupX, this.dropdownPopupY, this.dropdownPopupW, this.dropdownPopupH)
+                    .radius(6)
                     .thickness(1.0F)
                     .verticalGradient(Color.WHITE, FADE_WHITE)
                     .alpha(animVal)
@@ -412,14 +429,10 @@ public class LiquidClickGui extends Screen {
                 Render2D.drawRoundedRect(catX, catY, catW, catH, 5.0F, ColorUtil.rgba(255, 255, 255, (int) (hVal * 16 * alphaVal)));
             }
 
-            // Real Category Icon from system assets
-            Identifier catIcon = getCategoryIcon(cat);
-            int iconCol = active ? 0xFFFFFFFF : (isHovered ? 0xFFFFFFFF : ColorUtil.rgba(160, 180, 200, (int) (180 * alphaVal)));
-            if (catIcon != null) {
-                Render2D.drawTexture(catIcon, catX + 8.0F, catY + 5.0F, 11.0F, 11.0F, iconCol);
-            } else {
-                Render2D.drawCircle(catX + 13.0F, catY + catH / 2.0F, 2.2F, active ? accentColor : 0xFF8090A0);
-            }
+            // Vector Category Icon from IconUse
+            IconUse catIcon = getCategoryIconUse(cat);
+            int iconCol = active ? 0xFFFFFFFF : (isHovered ? 0xFFFFFFFF : ColorUtil.rgba(200, 220, 240, (int) (200 * alphaVal)));
+            Fonts.drawString(Fonts.ICONS, catIcon.glyph, catX + 8.5F, catY + 5.5F, 5.5F, iconCol);
 
             int nameCol = active ? 0xFFFFFFFF : 0xFFC0D0E0;
             Fonts.drawString(Fonts.SF_MEDIUM, cat.getDisplayName(), catX + 24.0F, catY + 6.5F, 6.2F, nameCol);
@@ -791,15 +804,14 @@ public class LiquidClickGui extends Screen {
         float modalX = (screenW - modalW) / 2.0F;
         float modalY = (screenH - modalH) / 2.0F;
 
-        // Dim background behind modal (soft subtle veil, not opaque black)
-        Render2D.drawRoundedRect(0, 0, screenW, screenH, 0.0F, ColorUtil.rgba(0, 0, 0, (int) (45 * alphaVal)));
-
-        // Shadow and translucent liquid glass body
-        Render2D.drawShadow(modalX, modalY, modalW, modalH, 12.0F, 24.0F, ColorUtil.rgba(0, 0, 0, (int) (150 * alphaVal)));
-        Render2D.drawBlur(modalX, modalY, modalW, modalH, 12.0F, 24.0F, ColorUtil.rgba(14, 18, 28, (int) (130 * alphaVal)), alphaVal);
-        Render2D.drawRoundedRect(modalX, modalY, modalW, modalH, 12.0F, ColorUtil.rgba(14, 18, 28, (int) (135 * alphaVal)));
-        Render2D.drawRoundedOutline(modalX, modalY, modalW, modalH, 12.0F, 0.8F, ColorUtil.rgba(255, 255, 255, (int) (30 * alphaVal)));
-        Render2D.drawRoundedOutline(modalX, modalY, modalW, modalH, 12.0F, 0.6F, ColorUtil.withAlpha(accentColor, (int) (60 * alphaVal)));
+        // Translucent liquid glass body (exact same frosted glass as GUI)
+        int modalDarken = ColorUtil.rgba(12, 16, 28, (int) (40 * alphaVal));
+        int modalFrosted = ColorUtil.rgba(255, 255, 255, (int) (14 * alphaVal));
+        Render2D.drawShadow(modalX, modalY, modalW, modalH, 12.0F, 24.0F, ColorUtil.rgba(0, 0, 0, (int) (120 * alphaVal)));
+        Render2D.drawRoundedRect(modalX, modalY, modalW, modalH, 12.0F, modalDarken);
+        Render2D.drawRoundedRect(modalX, modalY, modalW, modalH, 12.0F, modalFrosted);
+        Render2D.drawRoundedOutline(modalX, modalY, modalW, modalH, 12.0F, 0.8F, ColorUtil.rgba(255, 255, 255, (int) (35 * alphaVal)));
+        Render2D.drawRoundedOutline(modalX, modalY, modalW, modalH, 12.0F, 0.5F, ColorUtil.withAlpha(accentColor, (int) (65 * alphaVal)));
 
         // Header: Settings Icon + Title + Close Button
         float headY = modalY + 8.0F;
@@ -985,15 +997,14 @@ public class LiquidClickGui extends Screen {
         float modalX = (screenW - modalW) / 2.0F;
         float modalY = (screenH - modalH) / 2.0F;
 
-        // Dim background behind modal (soft subtle veil, not opaque black)
-        Render2D.drawRoundedRect(0, 0, screenW, screenH, 0.0F, ColorUtil.rgba(0, 0, 0, (int) (40 * alphaVal)));
-
-        // Shadow and translucent liquid glass body
-        Render2D.drawShadow(modalX, modalY, modalW, modalH, 10.0F, 20.0F, ColorUtil.rgba(0, 0, 0, (int) (150 * alphaVal)));
-        Render2D.drawBlur(modalX, modalY, modalW, modalH, 10.0F, 20.0F, ColorUtil.rgba(14, 18, 26, (int) (130 * alphaVal)), alphaVal);
-        Render2D.drawRoundedRect(modalX, modalY, modalW, modalH, 10.0F, ColorUtil.rgba(14, 18, 26, (int) (135 * alphaVal)));
-        Render2D.drawRoundedOutline(modalX, modalY, modalW, modalH, 10.0F, 0.8F, ColorUtil.rgba(255, 255, 255, (int) (30 * alphaVal)));
-        Render2D.drawRoundedOutline(modalX, modalY, modalW, modalH, 10.0F, 0.6F, ColorUtil.withAlpha(accentColor, (int) (60 * alphaVal)));
+        // Translucent liquid glass body (exact same frosted glass as GUI)
+        int modalDarken = ColorUtil.rgba(12, 16, 28, (int) (40 * alphaVal));
+        int modalFrosted = ColorUtil.rgba(255, 255, 255, (int) (14 * alphaVal));
+        Render2D.drawShadow(modalX, modalY, modalW, modalH, 10.0F, 20.0F, ColorUtil.rgba(0, 0, 0, (int) (120 * alphaVal)));
+        Render2D.drawRoundedRect(modalX, modalY, modalW, modalH, 10.0F, modalDarken);
+        Render2D.drawRoundedRect(modalX, modalY, modalW, modalH, 10.0F, modalFrosted);
+        Render2D.drawRoundedOutline(modalX, modalY, modalW, modalH, 10.0F, 0.8F, ColorUtil.rgba(255, 255, 255, (int) (35 * alphaVal)));
+        Render2D.drawRoundedOutline(modalX, modalY, modalW, modalH, 10.0F, 0.5F, ColorUtil.withAlpha(accentColor, (int) (65 * alphaVal)));
 
         // Header: :: dots + Module Name + Close button
         float headY = modalY + 8.0F;
@@ -1099,12 +1110,14 @@ public class LiquidClickGui extends Screen {
         float dh = this.dropdownPopupH;
 
         // Soft drop shadow
-        Render2D.drawShadow(dx, dy, dw, dh, 6.0F, 12.0F, ColorUtil.rgba(0, 0, 0, (int) (140 * alphaVal)));
-        // Translucent liquid glass body (slightly darker than GUI, but clearly translucent)
-        Render2D.drawBlur(dx, dy, dw, dh, 6.0F, 16.0F, ColorUtil.rgba(14, 18, 28, (int) (140 * alphaVal)), alphaVal);
-        Render2D.drawRoundedRect(dx, dy, dw, dh, 6.0F, ColorUtil.rgba(14, 18, 28, (int) (145 * alphaVal)));
-        Render2D.drawRoundedOutline(dx, dy, dw, dh, 6.0F, 0.75F, ColorUtil.rgba(255, 255, 255, (int) (28 * alphaVal)));
-        Render2D.drawRoundedOutline(dx, dy, dw, dh, 6.0F, 0.5F, ColorUtil.withAlpha(accentColor, (int) (55 * alphaVal)));
+        Render2D.drawShadow(dx, dy, dw, dh, 6.0F, 12.0F, ColorUtil.rgba(0, 0, 0, (int) (110 * alphaVal)));
+        // Translucent liquid glass body (exact same frosted glass as GUI)
+        int dropDarken = ColorUtil.rgba(12, 16, 28, (int) (40 * alphaVal));
+        int dropFrosted = ColorUtil.rgba(255, 255, 255, (int) (14 * alphaVal));
+        Render2D.drawRoundedRect(dx, dy, dw, dh, 6.0F, dropDarken);
+        Render2D.drawRoundedRect(dx, dy, dw, dh, 6.0F, dropFrosted);
+        Render2D.drawRoundedOutline(dx, dy, dw, dh, 6.0F, 0.75F, ColorUtil.rgba(255, 255, 255, (int) (35 * alphaVal)));
+        Render2D.drawRoundedOutline(dx, dy, dw, dh, 6.0F, 0.5F, ColorUtil.withAlpha(accentColor, (int) (65 * alphaVal)));
 
         float rowY = dy + 3.0F;
         float rowH = 15.0F;

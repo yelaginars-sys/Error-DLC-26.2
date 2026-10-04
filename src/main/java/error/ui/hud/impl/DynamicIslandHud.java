@@ -570,14 +570,16 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
             int primaryAccent = getHudAccent();
 
             int haloCol = ColorUtil.rgba(ColorUtil.red(primaryAccent), ColorUtil.green(primaryAccent), ColorUtil.blue(primaryAccent), (int) (35 * alpha));
-            int glassFill = ColorUtil.rgba(14, 18, 28, (int) (130 * alpha));
-            int glassBorder = ColorUtil.withAlpha(primaryAccent, (int) (105 * alpha));
+            int lightDarken = ColorUtil.rgba(12, 16, 28, (int) (45 * alpha));
+            int frostedTint = ColorUtil.rgba(255, 255, 255, (int) (16 * alpha));
+            int glassBorder = ColorUtil.withAlpha(primaryAccent, (int) (95 * alpha));
 
             if (shadowBlur > 1.0F) {
                 Render2D.drawShadow(x, y, w, h, radius, shadowBlur, shadowCol);
                 Render2D.drawShadow(x, y, w, h, radius, Math.min(shadowBlur, 6.0F), haloCol);
             }
-            Render2D.drawRoundedRect(x, y, w, h, radius, glassFill);
+            Render2D.drawRoundedRect(x, y, w, h, radius, lightDarken);
+            Render2D.drawRoundedRect(x, y, w, h, radius, frostedTint);
             Render2D.drawRoundedOutline(x, y, w, h, radius, 0.7F, glassBorder);
         }
     }
@@ -588,12 +590,14 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
         float subRadius = h / 2.0F;
         int primaryAccent = getHudAccent();
 
-        int shadowCol = ColorUtil.rgba(0, 0, 0, (int) (130 * alpha));
-        int glassFill = ColorUtil.rgba(14, 18, 28, (int) (130 * alpha));
-        int glassBorder = ColorUtil.withAlpha(primaryAccent, (int) (100 * alpha));
+        int shadowCol = ColorUtil.rgba(0, 0, 0, (int) (110 * alpha));
+        int lightDarken = ColorUtil.rgba(12, 16, 28, (int) (45 * alpha));
+        int frostedTint = ColorUtil.rgba(255, 255, 255, (int) (16 * alpha));
+        int glassBorder = ColorUtil.withAlpha(primaryAccent, (int) (90 * alpha));
 
         Render2D.drawShadow(x, y, w, h, subRadius, 6.0F, shadowCol);
-        Render2D.drawRoundedRect(x, y, w, h, subRadius, glassFill);
+        Render2D.drawRoundedRect(x, y, w, h, subRadius, lightDarken);
+        Render2D.drawRoundedRect(x, y, w, h, subRadius, frostedTint);
         Render2D.drawRoundedOutline(x, y, w, h, subRadius, 0.7F, glassBorder);
 
         float curX = x + 6.0F;
