@@ -6,6 +6,7 @@ import error.module.Module;
 import error.setting.Setting;
 import error.setting.impl.*;
 import error.util.RenderExtend;
+import error.util.client.clients.ColorUtil;
 import error.util.client.clients.Theme;
 import error.util.display.batch.DisplayBatcher;
 import error.util.display.blur.Blur;
@@ -13,7 +14,6 @@ import error.util.display.blur.BlurType;
 import error.util.display.color.Color;
 import error.util.display.outline.Outline;
 import error.util.display.rounded.RoundedRect;
-import error.util.display.shadow.Shadow;
 import error.util.math.Animation;
 import error.util.render.Render2D;
 import error.util.render.Render2DUtil;
@@ -118,82 +118,70 @@ public class LiquidClickGui extends Screen {
             this.draggingSlider = null;
         }
 
-        int accentArgb = Theme.getAccentColor();
-        Color accentColor = Color.of(accentArgb);
+        int accentColor = Theme.getAccentColor();
 
+        // 1. Subtle World Dimmer
+        RoundedRect.of(0, 0, screenW, screenH)
+                .color(Color.rgba(0, 0, 0, Math.round(75 * animVal)))
+                .render(extractor);
+
+        // 2. Liquid Glass Window (The exact frosted Kawase Blur from RenderDemo)
+        Blur.of(x, y, WINDOW_W, WINDOW_H)
+                .radius(12)
+                .type(BlurType.KAWASE)
+                .strength(4)
+                .tint(Color.rgba(0, 0, 0, Math.round(75 * animVal)))
+                .alpha(animVal)
+                .render(extractor);
+
+        Outline.of(x, y, WINDOW_W, WINDOW_H)
+                .radius(12)
+                .thickness(1.0F)
+                .verticalGradient(Color.WHITE, FADE_WHITE)
+                .alpha(animVal)
+                .render(extractor);
+
+        // Flush the glass background first
+        DisplayBatcher.flush();
+
+        // 3. Render Cards, Buttons, and Fonts via Render2D & Render2DUtil
         RenderExtend.enter2D(null, extractor, null);
         Render2DUtil.beginFrame();
         try {
-            // 1. Subtle World Dimmer
-            RoundedRect.of(0, 0, screenW, screenH)
-                    .color(Color.rgba(0, 0, 0, Math.round(75 * animVal)))
-                    .render(extractor);
+            // Winter snowflakes
+            renderSnowflakes(screenW, screenH, animVal);
 
-            // 2. Winter Snowflakes
-            renderSnowflakes(extractor, screenW, screenH, animVal);
+            // Subtle divider line
+            Render2D.drawRoundedRect(x + SIDEBAR_W, y + 10.0F, 1.0F, WINDOW_H - 20.0F, 0.5F, ColorUtil.rgba(255, 255, 255, (int) (16 * animVal)));
 
-            // 3. Main Liquid Glass Window (1:1 from RenderDemo)
-            Shadow.of(x, y, WINDOW_W, WINDOW_H)
-                    .radius(12)
-                    .blur(20)
-                    .color(Color.rgba(0, 0, 0, Math.round(180 * animVal)))
-                    .render(extractor);
+            // Sidebar and Header
+            renderSidebar(x, y, mouseX, mouseY, animVal, accentColor);
+            renderHeader(x + SIDEBAR_W + 12.0F, y + 14.0F, WINDOW_W - SIDEBAR_W - 24.0F, mouseX, mouseY, animVal, accentColor);
 
-            Blur.of(x, y, WINDOW_W, WINDOW_H)
-                    .radius(12)
-                    .type(BlurType.KAWASE)
-                    .strength(4)
-                    .tint(Color.rgba(0, 0, 0, Math.round(80 * animVal)))
-                    .alpha(animVal)
-                    .render(extractor);
-
-            RoundedRect.of(x, y, WINDOW_W, WINDOW_H)
-                    .radius(12)
-                    .color(Color.rgba(14, 16, 22, Math.round(140 * animVal)))
-                    .render(extractor);
-
-            Outline.of(x, y, WINDOW_W, WINDOW_H)
-                    .radius(12)
-                    .thickness(1.0F)
-                    .verticalGradient(Color.WHITE, FADE_WHITE)
-                    .alpha(animVal)
-                    .render(extractor);
-
-            // 4. Sidebar Separator
-            RoundedRect.of(x + SIDEBAR_W, y + 10.0F, 1.0F, WINDOW_H - 20.0F)
-                    .radius(0.5F)
-                    .color(Color.rgba(255, 255, 255, Math.round(16 * animVal)))
-                    .render(extractor);
-
-            // 5. Sidebar and Header
-            renderSidebar(extractor, x, y, mouseX, mouseY, animVal, accentColor);
-            renderHeader(extractor, x + SIDEBAR_W + 12.0F, y + 14.0F, WINDOW_W - SIDEBAR_W - 24.0F, mouseX, mouseY, animVal, accentColor);
-
-            // 6. Content Section
+            // Content Section
             float contentX = x + SIDEBAR_W + 12.0F;
             float contentY = y + 44.0F;
             float contentW = WINDOW_W - SIDEBAR_W - 24.0F;
             float contentH = WINDOW_H - 54.0F;
 
             if (activeCategory == Category.THEMES) {
-                renderThemesTab(extractor, contentX, contentY, contentW, contentH, mouseX, mouseY, animVal);
+                renderThemesTab(contentX, contentY, contentW, contentH, mouseX, mouseY, animVal, accentColor);
             } else if (activeCategory == Category.CONFIGS) {
-                renderConfigsTab(extractor, contentX, contentY, contentW, contentH, mouseX, mouseY, animVal, accentColor);
+                renderConfigsTab(contentX, contentY, contentW, contentH, mouseX, mouseY, animVal, accentColor);
             } else if (activeCategory == Category.FRIENDS) {
-                renderFriendsTab(extractor, contentX, contentY, contentW, contentH, mouseX, mouseY, animVal);
+                renderFriendsTab(contentX, contentY, contentW, contentH, mouseX, mouseY, animVal);
             } else if (activeCategory == Category.EVENTS || activeCategory == Category.COSMETICS) {
-                renderEventsTab(extractor, contentX, contentY, contentW, contentH, mouseX, mouseY, animVal, accentColor);
+                renderEventsTab(contentX, contentY, contentW, contentH, mouseX, mouseY, animVal, accentColor);
             } else {
-                renderModulesGrid(extractor, contentX, contentY, contentW, contentH, mouseX, mouseY, animVal, accentColor);
+                renderModulesGrid(contentX, contentY, contentW, contentH, mouseX, mouseY, animVal, accentColor);
             }
         } finally {
-            DisplayBatcher.flush();
             Render2DUtil.flush();
             RenderExtend.exit2D();
         }
     }
 
-    private void renderSnowflakes(GuiGraphicsExtractor extractor, int screenW, int screenH, float alphaVal) {
+    private void renderSnowflakes(int screenW, int screenH, float alphaVal) {
         long time = System.currentTimeMillis();
         for (Snowflake2D sf : snowflakes) {
             sf.y += sf.speed * 0.035F;
@@ -204,18 +192,13 @@ public class LiquidClickGui extends Screen {
                 sf.x = random.nextFloat() * screenW;
             }
 
-            RoundedRect.of(sf.x, sf.y, sf.size, sf.size)
-                    .radius(sf.size * 0.5F)
-                    .color(Color.rgba(220, 240, 255, Math.round(110 * alphaVal)))
-                    .render(extractor);
+            Render2D.drawCircle(sf.x, sf.y, sf.size, ColorUtil.rgba(220, 240, 255, (int) (110 * alphaVal)));
         }
     }
 
-    private void renderSidebar(GuiGraphicsExtractor extractor, float x, float y, int mouseX, int mouseY, float alphaVal, Color accentColor) {
-        int accentArgb = accentColor.argb();
-
+    private void renderSidebar(float x, float y, int mouseX, int mouseY, float alphaVal, int accentColor) {
         // Branding
-        Fonts.drawString(Fonts.ICONS, IconUse.LOGO.getGlyph(), x + 12.0F, y + 13.0F, 9.5F, accentArgb);
+        Fonts.drawString(Fonts.ICONS, IconUse.LOGO.getGlyph(), x + 12.0F, y + 13.0F, 9.5F, accentColor);
         Fonts.drawString(Fonts.SF_MEDIUM, "Error DLC", x + 28.0F, y + 12.0F, 8.5F, 0xFFFFFFFF);
         Fonts.drawString(Fonts.SF_MEDIUM, "Winter 26.2", x + 28.0F, y + 22.0F, 4.8F, 0xFFA0B0C8);
 
@@ -236,31 +219,13 @@ public class LiquidClickGui extends Screen {
             float hVal = hoverAnim.getValue();
 
             if (active) {
-                Shadow.of(catX, catY, catW, catH)
-                        .radius(6)
-                        .blur(6)
-                        .offset(0, 2)
-                        .strength(2.0F)
-                        .color(accentColor)
-                        .alpha(alphaVal)
-                        .render(extractor);
-
-                RoundedRect.of(catX, catY, catW, catH)
-                        .radius(6)
-                        .color(Color.rgba(28, 32, 44, Math.round(230 * alphaVal)))
-                        .render(extractor);
-
-                Outline.of(catX, catY, catW, catH)
-                        .radius(6)
-                        .thickness(1.0F)
-                        .verticalGradient(Color.WHITE, FADE_WHITE)
-                        .alpha(alphaVal)
-                        .render(extractor);
+                // Distinct, sleek frosted pill with accent indicator (NOT a solid blue block!)
+                Render2D.drawRoundedRect(catX, catY, catW, catH, 5.0F, ColorUtil.rgba(255, 255, 255, (int) (22 * alphaVal)));
+                Render2D.drawRoundedOutline(catX, catY, catW, catH, 5.0F, 0.7F, ColorUtil.rgba(255, 255, 255, (int) (40 * alphaVal)));
+                // Subtle accent bar on the left edge
+                Render2D.drawRoundedRect(catX + 2.0F, catY + 3.5F, 2.5F, catH - 7.0F, 1.0F, accentColor);
             } else if (hVal > 0.01F) {
-                RoundedRect.of(catX, catY, catW, catH)
-                        .radius(6)
-                        .color(Color.rgba(255, 255, 255, Math.round(hVal * 16 * alphaVal)))
-                        .render(extractor);
+                Render2D.drawRoundedRect(catX, catY, catW, catH, 5.0F, ColorUtil.rgba(255, 255, 255, (int) (hVal * 16 * alphaVal)));
             }
 
             int iconCol = active ? 0xFFFFFFFF : 0xFFB0C0D4;
@@ -281,12 +246,8 @@ public class LiquidClickGui extends Screen {
                 float badgeX = catX + catW - 6.0F - badgeW;
                 float badgeY = catY + 4.5F;
 
-                RoundedRect.of(badgeX, badgeY, badgeW, 11.5F)
-                        .radius(3.0F)
-                        .color(active ? accentColor : Color.rgba(255, 255, 255, 20))
-                        .alpha(alphaVal)
-                        .render(extractor);
-
+                int badgeBg = active ? ColorUtil.withAlpha(accentColor, (int) (180 * alphaVal)) : ColorUtil.rgba(255, 255, 255, (int) (22 * alphaVal));
+                Render2D.drawRoundedRect(badgeX, badgeY, badgeW, 11.5F, 3.0F, badgeBg);
                 Fonts.drawCenteredString(Fonts.SF_MEDIUM, countStr, badgeX + badgeW / 2.0F, badgeY + 2.5F, 4.8F, 0xFFFFFFFF);
             }
 
@@ -299,17 +260,8 @@ public class LiquidClickGui extends Screen {
         float profileX = x + 8.0F;
         float profileY = y + WINDOW_H - 34.0F;
 
-        RoundedRect.of(profileX, profileY, profileW, profileH)
-                .radius(6)
-                .color(Color.rgba(255, 255, 255, Math.round(12 * alphaVal)))
-                .render(extractor);
-
-        Outline.of(profileX, profileY, profileW, profileH)
-                .radius(6)
-                .thickness(1.0F)
-                .verticalGradient(Color.WHITE, FADE_WHITE)
-                .alpha(alphaVal)
-                .render(extractor);
+        Render2D.drawRoundedRect(profileX, profileY, profileW, profileH, 5.0F, ColorUtil.rgba(255, 255, 255, (int) (12 * alphaVal)));
+        Render2D.drawRoundedOutline(profileX, profileY, profileW, profileH, 5.0F, 0.65F, ColorUtil.rgba(255, 255, 255, (int) (22 * alphaVal)));
 
         Render2D.drawCustomAvatar(profileX + 4.0F, profileY + 4.0F, 18.0F, 4.0F, alphaVal);
 
@@ -332,7 +284,7 @@ public class LiquidClickGui extends Screen {
         return IconUse.GEAR.getGlyph();
     }
 
-    private void renderHeader(GuiGraphicsExtractor extractor, float x, float y, float w, int mouseX, int mouseY, float alphaVal, Color accentColor) {
+    private void renderHeader(float x, float y, float w, int mouseX, int mouseY, float alphaVal, int accentColor) {
         String titleText = searchQuery.isEmpty() ? activeCategory.getDisplayName() : "Поиск: \"" + searchQuery + "\"";
         Fonts.drawString(Fonts.SF_MEDIUM, titleText, x, y + 2.0F, 9.5F, 0xFFFFFFFF);
 
@@ -342,18 +294,11 @@ public class LiquidClickGui extends Screen {
         float searchX = x + w - searchW;
 
         boolean isHovered = mouseX >= searchX && mouseX <= searchX + searchW && mouseY >= y && mouseY <= y + searchH;
+        int boxBg = ColorUtil.rgba(255, 255, 255, (int) ((searchFocused ? 18 : (isHovered ? 12 : 8)) * alphaVal));
+        int boxBorder = searchFocused ? ColorUtil.withAlpha(accentColor, (int) (180 * alphaVal)) : ColorUtil.rgba(255, 255, 255, (int) (26 * alphaVal));
 
-        RoundedRect.of(searchX, y, searchW, searchH)
-                .radius(5)
-                .color(Color.rgba(255, 255, 255, Math.round((searchFocused ? 18 : (isHovered ? 12 : 8)) * alphaVal)))
-                .render(extractor);
-
-        Outline.of(searchX, y, searchW, searchH)
-                .radius(5)
-                .thickness(1.0F)
-                .verticalGradient(Color.WHITE, FADE_WHITE)
-                .alpha(alphaVal)
-                .render(extractor);
+        Render2D.drawRoundedRect(searchX, y, searchW, searchH, 4.5F, boxBg);
+        Render2D.drawRoundedOutline(searchX, y, searchW, searchH, 4.5F, 0.65F, boxBorder);
 
         Fonts.drawString(Fonts.ICONS, IconUse.SEARCH.getGlyph(), searchX + 6.5F, y + 5.0F, 7.0F, 0xFFB0C0D4);
 
@@ -362,22 +307,12 @@ public class LiquidClickGui extends Screen {
         Fonts.drawString(Fonts.SF_MEDIUM, displayText + (searchFocused && (System.currentTimeMillis() % 1000 > 500) ? "_" : ""), searchX + 20.0F, y + 5.5F, 5.8F, textCol);
     }
 
-    private void renderModulesGrid(GuiGraphicsExtractor extractor, float x, float y, float w, float h, int mouseX, int mouseY, float alphaVal, Color accentColor) {
+    private void renderModulesGrid(float x, float y, float w, float h, int mouseX, int mouseY, float alphaVal, int accentColor) {
         List<Module> modules = getFilteredModules();
 
         if (modules.isEmpty()) {
-            RoundedRect.of(x, y, w, 80.0F)
-                    .radius(8)
-                    .color(Color.rgba(255, 255, 255, Math.round(8 * alphaVal)))
-                    .render(extractor);
-
-            Outline.of(x, y, w, 80.0F)
-                    .radius(8)
-                    .thickness(1.0F)
-                    .verticalGradient(Color.WHITE, FADE_WHITE)
-                    .alpha(alphaVal)
-                    .render(extractor);
-
+            Render2D.drawRoundedRect(x, y, w, 80.0F, 7.0F, ColorUtil.rgba(255, 255, 255, (int) (8 * alphaVal)));
+            Render2D.drawRoundedOutline(x, y, w, 80.0F, 7.0F, 0.65F, ColorUtil.rgba(255, 255, 255, (int) (20 * alphaVal)));
             Fonts.drawCenteredString(Fonts.SF_MEDIUM, "В этой категории нет модулей", x + w / 2.0F, y + 30.0F, 7.0F, 0xFFC0D0E0);
             Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Выберите другую категорию в меню слева", x + w / 2.0F, y + 46.0F, 5.2F, 0xFF8898B0);
             return;
@@ -389,7 +324,6 @@ public class LiquidClickGui extends Screen {
         float leftY = startY;
         float rightY = startY;
 
-        extractor.enableScissor(Math.round(x - 2.0F), Math.round(y), Math.round(x + w + 2.0F), Math.round(y + h));
         Render2DUtil.pushScissor(x - 2.0F, y, w + 4.0F, h);
         try {
             for (int i = 0; i < modules.size(); i++) {
@@ -408,7 +342,7 @@ public class LiquidClickGui extends Screen {
                 float cardH = 34.0F + (eVal * calculateSettingsHeight(module));
 
                 if (currentY + cardH >= y && currentY <= y + h) {
-                    renderModuleCard(extractor, module, cardX, currentY, cardW, cardH, eVal, mouseX, mouseY, alphaVal, accentColor);
+                    renderModuleCard(module, cardX, currentY, cardW, cardH, eVal, mouseX, mouseY, alphaVal, accentColor);
                 }
 
                 if (isRightColumn) {
@@ -419,7 +353,6 @@ public class LiquidClickGui extends Screen {
             }
         } finally {
             Render2DUtil.popScissor();
-            extractor.disableScissor();
         }
 
         float contentH = Math.max(leftY, rightY) - startY;
@@ -427,7 +360,7 @@ public class LiquidClickGui extends Screen {
         this.scrollAnim.setTarget(this.scrollTarget);
     }
 
-    private void renderModuleCard(GuiGraphicsExtractor extractor, Module module, float x, float y, float w, float h, float expandVal, int mouseX, int mouseY, float alphaVal, Color accentColor) {
+    private void renderModuleCard(Module module, float x, float y, float w, float h, float expandVal, int mouseX, int mouseY, float alphaVal, int accentColor) {
         boolean isHovered = mouseX >= x && mouseX <= x + w && mouseY >= y && mouseY <= y + 34.0F;
 
         Animation toggleAnim = moduleToggleAnims.computeIfAbsent(module, k -> new Animation(module.isEnabled() ? 1.0F : 0.0F, 0.18F));
@@ -435,55 +368,26 @@ public class LiquidClickGui extends Screen {
         toggleAnim.update();
         float tVal = toggleAnim.getValue();
 
-        int accentArgb = accentColor.argb();
-
+        // Distinct styling: noticeable frosted glass card, but NOT a solid blue block!
         if (module.isEnabled()) {
-            Shadow.of(x, y, w, h)
-                    .radius(8)
-                    .blur(6)
-                    .offset(0, 2)
-                    .strength(2.0F)
-                    .color(accentColor)
-                    .alpha(alphaVal)
-                    .render(extractor);
+            // Elegant dark graphite glass with soft accent tint
+            int cardBg = ColorUtil.rgba(24, 32, 48, (int) (170 * alphaVal));
+            int cardOutline = ColorUtil.withAlpha(accentColor, (int) ((120 + (isHovered ? 40 : 0)) * alphaVal));
 
-            RoundedRect.of(x, y, w, h)
-                    .radius(8)
-                    .color(Color.rgba(26, 28, 38, Math.round(220 * alphaVal)))
-                    .render(extractor);
-
-            Outline.of(x, y, w, h)
-                    .radius(8)
-                    .thickness(1.0F)
-                    .verticalGradient(Color.WHITE, FADE_WHITE)
-                    .alpha(alphaVal)
-                    .render(extractor);
+            Render2D.drawRoundedRect(x, y, w, h, 6.0F, cardBg);
+            Render2D.drawRoundedOutline(x, y, w, h, 6.0F, 0.85F, cardOutline);
         } else {
-            Shadow.of(x, y, w, h)
-                    .radius(8)
-                    .blur(6)
-                    .color(Color.rgba(0, 0, 0, Math.round(80 * alphaVal)))
-                    .render(extractor);
+            // Inactive clean frosted glass card
+            int cardBg = ColorUtil.rgba(20, 24, 34, (int) ((isHovered ? 130 : 90) * alphaVal));
+            int cardOutline = ColorUtil.rgba(255, 255, 255, (int) ((isHovered ? 28 : 16) * alphaVal));
 
-            RoundedRect.of(x, y, w, h)
-                    .radius(8)
-                    .color(Color.rgba(18, 20, 26, Math.round((isHovered ? 160 : 120) * alphaVal)))
-                    .render(extractor);
-
-            Outline.of(x, y, w, h)
-                    .radius(8)
-                    .thickness(1.0F)
-                    .color(Color.rgba(255, 255, 255, Math.round((isHovered ? 30 : 16) * alphaVal)))
-                    .render(extractor);
+            Render2D.drawRoundedRect(x, y, w, h, 6.0F, cardBg);
+            Render2D.drawRoundedOutline(x, y, w, h, 6.0F, 0.75F, cardOutline);
         }
 
         // Status Indicator Dot
-        int dotCol = module.isEnabled() ? accentArgb : 0xFF708098;
-        RoundedRect.of(x + 9.0F, y + 11.5F, 5.0F, 5.0F)
-                .radius(2.5F)
-                .color(Color.of(dotCol))
-                .alpha(alphaVal)
-                .render(extractor);
+        int dotCol = module.isEnabled() ? accentColor : ColorUtil.rgba(110, 120, 140, (int) (120 * alphaVal));
+        Render2D.drawCircle(x + 10.0F, y + 12.0F, 2.6F, dotCol);
 
         // Module Name
         int titleCol = module.isEnabled() ? 0xFFFFFFFF : 0xFFC0D0E0;
@@ -492,7 +396,13 @@ public class LiquidClickGui extends Screen {
         // Module Description
         String desc = module.getDescription();
         if (desc != null && !desc.isEmpty()) {
-            Fonts.drawString(Fonts.SF_MEDIUM, desc, x + 18.0F, y + 18.0F, 4.6F, 0xFF8898B0);
+            float maxDescW = w - 58.0F;
+            Render2DUtil.pushScissor(x + 18.0F, y + 18.0F, maxDescW, 11.0F);
+            try {
+                Fonts.drawString(Fonts.SF_MEDIUM, desc, x + 18.0F, y + 18.0F, 4.6F, 0xFF8898B0);
+            } finally {
+                Render2DUtil.popScissor();
+            }
         }
 
         // Toggle Switch Widget
@@ -501,35 +411,27 @@ public class LiquidClickGui extends Screen {
         float switchX = x + w - switchW - 8.0F;
         float switchY = y + 11.0F;
 
-        Color trackCol = tVal > 0.01F ? accentColor : Color.rgba(255, 255, 255, 30);
-        RoundedRect.of(switchX, switchY, switchW, switchH)
-                .radius(6)
-                .color(trackCol)
-                .alpha(alphaVal)
-                .render(extractor);
+        int trackCol = tVal > 0.01F ? ColorUtil.withAlpha(accentColor, (int) (210 * alphaVal)) : ColorUtil.rgba(255, 255, 255, (int) (26 * alphaVal));
+        Render2D.drawRoundedRect(switchX, switchY, switchW, switchH, 6.0F, trackCol);
 
         // Knob
         float knobSize = 8.0F;
         float knobX = switchX + 2.0F + (switchW - knobSize - 4.0F) * tVal;
         float knobY = switchY + 2.0F;
-        RoundedRect.of(knobX, knobY, knobSize, knobSize)
-                .radius(4)
-                .color(Color.WHITE)
-                .alpha(alphaVal)
-                .render(extractor);
+        Render2D.drawRoundedRect(knobX, knobY, knobSize, knobSize, 4.0F, 0xFFFFFFFF);
 
         // Settings section
         if (expandVal > 0.01F) {
             float setY = y + 33.0F;
             List<Setting<?>> settings = module.getSettings();
             for (Setting<?> setting : settings) {
-                renderSettingRow(extractor, setting, x + 9.0F, setY, w - 18.0F, mouseX, mouseY, expandVal * alphaVal, accentColor);
+                renderSettingRow(setting, x + 9.0F, setY, w - 18.0F, mouseX, mouseY, expandVal * alphaVal, accentColor);
                 setY += getSettingHeight(setting);
             }
         }
     }
 
-    private void renderSettingRow(GuiGraphicsExtractor extractor, Setting<?> setting, float x, float y, float w, int mouseX, int mouseY, float alphaVal, Color accentColor) {
+    private void renderSettingRow(Setting<?> setting, float x, float y, float w, int mouseX, int mouseY, float alphaVal, int accentColor) {
         if (setting instanceof CheckBox cb) {
             Fonts.drawString(Fonts.SF_MEDIUM, cb.getName(), x, y + 2.0F, 5.6F, 0xFFE0E8F5);
 
@@ -537,11 +439,8 @@ public class LiquidClickGui extends Screen {
             float boxX = x + w - boxSize;
             boolean isHovered = mouseX >= boxX && mouseX <= boxX + boxSize && mouseY >= y && mouseY <= y + boxSize;
 
-            RoundedRect.of(boxX, y, boxSize, boxSize)
-                    .radius(3)
-                    .color(cb.getValue() ? accentColor : Color.rgba(255, 255, 255, isHovered ? 40 : 20))
-                    .alpha(alphaVal)
-                    .render(extractor);
+            int boxBg = cb.getValue() ? accentColor : ColorUtil.rgba(255, 255, 255, (int) ((isHovered ? 35 : 20) * alphaVal));
+            Render2D.drawRoundedRect(boxX, y, boxSize, boxSize, 3.0F, boxBg);
 
             if (cb.getValue()) {
                 Fonts.drawCenteredString(Fonts.SF_MEDIUM, "✓", boxX + boxSize / 2.0F, y + 1.2F, 6.2F, 0xFFFFFFFF);
@@ -559,25 +458,13 @@ public class LiquidClickGui extends Screen {
 
             float barY = y + 9.5F;
             float barH = 3.5F;
-            RoundedRect.of(x, barY, w, barH)
-                    .radius(1.8F)
-                    .color(Color.rgba(255, 255, 255, 25))
-                    .alpha(alphaVal)
-                    .render(extractor);
+            Render2D.drawRoundedRect(x, barY, w, barH, 1.8F, ColorUtil.rgba(255, 255, 255, (int) (22 * alphaVal)));
 
             float fillW = Math.max(3.5F, w * pct);
-            RoundedRect.of(x, barY, fillW, barH)
-                    .radius(1.8F)
-                    .color(accentColor)
-                    .alpha(alphaVal)
-                    .render(extractor);
+            Render2D.drawRoundedRect(x, barY, fillW, barH, 1.8F, accentColor);
 
             float handleX = x + fillW - 2.0F;
-            RoundedRect.of(handleX, barY + 0.2F, 3.5F, 3.5F)
-                    .radius(1.75F)
-                    .color(Color.WHITE)
-                    .alpha(alphaVal)
-                    .render(extractor);
+            Render2D.drawCircle(handleX, barY + 1.8F, 3.0F, 0xFFFFFFFF);
         } else if (setting instanceof BindSetting b) {
             Fonts.drawString(Fonts.SF_MEDIUM, "Назначение клавиши", x, y + 2.0F, 5.6F, 0xFFE0E8F5);
 
@@ -586,30 +473,25 @@ public class LiquidClickGui extends Screen {
             float btnH = 12.0F;
             float btnX = x + w - btnW;
 
-            RoundedRect.of(btnX, y, btnW, btnH)
-                    .radius(3)
-                    .color(Color.rgba(255, 255, 255, 24))
-                    .alpha(alphaVal)
-                    .render(extractor);
-
+            Render2D.drawRoundedRect(btnX, y, btnW, btnH, 3.0F, ColorUtil.rgba(255, 255, 255, (int) (20 * alphaVal)));
             Fonts.drawCenteredString(Fonts.SF_MEDIUM, bindText, btnX + btnW / 2.0F, y + 2.5F, 5.0F, 0xFFFFFFFF);
         }
     }
 
     // ===================== THEMES TAB =====================
 
-    private void renderThemesTab(GuiGraphicsExtractor extractor, float x, float y, float w, float h, int mouseX, int mouseY, float alphaVal) {
+    private void renderThemesTab(float x, float y, float w, float h, int mouseX, int mouseY, float alphaVal, int accentColor) {
         Fonts.drawString(Fonts.SF_MEDIUM, "Выберите цветовую палитру интерфейса", x, y, 6.8F, 0xFFB0C0D4);
 
         float cardW = (w - 10.0F) / 2.0F;
         float cardH = 56.0F;
 
         structThemeOption[] options = new structThemeOption[]{
-                new structThemeOption("WINTER_GLASS", "Зимнее Жидкое Стекло", "Ледяной циан, снег и сияние стекла", Color.rgb(0, 180, 255), Color.rgb(120, 200, 255), "Static"),
-                new structThemeOption("OBSIDIAN_BLACK", "Черный Обсидиан", "Глубокий матовый черный, строгий минимализм", Color.rgb(255, 255, 255), Color.rgb(180, 190, 205), "Static"),
-                new structThemeOption("CHRISTMAS", "Новогодний Карнавал", "Праздничный алый бархат и еловый изумруд", Color.rgb(255, 55, 75), Color.rgb(40, 210, 120), "Static"),
-                new structThemeOption("NEON_CYBER", "Неоновый Киберпанк", "Динамический радужный перелив Chroma", Color.rgb(168, 85, 247), Color.rgb(6, 182, 212), "Chroma"),
-                new structThemeOption("RETRO_UI", "RetroUI 90s", "Ретро-интерфейс, контрастные рамки", Color.rgb(16, 185, 129), Color.rgb(59, 130, 246), "Static")
+                new structThemeOption("WINTER_GLASS", "Зимнее Жидкое Стекло", "Ледяной циан, снег и сияние стекла", ColorUtil.rgb(0, 180, 255), ColorUtil.rgb(120, 200, 255), "Static"),
+                new structThemeOption("OBSIDIAN_BLACK", "Черный Обсидиан", "Глубокий матовый черный, строгий минимализм", ColorUtil.rgb(255, 255, 255), ColorUtil.rgb(180, 190, 205), "Static"),
+                new structThemeOption("CHRISTMAS", "Новогодний Карнавал", "Праздничный алый бархат и еловый изумруд", ColorUtil.rgb(255, 55, 75), ColorUtil.rgb(40, 210, 120), "Static"),
+                new structThemeOption("NEON_CYBER", "Неоновый Киберпанк", "Динамический радужный перелив Chroma", ColorUtil.rgb(168, 85, 247), ColorUtil.rgb(6, 182, 212), "Chroma"),
+                new structThemeOption("RETRO_UI", "RetroUI 90s", "Ретро-интерфейс, контрастные рамки", ColorUtil.rgb(16, 185, 129), ColorUtil.rgb(59, 130, 246), "Static")
         };
 
         String currentStyle = Theme.getUiStyle();
@@ -623,83 +505,29 @@ public class LiquidClickGui extends Screen {
             boolean isHovered = mouseX >= cx && mouseX <= cx + cardW && mouseY >= cy && mouseY <= cy + cardH;
             boolean isActive = currentStyle.equalsIgnoreCase(opt.styleId);
 
-            if (isActive) {
-                Shadow.of(cx, cy, cardW, cardH)
-                        .radius(8)
-                        .blur(6)
-                        .offset(0, 2)
-                        .strength(2.0F)
-                        .color(opt.accent)
-                        .alpha(alphaVal)
-                        .render(extractor);
+            int bg = isActive ? ColorUtil.rgba(24, 32, 48, (int) (180 * alphaVal)) : ColorUtil.rgba(20, 24, 34, (int) ((isHovered ? 140 : 90) * alphaVal));
+            int outline = isActive ? ColorUtil.withAlpha(opt.accent, (int) (160 * alphaVal)) : ColorUtil.rgba(255, 255, 255, (int) ((isHovered ? 28 : 16) * alphaVal));
 
-                RoundedRect.of(cx, cy, cardW, cardH)
-                        .radius(8)
-                        .color(Color.rgba(26, 28, 38, Math.round(225 * alphaVal)))
-                        .render(extractor);
+            Render2D.drawRoundedRect(cx, cy, cardW, cardH, 5.5F, bg);
+            Render2D.drawRoundedOutline(cx, cy, cardW, cardH, 5.5F, 0.75F, outline);
 
-                Outline.of(cx, cy, cardW, cardH)
-                        .radius(8)
-                        .thickness(1.0F)
-                        .verticalGradient(Color.WHITE, FADE_WHITE)
-                        .alpha(alphaVal)
-                        .render(extractor);
-            } else {
-                Shadow.of(cx, cy, cardW, cardH)
-                        .radius(8)
-                        .blur(5)
-                        .color(Color.rgba(0, 0, 0, Math.round(70 * alphaVal)))
-                        .render(extractor);
+            // Preview Orbs
+            Render2D.drawCircle(cx + 15.0F, cy + 18.0F, 5.5F, opt.accent);
+            Render2D.drawCircle(cx + 25.0F, cy + 18.0F, 5.5F, opt.secondary);
 
-                RoundedRect.of(cx, cy, cardW, cardH)
-                        .radius(8)
-                        .color(Color.rgba(18, 20, 26, Math.round((isHovered ? 160 : 120) * alphaVal)))
-                        .render(extractor);
-
-                Outline.of(cx, cy, cardW, cardH)
-                        .radius(8)
-                        .thickness(1.0F)
-                        .color(Color.rgba(255, 255, 255, Math.round((isHovered ? 30 : 16) * alphaVal)))
-                        .render(extractor);
-            }
-
-            // Orbs
-            RoundedRect.of(cx + 12.0F, cy + 14.0F, 8.0F, 8.0F)
-                    .radius(4)
-                    .color(opt.accent)
-                    .render(extractor);
-
-            RoundedRect.of(cx + 22.0F, cy + 14.0F, 8.0F, 8.0F)
-                    .radius(4)
-                    .color(opt.secondary)
-                    .render(extractor);
-
-            Fonts.drawString(Fonts.SF_MEDIUM, opt.title, cx + 36.0F, cy + 11.5F, 7.0F, 0xFFFFFFFF);
-            Fonts.drawString(Fonts.SF_MEDIUM, opt.desc, cx + 36.0F, cy + 24.0F, 4.5F, 0xFFA0B0C4);
+            Fonts.drawString(Fonts.SF_MEDIUM, opt.title, cx + 38.0F, cy + 11.5F, 7.0F, 0xFFFFFFFF);
+            Fonts.drawString(Fonts.SF_MEDIUM, opt.desc, cx + 38.0F, cy + 24.0F, 4.5F, 0xFFA0B0C4);
 
             if (isActive) {
-                RoundedRect.of(cx + cardW - 50.0F, cy + 35.0F, 42.0F, 13.0F)
-                        .radius(3)
-                        .color(opt.accent)
-                        .alpha(alphaVal)
-                        .render(extractor);
+                Render2D.drawRoundedRect(cx + cardW - 50.0F, cy + 35.0F, 42.0F, 13.0F, 3.0F, ColorUtil.withAlpha(opt.accent, (int) (200 * alphaVal)));
                 Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Активно", cx + cardW - 29.0F, cy + 38.5F, 4.8F, 0xFFFFFFFF);
             }
         }
     }
 
-    private void renderConfigsTab(GuiGraphicsExtractor extractor, float x, float y, float w, float h, int mouseX, int mouseY, float alphaVal, Color accentColor) {
-        RoundedRect.of(x, y, w, h)
-                .radius(8)
-                .color(Color.rgba(255, 255, 255, Math.round(8 * alphaVal)))
-                .render(extractor);
-
-        Outline.of(x, y, w, h)
-                .radius(8)
-                .thickness(1.0F)
-                .verticalGradient(Color.WHITE, FADE_WHITE)
-                .alpha(alphaVal)
-                .render(extractor);
+    private void renderConfigsTab(float x, float y, float w, float h, int mouseX, int mouseY, float alphaVal, int accentColor) {
+        Render2D.drawRoundedRect(x, y, w, h, 7.0F, ColorUtil.rgba(20, 24, 34, (int) (90 * alphaVal)));
+        Render2D.drawRoundedOutline(x, y, w, h, 7.0F, 0.7F, ColorUtil.rgba(255, 255, 255, (int) (20 * alphaVal)));
 
         Fonts.drawString(Fonts.SF_MEDIUM, "Менеджер Конфигураций", x + 14.0F, y + 14.0F, 9.0F, 0xFFFFFFFF);
         Fonts.drawString(Fonts.SF_MEDIUM, "Сохраняйте и загружайте настройки клиента", x + 14.0F, y + 26.0F, 5.5F, 0xFFA0B0C4);
@@ -707,45 +535,22 @@ public class LiquidClickGui extends Screen {
         String[] presets = new String[]{"default", "legit_funtime", "rage_hvh", "skywars_boost"};
         float itemY = y + 46.0F;
         for (String preset : presets) {
-            RoundedRect.of(x + 14.0F, itemY, w - 28.0F, 24.0F)
-                    .radius(6)
-                    .color(Color.rgba(255, 255, 255, Math.round(12 * alphaVal)))
-                    .render(extractor);
-
-            Outline.of(x + 14.0F, itemY, w - 28.0F, 24.0F)
-                    .radius(6)
-                    .thickness(1.0F)
-                    .verticalGradient(Color.WHITE, FADE_WHITE)
-                    .alpha(alphaVal)
-                    .render(extractor);
+            Render2D.drawRoundedRect(x + 14.0F, itemY, w - 28.0F, 24.0F, 5.0F, ColorUtil.rgba(255, 255, 255, (int) (14 * alphaVal)));
+            Render2D.drawRoundedOutline(x + 14.0F, itemY, w - 28.0F, 24.0F, 5.0F, 0.7F, ColorUtil.rgba(255, 255, 255, (int) (22 * alphaVal)));
 
             Fonts.drawString(Fonts.SF_MEDIUM, preset + ".json", x + 24.0F, itemY + 8.0F, 6.5F, 0xFFFFFFFF);
 
             float loadBtnX = x + w - 85.0F;
-            RoundedRect.of(loadBtnX, itemY + 4.0F, 60.0F, 16.0F)
-                    .radius(4)
-                    .color(accentColor)
-                    .alpha(alphaVal)
-                    .render(extractor);
-
+            Render2D.drawRoundedRect(loadBtnX, itemY + 4.0F, 60.0F, 16.0F, 3.5F, ColorUtil.withAlpha(accentColor, (int) (190 * alphaVal)));
             Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Загрузить", loadBtnX + 30.0F, itemY + 7.5F, 5.2F, 0xFFFFFFFF);
 
             itemY += 28.0F;
         }
     }
 
-    private void renderFriendsTab(GuiGraphicsExtractor extractor, float x, float y, float w, float h, int mouseX, int mouseY, float alphaVal) {
-        RoundedRect.of(x, y, w, h)
-                .radius(8)
-                .color(Color.rgba(255, 255, 255, Math.round(8 * alphaVal)))
-                .render(extractor);
-
-        Outline.of(x, y, w, h)
-                .radius(8)
-                .thickness(1.0F)
-                .verticalGradient(Color.WHITE, FADE_WHITE)
-                .alpha(alphaVal)
-                .render(extractor);
+    private void renderFriendsTab(float x, float y, float w, float h, int mouseX, int mouseY, float alphaVal) {
+        Render2D.drawRoundedRect(x, y, w, h, 7.0F, ColorUtil.rgba(20, 24, 34, (int) (90 * alphaVal)));
+        Render2D.drawRoundedOutline(x, y, w, h, 7.0F, 0.7F, ColorUtil.rgba(255, 255, 255, (int) (20 * alphaVal)));
 
         Fonts.drawString(Fonts.SF_MEDIUM, "Список Друзей", x + 14.0F, y + 14.0F, 9.0F, 0xFFFFFFFF);
         Fonts.drawString(Fonts.SF_MEDIUM, "Друзья автоматически игнорируются аимом и киллаурой", x + 14.0F, y + 26.0F, 5.5F, 0xFFA0B0C4);
@@ -753,24 +558,15 @@ public class LiquidClickGui extends Screen {
         Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Список друзей пуст. Кликните ПКМ по игроку в игре чтобы добавить!", x + w / 2.0F, y + h / 2.0F, 6.5F, 0xFFA0B0C4);
     }
 
-    private void renderEventsTab(GuiGraphicsExtractor extractor, float x, float y, float w, float h, int mouseX, int mouseY, float alphaVal, Color accentColor) {
-        RoundedRect.of(x, y, w, h)
-                .radius(8)
-                .color(Color.rgba(255, 255, 255, Math.round(8 * alphaVal)))
-                .render(extractor);
+    private void renderEventsTab(float x, float y, float w, float h, int mouseX, int mouseY, float alphaVal, int accentColor) {
+        Render2D.drawRoundedRect(x, y, w, h, 7.0F, ColorUtil.rgba(20, 24, 34, (int) (90 * alphaVal)));
+        Render2D.drawRoundedOutline(x, y, w, h, 7.0F, 0.7F, ColorUtil.rgba(255, 255, 255, (int) (20 * alphaVal)));
 
-        Outline.of(x, y, w, h)
-                .radius(8)
-                .thickness(1.0F)
-                .verticalGradient(Color.WHITE, FADE_WHITE)
-                .alpha(alphaVal)
-                .render(extractor);
-
-        Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Новогодний Ивент Error DLC 2026", x + w / 2.0F, y + h / 2.0F - 10.0F, 9.5F, accentColor.argb());
+        Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Новогодний Ивент Error DLC 2026", x + w / 2.0F, y + h / 2.0F - 10.0F, 9.5F, accentColor);
         Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Эксклюзивные праздничные эффекты и косметика будут доступны в обновлении!", x + w / 2.0F, y + h / 2.0F + 8.0F, 5.8F, 0xFFA0B0C4);
     }
 
-    private record structThemeOption(String styleId, String title, String desc, Color accent, Color secondary, String mode) {}
+    private record structThemeOption(String styleId, String title, String desc, int accent, int secondary, String mode) {}
 
     private float calculateSettingsHeight(Module module) {
         float h = 4.0F;
@@ -869,11 +665,11 @@ public class LiquidClickGui extends Screen {
                 float cardH = 56.0F;
 
                 structThemeOption[] options = new structThemeOption[]{
-                        new structThemeOption("WINTER_GLASS", "", "", Color.rgb(0, 180, 255), Color.rgb(120, 200, 255), "Static"),
-                        new structThemeOption("OBSIDIAN_BLACK", "", "", Color.rgb(255, 255, 255), Color.rgb(180, 190, 205), "Static"),
-                        new structThemeOption("CHRISTMAS", "", "", Color.rgb(255, 55, 75), Color.rgb(40, 210, 120), "Static"),
-                        new structThemeOption("NEON_CYBER", "", "", Color.rgb(168, 85, 247), Color.rgb(6, 182, 212), "Chroma"),
-                        new structThemeOption("RETRO_UI", "", "", Color.rgb(16, 185, 129), Color.rgb(59, 130, 246), "Static")
+                        new structThemeOption("WINTER_GLASS", "", "", ColorUtil.rgb(0, 180, 255), ColorUtil.rgb(120, 200, 255), "Static"),
+                        new structThemeOption("OBSIDIAN_BLACK", "", "", ColorUtil.rgb(255, 255, 255), ColorUtil.rgb(180, 190, 205), "Static"),
+                        new structThemeOption("CHRISTMAS", "", "", ColorUtil.rgb(255, 55, 75), ColorUtil.rgb(40, 210, 120), "Static"),
+                        new structThemeOption("NEON_CYBER", "", "", ColorUtil.rgb(168, 85, 247), ColorUtil.rgb(6, 182, 212), "Chroma"),
+                        new structThemeOption("RETRO_UI", "", "", ColorUtil.rgb(16, 185, 129), ColorUtil.rgb(59, 130, 246), "Static")
                 };
 
                 for (int i = 0; i < options.length; i++) {
@@ -884,8 +680,8 @@ public class LiquidClickGui extends Screen {
                         Theme.setUiStyle(options[i].styleId);
                         Theme.setAccentMode(options[i].mode);
                         if (options[i].mode.equalsIgnoreCase("Static")) {
-                            Theme.setAccentColor(options[i].accent.argb());
-                            Theme.setSecondaryColor(options[i].secondary.argb());
+                            Theme.setAccentColor(options[i].accent);
+                            Theme.setSecondaryColor(options[i].secondary);
                         }
                         return true;
                     }
