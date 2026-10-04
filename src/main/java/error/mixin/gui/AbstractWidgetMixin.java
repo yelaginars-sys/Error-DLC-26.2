@@ -7,6 +7,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractSelectionList;
 import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Checkbox;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.network.chat.Component;
@@ -37,14 +38,26 @@ public abstract class AbstractWidgetMixin {
         if (!this.visible) return;
 
         Object self = this;
+        String className = self.getClass().getName();
+
+        // Do NOT intercept lists, entries, edit boxes, checkboxes, tabs, text widgets
         if (self instanceof EditBox
                 || self instanceof Checkbox
-                || self instanceof AbstractSelectionList) {
+                || self instanceof AbstractSelectionList
+                || className.contains("List")
+                || className.contains("Entry")
+                || className.contains("Tab")
+                || className.contains("String")
+                || className.contains("Text")) {
+            return;
+        }
+
+        // Only custom render standard Buttons and Sliders
+        if (!(self instanceof Button || self instanceof AbstractSliderButton)) {
             return;
         }
 
         if (this.width <= 0 || this.height <= 0) {
-            ci.cancel();
             return;
         }
 
