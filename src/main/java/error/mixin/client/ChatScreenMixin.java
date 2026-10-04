@@ -20,17 +20,18 @@ import static error.IMinecraft.mc;
 @Mixin(ChatScreen.class)
 public abstract class ChatScreenMixin {
 
-    @Shadow public int width;
-    @Shadow public int height;
     @Shadow protected EditBox input;
 
     @Inject(method = "init", at = @At("TAIL"))
     private void enlargeChatInput(CallbackInfo ci) {
         if (this.input != null) {
-            float chatW = Math.min(360.0F, this.width - 20.0F);
+            float screenW = Minecraft.getInstance().getWindow().getGuiScaledWidth();
+            float screenH = Minecraft.getInstance().getWindow().getGuiScaledHeight();
+
+            float chatW = Math.min(360.0F, screenW - 20.0F);
             float chatH = 18.0F;
             float chatX = 8.0F;
-            float chatY = this.height - 24.0F;
+            float chatY = screenH - 24.0F;
 
             this.input.setX((int) chatX);
             this.input.setY((int) chatY);
