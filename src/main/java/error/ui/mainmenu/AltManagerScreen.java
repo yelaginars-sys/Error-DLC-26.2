@@ -78,11 +78,11 @@ public class AltManagerScreen extends Screen {
 
             // 1. Fullscreen dark background texture
             Render2D.drawRect(0, 0, screenW, screenH, ColorUtil.rgba(6, 8, 12, (int) (255 * this.screenAlpha)));
-            Render2D.drawTexture(BG_TEX, 0, 0, screenW, screenH, ColorUtil.rgba(240, 245, 255, (int) (255 * this.screenAlpha)));
-            Render2D.drawRect(0, 0, screenW, screenH, ColorUtil.rgba(5, 8, 14, (int) (45 * this.screenAlpha)));
+            Render2D.drawTexture(BG_TEX, 0, 0, screenW, screenH, ColorUtil.rgba(255, 255, 255, (int) (255 * this.screenAlpha)));
+            Render2D.drawRect(0, 0, screenW, screenH, ColorUtil.rgba(5, 8, 14, (int) (25 * this.screenAlpha)));
 
-            int topFade = ColorUtil.rgba(3, 5, 8, (int) (45 * this.screenAlpha));
-            int botFade = ColorUtil.rgba(3, 5, 8, (int) (95 * this.screenAlpha));
+            int topFade = ColorUtil.rgba(3, 5, 8, (int) (35 * this.screenAlpha));
+            int botFade = ColorUtil.rgba(3, 5, 8, (int) (80 * this.screenAlpha));
             Render2D.drawGradientRound(0, 0, screenW, screenH, 0.0F, topFade, topFade, botFade, botFade);
 
             // 2. Center Glass Panel

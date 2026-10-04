@@ -1,6 +1,5 @@
 package error.ui.mainmenu;
 
-import error.ui.nova.NovaShader;
 import error.util.client.clients.ColorUtil;
 import error.util.client.clients.Theme;
 import error.util.render.Render2D;
@@ -153,7 +152,7 @@ public final class WinterMenuRenderer {
         float timeSec = (now - startTime) / 1000.0f;
 
         // ── 1. Animated Liquid Glass Theme Backdrop ───────────────────────────
-        error.ui.nova.NovaShader.drawBackdrop(null, 0, cameraYOffset, width, height, 0.0F);
+        // Clean background render
 
         // ── 5. Twinkling stars ──────────────────────────────────────────────
         for (Star star : STARS) {

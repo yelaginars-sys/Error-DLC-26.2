@@ -4,7 +4,7 @@ import org.lwjgl.glfw.GLFW;
 import error.module.Category;
 import error.module.Module;
 import error.setting.impl.BindSetting;
-import error.ui.nova.NovaGui;
+import error.ui.clickgui.LiquidClickGui;
 
 public class ClickGui extends Module {
 
@@ -19,10 +19,10 @@ public class ClickGui extends Module {
 
     @Override
     protected void onEnable() {
-        if (screen() instanceof NovaGui) {
+        if (screen() instanceof LiquidClickGui) {
             mc.setScreenAndShow(null);
         } else {
-            mc.setScreenAndShow(new NovaGui());
+            mc.setScreenAndShow(new LiquidClickGui());
         }
         this.setState(false);
     }
