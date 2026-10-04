@@ -60,6 +60,7 @@ public class LiquidClickGui extends Screen {
     @Override
     protected void init() {
         super.init();
+        this.openAnim.setValue(1.0F);
         this.openAnim.setTarget(1.0F);
     }
 
@@ -141,6 +142,7 @@ public class LiquidClickGui extends Screen {
 
             extractor.pose().popMatrix();
         } finally {
+            error.util.display.DisplayUtil.flush();
             RenderExtend.exit2D();
         }
     }

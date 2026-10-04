@@ -22,7 +22,6 @@
     "client.LightmapRenderStateExtractorMixin",
     "client.MultiPlayerGameModeMixin",
     "client.MixinServerboundUseItemPacket",
-    "gui.TitleScreenMixin",
     "gui.PauseScreenMixin",
     "accessor.KeyMappingAccessor",
     "client.LocalPlayerMixin",

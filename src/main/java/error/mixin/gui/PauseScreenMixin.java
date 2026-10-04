@@ -19,7 +19,6 @@ public abstract class PauseScreenMixin extends Screen {
     @Inject(method = "init", at = @At("TAIL"))
     private void alignPauseButtons(CallbackInfo ci) {
         float centerX = this.width / 2.0F;
-        float centerY = this.height / 2.0F;
 
         AbstractWidget returnButton = null;
         AbstractWidget advancementsButton = null;
@@ -35,7 +34,7 @@ public abstract class PauseScreenMixin extends Screen {
                 String text = widget.getMessage() != null ? widget.getMessage().getString().toLowerCase() : "";
 
                 if (text.contains("вернуться") || text.contains("back to game") || text.contains("return")) {
-                    returnButton = widget;
+                    widget.visible = false; // Hide top Return button per user request ("убрать кнопку меню типо которая вверху")
                 } else if (text.contains("достижения") || text.contains("advancements")) {
                     advancementsButton = widget;
                 } else if (text.contains("статистика") || text.contains("stats")) {
@@ -51,7 +50,7 @@ public abstract class PauseScreenMixin extends Screen {
                 } else if (text.contains("сохранить") || text.contains("выйти") || text.contains("disconnect") || text.contains("quit")) {
                     quitButton = widget;
                 } else if (text.contains("друзья") || text.contains("жалобы") || text.contains("friends") || text.contains("reports")) {
-                    widget.visible = false;
+                    widget.visible = false; // Hide extra overlapping social buttons
                 }
             }
         }
@@ -60,33 +59,24 @@ public abstract class PauseScreenMixin extends Screen {
         float wHalf = 102.0F;
         float h = 20.0F;
         float gap = 5.0F;
-        float startY = centerY - 52.0F;
+        float startY = Math.max(30.0F, this.height * 0.22F); // Position buttons higher up on screen
 
-        // 1. Return to Game
-        if (returnButton != null) {
-            returnButton.setX((int) (centerX - wFull / 2.0F));
-            returnButton.setY((int) startY);
-            returnButton.setWidth((int) wFull);
-            returnButton.setHeight((int) h);
-        }
-
-        // 2. Advancements & Stats
-        float row1Y = startY + h + gap;
+        // Row 1: Advancements & Stats
         if (advancementsButton != null) {
             advancementsButton.setX((int) (centerX - wFull / 2.0F));
-            advancementsButton.setY((int) row1Y);
+            advancementsButton.setY((int) startY);
             advancementsButton.setWidth((int) wHalf);
             advancementsButton.setHeight((int) h);
         }
         if (statsButton != null) {
             statsButton.setX((int) (centerX + wFull / 2.0F - wHalf));
-            statsButton.setY((int) row1Y);
+            statsButton.setY((int) startY);
             statsButton.setWidth((int) wHalf);
             statsButton.setHeight((int) h);
         }
 
-        // 3. Feedback & Bugs
-        float row2Y = row1Y + h + gap;
+        // Row 2: Feedback & Bugs
+        float row2Y = startY + h + gap;
         if (feedbackButton != null) {
             feedbackButton.setX((int) (centerX - wFull / 2.0F));
             feedbackButton.setY((int) row2Y);
@@ -100,7 +90,7 @@ public abstract class PauseScreenMixin extends Screen {
             bugsButton.setHeight((int) h);
         }
 
-        // 4. Options & Open to LAN
+        // Row 3: Options & Open to LAN
         float row3Y = (feedbackButton != null || bugsButton != null) ? (row2Y + h + gap) : row2Y;
         if (optionsButton != null) {
             optionsButton.setX((int) (centerX - wFull / 2.0F));
@@ -115,7 +105,7 @@ public abstract class PauseScreenMixin extends Screen {
             lanButton.setHeight((int) h);
         }
 
-        // 5. Save & Quit
+        // Row 4: Save & Quit
         float row4Y = row3Y + h + gap;
         if (quitButton != null) {
             quitButton.setX((int) (centerX - wFull / 2.0F));
