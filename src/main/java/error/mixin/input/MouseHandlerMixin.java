@@ -22,10 +22,16 @@ public abstract class MouseHandlerMixin {
 
     @Inject(method = "onButton", at = @At("HEAD"), cancellable = true)
     private void onMouseButton(long window, MouseButtonInfo buttonInfo, int action, CallbackInfo ci) {
-        if (Client.getInstance().getEventManager().call(
-                Events.MOUSE_INPUT.set(window, buttonInfo.button(), action, buttonInfo.modifiers())
-        ).isCancelled()) {
-            ci.cancel();
+        if (Client.getInstance() != null && Client.getInstance().getModuleManager() != null) {
+            Client.getInstance().getModuleManager().onMouse(buttonInfo.button(), action);
+        }
+
+        if (Client.getInstance() != null && Client.getInstance().getEventManager() != null) {
+            if (Client.getInstance().getEventManager().call(
+                    Events.MOUSE_INPUT.set(window, buttonInfo.button(), action, buttonInfo.modifiers())
+            ).isCancelled()) {
+                ci.cancel();
+            }
         }
     }
 

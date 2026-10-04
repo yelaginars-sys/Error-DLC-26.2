@@ -3,13 +3,10 @@ package error;
 import net.fabricmc.api.ModInitializer;
 import error.event.EventManager;
 import error.builder.RotationBuilderManager;
-import error.ui.mainmenu.CustomTitleScreen;
 import error.account.AccountManager;
 import error.command.CommandManager;
 import error.config.ConfigManager;
 import error.ui.hud.HudManager;
-import error.ui.mainmenu.PanelKeyBoardHandler;
-import error.ui.mainmenu.PanelLapRenderHandler;
 import error.friend.FriendManager;
 import error.module.Modules;
 import error.util.client.persiki.Tps;
@@ -39,7 +36,6 @@ public class Client implements ModInitializer {
         this.commandManager = new CommandManager();
         this.configManager = new ConfigManager();
         EventManager.register(RotationBuilderManager.INSTANCE);
-        CustomTitleScreen.loadWallpaper();
         this.configManager.loadConfig("default", false);
         error.module.impl.misc.UnHook.unhooked = false;
         if (this.moduleManager.unHook != null) {
@@ -49,8 +45,6 @@ public class Client implements ModInitializer {
         error.cosmetic.CosmeticsManager.getInstance();
         this.eventManager.register(HudManager.getInstance());
         this.eventManager.register(Tps.INSTANCE);
-        this.eventManager.register(new PanelKeyBoardHandler());
-        this.eventManager.register(new PanelLapRenderHandler());
         } finally {
             error.config.ConfigManager.isLoadingConfig = false;
         }

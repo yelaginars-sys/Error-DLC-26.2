@@ -2,83 +2,41 @@ package error.ui.mainmenu;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import error.ui.mainmenu.popup.Modal;
 
-/**
- */
 public final class PanelRefractions {
-    private static final PanelLapState STATE = new PanelLapState();
-    private static final PanelLapSuperimposition RENDERER = new PanelLapSuperimposition();
-
     public static boolean toggle(Minecraft mc) {
-        if (STATE.isInteractive()) {
-            close(mc);
-            return true;
-        }
-        open(mc);
-        return true;
+        return false;
     }
 
-    public static void open(Minecraft mc) {
-        STATE.open();
-        if (mc.mouseHandler.isMouseGrabbed()) {
-            mc.mouseHandler.releaseMouse();
-        }
-    }
+    public static void open(Minecraft mc) {}
 
-    public static void close(Minecraft mc) {
-        if (!STATE.isOpen() || STATE.isClosing()) return;
-        STATE.setHoldActive(false);
-        STATE.beginClose();
-        if (mc.level != null && mc.player != null && mc.gui.screen() == null) {
-            mc.mouseHandler.grabMouse();
-        }
-    }
+    public static void close(Minecraft mc) {}
 
-    public static void openModal(Modal modal) {
-        STATE.setActiveModal(modal);
-    }
+    public static void openModal(Object modal) {}
 
     public static boolean isOpen() {
-        return STATE.isInteractive();
+        return false;
     }
 
     public static boolean isTyping() {
-        return STATE.isInteractive() && (STATE.isSearchFocused() || STATE.isAccountAddOpen() || STATE.isConfigInputFocused() || STATE.isShareCodeInputFocused() || STATE.isFriendInputFocused() || STATE.getActiveModal() != null);
+        return false;
     }
 
     public static boolean blocksInput() {
-        return STATE.isInteractive();
+        return false;
     }
 
     public static boolean handleMouseButton(Minecraft mc, int button, int action) {
-        if (!STATE.isInteractive()) return false;
-        int mouseX = (int) Math.round(mc.mouseHandler.getScaledXPos(mc.getWindow()));
-        int mouseY = (int) Math.round(mc.mouseHandler.getScaledYPos(mc.getWindow()));
-        return RENDERER.handleMouseButton(STATE, mouseX, mouseY, button, action);
+        return false;
     }
 
     public static boolean handleKey(int key, int scanCode, int modifiers) {
-        return STATE.isInteractive() && RENDERER.handleKey(STATE, key, scanCode, modifiers);
+        return false;
     }
 
-    public static void handleChar(int codePoint) {
-        if (STATE.isInteractive()) {
-            RENDERER.handleChar(STATE, codePoint);
-        }
-    }
+    public static void handleChar(int codePoint) {}
 
-    public static void handleScroll(double vertical) {
-        if (!STATE.isInteractive()) return;
-        Minecraft mc = Minecraft.getInstance();
-        int mouseX = (int) Math.round(mc.mouseHandler.getScaledXPos(mc.getWindow()));
-        int mouseY = (int) Math.round(mc.mouseHandler.getScaledYPos(mc.getWindow()));
-        RENDERER.handleScroll(STATE, vertical, mouseX, mouseY);
-    }
+    public static void handleScroll(double vertical) {}
 
-    public static void render(Minecraft mc, GuiGraphicsExtractor extractor, int screenWidth, int screenHeight) {
-        int mouseX = (int) Math.round(mc.mouseHandler.getScaledXPos(mc.getWindow()));
-        int mouseY = (int) Math.round(mc.mouseHandler.getScaledYPos(mc.getWindow()));
-        RENDERER.render(mc, extractor, STATE, screenWidth, screenHeight, mouseX, mouseY);
-    }
+    public static void render(Minecraft mc, GuiGraphicsExtractor extractor, int screenWidth, int screenHeight) {}
 }

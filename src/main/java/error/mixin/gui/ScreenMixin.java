@@ -27,4 +27,14 @@ public abstract class ScreenMixin {
         Client.INSTANCE.eventManager.call(SCREEN_CLOSE_EVENT.set(this.minecraft, (Screen) (Object) this)).isCancelled();
     }
 
+    @Inject(method = "extractRenderState", at = @At("HEAD"))
+    private void onExtractRenderStateHead(net.minecraft.client.gui.GuiGraphicsExtractor extractor, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
+        error.util.RenderExtend.enter2D(null, extractor, null);
+    }
+
+    @Inject(method = "extractRenderState", at = @At("TAIL"))
+    private void onExtractRenderStateTail(net.minecraft.client.gui.GuiGraphicsExtractor extractor, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
+        error.util.RenderExtend.exit2D();
+    }
+
 }

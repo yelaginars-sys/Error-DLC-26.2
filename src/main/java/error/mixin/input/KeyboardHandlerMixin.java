@@ -27,10 +27,16 @@ public abstract class KeyboardHandlerMixin {
 
     @Inject(method = "keyPress", at = @At("HEAD"), cancellable = true)
     private void onKeyPress(long window, int action, KeyEvent keyEvent, CallbackInfo ci) {
-        if (Client.getInstance().getEventManager().call(
-                Events.KEYBOARD_INPUT.set(window, keyEvent.key(), keyEvent.scancode(), action, keyEvent.modifiers())
-        ).isCancelled()) {
-            ci.cancel();
+        if (Client.getInstance() != null && Client.getInstance().getModuleManager() != null) {
+            Client.getInstance().getModuleManager().onKey(keyEvent.key(), action);
+        }
+
+        if (Client.getInstance() != null && Client.getInstance().getEventManager() != null) {
+            if (Client.getInstance().getEventManager().call(
+                    Events.KEYBOARD_INPUT.set(window, keyEvent.key(), keyEvent.scancode(), action, keyEvent.modifiers())
+            ).isCancelled()) {
+                ci.cancel();
+            }
         }
     }
 }
