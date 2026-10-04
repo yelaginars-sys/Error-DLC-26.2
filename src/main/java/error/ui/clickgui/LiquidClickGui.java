@@ -5,15 +5,18 @@ import error.module.Category;
 import error.module.Module;
 import error.setting.Setting;
 import error.setting.impl.*;
+import error.util.RenderExtend;
 import error.util.client.clients.Theme;
+import error.util.display.batch.DisplayBatcher;
 import error.util.display.blur.Blur;
 import error.util.display.blur.BlurType;
 import error.util.display.color.Color;
-import error.util.display.head.PlayerHead;
 import error.util.display.outline.Outline;
 import error.util.display.rounded.RoundedRect;
 import error.util.display.shadow.Shadow;
 import error.util.math.Animation;
+import error.util.render.Render2D;
+import error.util.render.Render2DUtil;
 import error.util.render.font.Fonts;
 import error.util.render.font.IconUse;
 import net.minecraft.client.Minecraft;
@@ -118,71 +121,75 @@ public class LiquidClickGui extends Screen {
         int accentArgb = Theme.getAccentColor();
         Color accentColor = Color.of(accentArgb);
 
-        // 1. Subtle World Dimmer (allows world to remain visible and blurred)
-        RoundedRect.of(0, 0, screenW, screenH)
-                .color(Color.rgba(0, 0, 0, Math.round(75 * animVal)))
-                .render(extractor);
+        RenderExtend.enter2D(null, extractor, null);
+        Render2DUtil.beginFrame();
+        try {
+            // 1. Subtle World Dimmer
+            RoundedRect.of(0, 0, screenW, screenH)
+                    .color(Color.rgba(0, 0, 0, Math.round(75 * animVal)))
+                    .render(extractor);
 
-        // 2. Winter Snowflakes
-        renderSnowflakes(extractor, screenW, screenH, animVal);
+            // 2. Winter Snowflakes
+            renderSnowflakes(extractor, screenW, screenH, animVal);
 
-        // 3. Main Liquid Glass Window (1:1 from RenderDemo)
-        // Soft drop shadow
-        Shadow.of(x, y, WINDOW_W, WINDOW_H)
-                .radius(12)
-                .blur(20)
-                .color(Color.rgba(0, 0, 0, Math.round(180 * animVal)))
-                .render(extractor);
+            // 3. Main Liquid Glass Window (1:1 from RenderDemo)
+            Shadow.of(x, y, WINDOW_W, WINDOW_H)
+                    .radius(12)
+                    .blur(20)
+                    .color(Color.rgba(0, 0, 0, Math.round(180 * animVal)))
+                    .render(extractor);
 
-        // Authentic Kawase Blur with subtle dark tint (NO opaque paint!)
-        Blur.of(x, y, WINDOW_W, WINDOW_H)
-                .radius(12)
-                .type(BlurType.KAWASE)
-                .strength(4)
-                .tint(Color.rgba(0, 0, 0, Math.round(80 * animVal)))
-                .alpha(animVal)
-                .render(extractor);
+            Blur.of(x, y, WINDOW_W, WINDOW_H)
+                    .radius(12)
+                    .type(BlurType.KAWASE)
+                    .strength(4)
+                    .tint(Color.rgba(0, 0, 0, Math.round(80 * animVal)))
+                    .alpha(animVal)
+                    .render(extractor);
 
-        // Subtle dark glass acrylic wash
-        RoundedRect.of(x, y, WINDOW_W, WINDOW_H)
-                .radius(12)
-                .color(Color.rgba(14, 16, 22, Math.round(140 * animVal)))
-                .render(extractor);
+            RoundedRect.of(x, y, WINDOW_W, WINDOW_H)
+                    .radius(12)
+                    .color(Color.rgba(14, 16, 22, Math.round(140 * animVal)))
+                    .render(extractor);
 
-        // Vertical gradient white outline (from RenderDemo row 7)
-        Outline.of(x, y, WINDOW_W, WINDOW_H)
-                .radius(12)
-                .thickness(1.0F)
-                .verticalGradient(Color.WHITE, FADE_WHITE)
-                .alpha(animVal)
-                .render(extractor);
+            Outline.of(x, y, WINDOW_W, WINDOW_H)
+                    .radius(12)
+                    .thickness(1.0F)
+                    .verticalGradient(Color.WHITE, FADE_WHITE)
+                    .alpha(animVal)
+                    .render(extractor);
 
-        // 4. Sidebar Separator
-        RoundedRect.of(x + SIDEBAR_W, y + 10.0F, 1.0F, WINDOW_H - 20.0F)
-                .radius(0.5F)
-                .color(Color.rgba(255, 255, 255, Math.round(16 * animVal)))
-                .render(extractor);
+            // 4. Sidebar Separator
+            RoundedRect.of(x + SIDEBAR_W, y + 10.0F, 1.0F, WINDOW_H - 20.0F)
+                    .radius(0.5F)
+                    .color(Color.rgba(255, 255, 255, Math.round(16 * animVal)))
+                    .render(extractor);
 
-        // 5. Sidebar and Header
-        renderSidebar(extractor, x, y, mouseX, mouseY, animVal, accentColor);
-        renderHeader(extractor, x + SIDEBAR_W + 12.0F, y + 14.0F, WINDOW_W - SIDEBAR_W - 24.0F, mouseX, mouseY, animVal, accentColor);
+            // 5. Sidebar and Header
+            renderSidebar(extractor, x, y, mouseX, mouseY, animVal, accentColor);
+            renderHeader(extractor, x + SIDEBAR_W + 12.0F, y + 14.0F, WINDOW_W - SIDEBAR_W - 24.0F, mouseX, mouseY, animVal, accentColor);
 
-        // 6. Content Section
-        float contentX = x + SIDEBAR_W + 12.0F;
-        float contentY = y + 44.0F;
-        float contentW = WINDOW_W - SIDEBAR_W - 24.0F;
-        float contentH = WINDOW_H - 54.0F;
+            // 6. Content Section
+            float contentX = x + SIDEBAR_W + 12.0F;
+            float contentY = y + 44.0F;
+            float contentW = WINDOW_W - SIDEBAR_W - 24.0F;
+            float contentH = WINDOW_H - 54.0F;
 
-        if (activeCategory == Category.THEMES) {
-            renderThemesTab(extractor, contentX, contentY, contentW, contentH, mouseX, mouseY, animVal);
-        } else if (activeCategory == Category.CONFIGS) {
-            renderConfigsTab(extractor, contentX, contentY, contentW, contentH, mouseX, mouseY, animVal, accentColor);
-        } else if (activeCategory == Category.FRIENDS) {
-            renderFriendsTab(extractor, contentX, contentY, contentW, contentH, mouseX, mouseY, animVal);
-        } else if (activeCategory == Category.EVENTS || activeCategory == Category.COSMETICS) {
-            renderEventsTab(extractor, contentX, contentY, contentW, contentH, mouseX, mouseY, animVal, accentColor);
-        } else {
-            renderModulesGrid(extractor, contentX, contentY, contentW, contentH, mouseX, mouseY, animVal, accentColor);
+            if (activeCategory == Category.THEMES) {
+                renderThemesTab(extractor, contentX, contentY, contentW, contentH, mouseX, mouseY, animVal);
+            } else if (activeCategory == Category.CONFIGS) {
+                renderConfigsTab(extractor, contentX, contentY, contentW, contentH, mouseX, mouseY, animVal, accentColor);
+            } else if (activeCategory == Category.FRIENDS) {
+                renderFriendsTab(extractor, contentX, contentY, contentW, contentH, mouseX, mouseY, animVal);
+            } else if (activeCategory == Category.EVENTS || activeCategory == Category.COSMETICS) {
+                renderEventsTab(extractor, contentX, contentY, contentW, contentH, mouseX, mouseY, animVal, accentColor);
+            } else {
+                renderModulesGrid(extractor, contentX, contentY, contentW, contentH, mouseX, mouseY, animVal, accentColor);
+            }
+        } finally {
+            DisplayBatcher.flush();
+            Render2DUtil.flush();
+            RenderExtend.exit2D();
         }
     }
 
@@ -229,7 +236,6 @@ public class LiquidClickGui extends Screen {
             float hVal = hoverAnim.getValue();
 
             if (active) {
-                // Glow shadow directly from RenderDemo row 7
                 Shadow.of(catX, catY, catW, catH)
                         .radius(6)
                         .blur(6)
@@ -287,7 +293,7 @@ public class LiquidClickGui extends Screen {
             catY += catH + 2.0F;
         }
 
-        // Bottom User Profile Card with PlayerHead from RenderDemo
+        // Bottom User Profile Card
         float profileW = SIDEBAR_W - 16.0F;
         float profileH = 26.0F;
         float profileX = x + 8.0F;
@@ -305,10 +311,7 @@ public class LiquidClickGui extends Screen {
                 .alpha(alphaVal)
                 .render(extractor);
 
-        PlayerHead.of(profileX + 4.0F, profileY + 4.0F, 18.0F)
-                .radius(4.0F)
-                .alpha(alphaVal)
-                .render(extractor);
+        Render2D.drawCustomAvatar(profileX + 4.0F, profileY + 4.0F, 18.0F, 4.0F, alphaVal);
 
         String username = this.minecraft != null && this.minecraft.getUser() != null ? this.minecraft.getUser().getName() : "User";
         Fonts.drawString(Fonts.SF_MEDIUM, username, profileX + 26.0F, profileY + 4.5F, 5.8F, 0xFFFFFFFF);
@@ -387,6 +390,7 @@ public class LiquidClickGui extends Screen {
         float rightY = startY;
 
         extractor.enableScissor(Math.round(x - 2.0F), Math.round(y), Math.round(x + w + 2.0F), Math.round(y + h));
+        Render2DUtil.pushScissor(x - 2.0F, y, w + 4.0F, h);
         try {
             for (int i = 0; i < modules.size(); i++) {
                 Module module = modules.get(i);
@@ -414,6 +418,7 @@ public class LiquidClickGui extends Screen {
                 }
             }
         } finally {
+            Render2DUtil.popScissor();
             extractor.disableScissor();
         }
 
@@ -432,8 +437,6 @@ public class LiquidClickGui extends Screen {
 
         int accentArgb = accentColor.argb();
 
-        // 1. Shadow: EXACTLY from RenderDemo row 7:
-        // Shadow.of(x, y, WIDTH, HEIGHT).radius(8).blur(6).offset(0, 3).strength(2.0F).color(MINT).render(graphics);
         if (module.isEnabled()) {
             Shadow.of(x, y, w, h)
                     .radius(8)
@@ -621,7 +624,6 @@ public class LiquidClickGui extends Screen {
             boolean isActive = currentStyle.equalsIgnoreCase(opt.styleId);
 
             if (isActive) {
-                // RenderDemo Row 7 shadow glow:
                 Shadow.of(cx, cy, cardW, cardH)
                         .radius(8)
                         .blur(6)
