@@ -568,23 +568,17 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
         } else {
             int shadowCol = ColorUtil.rgba(0, 0, 0, (int) (140 * alpha));
             int primaryAccent = getHudAccent();
-            int secondaryAccent = Theme.getSecondaryColor();
 
-            int haloCol = ColorUtil.rgba(ColorUtil.red(primaryAccent), ColorUtil.green(primaryAccent), ColorUtil.blue(primaryAccent), (int) (45 * alpha));
-            int glassFill = ColorUtil.rgba(14, 16, 24, (int) (140 * alpha));
-            int glassBorder = ColorUtil.withAlpha(primaryAccent, (int) (130 * alpha));
+            int haloCol = ColorUtil.rgba(ColorUtil.red(primaryAccent), ColorUtil.green(primaryAccent), ColorUtil.blue(primaryAccent), (int) (35 * alpha));
+            int glassFill = ColorUtil.rgba(14, 18, 28, (int) (130 * alpha));
+            int glassBorder = ColorUtil.withAlpha(primaryAccent, (int) (105 * alpha));
 
             if (shadowBlur > 1.0F) {
                 Render2D.drawShadow(x, y, w, h, radius, shadowBlur, shadowCol);
-                Render2D.drawShadow(x, y, w, h, radius, Math.min(shadowBlur, 8.0F), haloCol);
+                Render2D.drawShadow(x, y, w, h, radius, Math.min(shadowBlur, 6.0F), haloCol);
             }
             Render2D.drawRoundedRect(x, y, w, h, radius, glassFill);
-            Render2D.drawGradientRound(x, y, w, h, radius,
-                    ColorUtil.withAlpha(primaryAccent, (int)(140 * alpha)),
-                    ColorUtil.withAlpha(secondaryAccent, (int)(140 * alpha)),
-                    ColorUtil.withAlpha(primaryAccent, (int)(140 * alpha)),
-                    ColorUtil.withAlpha(secondaryAccent, (int)(140 * alpha)));
-            Render2D.drawRoundedRect(x + 0.8F, y + 0.8F, w - 1.6F, h - 1.6F, radius - 0.8F, glassFill);
+            Render2D.drawRoundedOutline(x, y, w, h, radius, 0.7F, glassBorder);
         }
     }
 
@@ -593,18 +587,14 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
 
         float subRadius = h / 2.0F;
         int primaryAccent = getHudAccent();
-        int secondaryAccent = Theme.getSecondaryColor();
 
         int shadowCol = ColorUtil.rgba(0, 0, 0, (int) (130 * alpha));
-        int glassFill = ColorUtil.rgba(16, 18, 26, (int) (140 * alpha));
+        int glassFill = ColorUtil.rgba(14, 18, 28, (int) (130 * alpha));
+        int glassBorder = ColorUtil.withAlpha(primaryAccent, (int) (100 * alpha));
 
-        Render2D.drawShadow(x, y, w, h, subRadius, 8.0F, shadowCol);
-        Render2D.drawGradientRound(x, y, w, h, subRadius,
-                ColorUtil.withAlpha(primaryAccent, (int)(130 * alpha)),
-                ColorUtil.withAlpha(secondaryAccent, (int)(130 * alpha)),
-                ColorUtil.withAlpha(primaryAccent, (int)(130 * alpha)),
-                ColorUtil.withAlpha(secondaryAccent, (int)(130 * alpha)));
-        Render2D.drawRoundedRect(x + 0.8F, y + 0.8F, w - 1.6F, h - 1.6F, subRadius - 0.8F, glassFill);
+        Render2D.drawShadow(x, y, w, h, subRadius, 6.0F, shadowCol);
+        Render2D.drawRoundedRect(x, y, w, h, subRadius, glassFill);
+        Render2D.drawRoundedOutline(x, y, w, h, subRadius, 0.7F, glassBorder);
 
         float curX = x + 6.0F;
         float textY = y + (h - 7.0F) / 2.0F;

@@ -20,6 +20,7 @@ import error.util.math.Animation;
 import error.util.render.Render2D;
 import error.util.render.Render2DUtil;
 import error.util.render.font.Fonts;
+import error.util.render.font.IconUse;
 import error.ui.hud.HudManager;
 import error.ui.hud.HudElement;
 import error.ui.hud.impl.DynamicIslandHud;
@@ -97,6 +98,13 @@ public class LiquidClickGui extends Screen {
     public boolean moduleModalOpen = false;
     public boolean moduleModalBinding = false;
 
+    // Mode Setting Dropdown Popup States
+    public ModeSetting activeDropdownMode = null;
+    public float dropdownPopupX = 0.0F;
+    public float dropdownPopupY = 0.0F;
+    public float dropdownPopupW = 85.0F;
+    public float dropdownPopupH = 0.0F;
+
     // General UI Animations & State
     private final Animation openAnim = new Animation(1.0F, 0.20F);
     private final Animation scrollAnim = new Animation(0.0F, 0.22F);
@@ -138,6 +146,7 @@ public class LiquidClickGui extends Screen {
     @Override
     protected void init() {
         super.init();
+        error.util.client.ClientSoundPlayer.playGuiOpen();
         this.openAnim.setValue(1.0F);
         this.openAnim.setTarget(1.0F);
         this.openTime = System.currentTimeMillis();
@@ -145,10 +154,17 @@ public class LiquidClickGui extends Screen {
         this.draggingPicker = DragTarget.NONE;
         this.moduleModalOpen = false;
         this.moduleModalBinding = false;
+        this.activeDropdownMode = null;
         if (this.activeCategory == Category.THEMES) {
             this.activeCategory = Category.COMBAT;
         }
         if (snowflakes.isEmpty()) initSnowflakes();
+    }
+
+    @Override
+    public void onClose() {
+        error.util.client.ClientSoundPlayer.playGuiClose();
+        super.onClose();
     }
 
     @Override
@@ -331,6 +347,11 @@ public class LiquidClickGui extends Screen {
             // Module Middle-Click Bind Modal Popup
             if (this.moduleModalOpen && this.moduleModalModule != null) {
                 renderModuleModal(screenW, screenH, mouseX, mouseY, animVal, accentColor);
+            }
+
+            // Dropdown Menu Popup (floating on top of everything)
+            if (this.activeDropdownMode != null) {
+                renderModeDropdown(screenW, screenH, mouseX, mouseY, animVal, accentColor);
             }
         } finally {
             Render2DUtil.flush();
@@ -650,13 +671,16 @@ public class LiquidClickGui extends Screen {
 
             String val = mode.getValue();
             float valW = Fonts.SF_MEDIUM.getWidth(val, 5.0F);
-            float btnW = Math.max(34.0F, valW + 8.0F);
+            float btnW = Math.max(36.0F, valW + 14.0F);
             float btnX = x + w - btnW - 4.0F;
             float btnY = y + 2.5F;
 
-            Render2D.drawRoundedRect(btnX, btnY, btnW, 11.5F, 3.0F, ColorUtil.rgba(255, 255, 255, (int) (18 * alphaVal)));
-            Render2D.drawRoundedOutline(btnX, btnY, btnW, 11.5F, 3.0F, 0.6F, ColorUtil.rgba(255, 255, 255, (int) (30 * alphaVal)));
-            Fonts.drawCenteredString(Fonts.SF_MEDIUM, val, btnX + btnW / 2.0F, btnY + 2.5F, 4.8F, 0xFFFFFFFF);
+            boolean isOpen = (this.activeDropdownMode == mode);
+            int bg = isOpen ? ColorUtil.withAlpha(accentColor, (int) (180 * alphaVal)) : ColorUtil.rgba(255, 255, 255, (int) (18 * alphaVal));
+            Render2D.drawRoundedRect(btnX, btnY, btnW, 11.5F, 3.0F, bg);
+            Render2D.drawRoundedOutline(btnX, btnY, btnW, 11.5F, 3.0F, 0.6F, isOpen ? accentColor : ColorUtil.rgba(255, 255, 255, (int) (30 * alphaVal)));
+            Fonts.drawString(Fonts.SF_MEDIUM, val, btnX + 4.0F, btnY + 2.5F, 4.8F, 0xFFFFFFFF);
+            Fonts.drawString(Fonts.ICONS, IconUse.DOWN.glyph, btnX + btnW - 8.0F, btnY + 2.8F, 4.2F, isOpen ? 0xFFFFFFFF : 0xFF90A4B8);
         } else if (setting instanceof BindSetting bind) {
             Fonts.drawString(Fonts.SF_MEDIUM, bind.getName(), x + 4.0F, y + 4.5F, 5.2F, 0xFFD0E0F0);
 
@@ -767,12 +791,15 @@ public class LiquidClickGui extends Screen {
         float modalX = (screenW - modalW) / 2.0F;
         float modalY = (screenH - modalH) / 2.0F;
 
-        // Dim background behind modal
-        Render2D.drawRoundedRect(0, 0, screenW, screenH, 0.0F, ColorUtil.rgba(0, 0, 0, (int) (120 * alphaVal)));
+        // Dim background behind modal (soft subtle veil, not opaque black)
+        Render2D.drawRoundedRect(0, 0, screenW, screenH, 0.0F, ColorUtil.rgba(0, 0, 0, (int) (45 * alphaVal)));
 
-        // Shadow and subtle glass body
-        Render2D.drawShadow(modalX, modalY, modalW, modalH, 12.0F, 24.0F, ColorUtil.rgba(0, 0, 0, (int) (220 * alphaVal)));
-        Render2D.drawRoundedRect(modalX, modalY, modalW, modalH, 12.0F, ColorUtil.rgba(14, 18, 28, (int) (85 * alphaVal)));
+        // Shadow and translucent liquid glass body
+        Render2D.drawShadow(modalX, modalY, modalW, modalH, 12.0F, 24.0F, ColorUtil.rgba(0, 0, 0, (int) (150 * alphaVal)));
+        Render2D.drawBlur(modalX, modalY, modalW, modalH, 12.0F, 24.0F, ColorUtil.rgba(14, 18, 28, (int) (130 * alphaVal)), alphaVal);
+        Render2D.drawRoundedRect(modalX, modalY, modalW, modalH, 12.0F, ColorUtil.rgba(14, 18, 28, (int) (135 * alphaVal)));
+        Render2D.drawRoundedOutline(modalX, modalY, modalW, modalH, 12.0F, 0.8F, ColorUtil.rgba(255, 255, 255, (int) (30 * alphaVal)));
+        Render2D.drawRoundedOutline(modalX, modalY, modalW, modalH, 12.0F, 0.6F, ColorUtil.withAlpha(accentColor, (int) (60 * alphaVal)));
 
         // Header: Settings Icon + Title + Close Button
         float headY = modalY + 8.0F;
@@ -958,12 +985,15 @@ public class LiquidClickGui extends Screen {
         float modalX = (screenW - modalW) / 2.0F;
         float modalY = (screenH - modalH) / 2.0F;
 
-        // Dim background behind modal
-        Render2D.drawRoundedRect(0, 0, screenW, screenH, 0.0F, ColorUtil.rgba(0, 0, 0, (int) (110 * alphaVal)));
+        // Dim background behind modal (soft subtle veil, not opaque black)
+        Render2D.drawRoundedRect(0, 0, screenW, screenH, 0.0F, ColorUtil.rgba(0, 0, 0, (int) (40 * alphaVal)));
 
-        // Shadow and subtle dark glass body
-        Render2D.drawShadow(modalX, modalY, modalW, modalH, 10.0F, 20.0F, ColorUtil.rgba(0, 0, 0, (int) (200 * alphaVal)));
-        Render2D.drawRoundedRect(modalX, modalY, modalW, modalH, 10.0F, ColorUtil.rgba(14, 18, 26, (int) (95 * alphaVal)));
+        // Shadow and translucent liquid glass body
+        Render2D.drawShadow(modalX, modalY, modalW, modalH, 10.0F, 20.0F, ColorUtil.rgba(0, 0, 0, (int) (150 * alphaVal)));
+        Render2D.drawBlur(modalX, modalY, modalW, modalH, 10.0F, 20.0F, ColorUtil.rgba(14, 18, 26, (int) (130 * alphaVal)), alphaVal);
+        Render2D.drawRoundedRect(modalX, modalY, modalW, modalH, 10.0F, ColorUtil.rgba(14, 18, 26, (int) (135 * alphaVal)));
+        Render2D.drawRoundedOutline(modalX, modalY, modalW, modalH, 10.0F, 0.8F, ColorUtil.rgba(255, 255, 255, (int) (30 * alphaVal)));
+        Render2D.drawRoundedOutline(modalX, modalY, modalW, modalH, 10.0F, 0.6F, ColorUtil.withAlpha(accentColor, (int) (60 * alphaVal)));
 
         // Header: :: dots + Module Name + Close button
         float headY = modalY + 8.0F;
@@ -1058,6 +1088,47 @@ public class LiquidClickGui extends Screen {
             Render2D.drawRoundedRect(toggleX, segY + 1.0F, segBtnW, segContainerH - 2.0F, 3.5F, ColorUtil.withAlpha(accentColor, (int) (210 * alphaVal)));
         }
         Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Toggle", toggleX + segBtnW / 2.0F, segY + 3.5F, 4.8F, !isHold ? 0xFFFFFFFF : 0xFF8090A4);
+    }
+
+    private void renderModeDropdown(int screenW, int screenH, int mouseX, int mouseY, float alphaVal, int accentColor) {
+        if (this.activeDropdownMode == null) return;
+
+        float dx = this.dropdownPopupX;
+        float dy = this.dropdownPopupY;
+        float dw = this.dropdownPopupW;
+        float dh = this.dropdownPopupH;
+
+        // Soft drop shadow
+        Render2D.drawShadow(dx, dy, dw, dh, 6.0F, 12.0F, ColorUtil.rgba(0, 0, 0, (int) (140 * alphaVal)));
+        // Translucent liquid glass body (slightly darker than GUI, but clearly translucent)
+        Render2D.drawBlur(dx, dy, dw, dh, 6.0F, 16.0F, ColorUtil.rgba(14, 18, 28, (int) (140 * alphaVal)), alphaVal);
+        Render2D.drawRoundedRect(dx, dy, dw, dh, 6.0F, ColorUtil.rgba(14, 18, 28, (int) (145 * alphaVal)));
+        Render2D.drawRoundedOutline(dx, dy, dw, dh, 6.0F, 0.75F, ColorUtil.rgba(255, 255, 255, (int) (28 * alphaVal)));
+        Render2D.drawRoundedOutline(dx, dy, dw, dh, 6.0F, 0.5F, ColorUtil.withAlpha(accentColor, (int) (55 * alphaVal)));
+
+        float rowY = dy + 3.0F;
+        float rowH = 15.0F;
+
+        for (int i = 0; i < this.activeDropdownMode.getModes().size(); i++) {
+            String opt = this.activeDropdownMode.getModes().get(i);
+            boolean isSelected = opt.equalsIgnoreCase(this.activeDropdownMode.getValue());
+            boolean isHovered = mouseX >= dx + 2.0F && mouseX <= dx + dw - 2.0F && mouseY >= rowY && mouseY <= rowY + rowH;
+
+            if (isHovered) {
+                Render2D.drawRoundedRect(dx + 2.5F, rowY, dw - 5.0F, rowH, 3.5F, ColorUtil.rgba(255, 255, 255, (int) (22 * alphaVal)));
+            } else if (isSelected) {
+                Render2D.drawRoundedRect(dx + 2.5F, rowY, dw - 5.0F, rowH, 3.5F, ColorUtil.withAlpha(accentColor, (int) (40 * alphaVal)));
+            }
+
+            int textColor = isSelected ? 0xFFFFFFFF : (isHovered ? 0xFFE0EBF8 : 0xFFA0B4C8);
+            Fonts.drawString(Fonts.SF_MEDIUM, opt, dx + 6.0F, rowY + 3.5F, 5.0F, textColor);
+
+            if (isSelected) {
+                Fonts.drawString(Fonts.ICONS, IconUse.CHECK.glyph, dx + dw - 12.0F, rowY + 3.5F, 5.2F, accentColor);
+            }
+
+            rowY += 16.0F;
+        }
     }
 
     private void renderConfigsTab(float x, float y, float w, float h, int mouseX, int mouseY, float alphaVal, int accentColor) {
@@ -1413,13 +1484,10 @@ public class LiquidClickGui extends Screen {
                 ? CustomModels.INSTANCE.model.getValue() : "Стив";
         Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Модель: " + activeModelName, charX + previewW / 2.0F, y + 19.0F, 4.6F, accentColor);
 
-        // Pedestal glow circle under player
-        Render2D.drawCircle(charX + previewW / 2.0F, y + h - 35.0F, 28.0F, ColorUtil.withAlpha(accentColor, (int) (35 * alphaVal)));
-
         // Flush 2D rendering before extracting 3D entity
         Render2DUtil.flush();
 
-        // Extract 3D Player Entity standing still (rotated freely via drag, not following cursor)
+        // Extract 3D Player Entity standing still (rotated freely via drag, whole body aligned without separate head spinning)
         if (this.minecraft != null && this.minecraft.player != null) {
             int pX1 = (int) (charX + 8.0F);
             int pY1 = (int) (y + 30.0F);
@@ -1434,8 +1502,10 @@ public class LiquidClickGui extends Screen {
                 renderState.outlineColor = 0;
                 if (renderState instanceof net.minecraft.client.renderer.entity.state.LivingEntityRenderState livingState) {
                     livingState.bodyRot = 180.0F + this.cosmeticsPlayerYaw;
-                    livingState.yRot = 180.0F + this.cosmeticsPlayerYaw;
+                    livingState.yRot = 0.0F;
                     livingState.xRot = 0.0F;
+                    livingState.walkAnimationPos = 0.0F;
+                    livingState.walkAnimationSpeed = 0.0F;
                     livingState.boundingBoxWidth /= livingState.scale;
                     livingState.boundingBoxHeight /= livingState.scale;
                     livingState.scale = 1.0F;
@@ -1524,6 +1594,34 @@ public class LiquidClickGui extends Screen {
                     return true;
                 }
             }
+        }
+
+        // Handle Active Mode Dropdown Popup Clicks
+        if (this.activeDropdownMode != null) {
+            float dx = this.dropdownPopupX;
+            float dy = this.dropdownPopupY;
+            float dw = this.dropdownPopupW;
+            float dh = this.dropdownPopupH;
+
+            if (mouseX >= dx && mouseX <= dx + dw && mouseY >= dy && mouseY <= dy + dh) {
+                float rowY = dy + 3.0F;
+                float rowH = 15.0F;
+                for (String opt : this.activeDropdownMode.getModes()) {
+                    if (mouseY >= rowY && mouseY <= rowY + rowH) {
+                        this.activeDropdownMode.setValue(opt);
+                        error.util.client.ClientSoundPlayer.playModePreview(opt);
+                        this.activeDropdownMode = null;
+                        if (Client.INSTANCE != null && Client.INSTANCE.configManager != null) {
+                            Client.INSTANCE.configManager.autoSave();
+                        }
+                        return true;
+                    }
+                    rowY += 16.0F;
+                }
+                return true;
+            }
+            // Click outside closes dropdown
+            this.activeDropdownMode = null;
         }
 
         // Handle Module Middle-Click Bind Modal Clicks if Open
@@ -2090,7 +2188,29 @@ public class LiquidClickGui extends Screen {
                             } else if (setting instanceof BindSetting b) {
                                 this.activeBindingSetting = b;
                             } else if (setting instanceof ModeSetting ms) {
-                                ms.cycle();
+                                if (this.activeDropdownMode == ms) {
+                                    this.activeDropdownMode = null;
+                                } else {
+                                    this.activeDropdownMode = ms;
+                                    float valW = Fonts.SF_MEDIUM.getWidth(ms.getValue(), 5.0F);
+                                    float btnW = Math.max(36.0F, valW + 14.0F);
+                                    float setW = cardW - 16.0F;
+                                    float btnX = cardX + 8.0F + setW - btnW - 4.0F;
+                                    float btnY = setY + 2.5F;
+
+                                    float maxOptW = 65.0F;
+                                    for (String opt : ms.getModes()) {
+                                        maxOptW = Math.max(maxOptW, Fonts.SF_MEDIUM.getWidth(opt, 5.0F) + 26.0F);
+                                    }
+                                    this.dropdownPopupW = Math.max(btnW + 10.0F, maxOptW);
+                                    this.dropdownPopupX = Math.min(screenW - this.dropdownPopupW - 8.0F, Math.max(8.0F, btnX + btnW - this.dropdownPopupW));
+                                    this.dropdownPopupH = ms.getModes().size() * 16.0F + 6.0F;
+                                    this.dropdownPopupY = btnY + 13.0F;
+                                    if (this.dropdownPopupY + this.dropdownPopupH > screenH - 8.0F) {
+                                        this.dropdownPopupY = Math.max(8.0F, btnY - this.dropdownPopupH - 2.0F);
+                                    }
+                                    error.util.client.ClientSoundPlayer.playGuiClick();
+                                }
                             } else if (setting instanceof ColorSetting cs) {
                                 openColorSettingModal(cs);
                             }

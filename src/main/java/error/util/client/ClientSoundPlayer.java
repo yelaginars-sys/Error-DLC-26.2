@@ -77,13 +77,13 @@ public final class ClientSoundPlayer {
          case "Шестой":
             return open ? "Function_ON.wav" : "Function_OFF.wav";
          case "Celestial":
-            return open ? "celestial_enable.wav" : "celestial_disable.wav";
+            return open ? "celestial_on.wav" : "celestial_off.wav";
          case "Bubble":
-            return open ? "bubble_enable.wav" : "bubble_disable.wav";
+            return open ? "enableBubbles.wav" : "disableBubbles.wav";
          case "Heavy":
             return open ? "heavyenable.wav" : "heavydisable.wav";
          case "Droplet":
-            return open ? "droplet_enable.wav" : "droplet_disable.wav";
+            return open ? "dropletenable.wav" : "dropletdisable.wav";
          case "Pop":
             return open ? "popenable.wav" : "popdisable.wav";
          case "Slide":
@@ -96,27 +96,46 @@ public final class ClientSoundPlayer {
    }
 
    private static void handleFileName(String fileName, double volume, float pitch) {
+      if (fileName == null || fileName.isEmpty()) return;
       String resourcePath = "/assets/error/sounds/" + fileName;
 
-      try (InputStream is = ClientSoundPlayer.class.getResourceAsStream(resourcePath)) {
-         if (is != null) {
-            try (
-               BufferedInputStream bis = new BufferedInputStream(is);
-               AudioInputStream originalStream = AudioSystem.getAudioInputStream(bis);
-               AudioInputStream pitchStream = getOriginalStream(originalStream, pitch)
-            ) {
-               Clip clip = AudioSystem.getClip();
-               clip.addLineListener(event -> {
-                  if (event.getType() == Type.STOP) {
-                     clip.close();
-                  }
-               });
-               clip.open(pitchStream);
-               handleClip(clip, volume);
-               clip.start();
+      InputStream is = ClientSoundPlayer.class.getResourceAsStream(resourcePath);
+      if (is == null) {
+         is = ClientSoundPlayer.class.getClassLoader().getResourceAsStream("assets/error/sounds/" + fileName);
+      }
+      if (is == null) return;
+
+      try (InputStream input = is;
+           BufferedInputStream bis = new BufferedInputStream(input);
+           AudioInputStream originalStream = AudioSystem.getAudioInputStream(bis)) {
+
+         AudioFormat baseFormat = originalStream.getFormat();
+         AudioFormat decodedFormat = new AudioFormat(
+               AudioFormat.Encoding.PCM_SIGNED,
+               baseFormat.getSampleRate(),
+               16,
+               baseFormat.getChannels(),
+               baseFormat.getChannels() * 2,
+               baseFormat.getSampleRate(),
+               false
+         );
+
+         AudioInputStream pcmStream = AudioSystem.isConversionSupported(decodedFormat, baseFormat)
+                 ? AudioSystem.getAudioInputStream(decodedFormat, originalStream)
+                 : originalStream;
+
+         AudioInputStream finalStream = (Math.abs(pitch - 1.0F) > 0.01F) ? getOriginalStream(pcmStream, pitch) : pcmStream;
+
+         Clip clip = AudioSystem.getClip();
+         clip.addLineListener(event -> {
+            if (event.getType() == Type.STOP) {
+               clip.close();
             }
-         }
-      } catch (UnsupportedAudioFileException | IOException | LineUnavailableException ignored) {
+         });
+         clip.open(finalStream);
+         handleClip(clip, volume);
+         clip.start();
+      } catch (Exception ignored) {
       }
    }
 
