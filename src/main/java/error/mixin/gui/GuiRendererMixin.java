@@ -39,6 +39,16 @@ public abstract class GuiRendererMixin {
     @Unique
     private boolean error$backdropCaptured;
 
+    @Inject(method = "draw", at = @At("HEAD"))
+    private void error$processDisplayBlur(CallbackInfo ci) {
+        error.util.display.blur.BlurManager.process();
+    }
+
+    @Inject(method = "close", at = @At("HEAD"))
+    private void error$closeDisplayBlur(CallbackInfo ci) {
+        error.util.display.blur.BlurManager.close();
+    }
+
     @Inject(method = "prepare", at = @At("HEAD"))
     private void error$resetGlassSplits(CallbackInfo ci) {
         this.error$glassSplits.clear();

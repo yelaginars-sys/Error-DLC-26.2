@@ -52,5 +52,15 @@ public abstract class RenderPipelinesMixin {
         register(PiplinePost.WORLD_SKY_PLASMA);
         register(PiplinePost.WORLD_SATURATION);
         register(PiplinePost.WORLD_PUDDLES);
+
+        error.util.display.rounded.RoundedRectPipeline.init();
+        error.util.display.outline.OutlinePipeline.init();
+        error.util.display.image.ImagePipeline.init();
+        error.util.display.image.Images.init();
+        error.util.display.head.PlayerHeadPipeline.init();
+        error.util.display.shadow.ShadowPipeline.init();
+        error.util.display.blur.BlurPipelines.init();
+        error.util.display.text.TextPipeline.init();
+        error.util.display.text.font.Fonts.init();
     }
 }

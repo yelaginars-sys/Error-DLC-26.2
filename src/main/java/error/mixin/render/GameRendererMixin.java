@@ -8,6 +8,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.SubmitNodeStorage;
 import net.minecraft.client.renderer.feature.FeatureRenderDispatcher;
+import net.minecraft.client.renderer.state.GameRenderState;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import org.joml.Matrix4f;
 import org.spongepowered.asm.mixin.Final;
@@ -23,6 +24,7 @@ import error.event.list.Render3DEvent;
 import error.module.impl.render.HandShader;
 import error.module.impl.render.Removals;
 import error.util.RenderExtend;
+import error.util.display.DisplayUtil;
 import error.util.render.Render3DUtil;
 
 /**
@@ -34,6 +36,17 @@ public abstract class GameRendererMixin {
     @Shadow
     @Final
     private Minecraft minecraft;
+
+    @Shadow
+    @Final
+    private GameRenderState gameRenderState;
+
+    @Inject(method = "extract(Lnet/minecraft/client/DeltaTracker;Z)V", at = @At("TAIL"))
+    private void error$extractDisplay(DeltaTracker deltaTracker, boolean advanceGameTime, CallbackInfo ci) {
+        if (minecraft.isGameLoadFinished()) {
+            DisplayUtil.render(minecraft, gameRenderState);
+        }
+    }
 
     @ModifyArg(method = "renderLevel", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/ProjectionMatrixBuffer;getBuffer(Lorg/joml/Matrix4f;)Lcom/mojang/blaze3d/buffers/GpuBufferSlice;"))
     private Matrix4f captureLevelProjection(Matrix4f projectionMatrix) {

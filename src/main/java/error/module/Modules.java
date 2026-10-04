@@ -88,6 +88,7 @@ public class Modules {
     public ExpThrow expThrow;
     public AspectRatio aspectRatio;
     public BlockOutline blockOutline;
+    public RenderDemoModule renderDemoModule;
 
     public void init() {
         this.clickGui = new ClickGui();
@@ -160,6 +161,7 @@ public class Modules {
         this.particles = new Particles();
         this.clientSounds = new ClientSounds();
         this.unHook = new UnHook();
+        this.renderDemoModule = new RenderDemoModule();
 
         register(
                 this.clickGui,
@@ -231,7 +233,8 @@ public class Modules {
                 this.worldParticles,
                 this.particles,
                 this.clientSounds,
-                this.unHook
+                this.unHook,
+                this.renderDemoModule
         );
 
         if (this.maceHelper != null) this.maceHelper.setState(true);
