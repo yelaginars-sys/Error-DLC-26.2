@@ -7,18 +7,11 @@ import error.setting.Setting;
 import error.setting.impl.*;
 import error.util.RenderExtend;
 import error.util.client.clients.ColorUtil;
-import error.util.display.blur.Blur;
-import error.util.display.color.Color;
-import error.util.display.color.Gradient;
-import error.util.display.head.PlayerHead;
-import error.util.display.outline.Outline;
-import error.util.display.rounded.RoundedRect;
-import error.util.display.shadow.Shadow;
-import error.util.display.text.Text;
-import error.util.display.text.TextAlign;
-import error.util.display.text.font.Fonts;
 import error.util.math.Animation;
-import net.minecraft.client.Minecraft;
+import error.util.render.Render2D;
+import error.util.render.Render2DUtil;
+import error.util.render.font.Fonts;
+import error.util.render.font.IconUse;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.CharacterEvent;
@@ -42,7 +35,7 @@ public class LiquidClickGui extends Screen {
     public String searchQuery = "";
     public boolean searchFocused = false;
 
-    private final Animation openAnim = new Animation(0.0F, 0.18F);
+    private final Animation openAnim = new Animation(1.0F, 0.18F);
     private final Animation scrollAnim = new Animation(0.0F, 0.20F);
     private float scrollTarget = 0.0F;
 
@@ -87,87 +80,43 @@ public class LiquidClickGui extends Screen {
         float y = (screenH - WINDOW_H) / 2.0F;
 
         RenderExtend.enter2D(null, extractor, null);
+        Render2DUtil.beginFrame();
         try {
-            // 1. Fullscreen Kawase Blur Pass on game background (fast 1-step pass)
-            Blur.of(0, 0, screenW, screenH)
-                    .radius(8)
-                    .strength(1)
-                    .render(extractor);
-
-            // Background dark veil tint
-            int veilAlpha = (int) (130 * animVal);
-            extractor.fill(0, 0, screenW, screenH, ColorUtil.rgba(4, 6, 10, veilAlpha));
-
-            // Apply scale animation around center
-            extractor.pose().pushMatrix();
-            float centerX = screenW / 2.0F;
-            float centerY = screenH / 2.0F;
-            float scale = 0.88F + 0.12F * animVal;
-            extractor.pose().translate(centerX, centerY);
-            extractor.pose().scale(scale, scale);
-            extractor.pose().translate(-centerX, -centerY);
+            // 1. Background dark veil tint
+            int veilAlpha = (int) (160 * animVal);
+            Render2D.drawRect(0, 0, screenW, screenH, ColorUtil.rgba(4, 6, 10, veilAlpha));
 
             // 2. Main Window Container Shadow, Glass Rect & Glowing Outline
-            Color glassBg = Color.rgba(14, 16, 24, (int) (215 * animVal));
-            Color borderGlow = Color.rgba(255, 255, 255, (int) (35 * animVal));
-            Color shadowCol = Color.rgba(0, 0, 0, (int) (190 * animVal));
+            int glassBg = ColorUtil.rgba(14, 16, 24, (int) (230 * animVal));
+            int borderGlow = ColorUtil.rgba(255, 255, 255, (int) (40 * animVal));
+            int shadowCol = ColorUtil.rgba(0, 0, 0, (int) (200 * animVal));
 
-            Shadow.of(x, y, WINDOW_W, WINDOW_H)
-                    .radius(14)
-                    .blur(14)
-                    .spread(2)
-                    .color(shadowCol)
-                    .render(extractor);
-
-            RoundedRect.of(x, y, WINDOW_W, WINDOW_H)
-                    .radius(14)
-                    .color(glassBg)
-                    .render(extractor);
-
-            Outline.of(x, y, WINDOW_W, WINDOW_H)
-                    .radius(14)
-                    .thickness(0.8F)
-                    .color(borderGlow)
-                    .render(extractor);
+            Render2D.drawShadow(x, y, WINDOW_W, WINDOW_H, 14.0F, 14.0F, shadowCol);
+            Render2D.drawRoundedRect(x, y, WINDOW_W, WINDOW_H, 14.0F, glassBg);
+            Render2D.drawRoundedOutline(x, y, WINDOW_W, WINDOW_H, 14.0F, 0.8F, borderGlow);
 
             // 3. Sidebar Divider & Sidebar UI
-            Color dividerColor = Color.rgba(255, 255, 255, (int) (18 * animVal));
-            RoundedRect.of(x + SIDEBAR_W, y + 12, 1.0F, WINDOW_H - 24)
-                    .radius(0.5F)
-                    .color(dividerColor)
-                    .render(extractor);
+            int dividerColor = ColorUtil.rgba(255, 255, 255, (int) (22 * animVal));
+            Render2D.drawRoundedRect(x + SIDEBAR_W, y + 12, 1.0F, WINDOW_H - 24, 0.5F, dividerColor);
 
-            renderSidebar(extractor, x, y, mouseX, mouseY, animVal);
+            renderSidebar(x, y, mouseX, mouseY, animVal);
 
             // 4. Header Search Bar & Content Area
-            renderHeader(extractor, x + SIDEBAR_W + 16.0F, y + 14.0F, WINDOW_W - SIDEBAR_W - 32.0F, mouseX, mouseY, animVal);
-            renderModulesGrid(extractor, x + SIDEBAR_W + 16.0F, y + 50.0F, WINDOW_W - SIDEBAR_W - 32.0F, WINDOW_H - 64.0F, mouseX, mouseY, animVal);
-
-            extractor.pose().popMatrix();
+            renderHeader(x + SIDEBAR_W + 16.0F, y + 14.0F, WINDOW_W - SIDEBAR_W - 32.0F, mouseX, mouseY, animVal);
+            renderModulesGrid(x + SIDEBAR_W + 16.0F, y + 50.0F, WINDOW_W - SIDEBAR_W - 32.0F, WINDOW_H - 64.0F, mouseX, mouseY, animVal);
         } finally {
-            error.util.display.DisplayUtil.flush();
+            Render2DUtil.flush();
             RenderExtend.exit2D();
         }
     }
 
-    private void renderSidebar(GuiGraphicsExtractor graphics, float x, float y, int mouseX, int mouseY, float alphaVal) {
+    private void renderSidebar(float x, float y, int mouseX, int mouseY, float alphaVal) {
         // Logo & Title Header
-        Color whiteCol = Color.rgba(255, 255, 255, (int) (250 * alphaVal));
-        Color subCol = Color.rgba(160, 175, 200, (int) (180 * alphaVal));
+        int whiteCol = ColorUtil.rgba(255, 255, 255, (int) (250 * alphaVal));
+        int subCol = ColorUtil.rgba(160, 175, 200, (int) (180 * alphaVal));
 
-        Text.of("Error DLC")
-                .font(Fonts.MANROPE_MEDIUM)
-                .size(11.0F)
-                .color(whiteCol)
-                .position(x + 16.0F, y + 16.0F)
-                .render(graphics);
-
-        Text.of("Liquid Glass v26.2")
-                .font(Fonts.MEDIUM)
-                .size(5.5F)
-                .color(subCol)
-                .position(x + 16.0F, y + 30.0F)
-                .render(graphics);
+        Fonts.drawString(Fonts.SF_MEDIUM, "Error DLC", x + 16.0F, y + 16.0F, 11.0F, whiteCol);
+        Fonts.drawString(Fonts.SF_MEDIUM, "Liquid Glass v26.2", x + 16.0F, y + 30.0F, 5.5F, subCol);
 
         // Categories Navigation List
         Category[] categories = Category.values();
@@ -186,20 +135,12 @@ public class LiquidClickGui extends Screen {
             float hVal = hoverAnim.getValue();
 
             if (hVal > 0.01F) {
-                Color pillBg = Color.rgba(255, 255, 255, (int) ((0.06F + hVal * 0.10F) * 255 * alphaVal));
-                Color pillOutline = Color.rgba(255, 255, 255, (int) (hVal * 0.20F * 255 * alphaVal));
+                int pillBg = ColorUtil.rgba(255, 255, 255, (int) ((0.06F + hVal * 0.10F) * 255 * alphaVal));
+                int pillOutline = ColorUtil.rgba(255, 255, 255, (int) (hVal * 0.20F * 255 * alphaVal));
 
-                RoundedRect.of(catX, catY, catW, catH)
-                        .radius(7)
-                        .color(pillBg)
-                        .render(graphics);
-
+                Render2D.drawRoundedRect(catX, catY, catW, catH, 7.0F, pillBg);
                 if (active) {
-                    Outline.of(catX, catY, catW, catH)
-                            .radius(7)
-                            .thickness(0.7F)
-                            .color(pillOutline)
-                            .render(graphics);
+                    Render2D.drawRoundedOutline(catX, catY, catW, catH, 7.0F, 0.7F, pillOutline);
                 }
             }
 
@@ -208,26 +149,17 @@ public class LiquidClickGui extends Screen {
                     .filter(m -> m.getCategory() == cat && m.isEnabled())
                     .count();
 
-            Color nameCol = active
-                    ? Color.rgba(255, 255, 255, (int) (255 * alphaVal))
-                    : Color.rgba(175, 185, 205, (int) ((0.75F + hVal * 0.25F) * 255 * alphaVal));
+            int nameCol = active
+                    ? ColorUtil.rgba(255, 255, 255, (int) (255 * alphaVal))
+                    : ColorUtil.rgba(175, 185, 205, (int) ((0.75F + hVal * 0.25F) * 255 * alphaVal));
 
-            Text.of(cat.getDisplayName())
-                    .font(Fonts.MANROPE_MEDIUM)
-                    .size(7.5F)
-                    .color(nameCol)
-                    .position(catX + 12.0F, catY + 9.5F)
-                    .render(graphics);
+            Fonts.drawString(Fonts.SF_MEDIUM, cat.getDisplayName(), catX + 12.0F, catY + 9.5F, 7.5F, nameCol);
 
             if (enabledCount > 0) {
-                Color countCol = Color.rgba(255, 255, 255, (int) (140 * alphaVal));
-                Text.of(String.valueOf(enabledCount))
-                        .font(Fonts.MEDIUM)
-                        .size(6.0F)
-                        .color(countCol)
-                        .align(TextAlign.RIGHT)
-                        .position(catX + catW - 12.0F, catY + 10.5F)
-                        .render(graphics);
+                int countCol = ColorUtil.rgba(255, 255, 255, (int) (140 * alphaVal));
+                String countStr = String.valueOf(enabledCount);
+                float countW = Fonts.SF_MEDIUM.getWidth(countStr, 6.0F);
+                Fonts.drawString(Fonts.SF_MEDIUM, countStr, catX + catW - 12.0F - countW, catY + 10.5F, 6.0F, countCol);
             }
 
             catY += catH + 4.0F;
@@ -238,50 +170,21 @@ public class LiquidClickGui extends Screen {
         float profileW = SIDEBAR_W - 24.0F;
         float profileX = x + 12.0F;
 
-        Color cardBg = Color.rgba(255, 255, 255, (int) (12 * alphaVal));
-        Color cardBorder = Color.rgba(255, 255, 255, (int) (22 * alphaVal));
+        int cardBg = ColorUtil.rgba(255, 255, 255, (int) (12 * alphaVal));
+        int cardBorder = ColorUtil.rgba(255, 255, 255, (int) (22 * alphaVal));
 
-        RoundedRect.of(profileX, profileY, profileW, 30.0F)
-                .radius(8)
-                .color(cardBg)
-                .render(graphics);
-
-        Outline.of(profileX, profileY, profileW, 30.0F)
-                .radius(8)
-                .thickness(0.7F)
-                .color(cardBorder)
-                .render(graphics);
-
-        PlayerHead.of(profileX + 5.0F, profileY + 5.0F, 20.0F)
-                .self()
-                .radius(5)
-                .render(graphics);
+        Render2D.drawRoundedRect(profileX, profileY, profileW, 30.0F, 8.0F, cardBg);
+        Render2D.drawRoundedOutline(profileX, profileY, profileW, 30.0F, 8.0F, 0.7F, cardBorder);
 
         String username = this.minecraft != null && this.minecraft.getUser() != null ? this.minecraft.getUser().getName() : "User";
-        Text.of(username)
-                .font(Fonts.MANROPE_MEDIUM)
-                .size(7.0F)
-                .color(Color.rgba(255, 255, 255, (int) (245 * alphaVal)))
-                .position(profileX + 30.0F, profileY + 6.0F)
-                .render(graphics);
-
-        Text.of("Developer")
-                .font(Fonts.MEDIUM)
-                .size(5.5F)
-                .color(Color.rgba(140, 160, 190, (int) (180 * alphaVal)))
-                .position(profileX + 30.0F, profileY + 17.0F)
-                .render(graphics);
+        Fonts.drawString(Fonts.SF_MEDIUM, username, profileX + 12.0F, profileY + 6.0F, 7.0F, ColorUtil.rgba(255, 255, 255, (int) (245 * alphaVal)));
+        Fonts.drawString(Fonts.SF_MEDIUM, "Developer", profileX + 12.0F, profileY + 17.0F, 5.5F, ColorUtil.rgba(140, 160, 190, (int) (180 * alphaVal)));
     }
 
-    private void renderHeader(GuiGraphicsExtractor graphics, float x, float y, float w, int mouseX, int mouseY, float alphaVal) {
+    private void renderHeader(float x, float y, float w, int mouseX, int mouseY, float alphaVal) {
         String titleText = searchQuery.isEmpty() ? activeCategory.getDisplayName() : "Поиск: \"" + searchQuery + "\"";
 
-        Text.of(titleText)
-                .font(Fonts.MANROPE_MEDIUM)
-                .size(11.0F)
-                .color(Color.rgba(255, 255, 255, (int) (250 * alphaVal)))
-                .position(x, y + 2.0F)
-                .render(graphics);
+        Fonts.drawString(Fonts.SF_MEDIUM, titleText, x, y + 2.0F, 11.0F, ColorUtil.rgba(255, 255, 255, (int) (250 * alphaVal)));
 
         // Search Bar Box
         float searchW = 130.0F;
@@ -289,34 +192,21 @@ public class LiquidClickGui extends Screen {
         float searchX = x + w - searchW;
 
         boolean isHovered = mouseX >= searchX && mouseX <= searchX + searchW && mouseY >= y && mouseY <= y + searchH;
-        Color boxBg = Color.rgba(255, 255, 255, (int) ((searchFocused ? 0.12F : (isHovered ? 0.08F : 0.05F)) * 255 * alphaVal));
-        Color boxBorder = Color.rgba(255, 255, 255, (int) ((searchFocused ? 0.35F : 0.15F) * 255 * alphaVal));
+        int boxBg = ColorUtil.rgba(255, 255, 255, (int) ((searchFocused ? 0.12F : (isHovered ? 0.08F : 0.05F)) * 255 * alphaVal));
+        int boxBorder = ColorUtil.rgba(255, 255, 255, (int) ((searchFocused ? 0.35F : 0.15F) * 255 * alphaVal));
 
-        RoundedRect.of(searchX, y, searchW, searchH)
-                .radius(6)
-                .color(boxBg)
-                .render(graphics);
-
-        Outline.of(searchX, y, searchW, searchH)
-                .radius(6)
-                .thickness(0.7F)
-                .color(boxBorder)
-                .render(graphics);
+        Render2D.drawRoundedRect(searchX, y, searchW, searchH, 6.0F, boxBg);
+        Render2D.drawRoundedOutline(searchX, y, searchW, searchH, 6.0F, 0.75F, boxBorder);
 
         String displayText = searchQuery.isEmpty() ? (searchFocused ? "" : "Поиск...") : searchQuery;
-        Color textCol = searchQuery.isEmpty() && !searchFocused
-                ? Color.rgba(140, 150, 170, (int) (180 * alphaVal))
-                : Color.rgba(255, 255, 255, (int) (245 * alphaVal));
+        int textCol = searchQuery.isEmpty() && !searchFocused
+                ? ColorUtil.rgba(140, 150, 170, (int) (180 * alphaVal))
+                : ColorUtil.rgba(255, 255, 255, (int) (245 * alphaVal));
 
-        Text.of(displayText + (searchFocused && (System.currentTimeMillis() % 1000 > 500) ? "_" : ""))
-                .font(Fonts.MEDIUM)
-                .size(6.5F)
-                .color(textCol)
-                .position(searchX + 8.0F, y + 7.0F)
-                .render(graphics);
+        Fonts.drawString(Fonts.SF_MEDIUM, displayText + (searchFocused && (System.currentTimeMillis() % 1000 > 500) ? "_" : ""), searchX + 8.0F, y + 7.0F, 6.5F, textCol);
     }
 
-    private void renderModulesGrid(GuiGraphicsExtractor graphics, float x, float y, float w, float h, int mouseX, int mouseY, float alphaVal) {
+    private void renderModulesGrid(float x, float y, float w, float h, int mouseX, int mouseY, float alphaVal) {
         List<Module> modules = getFilteredModules();
 
         float cardW = (w - 12.0F) / 2.0F;
@@ -340,9 +230,8 @@ public class LiquidClickGui extends Screen {
 
             float cardH = 38.0F + (eVal * calculateSettingsHeight(module));
 
-            // Scissor clip for grid area
             if (currentY + cardH >= y && currentY <= y + h) {
-                renderModuleCard(graphics, module, cardX, currentY, cardW, cardH, eVal, mouseX, mouseY, alphaVal);
+                renderModuleCard(module, cardX, currentY, cardW, cardH, eVal, mouseX, mouseY, alphaVal);
             }
 
             if (isRightColumn) {
@@ -357,7 +246,7 @@ public class LiquidClickGui extends Screen {
         this.scrollAnim.setTarget(this.scrollTarget);
     }
 
-    private void renderModuleCard(GuiGraphicsExtractor graphics, Module module, float x, float y, float w, float h, float expandVal, int mouseX, int mouseY, float alphaVal) {
+    private void renderModuleCard(Module module, float x, float y, float w, float h, float expandVal, int mouseX, int mouseY, float alphaVal) {
         boolean isHovered = mouseX >= x && mouseX <= x + w && mouseY >= y && mouseY <= y + 38.0F;
 
         Animation toggleAnim = moduleToggleAnims.computeIfAbsent(module, k -> new Animation(module.isEnabled() ? 1.0F : 0.0F, 0.18F));
@@ -366,40 +255,22 @@ public class LiquidClickGui extends Screen {
         float tVal = toggleAnim.getValue();
 
         // Card Glass Background & Outline
-        Color cardBg = Color.rgba(20, 22, 32, (int) ((0.60F + tVal * 0.15F) * 255 * alphaVal));
-        Color outlineCol = Color.rgba(255, 255, 255, (int) ((0.10F + (isHovered ? 0.18F : 0.0F) + tVal * 0.20F) * 255 * alphaVal));
+        int cardBg = ColorUtil.rgba(20, 22, 32, (int) ((0.60F + tVal * 0.15F) * 255 * alphaVal));
+        int outlineCol = ColorUtil.rgba(255, 255, 255, (int) ((0.10F + (isHovered ? 0.18F : 0.0F) + tVal * 0.20F) * 255 * alphaVal));
 
-        RoundedRect.of(x, y, w, h)
-                .radius(8)
-                .color(cardBg)
-                .render(graphics);
-
-        Outline.of(x, y, w, h)
-                .radius(8)
-                .thickness(0.75F)
-                .color(outlineCol)
-                .render(graphics);
+        Render2D.drawRoundedRect(x, y, w, h, 8.0F, cardBg);
+        Render2D.drawRoundedOutline(x, y, w, h, 8.0F, 0.75F, outlineCol);
 
         // Module Name & Subtitle
-        Color titleCol = module.isEnabled()
-                ? Color.rgba(255, 255, 255, (int) (255 * alphaVal))
-                : Color.rgba(185, 195, 215, (int) (210 * alphaVal));
+        int titleCol = module.isEnabled()
+                ? ColorUtil.rgba(255, 255, 255, (int) (255 * alphaVal))
+                : ColorUtil.rgba(185, 195, 215, (int) (210 * alphaVal));
 
-        Text.of(module.getName())
-                .font(Fonts.MANROPE_MEDIUM)
-                .size(7.5F)
-                .color(titleCol)
-                .position(x + 12.0F, y + 8.0F)
-                .render(graphics);
+        Fonts.drawString(Fonts.SF_MEDIUM, module.getName(), x + 12.0F, y + 8.0F, 7.5F, titleCol);
 
         String desc = module.getDescription();
         if (desc != null && !desc.isEmpty()) {
-            Text.of(desc)
-                    .font(Fonts.MEDIUM)
-                    .size(5.5F)
-                    .color(Color.rgba(130, 145, 170, (int) (170 * alphaVal)))
-                    .position(x + 12.0F, y + 21.0F)
-                    .render(graphics);
+            Fonts.drawString(Fonts.SF_MEDIUM, desc, x + 12.0F, y + 21.0F, 5.5F, ColorUtil.rgba(130, 145, 170, (int) (170 * alphaVal)));
         }
 
         // Toggle Switch Widget
@@ -408,75 +279,46 @@ public class LiquidClickGui extends Screen {
         float switchX = x + w - switchW - 10.0F;
         float switchY = y + 12.0F;
 
-        Color switchTrackBg = Color.rgba(255, 255, 255, (int) ((0.12F + tVal * 0.35F) * 255 * alphaVal));
-        Color activeGradient1 = Color.rgb(106, 17, 203);
-        Color activeGradient2 = Color.rgb(37, 117, 252);
+        int switchTrackBg = tVal > 0.01F
+                ? ColorUtil.rgba(37, 117, 252, (int) (255 * alphaVal))
+                : ColorUtil.rgba(255, 255, 255, (int) (0.12F * 255 * alphaVal));
 
-        if (tVal > 0.01F) {
-            RoundedRect.of(switchX, switchY, switchW, switchH)
-                    .radius(7)
-                    .horizontalGradient(activeGradient1, activeGradient2)
-                    .alpha(tVal * alphaVal)
-                    .render(graphics);
-        } else {
-            RoundedRect.of(switchX, switchY, switchW, switchH)
-                    .radius(7)
-                    .color(switchTrackBg)
-                    .render(graphics);
-        }
+        Render2D.drawRoundedRect(switchX, switchY, switchW, switchH, 7.0F, switchTrackBg);
 
         // Switch Knob
         float knobSize = 10.0F;
         float knobX = switchX + 2.0F + (switchW - knobSize - 4.0F) * tVal;
         float knobY = switchY + 2.0F;
-        Color knobColor = Color.rgba(255, 255, 255, (int) (255 * alphaVal));
+        int knobColor = ColorUtil.rgba(255, 255, 255, (int) (255 * alphaVal));
 
-        RoundedRect.of(knobX, knobY, knobSize, knobSize)
-                .radius(5)
-                .color(knobColor)
-                .render(graphics);
+        Render2D.drawRoundedRect(knobX, knobY, knobSize, knobSize, 5.0F, knobColor);
 
         // Expanded Settings Section
         if (expandVal > 0.01F) {
             float setY = y + 36.0F;
             List<Setting<?>> settings = module.getSettings();
             for (Setting<?> setting : settings) {
-                renderSettingRow(graphics, setting, x + 10.0F, setY, w - 20.0F, mouseX, mouseY, expandVal * alphaVal);
+                renderSettingRow(setting, x + 10.0F, setY, w - 20.0F, mouseX, mouseY, expandVal * alphaVal);
                 setY += getSettingHeight(setting);
             }
         }
     }
 
-    private void renderSettingRow(GuiGraphicsExtractor graphics, Setting<?> setting, float x, float y, float w, int mouseX, int mouseY, float alphaVal) {
+    private void renderSettingRow(Setting<?> setting, float x, float y, float w, int mouseX, int mouseY, float alphaVal) {
         if (setting instanceof CheckBox cb) {
-            Text.of(cb.getName())
-                    .font(Fonts.MEDIUM)
-                    .size(6.5F)
-                    .color(Color.rgba(215, 225, 240, (int) (230 * alphaVal)))
-                    .position(x, y + 3.0F)
-                    .render(graphics);
+            Fonts.drawString(Fonts.SF_MEDIUM, cb.getName(), x, y + 3.0F, 6.5F, ColorUtil.rgba(215, 225, 240, (int) (230 * alphaVal)));
 
             float boxSize = 12.0F;
             float boxX = x + w - boxSize;
             boolean isHovered = mouseX >= boxX && mouseX <= boxX + boxSize && mouseY >= y && mouseY <= y + boxSize;
 
-            Color boxBg = cb.getValue()
-                    ? Color.rgb(37, 117, 252)
-                    : Color.rgba(255, 255, 255, (int) ((isHovered ? 0.18F : 0.08F) * 255 * alphaVal));
+            int boxBg = cb.getValue()
+                    ? ColorUtil.rgba(37, 117, 252, (int) (255 * alphaVal))
+                    : ColorUtil.rgba(255, 255, 255, (int) ((isHovered ? 0.18F : 0.08F) * 255 * alphaVal));
 
-            RoundedRect.of(boxX, y, boxSize, boxSize)
-                    .radius(3)
-                    .color(boxBg)
-                    .render(graphics);
-
+            Render2D.drawRoundedRect(boxX, y, boxSize, boxSize, 3.0F, boxBg);
             if (cb.getValue()) {
-                Text.of("✓")
-                        .font(Fonts.MEDIUM)
-                        .size(7.0F)
-                        .color(Color.rgba(255, 255, 255, (int) (255 * alphaVal)))
-                        .align(TextAlign.CENTER)
-                        .position(boxX + boxSize / 2.0F, y + 2.0F)
-                        .render(graphics);
+                Fonts.drawCenteredString(Fonts.SF_MEDIUM, "✓", boxX + boxSize / 2.0F, y + 2.0F, 7.0F, ColorUtil.rgba(255, 255, 255, (int) (255 * alphaVal)));
             }
         } else if (setting instanceof SliderSetting sl) {
             float val = sl.getValue();
@@ -484,59 +326,27 @@ public class LiquidClickGui extends Screen {
             float max = sl.getMax();
             float pct = (val - min) / (max - min);
 
-            Text.of(sl.getName())
-                    .font(Fonts.MEDIUM)
-                    .size(6.5F)
-                    .color(Color.rgba(215, 225, 240, (int) (230 * alphaVal)))
-                    .position(x, y)
-                    .render(graphics);
-
-            Text.of(String.format("%.1f", val))
-                    .font(Fonts.MEDIUM)
-                    .size(6.0F)
-                    .color(Color.rgba(170, 185, 210, (int) (210 * alphaVal)))
-                    .align(TextAlign.RIGHT)
-                    .position(x + w, y)
-                    .render(graphics);
+            Fonts.drawString(Fonts.SF_MEDIUM, sl.getName(), x, y, 6.5F, ColorUtil.rgba(215, 225, 240, (int) (230 * alphaVal)));
+            String valStr = String.format("%.1f", val);
+            float valW = Fonts.SF_MEDIUM.getWidth(valStr, 6.0F);
+            Fonts.drawString(Fonts.SF_MEDIUM, valStr, x + w - valW, y, 6.0F, ColorUtil.rgba(170, 185, 210, (int) (210 * alphaVal)));
 
             float barY = y + 11.0F;
             float barH = 4.0F;
-            RoundedRect.of(x, barY, w, barH)
-                    .radius(2)
-                    .color(Color.rgba(255, 255, 255, (int) (25 * alphaVal)))
-                    .render(graphics);
+            Render2D.drawRoundedRect(x, barY, w, barH, 2.0F, ColorUtil.rgba(255, 255, 255, (int) (25 * alphaVal)));
 
             float fillW = Math.max(4.0F, w * pct);
-            RoundedRect.of(x, barY, fillW, barH)
-                    .radius(2)
-                    .horizontalGradient(Color.rgb(106, 17, 203), Color.rgb(37, 117, 252))
-                    .alpha(alphaVal)
-                    .render(graphics);
+            Render2D.drawRoundedRect(x, barY, fillW, barH, 2.0F, ColorUtil.rgba(37, 117, 252, (int) (255 * alphaVal)));
         } else if (setting instanceof BindSetting b) {
-            Text.of("Назначение клавиши")
-                    .font(Fonts.MEDIUM)
-                    .size(6.5F)
-                    .color(Color.rgba(215, 225, 240, (int) (230 * alphaVal)))
-                    .position(x, y + 3.0F)
-                    .render(graphics);
+            Fonts.drawString(Fonts.SF_MEDIUM, "Назначение клавиши", x, y + 3.0F, 6.5F, ColorUtil.rgba(215, 225, 240, (int) (230 * alphaVal)));
 
             String bindText = (activeBindingSetting == b) ? "[...]" : b.getDisplayValue();
             float btnW = 55.0F;
             float btnH = 14.0F;
             float btnX = x + w - btnW;
 
-            RoundedRect.of(btnX, y, btnW, btnH)
-                    .radius(4)
-                    .color(Color.rgba(255, 255, 255, (int) (20 * alphaVal)))
-                    .render(graphics);
-
-            Text.of(bindText)
-                    .font(Fonts.MEDIUM)
-                    .size(6.0F)
-                    .color(Color.rgba(255, 255, 255, (int) (245 * alphaVal)))
-                    .align(TextAlign.CENTER)
-                    .position(btnX + btnW / 2.0F, y + 3.5F)
-                    .render(graphics);
+            Render2D.drawRoundedRect(btnX, y, btnW, btnH, 4.0F, ColorUtil.rgba(255, 255, 255, (int) (20 * alphaVal)));
+            Fonts.drawCenteredString(Fonts.SF_MEDIUM, bindText, btnX + btnW / 2.0F, y + 3.5F, 6.0F, ColorUtil.rgba(255, 255, 255, (int) (245 * alphaVal)));
         }
     }
 
@@ -599,123 +409,142 @@ public class LiquidClickGui extends Screen {
             // Search Bar Click
             float searchW = 130.0F;
             float searchH = 22.0F;
-            float searchX = x + SIDEBAR_W + 16.0F + (WINDOW_W - SIDEBAR_W - 32.0F) - searchW;
-            this.searchFocused = (mouseX >= searchX && mouseX <= searchX + searchW && mouseY >= y + 14.0F && mouseY <= y + 14.0F + searchH);
+            float searchX = x + WINDOW_W - SIDEBAR_W - 16.0F - searchW;
+            float searchY = y + 14.0F;
 
-            // Module Cards Clicks
-            List<Module> modules = getFilteredModules();
-            float gridX = x + SIDEBAR_W + 16.0F;
-            float gridY = y + 50.0F;
-            float gridW = WINDOW_W - SIDEBAR_W - 32.0F;
-            float gridH = WINDOW_H - 64.0F;
-
-            float cardW = (gridW - 12.0F) / 2.0F;
-            float startY = gridY - scrollAnim.getValue();
-            float leftY = startY;
-            float rightY = startY;
-
-            for (int i = 0; i < modules.size(); i++) {
-                Module module = modules.get(i);
-                boolean isRightColumn = (i % 2 != 0);
-                float cardX = isRightColumn ? gridX + cardW + 12.0F : gridX;
-                float currentY = isRightColumn ? rightY : leftY;
-                float expandVal = moduleExpandAnims.computeIfAbsent(module, k -> new Animation(0.0F, 0.20F)).getValue();
-                float cardH = 38.0F + (expandVal * calculateSettingsHeight(module));
-
-                if (mouseY >= gridY && mouseY <= gridY + gridH) {
-                    // Header click toggles module
-                    if (mouseX >= cardX && mouseX <= cardX + cardW && mouseY >= currentY && mouseY <= currentY + 38.0F) {
-                        module.toggle();
-                        return true;
-                    }
-
-                    // Settings clicks inside card
-                    if (expandVal > 0.5F) {
-                        float setY = currentY + 36.0F;
-                        for (Setting<?> setting : module.getSettings()) {
-                            float rowH = getSettingHeight(setting);
-                            if (mouseY >= setY && mouseY <= setY + rowH && mouseX >= cardX + 10.0F && mouseX <= cardX + cardW - 10.0F) {
-                                if (setting instanceof CheckBox cb) {
-                                    cb.setValue(!cb.getValue());
-                                    return true;
-                                } else if (setting instanceof BindSetting b) {
-                                    activeBindingSetting = b;
-                                    return true;
-                                }
-                            }
-                            setY += rowH;
-                        }
-                    }
-                }
-
-                if (isRightColumn) rightY += cardH + 10.0F;
-                else leftY += cardH + 10.0F;
+            if (mouseX >= searchX && mouseX <= searchX + searchW && mouseY >= searchY && mouseY <= searchY + searchH) {
+                this.searchFocused = true;
+                return true;
+            } else {
+                this.searchFocused = false;
             }
-        } else if (event.button() == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
-            // Right-click opens module settings
+
+            // Modules Clicks
             List<Module> modules = getFilteredModules();
             float gridX = x + SIDEBAR_W + 16.0F;
             float gridY = y + 50.0F;
             float gridW = WINDOW_W - SIDEBAR_W - 32.0F;
             float cardW = (gridW - 12.0F) / 2.0F;
-
             float startY = gridY - scrollAnim.getValue();
+
             float leftY = startY;
             float rightY = startY;
 
             for (int i = 0; i < modules.size(); i++) {
                 Module module = modules.get(i);
                 boolean isRightColumn = (i % 2 != 0);
+
                 float cardX = isRightColumn ? gridX + cardW + 12.0F : gridX;
                 float currentY = isRightColumn ? rightY : leftY;
-                float expandVal = moduleExpandAnims.computeIfAbsent(module, k -> new Animation(0.0F, 0.20F)).getValue();
-                float cardH = 38.0F + (expandVal * calculateSettingsHeight(module));
 
+                Animation expandAnim = moduleExpandAnims.computeIfAbsent(module, k -> new Animation(0.0F, 0.20F));
+                float eVal = expandAnim.getValue();
+                float cardH = 38.0F + (eVal * calculateSettingsHeight(module));
+
+                // Check click inside card header (38px height)
                 if (mouseX >= cardX && mouseX <= cardX + cardW && mouseY >= currentY && mouseY <= currentY + 38.0F) {
-                    this.expandedModule = (expandedModule == module) ? null : module;
+                    // Check toggle switch click
+                    float switchW = 28.0F;
+                    float switchH = 14.0F;
+                    float switchX = cardX + cardW - switchW - 10.0F;
+                    float switchY = currentY + 12.0F;
+
+                    if (mouseX >= switchX && mouseX <= switchX + switchW && mouseY >= switchY && mouseY <= switchY + switchH) {
+                        module.toggle();
+                    }
                     return true;
                 }
 
-                if (isRightColumn) rightY += cardH + 10.0F;
-                else leftY += cardH + 10.0F;
+                // Check click inside expanded settings
+                if (eVal > 0.01F && mouseX >= cardX && mouseX <= cardX + cardW && mouseY >= currentY + 36.0F && mouseY <= currentY + cardH) {
+                    float setY = currentY + 36.0F;
+                    for (Setting<?> setting : module.getSettings()) {
+                        float sH = getSettingHeight(setting);
+                        if (mouseY >= setY && mouseY <= setY + sH) {
+                            if (setting instanceof CheckBox cb) {
+                                cb.setValue(!cb.getValue());
+                            } else if (setting instanceof BindSetting b) {
+                                this.activeBindingSetting = b;
+                            }
+                            return true;
+                        }
+                        setY += sH;
+                    }
+                }
+
+                if (isRightColumn) {
+                    rightY += cardH + 10.0F;
+                } else {
+                    leftY += cardH + 10.0F;
+                }
+            }
+        } else if (event.button() == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
+            // Right click module card to expand/collapse settings
+            List<Module> modules = getFilteredModules();
+            float gridX = x + SIDEBAR_W + 16.0F;
+            float gridY = y + 50.0F;
+            float gridW = WINDOW_W - SIDEBAR_W - 32.0F;
+            float cardW = (gridW - 12.0F) / 2.0F;
+            float startY = gridY - scrollAnim.getValue();
+
+            float leftY = startY;
+            float rightY = startY;
+
+            for (int i = 0; i < modules.size(); i++) {
+                Module module = modules.get(i);
+                boolean isRightColumn = (i % 2 != 0);
+
+                float cardX = isRightColumn ? gridX + cardW + 12.0F : gridX;
+                float currentY = isRightColumn ? rightY : leftY;
+
+                Animation expandAnim = moduleExpandAnims.computeIfAbsent(module, k -> new Animation(0.0F, 0.20F));
+                float eVal = expandAnim.getValue();
+                float cardH = 38.0F + (eVal * calculateSettingsHeight(module));
+
+                if (mouseX >= cardX && mouseX <= cardX + cardW && mouseY >= currentY && mouseY <= currentY + 38.0F) {
+                    this.expandedModule = (this.expandedModule == module) ? null : module;
+                    return true;
+                }
+
+                if (isRightColumn) {
+                    rightY += cardH + 10.0F;
+                } else {
+                    leftY += cardH + 10.0F;
+                }
             }
         }
-
         return super.mouseClicked(event, isLeftClick);
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
-        this.scrollTarget -= (float) (scrollY * 24.0D);
-        return true;
-    }
-
-    @Override
     public boolean keyPressed(KeyEvent event) {
-        if (activeBindingSetting != null) {
-            if (event.key() == GLFW.GLFW_KEY_ESCAPE || event.key() == GLFW.GLFW_KEY_DELETE) {
-                if (activeBindingSetting instanceof BindSetting b) {
-                    b.clear();
-                }
+        if (this.activeBindingSetting instanceof BindSetting b) {
+            if (event.key() == GLFW.GLFW_KEY_ESCAPE) {
+                b.setValue(List.of());
             } else {
-                if (activeBindingSetting instanceof BindSetting b) {
-                    b.setSingle(event.key());
-                }
+                b.setValue(List.of(event.key()));
             }
-            activeBindingSetting = null;
+            this.activeBindingSetting = null;
             return true;
         }
 
-        if (searchFocused) {
+        if (this.searchFocused) {
             if (event.key() == GLFW.GLFW_KEY_BACKSPACE) {
-                if (!searchQuery.isEmpty()) {
-                    searchQuery = searchQuery.substring(0, searchQuery.length() - 1);
+                if (!this.searchQuery.isEmpty()) {
+                    this.searchQuery = this.searchQuery.substring(0, this.searchQuery.length() - 1);
                 }
                 return true;
             } else if (event.key() == GLFW.GLFW_KEY_ESCAPE) {
-                searchFocused = false;
+                this.searchFocused = false;
                 return true;
             }
+        }
+
+        if (event.key() == GLFW.GLFW_KEY_RIGHT_SHIFT || event.key() == GLFW.GLFW_KEY_ESCAPE) {
+            if (this.minecraft != null) {
+                this.minecraft.setScreenAndShow(null);
+            }
+            return true;
         }
 
         return super.keyPressed(event);
@@ -723,10 +552,10 @@ public class LiquidClickGui extends Screen {
 
     @Override
     public boolean charTyped(CharacterEvent event) {
-        if (searchFocused) {
+        if (this.searchFocused) {
             int codePoint = event.codepoint();
             if (codePoint >= 32 && codePoint != 127) {
-                searchQuery += new String(Character.toChars(codePoint));
+                this.searchQuery += new String(Character.toChars(codePoint));
                 return true;
             }
         }
