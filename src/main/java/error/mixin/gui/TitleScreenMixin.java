@@ -137,10 +137,4 @@ public abstract class TitleScreenMixin extends Screen {
             }
         }
     }
-
-    @Inject(method = "extractRenderState", at = @At("HEAD"), cancellable = true)
-    private void hideDefaultTitleElements(GuiGraphicsExtractor extractor, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
-        super.extractRenderState(extractor, mouseX, mouseY, partialTick);
-        ci.cancel();
-    }
 }

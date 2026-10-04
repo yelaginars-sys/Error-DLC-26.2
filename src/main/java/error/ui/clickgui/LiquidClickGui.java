@@ -46,10 +46,13 @@ public class LiquidClickGui extends Screen {
     public Module expandedModule = null;
     public Setting<?> activeBindingSetting = null;
 
+    private long openTime = System.currentTimeMillis();
+
     public LiquidClickGui() {
         super(Component.literal("ClickGUI"));
         this.openAnim.setValue(1.0F);
         this.openAnim.setTarget(1.0F);
+        this.openTime = System.currentTimeMillis();
     }
 
     @Override
@@ -57,6 +60,7 @@ public class LiquidClickGui extends Screen {
         super.init();
         this.openAnim.setValue(1.0F);
         this.openAnim.setTarget(1.0F);
+        this.openTime = System.currentTimeMillis();
     }
 
     @Override
@@ -540,7 +544,17 @@ public class LiquidClickGui extends Screen {
             }
         }
 
-        if (event.key() == GLFW.GLFW_KEY_RIGHT_SHIFT || event.key() == GLFW.GLFW_KEY_ESCAPE) {
+        if (event.key() == GLFW.GLFW_KEY_RIGHT_SHIFT) {
+            if (System.currentTimeMillis() - this.openTime < 300L) {
+                return true;
+            }
+            if (this.minecraft != null) {
+                this.minecraft.setScreenAndShow(null);
+            }
+            return true;
+        }
+
+        if (event.key() == GLFW.GLFW_KEY_ESCAPE) {
             if (this.minecraft != null) {
                 this.minecraft.setScreenAndShow(null);
             }
