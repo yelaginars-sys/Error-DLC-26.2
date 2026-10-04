@@ -30,10 +30,12 @@ public abstract class ScreenMixin {
     @Inject(method = "extractRenderState", at = @At("HEAD"))
     private void onExtractRenderStateHead(net.minecraft.client.gui.GuiGraphicsExtractor extractor, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
         error.util.RenderExtend.enter2D(null, extractor, null);
+        error.util.display.batch.DisplayBatcher.begin(extractor);
     }
 
     @Inject(method = "extractRenderState", at = @At("TAIL"))
     private void onExtractRenderStateTail(net.minecraft.client.gui.GuiGraphicsExtractor extractor, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
+        error.util.display.batch.DisplayBatcher.end();
         error.util.RenderExtend.exit2D();
     }
 

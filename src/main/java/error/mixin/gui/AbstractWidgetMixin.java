@@ -125,23 +125,21 @@ public abstract class AbstractWidgetMixin {
 
                 Component msg = this.getMessage();
                 String msgText = msg != null ? msg.getString().toLowerCase() : "";
-                String symbol = "•";
+                String iconGlyph = error.util.render.font.IconUse.GLOBE.getGlyph();
 
                 if (msgText.contains("язык") || msgText.contains("lang") || className.contains("Language")) {
-                    symbol = "🌐";
+                    iconGlyph = error.util.render.font.IconUse.GLOBE.getGlyph();
                 } else if (msgText.contains("доступн") || msgText.contains("access") || className.contains("Accessibility")) {
-                    symbol = "♿";
+                    iconGlyph = error.util.render.font.IconUse.PERSONS.getGlyph();
                 } else if (msgText.contains("друг") || msgText.contains("friend") || msgText.contains("realms") || className.contains("Social")) {
-                    symbol = "👤";
-                } else if (msg != null && !msg.getString().isEmpty()) {
-                    symbol = msg.getString().substring(0, 1);
+                    iconGlyph = error.util.render.font.IconUse.GROUP.getGlyph();
                 }
 
                 int textColor = this.active
                         ? ColorUtil.rgba(255, 255, 255, (int) ((0.92F + 0.08F * this.error$hoverAnim) * 255))
                         : ColorUtil.rgba(160, 160, 175, 140);
 
-                Fonts.drawCenteredString(Fonts.SF_MEDIUM, symbol, x + w / 2.0F, y + (h - 8.0F) / 2.0F - 0.5F, 8.0F, textColor);
+                Fonts.drawCenteredString(Fonts.ICONS, iconGlyph, x + w / 2.0F, y + (h - 9.0F) / 2.0F - 0.5F, 9.0F, textColor);
 
                 Render2DUtil.flush();
                 ci.cancel();

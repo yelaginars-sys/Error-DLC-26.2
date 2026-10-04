@@ -84,16 +84,15 @@ public class LiquidClickGui extends Screen {
         float y = (screenH - WINDOW_H) / 2.0F;
 
         RenderExtend.enter2D(null, extractor, null);
-        error.util.display.batch.DisplayBatcher.begin(extractor);
         try {
-            // 1. Fullscreen Kawase Blur Pass on game background
+            // 1. Fullscreen Kawase Blur Pass on game background (fast 1-step pass)
             Blur.of(0, 0, screenW, screenH)
-                    .radius(12)
-                    .strength(3)
+                    .radius(8)
+                    .strength(1)
                     .render(extractor);
 
             // Background dark veil tint
-            int veilAlpha = (int) (110 * animVal);
+            int veilAlpha = (int) (130 * animVal);
             extractor.fill(0, 0, screenW, screenH, ColorUtil.rgba(4, 6, 10, veilAlpha));
 
             // Apply scale animation around center
@@ -143,7 +142,7 @@ public class LiquidClickGui extends Screen {
 
             extractor.pose().popMatrix();
         } finally {
-            error.util.display.batch.DisplayBatcher.end();
+            error.util.display.DisplayUtil.flush();
             RenderExtend.exit2D();
         }
     }
