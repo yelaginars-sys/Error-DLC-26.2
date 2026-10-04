@@ -379,8 +379,13 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
     }
 
     @Override
+    public boolean shouldRender() {
+        return enabled && mc.gui != null && mc.gui.screen() == null;
+    }
+
+    @Override
     public void draw(Render2DEvent event) {
-        if (mc.player == null) return;
+        if (mc.player == null || mc.gui == null || mc.gui.screen() != null) return;
 
         fadeAnim.setTarget(1.0F);
         fadeAnim.update();

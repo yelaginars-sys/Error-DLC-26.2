@@ -104,6 +104,19 @@ public abstract class AbstractWidgetMixin {
                 return;
             }
 
+            // 2.5 Small Icon Buttons (Language, Accessibility, Lock, Friends icons <= 24px wide)
+            if (w <= 24.0F) {
+                float iconRadius = Math.min(4.0F, h / 2.0F);
+                int bg = this.active ? ColorUtil.rgba(20, 24, 36, (int) ((0.60F + this.error$hoverAnim * 0.25F) * 255)) : ColorUtil.rgba(14, 16, 22, 100);
+                int outlineColor = this.active ? ColorUtil.rgba(255, 255, 255, (int) ((0.15F + this.error$hoverAnim * 0.40F) * 255)) : ColorUtil.rgba(255, 255, 255, 20);
+
+                Render2D.drawRoundedRect(x, y, w, h, iconRadius, bg);
+                Render2D.drawRoundedOutline(x, y, w, h, iconRadius, 0.75F, outlineColor);
+                Render2DUtil.flush();
+                // Allow vanilla icon/texture extraction on top
+                return;
+            }
+
             // 3. All Buttons, Sliders, CycleButtons, and other widgets
             float radius = Math.min(6.5F, h / 2.0F);
 
