@@ -18,20 +18,8 @@ public final class Interface extends Module {
 
     public final ModeSetting style         = mode("Style", "Liquid Glass", "Liquid Glass", "Default Black");
     public final ColorSetting accentColor  = color("Accent Color", ColorUtil.rgba(75, 124, 248, 255));
-    public final CheckBox watermark        = checkbox("Watermark", true);
-    public final CheckBox targetHud        = checkbox("Target HUD", true);
-    public final CheckBox potionHud        = checkbox("Potions", true);
-    public final CheckBox cooldownsHud     = checkbox("Cooldowns", true);
-    public final CheckBox keybindsHud      = checkbox("Keybinds", true);
-    public final CheckBox armorHud         = checkbox("Armor HUD", true);
-    public final CheckBox staffList        = checkbox("Staff List", true);
-    public final CheckBox itemHud          = checkbox("Item HUD", true);
-    public final CheckBox arrayList        = checkbox("Array List", true);
-    public final CheckBox customHotbar     = checkbox("Hotbar", true);
-    public final CheckBox useTracker       = checkbox("Use Tracker", true);
-    public final CheckBox blurBackground   = checkbox("Blur Background", true);
-    public final CheckBox dynamicIsland    = checkbox("Dynamic Island", false);
-    public final CheckBox gps              = checkbox("GPS Navigation", false);
+    public final CheckBox dynamicIsland    = checkbox("Dynamic Island", true);
+    public final CheckBox gps              = checkbox("GPS Navigation", true);
     public final CheckBox snapping         = checkbox("Snapping", true);
     public final CheckBox collisions       = checkbox("Collisions", true);
     public final CheckBox guidelines       = checkbox("Guidelines", true);
@@ -78,29 +66,7 @@ public final class Interface extends Module {
 
         boolean active = this.isEnabled();
         for (HudElement el : manager.getElements()) {
-            if (el instanceof error.ui.hud.impl.WatermarkHudElement) {
-                el.setEnabled(active && this.watermark.getValue());
-            } else if (el instanceof error.ui.hud.impl.TargetHudElement) {
-                el.setEnabled(active && this.targetHud.getValue());
-            } else if (el instanceof error.ui.hud.impl.PotionHudElement) {
-                el.setEnabled(active && this.potionHud.getValue());
-            } else if (el instanceof error.ui.hud.impl.CooldownsHudElement) {
-                el.setEnabled(active && this.cooldownsHud.getValue());
-            } else if (el instanceof error.ui.hud.impl.KeybindsHudElement) {
-                el.setEnabled(active && this.keybindsHud.getValue());
-            } else if (el instanceof error.ui.hud.impl.ArmorHudElement) {
-                el.setEnabled(active && this.armorHud.getValue());
-            } else if (el instanceof error.ui.hud.impl.StaffListHudElement) {
-                el.setEnabled(active && this.staffList.getValue());
-            } else if (el instanceof error.ui.hud.impl.ItemHudElement) {
-                el.setEnabled(active && this.itemHud.getValue());
-            } else if (el instanceof error.ui.hud.impl.ArrayListHudElement) {
-                el.setEnabled(active && this.arrayList.getValue());
-            } else if (el instanceof error.ui.hud.impl.HotbarHudElement) {
-                el.setEnabled(active && this.customHotbar.getValue());
-            } else if (el instanceof error.ui.hud.impl.UseTrackerHudElement) {
-                el.setEnabled(active && this.useTracker.getValue());
-            } else if (el instanceof error.ui.hud.impl.DynamicIslandHud) {
+            if (el instanceof error.ui.hud.impl.DynamicIslandHud) {
                 el.setEnabled(active && this.dynamicIsland.getValue());
             } else if (el instanceof error.ui.hud.impl.GpsHud) {
                 el.setEnabled(active && this.gps.getValue());

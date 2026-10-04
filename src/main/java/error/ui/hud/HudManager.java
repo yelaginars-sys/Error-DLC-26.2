@@ -41,17 +41,6 @@ public final class HudManager implements IMinecraft {
     private final Animation menuFadeAnim = new Animation(0.0F, 0.22F);
 
     private HudManager() {
-        register(new WatermarkHudElement());
-        register(new PotionHudElement());
-        register(new CooldownsHudElement());
-        register(new KeybindsHudElement());
-        register(new TargetHudElement());
-        register(new ArmorHudElement());
-        register(new StaffListHudElement());
-        register(new ItemHudElement());
-        register(new HotbarHudElement());
-        register(new ArrayListHudElement());
-        register(new UseTrackerHudElement());
         register(new DynamicIslandHud());
         register(new GpsHud());
     }
