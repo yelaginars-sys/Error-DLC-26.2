@@ -25,8 +25,8 @@ public final class Interface extends Module {
     public final CheckBox keybindsHud      = checkbox("Keybinds", true);
     public final CheckBox armorHud         = checkbox("Armor HUD", true);
     public final CheckBox blurBackground   = checkbox("Blur Background", true);
-    public final CheckBox dynamicIsland    = checkbox("Dynamic Island", true);
-    public final CheckBox gps              = checkbox("GPS Navigation", true);
+    public final CheckBox dynamicIsland    = checkbox("Dynamic Island", false);
+    public final CheckBox gps              = checkbox("GPS Navigation", false);
     public final CheckBox snapping         = checkbox("Snapping", true);
     public final CheckBox collisions       = checkbox("Collisions", true);
     public final CheckBox guidelines       = checkbox("Guidelines", true);

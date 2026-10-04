@@ -36,27 +36,25 @@ public final class WatermarkHudElement extends HudElement implements IMinecraft 
     public static class SettingItem {
         public final String key;
         public final String name;
-        public final String icon;
 
-        public SettingItem(String key, String name, String icon) {
+        public SettingItem(String key, String name) {
             this.key = key;
             this.name = name;
-            this.icon = icon;
         }
     }
 
     private final List<SettingItem> settingItems = List.of(
-            new SettingItem("Coordinates", "Координаты", "J"),
-            new SettingItem("Discord", "Пользователь (UID)", "N"),
-            new SettingItem("Ping", "Пинг", "k"),
-            new SettingItem("FPS", "FPS счетчик", "C"),
-            new SettingItem("BPS", "Скорость (BPS)", "H"),
-            new SettingItem("Time", "Время и дата", "U"),
-            new SettingItem("Server", "Сервер", "S")
+            new SettingItem("Coordinates", "Координаты"),
+            new SettingItem("Discord", "Пользователь (UID)"),
+            new SettingItem("Ping", "Пинг"),
+            new SettingItem("FPS", "FPS счетчик"),
+            new SettingItem("BPS", "Скорость (BPS)"),
+            new SettingItem("Time", "Время и дата"),
+            new SettingItem("Server", "Сервер")
     );
 
     public WatermarkHudElement() {
-        super("watermark", "Watermark", 400.0F, 10.0F, 220.0F, 22.0F, true);
+        super("watermark", "Watermark", 400.0F, 10.0F, 220.0F, 20.0F, true);
     }
 
     public boolean isSettingEnabled(String key) {
@@ -88,12 +86,13 @@ public final class WatermarkHudElement extends HudElement implements IMinecraft 
     public void draw(Render2DEvent event) {
         if (mc.player == null) return;
 
-        if (!(screen() instanceof ChatScreen) && settingsOpen) {
+        boolean isChat = screen() instanceof ChatScreen;
+        if (!isChat && settingsOpen) {
             settingsOpen = false;
         }
 
-        float h = 22.0F;
-        float r = 8.0F;
+        float H = 20.0F;
+        float RADIUS = 8.0F;
 
         int fps = mc.getFps();
         String timeStr = LocalTime.now().format(TIME_FORMATTER);
@@ -109,75 +108,77 @@ public final class WatermarkHudElement extends HudElement implements IMinecraft 
         double dx = mc.player.getX() - mc.player.xo;
         double dz = mc.player.getZ() - mc.player.zo;
         float bps = (float) (Math.sqrt(dx * dx + dz * dz) * 20.0F);
-
         String serverName = mc.hasSingleplayerServer() ? "Одиночная" : "Сервер";
 
         MsdfFont font = Fonts.SF_MEDIUM;
-        float fontSize = 7.5F;
-        float padX = 8.0F;
+        float fontSize = 7.0F;
+        float padX = 7.0F;
         float gap = 6.0F;
 
-        float totalW = padX + 14.0F + gap; // Logo
+        float logoSize = 13.0F;
+        float totalW = padX + logoSize + gap;
+
         if (showDiscord) totalW += font.getWidth(username + " | " + uid, fontSize) + gap;
-        if (showPing) totalW += font.getWidth("k " + ping + " ms", fontSize) + gap;
-        if (showFps) totalW += font.getWidth("C " + fps + " FPS", fontSize) + gap;
-        if (showBps) totalW += font.getWidth(String.format("H %.1f bps", bps), fontSize) + gap;
-        if (showServer) totalW += font.getWidth("S " + serverName, fontSize) + gap;
+        if (showPing) totalW += font.getWidth(ping + " ms", fontSize) + gap;
+        if (showFps) totalW += font.getWidth(fps + " FPS", fontSize) + gap;
+        if (showBps) totalW += font.getWidth(String.format(java.util.Locale.US, "%.1f bps", bps), fontSize) + gap;
+        if (showServer) totalW += font.getWidth(serverName, fontSize) + gap;
         if (showCoords) {
             int px = (int) mc.player.getX();
             int py = (int) mc.player.getY();
             int pz = (int) mc.player.getZ();
-            totalW += font.getWidth("J " + px + " " + py + " " + pz, fontSize) + gap;
+            totalW += font.getWidth(px + " " + py + " " + pz, fontSize) + gap;
         }
-        if (showTime) totalW += font.getWidth("U " + timeStr, fontSize) + gap;
+        if (showTime) totalW += font.getWidth(timeStr, fontSize) + gap;
         totalW += padX - gap;
 
-        this.width = Math.max(140.0F, totalW);
-        this.height = h;
+        this.width = Math.max(120.0F, totalW);
+        this.height = H;
 
-        int bgColor = ColorUtil.rgba(12, 12, 18, 230);
-        int outlineColor = ColorUtil.withAlpha(Theme.getAccentColor(), 160);
+        int bgColor = ColorUtil.rgba(14, 16, 24, 230);
+        int outlineColor = ColorUtil.withAlpha(Theme.getAccentColor(), 140);
 
-        Render2D.drawBlur(x, y, width, height, r, bgColor, 1.0F);
-        Render2D.drawRoundedRectWithOutline(x, y, width, height, r, bgColor, 1.0F, outlineColor);
+        Render2D.drawBlur(x, y, width, height, RADIUS, bgColor, 1.0F);
+        Render2D.drawRoundedRectWithOutline(x, y, width, height, RADIUS, bgColor, 1.0F, outlineColor);
 
         float curX = x + padX;
-        float textY = y + (height - font.lineHeight(fontSize)) / 2.0F + 1.0F;
+        float textY = y + (height - fontSize) / 2.0F - 0.5F;
 
-        // Logo icon
-        Render2D.drawRoundedRect(curX, y + 4.0F, 14.0F, 14.0F, 3.0F, Theme.getAccentColor());
-        curX += 14.0F + gap;
+        // Logo
+        Render2D.drawTexture(LOGO_TEXTURE, curX, y + (H - logoSize) / 2.0F, logoSize, logoSize, ColorUtil.rgba(255, 255, 255, 255));
+        curX += logoSize + gap;
 
-        // User / Discord
+        // Discord user | UID
         if (showDiscord) {
-            Fonts.drawString(font, username, curX, textY, fontSize, ColorUtil.rgba(255, 255, 255, 255));
-            curX += font.getWidth(username, fontSize);
-            Fonts.drawString(font, " | " + uid, curX, textY, fontSize, Theme.getAccentColor());
-            curX += font.getWidth(" | " + uid, fontSize) + gap;
+            String str = username + " | " + uid;
+            Fonts.drawString(font, str, curX, textY, fontSize, ColorUtil.rgba(245, 245, 250, 255));
+            curX += font.getWidth(str, fontSize) + gap;
         }
 
         // Ping
         if (showPing) {
-            Fonts.drawString(font, ping + " ms", curX, textY, fontSize, ColorUtil.rgba(220, 220, 220, 255));
-            curX += font.getWidth(ping + " ms", fontSize) + gap;
+            String str = ping + " ms";
+            Fonts.drawString(font, str, curX, textY, fontSize, ColorUtil.rgba(190, 205, 230, 255));
+            curX += font.getWidth(str, fontSize) + gap;
         }
 
         // FPS
         if (showFps) {
-            Fonts.drawString(font, fps + " FPS", curX, textY, fontSize, Theme.getAccentColor());
-            curX += font.getWidth(fps + " FPS", fontSize) + gap;
+            String str = fps + " FPS";
+            Fonts.drawString(font, str, curX, textY, fontSize, ColorUtil.rgba(190, 205, 230, 255));
+            curX += font.getWidth(str, fontSize) + gap;
         }
 
         // BPS
         if (showBps) {
-            String bpsStr = String.format("%.1f bps", bps);
-            Fonts.drawString(font, bpsStr, curX, textY, fontSize, ColorUtil.rgba(200, 200, 220, 255));
-            curX += font.getWidth(bpsStr, fontSize) + gap;
+            String str = String.format(java.util.Locale.US, "%.1f bps", bps);
+            Fonts.drawString(font, str, curX, textY, fontSize, ColorUtil.rgba(190, 205, 230, 255));
+            curX += font.getWidth(str, fontSize) + gap;
         }
 
         // Server
         if (showServer) {
-            Fonts.drawString(font, serverName, curX, textY, fontSize, ColorUtil.rgba(220, 220, 220, 255));
+            Fonts.drawString(font, serverName, curX, textY, fontSize, ColorUtil.rgba(190, 205, 230, 255));
             curX += font.getWidth(serverName, fontSize) + gap;
         }
 
@@ -186,61 +187,69 @@ public final class WatermarkHudElement extends HudElement implements IMinecraft 
             int px = (int) mc.player.getX();
             int py = (int) mc.player.getY();
             int pz = (int) mc.player.getZ();
-            String coordsStr = px + " " + py + " " + pz;
-            Fonts.drawString(font, coordsStr, curX, textY, fontSize, ColorUtil.rgba(180, 220, 255, 255));
-            curX += font.getWidth(coordsStr, fontSize) + gap;
+            String str = px + " " + py + " " + pz;
+            Fonts.drawString(font, str, curX, textY, fontSize, ColorUtil.rgba(190, 205, 230, 255));
+            curX += font.getWidth(str, fontSize) + gap;
         }
 
         // Time
         if (showTime) {
-            Fonts.drawString(font, timeStr, curX, textY, fontSize, ColorUtil.rgba(200, 200, 200, 255));
+            Fonts.drawString(font, timeStr, curX, textY, fontSize, ColorUtil.rgba(245, 245, 250, 255));
         }
 
-        // Render Settings Panel if open
-        if (settingsOpen && screen() instanceof ChatScreen) {
-            drawSettingsPanel();
+        // Settings Panel inside ChatScreen
+        if (isChat && settingsOpen) {
+            renderSettingsPanel();
         }
     }
 
-    private void drawSettingsPanel() {
-        float itemH = 16.0F;
-        float headerH = 20.0F;
-        panelW = Math.max(140.0F, width);
-        panelH = headerH + settingItems.size() * itemH + 6.0F;
-        panelX = x + (width - panelW) / 2.0F;
+    private void renderSettingsPanel() {
+        panelW = 140.0F;
+        panelH = settingItems.size() * 14.0F + 16.0F;
+        panelX = x;
         panelY = y + height + 6.0F;
 
-        int panelBg = ColorUtil.rgba(15, 15, 22, 240);
-        int outline = ColorUtil.withAlpha(Theme.getAccentColor(), 180);
+        int panelBg = ColorUtil.rgba(16, 18, 26, 240);
+        int borderCol = ColorUtil.rgba(255, 255, 255, 45);
+        int accent = Theme.getAccentColor();
 
-        Render2D.drawBlur(panelX, panelY, panelW, panelH, 6.0F, panelBg, 1.0F);
-        Render2D.drawRoundedRectWithOutline(panelX, panelY, panelW, panelH, 6.0F, panelBg, 1.0F, outline);
+        Render2D.drawBlur(panelX, panelY, panelW, panelH, 7.0F, panelBg, 1.0F);
+        Render2D.drawRoundedRectWithOutline(panelX, panelY, panelW, panelH, 7.0F, panelBg, 1.0F, borderCol);
 
-        MsdfFont font = Fonts.SF_MEDIUM;
-        float titleW = font.getWidth("Настройки Watermark", 7.0F);
-        Fonts.drawString(font, "Настройки Watermark", panelX + (panelW - titleW) / 2.0F, panelY + 5.0F, 7.0F, Theme.getAccentColor());
+        Fonts.drawString(Fonts.SF_MEDIUM, "Настройки Watermark", panelX + 6.0F, panelY + 5.0F, 6.5F, ColorUtil.rgba(240, 240, 250, 255));
 
-        for (int i = 0; i < settingItems.size(); i++) {
-            SettingItem item = settingItems.get(i);
-            float rowX = panelX + 6.0F;
-            float rowY = panelY + headerH + i * itemH;
-            float rowW = panelW - 12.0F;
+        float rowY = panelY + 16.0F;
+        for (SettingItem item : settingItems) {
+            boolean active = isSettingEnabled(item.key);
+            int toggleBg = active ? accent : ColorUtil.rgba(35, 38, 52, 200);
 
-            boolean enabled = isSettingEnabled(item.key);
-            Fonts.drawString(font, item.name, rowX, rowY + 3.0F, 6.5F, ColorUtil.rgba(230, 230, 240, 255));
+            Render2D.drawRoundedRect(panelX + panelW - 20.0F, rowY + 1.0F, 14.0F, 8.0F, 4.0F, toggleBg);
+            Render2D.drawRoundedRect(panelX + panelW - (active ? 13.0F : 19.0F), rowY + 2.0F, 6.0F, 6.0F, 3.0F, ColorUtil.rgba(255, 255, 255, 255));
 
-            // Switch toggle
-            float swW = 18.0F;
-            float swH = 9.0F;
-            float swX = rowX + rowW - swW;
-            float swY = rowY + 3.0F;
-
-            int trackColor = enabled ? Theme.getAccentColor() : ColorUtil.rgba(45, 45, 55, 255);
-            Render2D.drawRoundedRect(swX, swY, swW, swH, 4.5F, trackColor);
-
-            float knobSize = 7.0F;
-            float knobX = enabled ? (swX + swW - knobSize - 1.0F) : (swX + 1.0F);
-            Render2D.drawRoundedRect(knobX, swY + 1.0F, knobSize, knobSize, 3.5F, ColorUtil.rgba(255, 255, 255, 255));
+            Fonts.drawString(Fonts.SF_MEDIUM, item.name, panelX + 6.0F, rowY + 1.5F, 6.0F, ColorUtil.rgba(220, 225, 240, 255));
+            rowY += 14.0F;
         }
+    }
+
+    public boolean handleMouseClick(double mouseX, double mouseY, int button) {
+        if (!(screen() instanceof ChatScreen)) return false;
+
+        if (button == 1 && isHovered(mouseX, mouseY)) {
+            settingsOpen = !settingsOpen;
+            return true;
+        }
+
+        if (button == 0 && settingsOpen) {
+            float rowY = panelY + 16.0F;
+            for (SettingItem item : settingItems) {
+                if (mouseX >= panelX + 4.0F && mouseX <= panelX + panelW - 4.0F && mouseY >= rowY && mouseY <= rowY + 13.0F) {
+                    toggleSetting(item.key);
+                    return true;
+                }
+                rowY += 14.0F;
+            }
+        }
+
+        return false;
     }
 }

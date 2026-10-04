@@ -6,7 +6,6 @@ import error.util.client.clients.ColorUtil;
 import error.util.client.clients.Theme;
 import error.util.render.Render2D;
 import error.util.render.Render2DUtil;
-import error.ui.nova.NovaShader;
 import error.util.render.font.Fonts;
 import error.util.render.font.IconUse;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -19,24 +18,37 @@ import net.minecraft.client.resources.DefaultPlayerSkin;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
+import net.minecraft.world.level.storage.LevelStorageSource;
+import net.minecraft.world.level.storage.LevelSummary;
 import org.lwjgl.glfw.GLFW;
+
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 public class CustomTitleScreen extends Screen {
 
-    private static final Identifier BANNER_SINGLEPLAYER = Identifier.fromNamespaceAndPath("error", "images/ui/title/title.png");
-    private static final Identifier BANNER_MULTIPLAYER  = Identifier.fromNamespaceAndPath("error", "images/ui/title/title2.png");
-    private static final Identifier LOGO_TEXTURE        = Identifier.fromNamespaceAndPath("error", "images/logo.png");
+    private static final Identifier BG_TEX = Identifier.fromNamespaceAndPath("client", "textures/mainmenu/background.png");
+    private static final Identifier SINGLEPLAYER_TEX = Identifier.fromNamespaceAndPath("client", "textures/mainmenu/singleplayer.png");
+    private static final Identifier MULTIPLAYER_TEX = Identifier.fromNamespaceAndPath("client", "textures/mainmenu/multiplayer.png");
+    private static final Identifier ACCOUNT_TEX = Identifier.fromNamespaceAndPath("client", "textures/mainmenu/accountmanager.png");
+    private static final Identifier LOGO_TEX = Identifier.fromNamespaceAndPath("client", "textures/hud/logo.png");
 
-    // Modal state for Accounts
+    // Subtitle caches
+    private static String cachedSingleplayerSubRu = "Локальные миры";
+    private static String cachedMultiplayerSubRu = "SpookyTime • Загрузка...";
+    private static long lastOnlineFetchTime = 0;
+    private static boolean isFetchingOnline = false;
+
+    // Transition & Account Modal state
     private boolean accountModalOpen = false;
     private float accountModalAnim = 0.0F;
-
-    // Transition & Animation states
     private float screenAlpha = 1.0F;
     private Screen targetScreen = null;
     private long startTime = System.currentTimeMillis();
@@ -49,16 +61,15 @@ public class CustomTitleScreen extends Screen {
     private float accountScroll = 0.0F;
     private float maxAccountScroll = 0.0F;
 
-    // Button hover animations: 0: MP, 1: SP, 2: Acc, 3: Set, 4: Exit
-    private final float[] mainBtnAnims = new float[5];
+    // Hover animations: 0: Singleplayer, 1: Multiplayer, 2: Accounts, 3: Settings, 4: Exit
+    private final float[] heroHoverAnims = new float[3];
+    private final float[] pillHoverAnims = new float[2];
 
     public CustomTitleScreen() {
         super(Component.literal("Main Menu"));
     }
 
-    public static void loadWallpaper() {
-        // Compatibility stub for Client.java
-    }
+    public static void loadWallpaper() {}
 
     @Override
     protected void init() {
@@ -68,28 +79,141 @@ public class CustomTitleScreen extends Screen {
         this.targetScreen = null;
         this.selectedAccount = AccountManager.getInstance().getActiveAccount();
         this.startTime = System.currentTimeMillis();
+
+        loadLastWorldInfo();
+        fetchSpookyTimeOnline();
     }
 
     private void switchScreen(Screen screen) {
         this.targetScreen = screen;
     }
 
-    @Override
-    public void extractBackground(GuiGraphicsExtractor extractor, int mouseX, int mouseY, float partialTick) {
-        // Custom background rendered directly in extractRenderState
+    private String getPlayerUsername() {
+        if (this.minecraft != null && this.minecraft.getUser() != null && this.minecraft.getUser().getName() != null) {
+            return this.minecraft.getUser().getName();
+        }
+        return "Player";
+    }
+
+    private void loadLastWorldInfo() {
+        if (this.minecraft == null) return;
+        try {
+            LevelStorageSource storage = this.minecraft.getLevelSource();
+            if (storage == null) return;
+            LevelStorageSource.LevelCandidates levelList = storage.findLevelCandidates();
+            if (levelList.isEmpty()) {
+                cachedSingleplayerSubRu = "Нет миров • Создать";
+                return;
+            }
+
+            storage.loadLevelSummaries(levelList).thenAccept(summaries -> {
+                if (summaries != null && !summaries.isEmpty()) {
+                    List<LevelSummary> sorted = new ArrayList<>(summaries);
+                    sorted.sort((a, b) -> Long.compare(b.getLastPlayed(), a.getLastPlayed()));
+                    LevelSummary latest = sorted.get(0);
+
+                    String worldName = latest.getLevelName();
+                    if (worldName == null || worldName.trim().isEmpty()) {
+                        worldName = "Мир";
+                    }
+                    if (worldName.length() > 14) {
+                        worldName = worldName.substring(0, 12) + "…";
+                    }
+
+                    long lastPlayed = latest.getLastPlayed();
+                    String timeAgoRu = formatTimeAgoRu(lastPlayed);
+                    cachedSingleplayerSubRu = worldName + " • " + timeAgoRu;
+                } else {
+                    cachedSingleplayerSubRu = "Нет миров • Создать";
+                }
+            }).exceptionally(e -> {
+                cachedSingleplayerSubRu = "Локальные миры";
+                return null;
+            });
+        } catch (Exception ignored) {}
+    }
+
+    private static String formatTimeAgoRu(long timestamp) {
+        if (timestamp <= 0) return "недавно";
+        long now = System.currentTimeMillis();
+        long diffMs = Math.max(0, now - timestamp);
+        long diffSec = diffMs / 1000L;
+        long diffMin = diffSec / 60L;
+        long diffHours = diffMin / 60L;
+        long diffDays = diffHours / 24L;
+        long diffMonths = diffDays / 30L;
+
+        if (diffMin < 1) return "только что";
+        if (diffMin < 60) return diffMin + " мин. назад";
+        if (diffHours < 24) return diffHours + " ч. назад";
+        if (diffDays < 30) return diffDays + " дн. назад";
+        return diffMonths + " мес. назад";
+    }
+
+    private void fetchSpookyTimeOnline() {
+        long now = System.currentTimeMillis();
+        if (now - lastOnlineFetchTime < 60_000L && !cachedMultiplayerSubRu.contains("Загрузка")) return;
+        if (isFetchingOnline) return;
+        isFetchingOnline = true;
+
+        CompletableFuture.runAsync(() -> {
+            int online = -1;
+            String[] endpoints = new String[]{
+                    "https://api.mcsrvstat.us/3/play.spookytime.net",
+                    "https://api.mcsrvstat.us/3/spookytime.net",
+                    "https://api.mcsrvstat.us/3/mc.spookytime.ru"
+            };
+
+            for (String urlStr : endpoints) {
+                try {
+                    java.net.URI uri = java.net.URI.create(urlStr);
+                    java.net.http.HttpClient client = java.net.http.HttpClient.newBuilder()
+                            .connectTimeout(java.time.Duration.ofSeconds(3))
+                            .build();
+                    java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
+                            .uri(uri)
+                            .header("User-Agent", "Mozilla/5.0")
+                            .timeout(java.time.Duration.ofSeconds(4))
+                            .GET()
+                            .build();
+
+                    java.net.http.HttpResponse<String> response = client.send(request, java.net.http.HttpResponse.BodyHandlers.ofString());
+                    if (response.statusCode() == 200) {
+                        String body = response.body();
+                        JsonObject obj = JsonParser.parseString(body).getAsJsonObject();
+                        if (obj.has("players") && obj.getAsJsonObject("players").has("online")) {
+                            online = obj.getAsJsonObject("players").get("online").getAsInt();
+                            if (online >= 0) break;
+                        }
+                    }
+                } catch (Exception ignored) {}
+            }
+
+            lastOnlineFetchTime = System.currentTimeMillis();
+            isFetchingOnline = false;
+
+            if (online >= 0) {
+                String formatted = String.format(Locale.US, "%,d", online).replace(',', ' ');
+                cachedMultiplayerSubRu = "SpookyTime • " + formatted + " онлайн";
+            } else {
+                if (cachedMultiplayerSubRu.contains("Загрузка")) {
+                    cachedMultiplayerSubRu = "SpookyTime • Серверы";
+                }
+            }
+        });
     }
 
     @Override
-    protected void extractPanorama(GuiGraphicsExtractor extractor, float partialTick) {
-        // Disable vanilla CubeMap panorama
-    }
+    public void extractBackground(GuiGraphicsExtractor extractor, int mouseX, int mouseY, float partialTick) {}
+
+    @Override
+    protected void extractPanorama(GuiGraphicsExtractor extractor, float partialTick) {}
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor extractor, int mouseX, int mouseY, float partialTick) {
         int screenWidth = this.width > 0 ? this.width : (this.minecraft != null ? this.minecraft.getWindow().getGuiScaledWidth() : 854);
         int screenHeight = this.height > 0 ? this.height : (this.minecraft != null ? this.minecraft.getWindow().getGuiScaledHeight() : 480);
 
-        // Transition fade
         if (this.targetScreen != null) {
             this.screenAlpha = Math.max(0.0F, this.screenAlpha - 0.12F);
             if (this.screenAlpha <= 0.01F) {
@@ -106,16 +230,23 @@ public class CustomTitleScreen extends Screen {
         try {
             Render2DUtil.beginFrame();
 
-            // 1. Liquid Glass Gradient Background
-            NovaShader.drawBackdropWithAlpha(this.screenAlpha, 0, 0, screenWidth, screenHeight, 0.0F);
+            // 1. Fullscreen Background Texture with Vignette Gradient
+            Render2D.drawRect(0, 0, screenWidth, screenHeight, ColorUtil.rgba(6, 8, 12, (int) (255 * this.screenAlpha)));
+            Render2D.drawTexture(BG_TEX, 0, 0, screenWidth, screenHeight, ColorUtil.rgba(240, 245, 255, (int) (255 * this.screenAlpha)));
+            Render2D.drawRect(0, 0, screenWidth, screenHeight, ColorUtil.rgba(5, 8, 14, (int) (45 * this.screenAlpha)));
 
-            // Animated Night Sky Background (Procedural Stars, Nebula, Aurora, Snow)
-            WinterMenuRenderer.render(screenWidth, screenHeight, this.screenAlpha, 0.0F);
+            // Top and bottom cinematic dark gradient fade
+            int topFade = ColorUtil.rgba(3, 5, 8, (int) (45 * this.screenAlpha));
+            int botFade = ColorUtil.rgba(3, 5, 8, (int) (95 * this.screenAlpha));
+            Render2D.drawGradientRound(0, 0, screenWidth, screenHeight, 0.0F, topFade, topFade, botFade, botFade);
 
-            // 2. Central Liquid Glass Menu UI (Logo, Title, Multiplayer, Singleplayer, Accounts, Settings, Exit)
+            // 2. Top-Left Branding
+            drawTopLeftBranding(14.0F, 12.0F, this.screenAlpha);
+
+            // 3. Main Menu Central Greeting & Hero Cards Layout
             renderMainMenuUI(screenWidth, screenHeight, mouseX, mouseY);
 
-            // 3. Accounts Manager Liquid Glass Modal
+            // 4. Accounts Manager Liquid Glass Modal
             if (this.accountModalAnim > 0.001F) {
                 renderAccountModal(screenWidth, screenHeight, mouseX, mouseY, this.accountModalAnim);
             }
@@ -128,147 +259,148 @@ public class CustomTitleScreen extends Screen {
         }
     }
 
+    private void drawTopLeftBranding(float x, float y, float alphaVal) {
+        float logoSize = 14.0F;
+        Render2D.drawTexture(LOGO_TEX, x, y, logoSize, logoSize, ColorUtil.rgba(255, 255, 255, (int) (255 * alphaVal)));
+
+        float textX = x + logoSize + 6.0F;
+        float textY = y + logoSize / 2.0F - 4.0F;
+        int textCol = ColorUtil.rgba(255, 255, 255, (int) (245 * alphaVal));
+
+        Fonts.drawString(Fonts.SF_MEDIUM, "Error DLC", textX, textY, 8.5F, textCol);
+    }
+
     private void renderMainMenuUI(int screenWidth, int screenHeight, int mouseX, int mouseY) {
         float centerX = screenWidth / 2.0F;
         float centerY = screenHeight / 2.0F;
-        int accent = Theme.getAccentColor();
-        long elapsed = System.currentTimeMillis() - startTime;
 
-        // Smooth floating motion for logo
-        float logoFloat = (float) Math.sin(elapsed / 450.0D) * 3.5F;
+        // 1. Center Greeting Header
+        String username = getPlayerUsername();
+        String title = "С возвращением, " + username;
+        String sub = "Выбери, с чего начать";
 
-        // 1. Central Logo & Brand Text
-        float logoSize = 64.0F;
-        float logoY = centerY - 152.0F + logoFloat;
-        float logoX = centerX - logoSize / 2.0F;
+        float headerY = centerY - 105.0F;
+        Fonts.drawCenteredString(Fonts.SF_MEDIUM, title, centerX, headerY, 11.5F, ColorUtil.rgba(255, 255, 255, (int) (250 * this.screenAlpha)));
+        Fonts.drawCenteredString(Fonts.SF_MEDIUM, sub, centerX, headerY + 16.5F, 6.0F, ColorUtil.rgba(200, 215, 235, (int) (215 * this.screenAlpha)));
 
-        // Super Smooth Soft Radial Glow (Multi-layered exponential falloff into background)
-        int ar = ColorUtil.red(accent);
-        int ag = ColorUtil.green(accent);
-        int ab = ColorUtil.blue(accent);
-
-        for (int i = 6; i >= 1; i--) {
-            float sizeOffset = i * 16.0F;
-            float radius = (logoSize + sizeOffset * 2.0F) / 2.0F;
-            float shadowRadius = i * 14.0F;
-            int layerAlpha = (int) ((14.0F / (i * i)) * this.screenAlpha);
-            if (layerAlpha > 0) {
-                Render2D.drawShadow(
-                        logoX - sizeOffset,
-                        logoY - sizeOffset,
-                        logoSize + sizeOffset * 2.0F,
-                        logoSize + sizeOffset * 2.0F,
-                        radius,
-                        shadowRadius,
-                        ColorUtil.rgba(ar, ag, ab, layerAlpha)
-                );
-            }
-        }
-
-        Render2D.drawTexture(LOGO_TEXTURE, logoX, logoY, logoSize, logoSize,
-                ColorUtil.withAlpha(accent, (int) (255 * this.screenAlpha)));
-
-        // Client Name & Version
-        Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Error DLC", centerX, logoY + logoSize + 10.0F, 14.0F,
-                ColorUtil.rgba(250, 250, 255, (int) (255 * this.screenAlpha)));
-        Fonts.drawCenteredString(Fonts.SF_MEDIUM, "26.2", centerX, logoY + logoSize + 28.0F, 8.0F,
-                ColorUtil.rgba(160, 175, 205, (int) (200 * this.screenAlpha)));
-
-        // 2. Central Cards Layout (Multiplayer & Singleplayer)
-        float cardW = 190.0F;
-        float cardH = 124.0F;
+        // 2. Three Hero Cards Row (Singleplayer, Multiplayer, Accounts)
+        float cardW = 126.0F;
+        float cardH = 162.0F;
         float gap = 12.0F;
-        float totalW = cardW * 2.0F + gap;
-        float startX = (screenWidth - totalW) / 2.0F;
-        float startY = centerY - 22.0F;
+        float totalW = 3 * cardW + 2 * gap;
+        float startX = centerX - totalW / 2.0F;
+        float cardsY = centerY - cardH / 2.0F + 10.0F;
 
         boolean modalActive = accountModalOpen || targetScreen != null;
 
-        // Card 0: Multiplayer (Left side)
-        float mpX = startX;
-        float mpY = startY;
-        boolean mpHovered = !modalActive && mouseX >= mpX && mouseX <= mpX + cardW && mouseY >= mpY && mouseY <= mpY + cardH;
-        mainBtnAnims[0] = Mth.clamp(mainBtnAnims[0] + (mpHovered ? 0.14F : -0.14F), 0.0F, 1.0F);
-        renderFeatureCard(mpX, mpY, cardW, cardH, "Multiplayer", IconUse.GROUP,
-                "Play with friends over a local network or connect to dedicated servers.",
-                BANNER_MULTIPLAYER, mainBtnAnims[0], accent);
+        // Card 0: Singleplayer
+        float spX = startX;
+        boolean spHover = !modalActive && mouseX >= spX && mouseX <= spX + cardW && mouseY >= cardsY && mouseY <= cardsY + cardH;
+        heroHoverAnims[0] = Mth.clamp(heroHoverAnims[0] + (spHover ? 0.14F : -0.14F), 0.0F, 1.0F);
+        renderHeroCard(spX, cardsY, cardW, cardH, "Одиночная игра", cachedSingleplayerSubRu, "Играть →", SINGLEPLAYER_TEX, heroHoverAnims[0]);
 
-        // Card 1: Singleplayer (Right side)
-        float spX = startX + cardW + gap;
-        float spY = startY;
-        boolean spHovered = !modalActive && mouseX >= spX && mouseX <= spX + cardW && mouseY >= spY && mouseY <= spY + cardH;
-        mainBtnAnims[1] = Mth.clamp(mainBtnAnims[1] + (spHovered ? 0.14F : -0.14F), 0.0F, 1.0F);
-        renderFeatureCard(spX, spY, cardW, cardH, "Singleplayer", IconUse.PERSONS,
-                "Dive into your own adventure. Create new worlds with unique generation settings.",
-                BANNER_SINGLEPLAYER, mainBtnAnims[1], accent);
+        // Card 1: Multiplayer
+        float mpX = startX + cardW + gap;
+        boolean mpHover = !modalActive && mouseX >= mpX && mouseX <= mpX + cardW && mouseY >= cardsY && mouseY <= cardsY + cardH;
+        heroHoverAnims[1] = Mth.clamp(heroHoverAnims[1] + (mpHover ? 0.14F : -0.14F), 0.0F, 1.0F);
+        renderHeroCard(mpX, cardsY, cardW, cardH, "Сетевая игра", cachedMultiplayerSubRu, "Играть →", MULTIPLAYER_TEX, heroHoverAnims[1]);
 
-        // Row 2: Accounts & Settings Buttons
-        float row2Y = startY + cardH + gap;
-        float subBtnH = 30.0F;
+        // Card 2: Accounts
+        float accCount = Math.max(1, AccountManager.getInstance().getAccounts().size());
+        String accSub = username + " • " + (int) accCount + " сохранено";
+        float accX = startX + (cardW + gap) * 2;
+        boolean accHover = !modalActive && mouseX >= accX && mouseX <= accX + cardW && mouseY >= cardsY && mouseY <= cardsY + cardH;
+        heroHoverAnims[2] = Mth.clamp(heroHoverAnims[2] + (accHover ? 0.14F : -0.14F), 0.0F, 1.0F);
+        renderHeroCard(accX, cardsY, cardW, cardH, "Аккаунты", accSub, "Выбрать →", ACCOUNT_TEX, heroHoverAnims[2]);
 
-        // Button 2: Accounts
-        float accX = startX;
-        boolean accHovered = !modalActive && mouseX >= accX && mouseX <= accX + cardW && mouseY >= row2Y && mouseY <= row2Y + subBtnH;
-        mainBtnAnims[2] = Mth.clamp(mainBtnAnims[2] + (accHovered ? 0.14F : -0.14F), 0.0F, 1.0F);
-        renderRowButton(accX, row2Y, cardW, subBtnH, "Accounts", IconUse.INFO, mainBtnAnims[2], accent);
+        // 3. Bottom Action Pills (Settings, Exit)
+        float pillY = cardsY + cardH + 16.0F;
+        float pillH = 18.0F;
 
-        // Button 3: Settings
-        float setX = startX + cardW + gap;
-        boolean setHovered = !modalActive && mouseX >= setX && mouseX <= setX + cardW && mouseY >= row2Y && mouseY <= row2Y + subBtnH;
-        mainBtnAnims[3] = Mth.clamp(mainBtnAnims[3] + (setHovered ? 0.14F : -0.14F), 0.0F, 1.0F);
-        renderRowButton(setX, row2Y, cardW, subBtnH, "Settings", IconUse.GEAR, mainBtnAnims[3], accent);
+        float setPillW = 86.0F;
+        float exitPillW = 68.0F;
+        float pillGap = 8.0F;
+        float totalPillsW = setPillW + exitPillW + pillGap;
+        float pillStartX = centerX - totalPillsW / 2.0F;
 
-        // Row 3: Exit (Full Width)
-        float row3Y = row2Y + subBtnH + gap;
-        boolean exitHovered = !modalActive && mouseX >= startX && mouseX <= startX + totalW && mouseY >= row3Y && mouseY <= row3Y + subBtnH;
-        mainBtnAnims[4] = Mth.clamp(mainBtnAnims[4] + (exitHovered ? 0.14F : -0.14F), 0.0F, 1.0F);
-        renderRowButton(startX, row3Y, totalW, subBtnH, "Exit", IconUse.EXIT, mainBtnAnims[4], ColorUtil.rgba(245, 65, 80, 255));
+        // Settings Pill
+        float setPillX = pillStartX;
+        boolean setPillHover = !modalActive && mouseX >= setPillX && mouseX <= setPillX + setPillW && mouseY >= pillY && mouseY <= pillY + pillH;
+        pillHoverAnims[0] = Mth.clamp(pillHoverAnims[0] + (setPillHover ? 0.14F : -0.14F), 0.0F, 1.0F);
+        renderBottomPill(setPillX, pillY, setPillW, pillH, "Настройки", pillHoverAnims[0], false);
+
+        // Exit Pill
+        float exitPillX = pillStartX + setPillW + pillGap;
+        boolean exitPillHover = !modalActive && mouseX >= exitPillX && mouseX <= exitPillX + exitPillW && mouseY >= pillY && mouseY <= pillY + pillH;
+        pillHoverAnims[1] = Mth.clamp(pillHoverAnims[1] + (exitPillHover ? 0.14F : -0.14F), 0.0F, 1.0F);
+        renderBottomPill(exitPillX, pillY, exitPillW, pillH, "Выход", pillHoverAnims[1], true);
     }
 
-    private void renderFeatureCard(float x, float y, float w, float h, String title, IconUse icon, String desc, Identifier bannerTex, float hoverAnim, int accent) {
-        // Animated elevation on hover
-        float drawY = y - 3.0F * hoverAnim;
+    private void renderHeroCard(float x, float y, float w, float h, String title, String subtitle, String buttonText, Identifier bannerTex, float hoverAnim) {
+        float drawY = y - 3.5F * hoverAnim;
+        float radius = 9.0F;
 
-        // Authentic Liquid Glass Container
-        Render2D.drawLiquidGlass(x, drawY, w, h, 12.0F, this.screenAlpha, accent);
+        // Card glass background
+        int bgCol = ColorUtil.rgba(18, 20, 28, (int) ((0.75F + 0.10F * hoverAnim) * 255 * this.screenAlpha));
+        int borderCol = ColorUtil.rgba(255, 255, 255, (int) ((0.08F + 0.14F * hoverAnim) * 255 * this.screenAlpha));
 
-        // Header: Title & Icon
-        Fonts.drawString(Fonts.SF_MEDIUM, title, x + 12.0F, drawY + 10.0F, 9.0F, ColorUtil.rgba(250, 250, 255, (int) (250 * this.screenAlpha)));
-        int iconCol = ColorUtil.lerp(ColorUtil.rgba(180, 195, 220, (int) (190 * this.screenAlpha)), accent, hoverAnim);
-        Fonts.drawIcon(icon, x + w - 24.0F, drawY + 9.5F, 9.0F, iconCol);
+        Render2D.drawRoundedRect(x, drawY, w, h, radius, bgCol);
+        Render2D.drawRoundedOutline(x, drawY, w, h, radius, 0.9F, borderCol);
 
-        // Description text
-        if (title.equalsIgnoreCase("Singleplayer")) {
-            Fonts.drawString(Fonts.SF_MEDIUM, "Dive into your own adventure.", x + 12.0F, drawY + 24.0F, 6.0F, ColorUtil.rgba(160, 175, 200, (int) (200 * this.screenAlpha)));
-            Fonts.drawString(Fonts.SF_MEDIUM, "Create new worlds with unique", x + 12.0F, drawY + 32.0F, 6.0F, ColorUtil.rgba(160, 175, 200, (int) (200 * this.screenAlpha)));
-            Fonts.drawString(Fonts.SF_MEDIUM, "generation settings and game rules.", x + 12.0F, drawY + 40.0F, 6.0F, ColorUtil.rgba(160, 175, 200, (int) (200 * this.screenAlpha)));
+        // Top Banner Image Container
+        float bannerW = w - 12.0F;
+        float bannerH = 88.0F;
+        float bannerX = x + 6.0F;
+        float bannerY = drawY + 6.0F;
+
+        Render2D.drawTexture(bannerTex, bannerX, bannerY, bannerW, bannerH, 6.0F, ColorUtil.rgba(255, 255, 255, (int) (240 * this.screenAlpha)));
+        Render2D.drawRoundedOutline(bannerX, bannerY, bannerW, bannerH, 6.0F, 0.7F, ColorUtil.rgba(255, 255, 255, (int) (30 * this.screenAlpha)));
+
+        // Title & Subtitle below banner
+        float titleY = drawY + 102.0F;
+        Fonts.drawString(Fonts.SF_MEDIUM, title, x + 10.0F, titleY, 7.5F, ColorUtil.rgba(250, 250, 255, (int) (250 * this.screenAlpha)));
+
+        float subY = titleY + 11.0F;
+        Fonts.drawString(Fonts.SF_MEDIUM, subtitle, x + 10.0F, subY, 5.2F, ColorUtil.rgba(170, 185, 210, (int) (200 * this.screenAlpha)));
+
+        // Button Pill at bottom of card
+        float btnW = w - 20.0F;
+        float btnH = 18.0F;
+        float btnX = x + 10.0F;
+        float btnY = drawY + h - btnH - 8.0F;
+
+        int accent = Theme.getAccentColor();
+        int btnBg = hoverAnim > 0.01F ? ColorUtil.withAlpha(accent, (int) ((0.60F + 0.30F * hoverAnim) * 255 * this.screenAlpha))
+                : ColorUtil.rgba(30, 34, 48, (int) (220 * this.screenAlpha));
+
+        Render2D.drawRoundedRect(btnX, btnY, btnW, btnH, 5.0F, btnBg);
+        Render2D.drawRoundedOutline(btnX, btnY, btnW, btnH, 5.0F, 0.7F, ColorUtil.rgba(255, 255, 255, (int) (40 * this.screenAlpha)));
+
+        Fonts.drawCenteredString(Fonts.SF_MEDIUM, buttonText, btnX + btnW / 2.0F, btnY + 4.5F, 6.2F, ColorUtil.rgba(255, 255, 255, (int) (250 * this.screenAlpha)));
+    }
+
+    private void renderBottomPill(float x, float y, float w, float h, String text, float hoverAnim, boolean isDanger) {
+        float drawY = y - 1.5F * hoverAnim;
+        float radius = 5.0F;
+
+        int bgCol;
+        int outlineCol;
+
+        if (isDanger) {
+            bgCol = ColorUtil.rgba(200, 45, 55, (int) ((0.25F + 0.35F * hoverAnim) * 255 * this.screenAlpha));
+            outlineCol = ColorUtil.rgba(240, 60, 70, (int) ((0.20F + 0.40F * hoverAnim) * 255 * this.screenAlpha));
         } else {
-            Fonts.drawString(Fonts.SF_MEDIUM, "Play with friends over a local", x + 12.0F, drawY + 24.0F, 6.0F, ColorUtil.rgba(160, 175, 200, (int) (200 * this.screenAlpha)));
-            Fonts.drawString(Fonts.SF_MEDIUM, "network or connect to dedicated", x + 12.0F, drawY + 32.0F, 6.0F, ColorUtil.rgba(160, 175, 200, (int) (200 * this.screenAlpha)));
-            Fonts.drawString(Fonts.SF_MEDIUM, "servers.", x + 12.0F, drawY + 40.0F, 6.0F, ColorUtil.rgba(160, 175, 200, (int) (200 * this.screenAlpha)));
+            bgCol = ColorUtil.rgba(22, 25, 35, (int) ((0.60F + 0.20F * hoverAnim) * 255 * this.screenAlpha));
+            outlineCol = ColorUtil.rgba(255, 255, 255, (int) ((0.08F + 0.16F * hoverAnim) * 255 * this.screenAlpha));
         }
 
-        // Bottom Image Banner Box with rounded corners
-        float bannerW = w - 20.0F;
-        float bannerH = 48.0F;
-        float bannerX = x + 10.0F;
-        float bannerY = drawY + h - bannerH - 10.0F;
+        Render2D.drawRoundedRect(x, drawY, w, h, radius, bgCol);
+        Render2D.drawRoundedOutline(x, drawY, w, h, radius, 0.7F, outlineCol);
 
-        Render2D.drawTexture(bannerTex, bannerX, bannerY, bannerW, bannerH, 7.0F, ColorUtil.rgba(225, 235, 255, (int) (225 * this.screenAlpha)));
-        Render2D.drawRoundedOutline(bannerX, bannerY, bannerW, bannerH, 7.0F, 0.9F, ColorUtil.rgba(255, 255, 255, (int) (35 * this.screenAlpha)));
-    }
+        int textCol = isDanger ? ColorUtil.rgba(255, 180, 180, (int) (250 * this.screenAlpha))
+                : ColorUtil.rgba(245, 245, 250, (int) (245 * this.screenAlpha));
 
-    private void renderRowButton(float x, float y, float w, float h, String title, IconUse icon, float hoverAnim, int accent) {
-        float drawY = y - 2.0F * hoverAnim;
-
-        // Authentic Liquid Glass Container
-        Render2D.drawLiquidGlass(x, drawY, w, h, 9.0F, this.screenAlpha, accent);
-
-        float textY = drawY + (h - 8.0F) / 2.0F - 0.5F;
-        Fonts.drawString(Fonts.SF_MEDIUM, title, x + 14.0F, textY, 8.5F, ColorUtil.rgba(250, 250, 255, (int) (250 * this.screenAlpha)));
-
-        int iconCol = ColorUtil.lerp(ColorUtil.rgba(180, 195, 220, (int) (190 * this.screenAlpha)), accent, hoverAnim);
-        Fonts.drawIcon(icon, x + w - 22.0F, textY - 0.5F, 8.5F, iconCol);
+        Fonts.drawCenteredString(Fonts.SF_MEDIUM, text, x + w / 2.0F, drawY + 4.5F, 6.5F, textCol);
     }
 
     /**
@@ -282,11 +414,9 @@ public class CustomTitleScreen extends Screen {
 
         int accent = Theme.getAccentColor();
 
-        // Dark dim backdrop with glass blur
         Render2D.drawRect(0, 0, screenWidth, screenHeight, ColorUtil.rgba(0, 0, 0, (int) (160 * alpha)));
         Render2D.drawBlur(0, 0, screenWidth, screenHeight, 0.0F, 24.0F, ColorUtil.rgba(0, 0, 0, (int) (100 * alpha)), alpha);
 
-        // Liquid Glass Modal Container
         int modalGlassFill = ColorUtil.rgba(16, 14, 26, (int) (235 * alpha));
         int modalGlassBorder = ColorUtil.rgba(255, 255, 255, (int) (45 * alpha));
 
@@ -295,18 +425,14 @@ public class CustomTitleScreen extends Screen {
         Render2D.drawRoundedRect(modalX, modalY, modalW, modalH, 12.0F, modalGlassFill);
         Render2D.drawRoundedOutline(modalX, modalY, modalW, modalH, 12.0F, 1.0F, modalGlassBorder);
 
-        // Top specular line
         Render2D.drawRoundedRect(modalX + 16.0F, modalY + 1.0F, modalW - 32.0F, 1.0F, 0.5F, ColorUtil.rgba(255, 255, 255, (int) (45 * alpha)));
 
-        // Left Accounts List Pane
         float leftW = 245.0F;
         float leftX = modalX + 14.0F;
         float leftY = modalY + 14.0F;
 
-        // Title
         Fonts.drawString(Fonts.SF_MEDIUM, "Аккаунты", leftX, leftY + 2.0F, 10.5F, ColorUtil.applyAlpha(ColorUtil.WHITE, alpha));
 
-        // Search Bar
         float searchY = leftY + 20.0F;
         float searchW = leftW;
         float searchH = 19.0F;
@@ -318,7 +444,6 @@ public class CustomTitleScreen extends Screen {
         String displaySearch = searchFilter.isEmpty() ? "Поиск..." : searchFilter + (searchFocused && blink ? "|" : "");
         Fonts.drawString(Fonts.SF_MEDIUM, displaySearch, leftX + 8.0F, searchY + 5.5F, 6.5F, ColorUtil.multiplyAlpha(searchCol, alpha));
 
-        // Tabs Row (Все / Избранные)
         float tabY = searchY + searchH + 6.0F;
         String[] tabs = {"Все", "Избранные"};
         float tabW = (leftW - 4.0F) / 2.0F;
@@ -332,7 +457,6 @@ public class CustomTitleScreen extends Screen {
                     ColorUtil.applyAlpha(sel ? ColorUtil.WHITE : ColorUtil.rgba(180, 195, 220, 255), alpha));
         }
 
-        // Accounts List Area
         float listY = tabY + 19.0F;
         float listH = modalH - (listY - modalY) - 14.0F;
 
@@ -366,7 +490,6 @@ public class CustomTitleScreen extends Screen {
 
                 Fonts.drawString(Fonts.SF_MEDIUM, acc, leftX + 25.0F, itemY + 6.5F, 7.0F, ColorUtil.applyAlpha(ColorUtil.WHITE, alpha));
 
-                // Star icon for favorites
                 boolean isFav = AccountManager.getInstance().isFavorite(acc);
                 int starCol = isFav ? ColorUtil.rgba(255, 215, 0, 255) : ColorUtil.rgba(130, 140, 160, 180);
                 Fonts.drawString(Fonts.SF_MEDIUM, isFav ? "★" : "☆", leftX + leftW - 14.0F, itemY + 6.5F, 7.5F, ColorUtil.applyAlpha(starCol, alpha));
@@ -375,7 +498,6 @@ public class CustomTitleScreen extends Screen {
         }
         Render2D.popScissor();
 
-        // Right Pane - Selected Account Info
         float rightX = leftX + leftW + 16.0F;
         float rightW = modalW - (rightX - modalX) - 14.0F;
 
@@ -383,7 +505,6 @@ public class CustomTitleScreen extends Screen {
         UUID targetUuid = UUID.nameUUIDFromBytes(("OfflinePlayer:" + targetAcc).getBytes(StandardCharsets.UTF_8));
         Identifier targetSkin = DefaultPlayerSkin.get(targetUuid).body().texturePath();
 
-        // Avatar & Info
         float headBig = 46.0F;
         float avatarX = rightX + (rightW - headBig) / 2.0F;
         float avatarY = modalY + 34.0F;
@@ -394,7 +515,6 @@ public class CustomTitleScreen extends Screen {
         Fonts.drawCenteredString(Fonts.SF_MEDIUM, targetAcc, rightX + rightW / 2.0F, avatarY + headBig + 10.0F, 9.5F, ColorUtil.applyAlpha(ColorUtil.WHITE, alpha));
         Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Offline / Session", rightX + rightW / 2.0F, avatarY + headBig + 24.0F, 6.5F, ColorUtil.applyAlpha(ColorUtil.rgba(170, 185, 210, 255), alpha));
 
-        // Use Account Button
         float btnW = rightW;
         float btnH = 26.0F;
         float btnX = rightX;
@@ -417,20 +537,17 @@ public class CustomTitleScreen extends Screen {
         int screenHeight = this.height;
 
         if (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
-            // 1. Account Modal Interaction
             if (accountModalOpen) {
                 float modalW = 430.0F;
                 float modalH = 270.0F;
                 float modalX = (screenWidth - modalW) / 2.0F;
                 float modalY = (screenHeight - modalH) / 2.0F;
 
-                // Close on click outside modal
                 if (mouseX < modalX || mouseX > modalX + modalW || mouseY < modalY || mouseY > modalY + modalH) {
                     accountModalOpen = false;
                     return true;
                 }
 
-                // Left Accounts List click
                 float leftW = 245.0F;
                 float leftX = modalX + 14.0F;
                 float listY = modalY + 14.0F + 20.0F + 19.0F + 6.0F + 15.0F + 4.0F;
@@ -461,7 +578,6 @@ public class CustomTitleScreen extends Screen {
                     itemY += itemH + 3.0F;
                 }
 
-                // Account "Использовать" Button
                 float rightX = leftX + leftW + 16.0F;
                 float rightW = modalW - (rightX - modalX) - 14.0F;
                 float btnH = 26.0F;
@@ -480,53 +596,57 @@ public class CustomTitleScreen extends Screen {
                 return true;
             }
 
-            // 2. Main Menu Navigation Cards & Buttons
-            float cardW = 190.0F;
-            float cardH = 124.0F;
-            float gap = 12.0F;
-            float totalW = cardW * 2.0F + gap;
-            float startX = (screenWidth - totalW) / 2.0F;
+            // Main Menu Cards & Pills Interaction
+            float centerX = screenWidth / 2.0F;
             float centerY = screenHeight / 2.0F;
-            float startY = centerY - 22.0F;
+            float cardW = 126.0F;
+            float cardH = 162.0F;
+            float gap = 12.0F;
+            float totalW = 3 * cardW + 2 * gap;
+            float startX = centerX - totalW / 2.0F;
+            float cardsY = centerY - cardH / 2.0F + 10.0F;
 
             if (targetScreen == null) {
-                // Multiplayer Card (Left)
-                float mpX = startX;
-                float mpY = startY;
-                if (mouseX >= mpX && mouseX <= mpX + cardW && mouseY >= mpY && mouseY <= mpY + cardH) {
-                    switchScreen(new JoinMultiplayerScreen(this));
-                    return true;
-                }
-
-                // Singleplayer Card (Right)
-                float spX = startX + cardW + gap;
-                float spY = startY;
-                if (mouseX >= spX && mouseX <= spX + cardW && mouseY >= spY && mouseY <= spY + cardH) {
+                // Card 0: Singleplayer
+                float spX = startX;
+                if (mouseX >= spX && mouseX <= spX + cardW && mouseY >= cardsY && mouseY <= cardsY + cardH) {
                     switchScreen(new SelectWorldScreen(this));
                     return true;
                 }
 
-                // Row 2: Accounts & Settings
-                float row2Y = startY + cardH + gap;
-                float subBtnH = 30.0F;
+                // Card 1: Multiplayer
+                float mpX = startX + cardW + gap;
+                if (mouseX >= mpX && mouseX <= mpX + cardW && mouseY >= cardsY && mouseY <= cardsY + cardH) {
+                    switchScreen(new JoinMultiplayerScreen(this));
+                    return true;
+                }
 
-                // Button 2: Accounts
-                float accX = startX;
-                if (mouseX >= accX && mouseX <= accX + cardW && mouseY >= row2Y && mouseY <= row2Y + subBtnH) {
+                // Card 2: Accounts
+                float accX = startX + (cardW + gap) * 2;
+                if (mouseX >= accX && mouseX <= accX + cardW && mouseY >= cardsY && mouseY <= cardsY + cardH) {
                     this.accountModalOpen = true;
                     return true;
                 }
 
-                // Button 3: Settings
-                float setX = startX + cardW + gap;
-                if (mouseX >= setX && mouseX <= setX + cardW && mouseY >= row2Y && mouseY <= row2Y + subBtnH) {
+                // Bottom Action Pills
+                float pillY = cardsY + cardH + 16.0F;
+                float pillH = 18.0F;
+                float setPillW = 86.0F;
+                float exitPillW = 68.0F;
+                float pillGap = 8.0F;
+                float totalPillsW = setPillW + exitPillW + pillGap;
+                float pillStartX = centerX - totalPillsW / 2.0F;
+
+                // Settings Pill
+                float setPillX = pillStartX;
+                if (mouseX >= setPillX && mouseX <= setPillX + setPillW && mouseY >= pillY && mouseY <= pillY + pillH) {
                     switchScreen(new OptionsScreen(this, this.minecraft.options, false));
                     return true;
                 }
 
-                // Row 3: Exit
-                float row3Y = row2Y + subBtnH + gap;
-                if (mouseX >= startX && mouseX <= startX + totalW && mouseY >= row3Y && mouseY <= row3Y + subBtnH) {
+                // Exit Pill
+                float exitPillX = pillStartX + setPillW + pillGap;
+                if (mouseX >= exitPillX && mouseX <= exitPillX + exitPillW && mouseY >= pillY && mouseY <= pillY + pillH) {
                     this.minecraft.stop();
                     return true;
                 }
