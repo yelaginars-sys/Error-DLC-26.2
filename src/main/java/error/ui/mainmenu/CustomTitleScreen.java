@@ -2,19 +2,18 @@ package error.ui.mainmenu;
 
 import error.account.AccountManager;
 import error.util.RenderExtend;
+import error.util.client.BackgroundAudioPlayer;
 import error.util.client.clients.ColorUtil;
 import error.util.client.clients.Theme;
 import error.util.render.Render2D;
 import error.util.render.Render2DUtil;
 import error.util.render.font.Fonts;
-import error.util.render.font.IconUse;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.multiplayer.JoinMultiplayerScreen;
 import net.minecraft.client.gui.screens.options.OptionsScreen;
 import net.minecraft.client.gui.screens.worldselection.SelectWorldScreen;
 import net.minecraft.client.input.MouseButtonEvent;
-import net.minecraft.client.resources.DefaultPlayerSkin;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
@@ -25,20 +24,21 @@ import org.lwjgl.glfw.GLFW;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 public class CustomTitleScreen extends Screen {
 
-    private static final Identifier BG_TEX = Identifier.fromNamespaceAndPath("client", "textures/mainmenu/background.png");
+    private static final Identifier BG_FALLBACK = Identifier.fromNamespaceAndPath("client", "textures/mainmenu/background.png");
     private static final Identifier SINGLEPLAYER_TEX = Identifier.fromNamespaceAndPath("client", "textures/mainmenu/singleplayer.png");
     private static final Identifier MULTIPLAYER_TEX = Identifier.fromNamespaceAndPath("client", "textures/mainmenu/multiplayer.png");
     private static final Identifier ACCOUNT_TEX = Identifier.fromNamespaceAndPath("client", "textures/mainmenu/accountmanager.png");
     private static final Identifier LOGO_TEX = Identifier.fromNamespaceAndPath("client", "textures/hud/logo.png");
+
+    private static final int TOTAL_VIDEO_FRAMES = 744;
+    private static final float VIDEO_FPS = 15.0F;
 
     // Subtitle caches
     private static String cachedSingleplayerSubRu = "Локальные миры";
@@ -46,22 +46,15 @@ public class CustomTitleScreen extends Screen {
     private static long lastOnlineFetchTime = 0;
     private static boolean isFetchingOnline = false;
 
-    // Transition & Account Modal state
-    private boolean accountModalOpen = false;
-    private float accountModalAnim = 0.0F;
+    // State
     private float screenAlpha = 1.0F;
     private Screen targetScreen = null;
     private long startTime = System.currentTimeMillis();
 
-    // Account Manager State
-    private String selectedAccount = "";
-    private String searchFilter = "";
-    private int selectedTab = 0; // 0: Все, 1: Избранные
-    private boolean searchFocused = false;
-    private float accountScroll = 0.0F;
-    private float maxAccountScroll = 0.0F;
+    // Volume Slider State
+    private boolean draggingVolume = false;
 
-    // Hover animations: 0: Singleplayer, 1: Multiplayer, 2: Accounts, 3: Settings, 4: Exit
+    // Hover animations: 0: Singleplayer, 1: Multiplayer, 2: Accounts
     private final float[] heroHoverAnims = new float[3];
     private final float[] pillHoverAnims = new float[2];
 
@@ -77,8 +70,10 @@ public class CustomTitleScreen extends Screen {
         AccountManager.getInstance().applyActiveSession();
         this.screenAlpha = 1.0F;
         this.targetScreen = null;
-        this.selectedAccount = AccountManager.getInstance().getActiveAccount();
         this.startTime = System.currentTimeMillis();
+
+        // Start lopped video background audio
+        BackgroundAudioPlayer.getInstance().start();
 
         loadLastWorldInfo();
         fetchSpookyTimeOnline();
@@ -217,6 +212,7 @@ public class CustomTitleScreen extends Screen {
         if (this.targetScreen != null) {
             this.screenAlpha = Math.max(0.0F, this.screenAlpha - 0.12F);
             if (this.screenAlpha <= 0.01F) {
+                BackgroundAudioPlayer.getInstance().stop();
                 this.minecraft.setScreenAndShow(this.targetScreen);
                 return;
             }
@@ -224,32 +220,41 @@ public class CustomTitleScreen extends Screen {
             this.screenAlpha = Math.min(1.0F, this.screenAlpha + 0.10F);
         }
 
-        this.accountModalAnim = Mth.clamp(this.accountModalAnim + (accountModalOpen ? 0.10F : -0.10F), 0.0F, 1.0F);
+        // Handle volume slider dragging
+        if (draggingVolume) {
+            float volX = 14.0F + 16.0F;
+            float volW = 75.0F;
+            float newVol = Math.clamp((mouseX - volX) / volW, 0.0F, 1.0F);
+            BackgroundAudioPlayer.getInstance().setVolume(newVol);
+        }
 
         RenderExtend.enter2D(null, extractor, null);
         try {
             Render2DUtil.beginFrame();
 
-            // 1. Fullscreen Background Texture with Vignette Gradient
-            Render2D.drawRect(0, 0, screenWidth, screenHeight, ColorUtil.rgba(6, 8, 12, (int) (255 * this.screenAlpha)));
-            Render2D.drawTexture(BG_TEX, 0, 0, screenWidth, screenHeight, ColorUtil.rgba(240, 245, 255, (int) (255 * this.screenAlpha)));
-            Render2D.drawRect(0, 0, screenWidth, screenHeight, ColorUtil.rgba(5, 8, 14, (int) (45 * this.screenAlpha)));
+            // 1. DYNAMIC VIDEO BACKGROUND FRAME RENDER
+            long elapsed = Math.max(0L, System.currentTimeMillis() - startTime);
+            int frameIndex = (int) ((elapsed / 1000.0D * VIDEO_FPS) % TOTAL_VIDEO_FRAMES) + 1;
+            String frameName = String.format(Locale.US, "frame_%04d.jpg", frameIndex);
+            Identifier videoFrameTex = Identifier.fromNamespaceAndPath("client", "textures/mainmenu/frames/" + frameName);
 
-            // Top and bottom cinematic dark gradient fade
-            int topFade = ColorUtil.rgba(3, 5, 8, (int) (45 * this.screenAlpha));
-            int botFade = ColorUtil.rgba(3, 5, 8, (int) (95 * this.screenAlpha));
+            Render2D.drawRect(0, 0, screenWidth, screenHeight, ColorUtil.rgba(6, 8, 12, (int) (255 * this.screenAlpha)));
+            Render2D.drawTexture(videoFrameTex, 0, 0, screenWidth, screenHeight, ColorUtil.rgba(255, 255, 255, (int) (240 * this.screenAlpha)));
+
+            // 2. SOFT BLUR PASS + DARK VIGNETTE OVERLAY
+            Render2D.drawBlur(0, 0, screenWidth, screenHeight, 0.0F, 14.0F, ColorUtil.rgba(10, 12, 22, (int) (115 * this.screenAlpha)), this.screenAlpha);
+            Render2D.drawRect(0, 0, screenWidth, screenHeight, ColorUtil.rgba(5, 8, 14, (int) (35 * this.screenAlpha)));
+
+            int topFade = ColorUtil.rgba(3, 5, 8, (int) (50 * this.screenAlpha));
+            int botFade = ColorUtil.rgba(3, 5, 8, (int) (105 * this.screenAlpha));
             Render2D.drawGradientRound(0, 0, screenWidth, screenHeight, 0.0F, topFade, topFade, botFade, botFade);
 
-            // 2. Top-Left Branding
+            // 3. Top-Left Branding & Volume Slider
             drawTopLeftBranding(14.0F, 12.0F, this.screenAlpha);
+            drawVolumeSlider(14.0F, 31.0F, mouseX, mouseY, this.screenAlpha);
 
-            // 3. Main Menu Central Greeting & Hero Cards Layout
+            // 4. Main Menu Central Greeting & Hero Cards Layout
             renderMainMenuUI(screenWidth, screenHeight, mouseX, mouseY);
-
-            // 4. Accounts Manager Liquid Glass Modal
-            if (this.accountModalAnim > 0.001F) {
-                renderAccountModal(screenWidth, screenHeight, mouseX, mouseY, this.accountModalAnim);
-            }
 
             Render2DUtil.flush();
         } catch (Throwable t) {
@@ -268,6 +273,43 @@ public class CustomTitleScreen extends Screen {
         int textCol = ColorUtil.rgba(255, 255, 255, (int) (245 * alphaVal));
 
         Fonts.drawString(Fonts.SF_MEDIUM, "Error DLC", textX, textY, 8.5F, textCol);
+    }
+
+    private void drawVolumeSlider(float x, float y, int mouseX, int mouseY, float alphaVal) {
+        float totalW = 112.0F;
+        float totalH = 14.0F;
+
+        // Container Glass Background
+        int bgCol = ColorUtil.rgba(18, 20, 32, (int) (190 * alphaVal));
+        int borderCol = ColorUtil.rgba(255, 255, 255, (int) (35 * alphaVal));
+
+        Render2D.drawRoundedRect(x, y, totalW, totalH, 4.0F, bgCol);
+        Render2D.drawRoundedOutline(x, y, totalW, totalH, 4.0F, 0.7F, borderCol);
+
+        // Sound Icon 🔊 / 🔇
+        float vol = BackgroundAudioPlayer.getInstance().getVolume();
+        String icon = vol <= 0.001F ? "🔇" : "🔊";
+        Fonts.drawString(Fonts.SF_MEDIUM, icon, x + 4.0F, y + 3.0F, 6.5F, ColorUtil.rgba(255, 255, 255, (int) (240 * alphaVal)));
+
+        // Slider Bar
+        float barX = x + 18.0F;
+        float barY = y + (totalH - 4.0F) / 2.0F;
+        float barW = 68.0F;
+        float barH = 4.0F;
+
+        Render2D.drawRoundedRect(barX, barY, barW, barH, 2.0F, ColorUtil.rgba(255, 255, 255, (int) (40 * alphaVal)));
+
+        float filledW = Math.max(2.0F, barW * vol);
+        int accent = Theme.getAccentColor();
+        Render2D.drawRoundedRect(barX, barY, filledW, barH, 2.0F, ColorUtil.withAlpha(accent, (int) (230 * alphaVal)));
+
+        // Slider Knob Circle
+        float knobX = barX + (barW - 4.0F) * vol;
+        Render2D.drawRoundedRect(knobX, barY - 1.0F, 6.0F, 6.0F, 3.0F, ColorUtil.rgba(255, 255, 255, (int) (255 * alphaVal)));
+
+        // Volume % Text
+        int pct = (int) Math.round(vol * 100.0F);
+        Fonts.drawString(Fonts.SF_MEDIUM, pct + "%", x + 90.0F, y + 3.5F, 5.8F, ColorUtil.rgba(200, 210, 230, (int) (220 * alphaVal)));
     }
 
     private void renderMainMenuUI(int screenWidth, int screenHeight, int mouseX, int mouseY) {
@@ -291,7 +333,7 @@ public class CustomTitleScreen extends Screen {
         float startX = centerX - totalW / 2.0F;
         float cardsY = centerY - cardH / 2.0F + 10.0F;
 
-        boolean modalActive = accountModalOpen || targetScreen != null;
+        boolean modalActive = targetScreen != null;
 
         // Card 0: Singleplayer
         float spX = startX;
@@ -403,132 +445,6 @@ public class CustomTitleScreen extends Screen {
         Fonts.drawCenteredString(Fonts.SF_MEDIUM, text, x + w / 2.0F, drawY + 4.5F, 6.5F, textCol);
     }
 
-    /**
-     * Account Manager Liquid Glass modal window.
-     */
-    private void renderAccountModal(int screenWidth, int screenHeight, int mouseX, int mouseY, float alpha) {
-        float modalW = 430.0F;
-        float modalH = 270.0F;
-        float modalX = (screenWidth - modalW) / 2.0F;
-        float modalY = (screenHeight - modalH) / 2.0F;
-
-        int accent = Theme.getAccentColor();
-
-        Render2D.drawRect(0, 0, screenWidth, screenHeight, ColorUtil.rgba(0, 0, 0, (int) (160 * alpha)));
-        Render2D.drawBlur(0, 0, screenWidth, screenHeight, 0.0F, 24.0F, ColorUtil.rgba(0, 0, 0, (int) (100 * alpha)), alpha);
-
-        int modalGlassFill = ColorUtil.rgba(16, 14, 26, (int) (235 * alpha));
-        int modalGlassBorder = ColorUtil.rgba(255, 255, 255, (int) (45 * alpha));
-
-        Render2D.drawShadow(modalX, modalY, modalW, modalH, 12.0F, 24.0F, ColorUtil.rgba(0, 0, 0, (int) (240 * alpha)));
-        Render2D.drawBlur(modalX, modalY, modalW, modalH, 12.0F, 22.0F, modalGlassFill, alpha);
-        Render2D.drawRoundedRect(modalX, modalY, modalW, modalH, 12.0F, modalGlassFill);
-        Render2D.drawRoundedOutline(modalX, modalY, modalW, modalH, 12.0F, 1.0F, modalGlassBorder);
-
-        Render2D.drawRoundedRect(modalX + 16.0F, modalY + 1.0F, modalW - 32.0F, 1.0F, 0.5F, ColorUtil.rgba(255, 255, 255, (int) (45 * alpha)));
-
-        float leftW = 245.0F;
-        float leftX = modalX + 14.0F;
-        float leftY = modalY + 14.0F;
-
-        Fonts.drawString(Fonts.SF_MEDIUM, "Аккаунты", leftX, leftY + 2.0F, 10.5F, ColorUtil.applyAlpha(ColorUtil.WHITE, alpha));
-
-        float searchY = leftY + 20.0F;
-        float searchW = leftW;
-        float searchH = 19.0F;
-        int searchCol = searchFocused ? accent : ColorUtil.rgba(255, 255, 255, 35);
-        Render2D.drawRoundedRect(leftX, searchY, searchW, searchH, 5.0F, ColorUtil.rgba(22, 26, 42, (int) (220 * alpha)));
-        Render2D.drawRoundedOutline(leftX, searchY, searchW, searchH, 5.0F, 0.8F, ColorUtil.applyAlpha(searchCol, alpha));
-
-        boolean blink = (System.currentTimeMillis() / 500L) % 2 == 0;
-        String displaySearch = searchFilter.isEmpty() ? "Поиск..." : searchFilter + (searchFocused && blink ? "|" : "");
-        Fonts.drawString(Fonts.SF_MEDIUM, displaySearch, leftX + 8.0F, searchY + 5.5F, 6.5F, ColorUtil.multiplyAlpha(searchCol, alpha));
-
-        float tabY = searchY + searchH + 6.0F;
-        String[] tabs = {"Все", "Избранные"};
-        float tabW = (leftW - 4.0F) / 2.0F;
-
-        for (int i = 0; i < 2; i++) {
-            float tx = leftX + i * (tabW + 4.0F);
-            boolean sel = (selectedTab == i);
-            int tabBg = sel ? ColorUtil.withAlpha(accent, (int) (190 * alpha)) : ColorUtil.rgba(26, 30, 48, (int) (190 * alpha));
-            Render2D.drawRoundedRect(tx, tabY, tabW, 15.0F, 4.0F, tabBg);
-            Fonts.drawCenteredString(Fonts.SF_MEDIUM, tabs[i], tx + tabW / 2.0F, tabY + 4.0F, 6.5F,
-                    ColorUtil.applyAlpha(sel ? ColorUtil.WHITE : ColorUtil.rgba(180, 195, 220, 255), alpha));
-        }
-
-        float listY = tabY + 19.0F;
-        float listH = modalH - (listY - modalY) - 14.0F;
-
-        List<String> allAccs = AccountManager.getInstance().getAccounts();
-        List<String> filtered = new ArrayList<>();
-        for (String acc : allAccs) {
-            if (!searchFilter.isEmpty() && !acc.toLowerCase().contains(searchFilter.toLowerCase())) continue;
-            if (selectedTab == 1 && !AccountManager.getInstance().isFavorite(acc)) continue;
-            filtered.add(acc);
-        }
-
-        float itemH = 22.0F;
-        maxAccountScroll = Math.max(0.0F, filtered.size() * (itemH + 3.0F) - listH);
-
-        Render2D.pushScissor(leftX, listY, leftW, listH);
-        float itemY = listY - accountScroll;
-
-        for (String acc : filtered) {
-            if (itemY + itemH >= listY && itemY <= listY + listH) {
-                boolean active = acc.equalsIgnoreCase(selectedAccount);
-                boolean hovered = mouseX >= leftX && mouseX <= leftX + leftW && mouseY >= itemY && mouseY <= itemY + itemH;
-
-                int itemBg = active ? ColorUtil.withAlpha(accent, (int) (160 * alpha))
-                        : (hovered ? ColorUtil.rgba(34, 40, 62, (int) (200 * alpha)) : ColorUtil.rgba(22, 26, 42, (int) (170 * alpha)));
-                Render2D.drawRoundedRect(leftX, itemY, leftW, itemH, 5.0F, itemBg);
-                Render2D.drawRoundedOutline(leftX, itemY, leftW, itemH, 5.0F, 0.7F, ColorUtil.rgba(255, 255, 255, (int) (35 * alpha)));
-
-                UUID uuid = UUID.nameUUIDFromBytes(("OfflinePlayer:" + acc).getBytes(StandardCharsets.UTF_8));
-                Identifier skin = DefaultPlayerSkin.get(uuid).body().texturePath();
-                Render2D.drawHead(skin, leftX + 4.0F, itemY + 3.0F, 16.0F, 3.0F, alpha);
-
-                Fonts.drawString(Fonts.SF_MEDIUM, acc, leftX + 25.0F, itemY + 6.5F, 7.0F, ColorUtil.applyAlpha(ColorUtil.WHITE, alpha));
-
-                boolean isFav = AccountManager.getInstance().isFavorite(acc);
-                int starCol = isFav ? ColorUtil.rgba(255, 215, 0, 255) : ColorUtil.rgba(130, 140, 160, 180);
-                Fonts.drawString(Fonts.SF_MEDIUM, isFav ? "★" : "☆", leftX + leftW - 14.0F, itemY + 6.5F, 7.5F, ColorUtil.applyAlpha(starCol, alpha));
-            }
-            itemY += itemH + 3.0F;
-        }
-        Render2D.popScissor();
-
-        float rightX = leftX + leftW + 16.0F;
-        float rightW = modalW - (rightX - modalX) - 14.0F;
-
-        String targetAcc = selectedAccount.isEmpty() ? this.minecraft.getUser().getName() : selectedAccount;
-        UUID targetUuid = UUID.nameUUIDFromBytes(("OfflinePlayer:" + targetAcc).getBytes(StandardCharsets.UTF_8));
-        Identifier targetSkin = DefaultPlayerSkin.get(targetUuid).body().texturePath();
-
-        float headBig = 46.0F;
-        float avatarX = rightX + (rightW - headBig) / 2.0F;
-        float avatarY = modalY + 34.0F;
-
-        Render2D.drawShadow(avatarX, avatarY, headBig, headBig, 10.0F, 12.0F, ColorUtil.withAlpha(accent, (int) (120 * alpha)));
-        Render2D.drawHead(targetSkin, avatarX, avatarY, headBig, 8.0F, alpha);
-
-        Fonts.drawCenteredString(Fonts.SF_MEDIUM, targetAcc, rightX + rightW / 2.0F, avatarY + headBig + 10.0F, 9.5F, ColorUtil.applyAlpha(ColorUtil.WHITE, alpha));
-        Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Offline / Session", rightX + rightW / 2.0F, avatarY + headBig + 24.0F, 6.5F, ColorUtil.applyAlpha(ColorUtil.rgba(170, 185, 210, 255), alpha));
-
-        float btnW = rightW;
-        float btnH = 26.0F;
-        float btnX = rightX;
-        float btnY = modalY + modalH - btnH - 14.0F;
-
-        boolean btnHover = mouseX >= btnX && mouseX <= btnX + btnW && mouseY >= btnY && mouseY <= btnY + btnH;
-        int btnCol = btnHover ? ColorUtil.withAlpha(accent, (int) (245 * alpha)) : ColorUtil.withAlpha(accent, (int) (195 * alpha));
-
-        Render2D.drawShadow(btnX, btnY, btnW, btnH, 7.0F, 9.0F, ColorUtil.withAlpha(accent, (int) (110 * alpha)));
-        Render2D.drawRoundedRect(btnX, btnY, btnW, btnH, 7.0F, btnCol);
-        Render2D.drawRoundedOutline(btnX, btnY, btnW, btnH, 7.0F, 0.8F, ColorUtil.rgba(255, 255, 255, (int) (70 * alpha)));
-        Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Использовать", btnX + btnW / 2.0F, btnY + 8.0F, 8.0F, ColorUtil.applyAlpha(ColorUtil.WHITE, alpha));
-    }
-
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean isLeftClick) {
         double mouseX = event.x();
@@ -537,62 +453,18 @@ public class CustomTitleScreen extends Screen {
         int screenHeight = this.height;
 
         if (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
-            if (accountModalOpen) {
-                float modalW = 430.0F;
-                float modalH = 270.0F;
-                float modalX = (screenWidth - modalW) / 2.0F;
-                float modalY = (screenHeight - modalH) / 2.0F;
+            // Volume Slider Click / Drag
+            float volX = 14.0F;
+            float volY = 31.0F;
+            float volW = 112.0F;
+            float volH = 14.0F;
 
-                if (mouseX < modalX || mouseX > modalX + modalW || mouseY < modalY || mouseY > modalY + modalH) {
-                    accountModalOpen = false;
-                    return true;
-                }
-
-                float leftW = 245.0F;
-                float leftX = modalX + 14.0F;
-                float listY = modalY + 14.0F + 20.0F + 19.0F + 6.0F + 15.0F + 4.0F;
-                float listH = modalH - (listY - modalY) - 14.0F;
-
-                List<String> allAccs = AccountManager.getInstance().getAccounts();
-                List<String> filtered = new ArrayList<>();
-                for (String acc : allAccs) {
-                    if (!searchFilter.isEmpty() && !acc.toLowerCase().contains(searchFilter.toLowerCase())) continue;
-                    if (selectedTab == 1 && !AccountManager.getInstance().isFavorite(acc)) continue;
-                    filtered.add(acc);
-                }
-
-                float itemH = 22.0F;
-                float itemY = listY - accountScroll;
-
-                for (String acc : filtered) {
-                    if (itemY + itemH >= listY && itemY <= listY + listH) {
-                        if (mouseX >= leftX && mouseX <= leftX + leftW && mouseY >= itemY && mouseY <= itemY + itemH) {
-                            if (mouseX >= leftX + leftW - 20.0F) {
-                                AccountManager.getInstance().toggleFavorite(acc);
-                            } else {
-                                this.selectedAccount = acc;
-                            }
-                            return true;
-                        }
-                    }
-                    itemY += itemH + 3.0F;
-                }
-
-                float rightX = leftX + leftW + 16.0F;
-                float rightW = modalW - (rightX - modalX) - 14.0F;
-                float btnH = 26.0F;
-                float btnX = rightX;
-                float btnY = modalY + modalH - btnH - 14.0F;
-
-                if (mouseX >= btnX && mouseX <= btnX + rightW && mouseY >= btnY && mouseY <= btnY + btnH) {
-                    if (!selectedAccount.isEmpty()) {
-                        AccountManager.getInstance().setActiveAccount(selectedAccount);
-                        AccountManager.getInstance().applyActiveSession();
-                    }
-                    accountModalOpen = false;
-                    return true;
-                }
-
+            if (mouseX >= volX && mouseX <= volX + volW && mouseY >= volY && mouseY <= volY + volH) {
+                this.draggingVolume = true;
+                float sliderBarX = volX + 18.0F;
+                float sliderBarW = 68.0F;
+                float newVol = Math.clamp((float) ((mouseX - sliderBarX) / sliderBarW), 0.0F, 1.0F);
+                BackgroundAudioPlayer.getInstance().setVolume(newVol);
                 return true;
             }
 
@@ -621,10 +493,10 @@ public class CustomTitleScreen extends Screen {
                     return true;
                 }
 
-                // Card 2: Accounts
+                // Card 2: Accounts -> Opens Exclusive AltManagerScreen
                 float accX = startX + (cardW + gap) * 2;
                 if (mouseX >= accX && mouseX <= accX + cardW && mouseY >= cardsY && mouseY <= cardsY + cardH) {
-                    this.accountModalOpen = true;
+                    switchScreen(new AltManagerScreen(this));
                     return true;
                 }
 
@@ -654,5 +526,19 @@ public class CustomTitleScreen extends Screen {
         }
 
         return super.mouseClicked(event, isLeftClick);
+    }
+
+    @Override
+    public boolean mouseReleased(MouseButtonEvent event) {
+        if (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+            this.draggingVolume = false;
+        }
+        return super.mouseReleased(event);
+    }
+
+    @Override
+    public void removed() {
+        BackgroundAudioPlayer.getInstance().stop();
+        super.removed();
     }
 }

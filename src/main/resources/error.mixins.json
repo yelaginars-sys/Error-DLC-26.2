@@ -23,7 +23,6 @@
     "client.MultiPlayerGameModeMixin",
     "client.MixinServerboundUseItemPacket",
     "gui.TitleScreenMixin",
-    "gui.AbstractWidgetMixin",
     "accessor.KeyMappingAccessor",
     "client.LocalPlayerMixin",
     "client.AbstractClientPlayerMixin",
