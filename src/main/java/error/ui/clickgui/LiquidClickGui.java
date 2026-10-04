@@ -84,6 +84,7 @@ public class LiquidClickGui extends Screen {
         float y = (screenH - WINDOW_H) / 2.0F;
 
         RenderExtend.enter2D(null, extractor, null);
+        error.util.display.batch.DisplayBatcher.begin(extractor);
         try {
             // 1. Fullscreen Kawase Blur Pass on game background
             Blur.of(0, 0, screenW, screenH)
@@ -142,7 +143,7 @@ public class LiquidClickGui extends Screen {
 
             extractor.pose().popMatrix();
         } finally {
-            error.util.display.DisplayUtil.flush();
+            error.util.display.batch.DisplayBatcher.end();
             RenderExtend.exit2D();
         }
     }

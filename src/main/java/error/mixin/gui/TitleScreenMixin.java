@@ -95,5 +95,30 @@ public abstract class TitleScreenMixin extends Screen {
             quitButton.setWidth((int) optionsW);
             quitButton.setHeight((int) h);
         }
+
+        // Align small icon buttons neatly on the sides of the bottom row (Options / Quit)
+        float smallW = 20.0F;
+        float smallH = 20.0F;
+        float leftX = centerX - w / 2.0F - gap - smallW;
+        float rightX = centerX + w / 2.0F + gap;
+
+        int leftCount = 0;
+        int rightCount = 0;
+
+        for (AbstractWidget btn : smallIconButtons) {
+            btn.setWidth((int) smallW);
+            btn.setHeight((int) smallH);
+
+            String text = btn.getMessage() != null ? btn.getMessage().getString().toLowerCase() : "";
+            if (text.contains("язык") || text.contains("lang") || (leftCount == 0 && rightCount > 0)) {
+                btn.setX((int) (leftX - leftCount * (smallW + gap)));
+                btn.setY((int) currentY);
+                leftCount++;
+            } else {
+                btn.setX((int) (rightX + rightCount * (smallW + gap)));
+                btn.setY((int) currentY);
+                rightCount++;
+            }
+        }
     }
 }

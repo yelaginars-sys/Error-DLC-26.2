@@ -106,14 +106,45 @@ public abstract class AbstractWidgetMixin {
 
             // 2.5 Small Icon Buttons (Language, Accessibility, Lock, Friends icons <= 24px wide)
             if (w <= 24.0F) {
-                float iconRadius = Math.min(4.0F, h / 2.0F);
-                int bg = this.active ? ColorUtil.rgba(20, 24, 36, (int) ((0.60F + this.error$hoverAnim * 0.25F) * 255)) : ColorUtil.rgba(14, 16, 22, 100);
-                int outlineColor = this.active ? ColorUtil.rgba(255, 255, 255, (int) ((0.15F + this.error$hoverAnim * 0.40F) * 255)) : ColorUtil.rgba(255, 255, 255, 20);
+                float iconRadius = Math.min(5.0F, h / 2.0F);
+                int bg;
+                int outlineColor;
+                if (!this.active) {
+                    bg = ColorUtil.rgba(16, 18, 26, 80);
+                    outlineColor = ColorUtil.rgba(255, 255, 255, 15);
+                } else {
+                    int bgAlpha = (int) ((0.52F + this.error$hoverAnim * 0.28F) * 255);
+                    bg = ColorUtil.rgba(20, 24, 36, bgAlpha);
+
+                    int outlineAlpha = (int) ((0.14F + this.error$hoverAnim * 0.45F) * 255);
+                    outlineColor = ColorUtil.rgba(255, 255, 255, outlineAlpha);
+                }
 
                 Render2D.drawRoundedRect(x, y, w, h, iconRadius, bg);
-                Render2D.drawRoundedOutline(x, y, w, h, iconRadius, 0.75F, outlineColor);
+                Render2D.drawRoundedOutline(x, y, w, h, iconRadius, 0.8F, outlineColor);
+
+                Component msg = this.getMessage();
+                String msgText = msg != null ? msg.getString().toLowerCase() : "";
+                String symbol = "•";
+
+                if (msgText.contains("язык") || msgText.contains("lang") || className.contains("Language")) {
+                    symbol = "🌐";
+                } else if (msgText.contains("доступн") || msgText.contains("access") || className.contains("Accessibility")) {
+                    symbol = "♿";
+                } else if (msgText.contains("друг") || msgText.contains("friend") || msgText.contains("realms") || className.contains("Social")) {
+                    symbol = "👤";
+                } else if (msg != null && !msg.getString().isEmpty()) {
+                    symbol = msg.getString().substring(0, 1);
+                }
+
+                int textColor = this.active
+                        ? ColorUtil.rgba(255, 255, 255, (int) ((0.92F + 0.08F * this.error$hoverAnim) * 255))
+                        : ColorUtil.rgba(160, 160, 175, 140);
+
+                Fonts.drawCenteredString(Fonts.SF_MEDIUM, symbol, x + w / 2.0F, y + (h - 8.0F) / 2.0F - 0.5F, 8.0F, textColor);
+
                 Render2DUtil.flush();
-                // Allow vanilla icon/texture extraction on top
+                ci.cancel();
                 return;
             }
 
