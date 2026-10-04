@@ -36,6 +36,8 @@ public class CustomTitleScreen extends Screen {
     private static final Identifier MULTIPLAYER_TEX = Identifier.fromNamespaceAndPath("client", "textures/mainmenu/multiplayer.png");
     private static final Identifier ACCOUNT_TEX = Identifier.fromNamespaceAndPath("client", "textures/mainmenu/accountmanager.png");
     private static final Identifier LOGO_TEX = Identifier.fromNamespaceAndPath("client", "textures/hud/logo.png");
+    private static final Identifier SPEAKER_ICON = Identifier.fromNamespaceAndPath("client", "textures/mainmenu/speaker.png");
+    private static final Identifier SPEAKER_MUTE_ICON = Identifier.fromNamespaceAndPath("client", "textures/mainmenu/speaker_mute.png");
 
     private static final int TOTAL_VIDEO_FRAMES = 744;
     private static final float VIDEO_FPS = 15.0F;
@@ -222,8 +224,8 @@ public class CustomTitleScreen extends Screen {
 
         // Handle volume slider dragging
         if (draggingVolume) {
-            float volX = 14.0F + 16.0F;
-            float volW = 75.0F;
+            float volX = 14.0F + 22.0F;
+            float volW = 66.0F;
             float newVol = Math.clamp((mouseX - volX) / volW, 0.0F, 1.0F);
             BackgroundAudioPlayer.getInstance().setVolume(newVol);
         }
@@ -235,23 +237,27 @@ public class CustomTitleScreen extends Screen {
             // 1. DYNAMIC VIDEO BACKGROUND FRAME RENDER
             long elapsed = Math.max(0L, System.currentTimeMillis() - startTime);
             int frameIndex = (int) ((elapsed / 1000.0D * VIDEO_FPS) % TOTAL_VIDEO_FRAMES) + 1;
-            String frameName = String.format(Locale.US, "frame_%04d.jpg", frameIndex);
+            String frameName = String.format(Locale.US, "frame_%04d.png", frameIndex);
             Identifier videoFrameTex = Identifier.fromNamespaceAndPath("client", "textures/mainmenu/frames/" + frameName);
 
-            Render2D.drawRect(0, 0, screenWidth, screenHeight, ColorUtil.rgba(6, 8, 12, (int) (255 * this.screenAlpha)));
-            Render2D.drawTexture(videoFrameTex, 0, 0, screenWidth, screenHeight, ColorUtil.rgba(255, 255, 255, (int) (240 * this.screenAlpha)));
+            // Dark base background
+            Render2D.drawRect(0, 0, screenWidth, screenHeight, ColorUtil.rgba(8, 10, 16, (int) (255 * this.screenAlpha)));
 
-            // 2. SOFT BLUR PASS + DARK VIGNETTE OVERLAY
-            Render2D.drawBlur(0, 0, screenWidth, screenHeight, 0.0F, 14.0F, ColorUtil.rgba(10, 12, 22, (int) (115 * this.screenAlpha)), this.screenAlpha);
-            Render2D.drawRect(0, 0, screenWidth, screenHeight, ColorUtil.rgba(5, 8, 14, (int) (35 * this.screenAlpha)));
+            // High-res static fallback
+            Render2D.drawTexture(BG_FALLBACK, 0, 0, screenWidth, screenHeight, ColorUtil.rgba(255, 255, 255, (int) (180 * this.screenAlpha)));
 
-            int topFade = ColorUtil.rgba(3, 5, 8, (int) (50 * this.screenAlpha));
-            int botFade = ColorUtil.rgba(3, 5, 8, (int) (105 * this.screenAlpha));
+            // Live video frame texture
+            Render2D.drawTexture(videoFrameTex, 0, 0, screenWidth, screenHeight, ColorUtil.rgba(255, 255, 255, (int) (245 * this.screenAlpha)));
+
+            // 2. SOFT ATMOSPHERE & DARK GRADIENT OVERLAY
+            int topFade = ColorUtil.rgba(4, 6, 12, (int) (55 * this.screenAlpha));
+            int botFade = ColorUtil.rgba(4, 6, 12, (int) (105 * this.screenAlpha));
             Render2D.drawGradientRound(0, 0, screenWidth, screenHeight, 0.0F, topFade, topFade, botFade, botFade);
+            Render2D.drawRect(0, 0, screenWidth, screenHeight, ColorUtil.rgba(6, 8, 14, (int) (30 * this.screenAlpha)));
 
             // 3. Top-Left Branding & Volume Slider
             drawTopLeftBranding(14.0F, 12.0F, this.screenAlpha);
-            drawVolumeSlider(14.0F, 31.0F, mouseX, mouseY, this.screenAlpha);
+            drawVolumeSlider(14.0F, 32.0F, mouseX, mouseY, this.screenAlpha);
 
             // 4. Main Menu Central Greeting & Hero Cards Layout
             renderMainMenuUI(screenWidth, screenHeight, mouseX, mouseY);
@@ -276,40 +282,41 @@ public class CustomTitleScreen extends Screen {
     }
 
     private void drawVolumeSlider(float x, float y, int mouseX, int mouseY, float alphaVal) {
-        float totalW = 112.0F;
-        float totalH = 14.0F;
+        float totalW = 124.0F;
+        float totalH = 18.0F;
+        float radius = 9.0F;
 
-        // Container Glass Background
-        int bgCol = ColorUtil.rgba(18, 20, 32, (int) (190 * alphaVal));
-        int borderCol = ColorUtil.rgba(255, 255, 255, (int) (35 * alphaVal));
+        // Container Liquid Glass Background & Shadow
+        int accent = Theme.getAccentColor();
+        Render2D.drawShadow(x, y, totalW, totalH, 6.0F, 8.0F, ColorUtil.rgba(0, 0, 0, (int) (120 * alphaVal)));
+        Render2D.drawRoundedRect(x, y, totalW, totalH, radius, ColorUtil.rgba(14, 16, 24, (int) (210 * alphaVal)));
+        Render2D.drawRoundedOutline(x, y, totalW, totalH, radius, 0.8F, ColorUtil.rgba(255, 255, 255, (int) (40 * alphaVal)));
 
-        Render2D.drawRoundedRect(x, y, totalW, totalH, 4.0F, bgCol);
-        Render2D.drawRoundedOutline(x, y, totalW, totalH, 4.0F, 0.7F, borderCol);
-
-        // Sound Icon 🔊 / 🔇
+        // Sound Icon
         float vol = BackgroundAudioPlayer.getInstance().getVolume();
-        String icon = vol <= 0.001F ? "🔇" : "🔊";
-        Fonts.drawString(Fonts.SF_MEDIUM, icon, x + 4.0F, y + 3.0F, 6.5F, ColorUtil.rgba(255, 255, 255, (int) (240 * alphaVal)));
+        Identifier iconTex = vol <= 0.001F ? SPEAKER_MUTE_ICON : SPEAKER_ICON;
+        Render2D.drawTexture(iconTex, x + 6.0F, y + 4.0F, 10.0F, 10.0F, ColorUtil.rgba(255, 255, 255, (int) (230 * alphaVal)));
 
-        // Slider Bar
-        float barX = x + 18.0F;
-        float barY = y + (totalH - 4.0F) / 2.0F;
-        float barW = 68.0F;
+        // Slider Bar Track
+        float barX = x + 22.0F;
         float barH = 4.0F;
+        float barY = y + (totalH - barH) / 2.0F;
+        float barW = 66.0F;
 
-        Render2D.drawRoundedRect(barX, barY, barW, barH, 2.0F, ColorUtil.rgba(255, 255, 255, (int) (40 * alphaVal)));
+        Render2D.drawRoundedRect(barX, barY, barW, barH, 2.0F, ColorUtil.rgba(255, 255, 255, (int) (35 * alphaVal)));
 
         float filledW = Math.max(2.0F, barW * vol);
-        int accent = Theme.getAccentColor();
-        Render2D.drawRoundedRect(barX, barY, filledW, barH, 2.0F, ColorUtil.withAlpha(accent, (int) (230 * alphaVal)));
+        Render2D.drawRoundedRect(barX, barY, filledW, barH, 2.0F, ColorUtil.withAlpha(accent, (int) (240 * alphaVal)));
 
-        // Slider Knob Circle
-        float knobX = barX + (barW - 4.0F) * vol;
-        Render2D.drawRoundedRect(knobX, barY - 1.0F, 6.0F, 6.0F, 3.0F, ColorUtil.rgba(255, 255, 255, (int) (255 * alphaVal)));
+        // Slider Knob Circle with Glow
+        float knobX = barX + (barW - 7.0F) * vol;
+        float knobY = y + (totalH - 7.0F) / 2.0F;
+        Render2D.drawShadow(knobX - 1.0F, knobY - 1.0F, 9.0F, 9.0F, 3.0F, 4.0F, ColorUtil.withAlpha(accent, (int) (150 * alphaVal)));
+        Render2D.drawRoundedRect(knobX, knobY, 7.0F, 7.0F, 3.5F, ColorUtil.rgba(255, 255, 255, (int) (255 * alphaVal)));
 
         // Volume % Text
         int pct = (int) Math.round(vol * 100.0F);
-        Fonts.drawString(Fonts.SF_MEDIUM, pct + "%", x + 90.0F, y + 3.5F, 5.8F, ColorUtil.rgba(200, 210, 230, (int) (220 * alphaVal)));
+        Fonts.drawString(Fonts.SF_MEDIUM, pct + "%", x + 94.0F, y + 5.5F, 6.2F, ColorUtil.rgba(215, 220, 240, (int) (230 * alphaVal)));
     }
 
     private void renderMainMenuUI(int screenWidth, int screenHeight, int mouseX, int mouseY) {
@@ -455,14 +462,14 @@ public class CustomTitleScreen extends Screen {
         if (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
             // Volume Slider Click / Drag
             float volX = 14.0F;
-            float volY = 31.0F;
-            float volW = 112.0F;
-            float volH = 14.0F;
+            float volY = 32.0F;
+            float volW = 124.0F;
+            float volH = 18.0F;
 
             if (mouseX >= volX && mouseX <= volX + volW && mouseY >= volY && mouseY <= volY + volH) {
                 this.draggingVolume = true;
-                float sliderBarX = volX + 18.0F;
-                float sliderBarW = 68.0F;
+                float sliderBarX = volX + 22.0F;
+                float sliderBarW = 66.0F;
                 float newVol = Math.clamp((float) ((mouseX - sliderBarX) / sliderBarW), 0.0F, 1.0F);
                 BackgroundAudioPlayer.getInstance().setVolume(newVol);
                 return true;

@@ -103,14 +103,18 @@ public class AltManagerScreen extends Screen {
         float panelY = (screenH - panelH) / 2.0F;
 
         int accent = Theme.getAccentColor();
-        int glassFill = ColorUtil.rgba(16, 14, 26, (int) (235 * this.screenAlpha));
-        int glassBorder = ColorUtil.rgba(255, 255, 255, (int) (45 * this.screenAlpha));
+        int glassFill = ColorUtil.rgba(14, 16, 24, (int) (225 * this.screenAlpha));
+        int glassBorder = ColorUtil.rgba(255, 255, 255, (int) (38 * this.screenAlpha));
 
-        // Shadows & Blur container
-        Render2D.drawShadow(panelX, panelY, panelW, panelH, 12.0F, 24.0F, ColorUtil.rgba(0, 0, 0, (int) (240 * this.screenAlpha)));
-        Render2D.drawBlur(panelX, panelY, panelW, panelH, 12.0F, 22.0F, glassFill, this.screenAlpha);
+        // Shadows & Liquid glass body
+        Render2D.drawShadow(panelX, panelY, panelW, panelH, 14.0F, 28.0F, ColorUtil.rgba(0, 0, 0, (int) (180 * this.screenAlpha)));
         Render2D.drawRoundedRect(panelX, panelY, panelW, panelH, 12.0F, glassFill);
-        Render2D.drawRoundedOutline(panelX, panelY, panelW, panelH, 12.0F, 1.0F, glassBorder);
+        Render2D.drawGradientRound(panelX, panelY, panelW, 36.0F, 12.0F,
+                ColorUtil.rgba(255, 255, 255, (int) (18 * this.screenAlpha)),
+                ColorUtil.rgba(255, 255, 255, (int) (18 * this.screenAlpha)),
+                ColorUtil.rgba(255, 255, 255, 0),
+                ColorUtil.rgba(255, 255, 255, 0));
+        Render2D.drawRoundedOutline(panelX, panelY, panelW, panelH, 12.0F, 0.8F, glassBorder);
 
         // Header Title
         float titleY = panelY + 12.0F;
@@ -216,6 +220,10 @@ public class AltManagerScreen extends Screen {
                 float rx = listX + 3.0F;
                 float rw = listW - 6.0F;
 
+                if (active) {
+                    Render2D.drawShadow(rx, itemY, rw, rowH, 5.0F, 8.0F, ColorUtil.withAlpha(Theme.getAccentColor(), (int) (100 * this.screenAlpha)));
+                }
+
                 Render2D.drawRoundedRect(rx, itemY, rw, rowH, 5.0F, rowBg);
                 Render2D.drawRoundedOutline(rx, itemY, rw, rowH, 5.0F, 0.7F, ColorUtil.rgba(255, 255, 255, (int) (35 * this.screenAlpha)));
 
@@ -244,16 +252,22 @@ public class AltManagerScreen extends Screen {
 
     private void renderActionButton(float x, float y, float w, float h, String text, float hoverAnim, boolean isDanger) {
         float drawY = y - 1.0F * hoverAnim;
-        int bg = isDanger ? ColorUtil.rgba(200, 45, 55, (int) ((0.25F + 0.35F * hoverAnim) * 255 * this.screenAlpha))
-                : ColorUtil.rgba(28, 32, 48, (int) ((0.60F + 0.25F * hoverAnim) * 255 * this.screenAlpha));
+        int bg = isDanger ? ColorUtil.rgba(200, 45, 55, (int) ((0.28F + 0.32F * hoverAnim) * 255 * this.screenAlpha))
+                : ColorUtil.rgba(26, 30, 46, (int) ((0.65F + 0.25F * hoverAnim) * 255 * this.screenAlpha));
 
-        int outline = isDanger ? ColorUtil.rgba(240, 70, 80, (int) ((0.20F + 0.40F * hoverAnim) * 255 * this.screenAlpha))
-                : ColorUtil.rgba(255, 255, 255, (int) ((0.08F + 0.16F * hoverAnim) * 255 * this.screenAlpha));
+        int outline = isDanger ? ColorUtil.rgba(255, 80, 90, (int) ((0.25F + 0.45F * hoverAnim) * 255 * this.screenAlpha))
+                : ColorUtil.rgba(255, 255, 255, (int) ((0.10F + 0.22F * hoverAnim) * 255 * this.screenAlpha));
+
+        if (hoverAnim > 0.05F) {
+            int glowColor = isDanger ? ColorUtil.rgba(240, 50, 60, (int) (80 * hoverAnim * this.screenAlpha))
+                    : ColorUtil.rgba(255, 255, 255, (int) (35 * hoverAnim * this.screenAlpha));
+            Render2D.drawShadow(x, drawY, w, h, 6.0F, 8.0F, glowColor);
+        }
 
         Render2D.drawRoundedRect(x, drawY, w, h, 5.0F, bg);
         Render2D.drawRoundedOutline(x, drawY, w, h, 5.0F, 0.7F, outline);
 
-        int textCol = isDanger ? ColorUtil.rgba(255, 190, 190, (int) (250 * this.screenAlpha))
+        int textCol = isDanger ? ColorUtil.rgba(255, 200, 200, (int) (250 * this.screenAlpha))
                 : ColorUtil.rgba(245, 245, 255, (int) (250 * this.screenAlpha));
 
         Fonts.drawCenteredString(Fonts.SF_MEDIUM, text, x + w / 2.0F, drawY + 6.0F, 6.5F, textCol);
