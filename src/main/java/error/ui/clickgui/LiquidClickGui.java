@@ -8,6 +8,8 @@ import error.setting.impl.*;
 import error.util.RenderExtend;
 import error.util.client.clients.ColorUtil;
 import error.util.client.clients.Theme;
+import error.util.client.persiki.ChatUtil;
+import error.util.client.persiki.KeyUtil;
 import error.util.display.batch.DisplayBatcher;
 import error.util.display.blur.Blur;
 import error.util.display.blur.BlurType;
@@ -18,27 +20,30 @@ import error.util.math.Animation;
 import error.util.render.Render2D;
 import error.util.render.Render2DUtil;
 import error.util.render.font.Fonts;
-import error.util.render.font.IconUse;
+import error.ui.hud.HudManager;
+import error.ui.hud.HudElement;
+import error.ui.hud.impl.DynamicIslandHud;
+import error.module.impl.render.ClickGui;
+import error.module.impl.render.CustomModels;
+import error.cosmetic.CosmeticsManager;
+import error.cosmetic.CosmeticItem;
+import error.cosmetic.CosmeticType;
+import error.friend.FriendManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
-import error.module.impl.render.ClickGui;
-import error.util.client.persiki.KeyUtil;
-import error.ui.hud.HudManager;
-import error.ui.hud.HudElement;
-import error.ui.hud.impl.DynamicIslandHud;
+import net.minecraft.resources.Identifier;
 import org.lwjgl.glfw.GLFW;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.util.*;
 
 public class LiquidClickGui extends Screen {
 
@@ -47,11 +52,13 @@ public class LiquidClickGui extends Screen {
     public static final float SIDEBAR_W = 125.0F;
 
     private static final Color FADE_WHITE = Color.rgba(255, 255, 255, 32);
+    private static final Identifier LOGO_NONFONE = Identifier.fromNamespaceAndPath("error", "textures/logo_nonfone.png");
 
     public Category activeCategory = Category.COMBAT;
     public String searchQuery = "";
     public boolean searchFocused = false;
 
+    // Settings Modal (Top-Right Gear)
     public boolean settingsModalOpen = false;
     public ColorSetting activeEditingColorSetting = null;
     public boolean bindingClickGuiKey = false;
@@ -63,6 +70,26 @@ public class LiquidClickGui extends Screen {
     private enum DragTarget { NONE, FIELD_2D, HUE_VERT }
     private DragTarget draggingPicker = DragTarget.NONE;
 
+    // Configs Tab States
+    public String newConfigInput = "";
+    public boolean newConfigFocused = false;
+    public String shareKeyInput = "";
+    public boolean shareKeyFocused = false;
+    private final Animation configsScrollAnim = new Animation(0.0F, 0.22F);
+    private float configsScrollTarget = 0.0F;
+
+    // Friends Tab States
+    public String friendInput = "";
+    public boolean friendInputFocused = false;
+    private final Animation friendsScrollAnim = new Animation(0.0F, 0.22F);
+    private float friendsScrollTarget = 0.0F;
+
+    // Cosmetics Tab States
+    public String cosmeticFilter = "Все";
+    private final Animation cosmeticsScrollAnim = new Animation(0.0F, 0.22F);
+    private float cosmeticsScrollTarget = 0.0F;
+
+    // General UI Animations & State
     private final Animation openAnim = new Animation(1.0F, 0.20F);
     private final Animation scrollAnim = new Animation(0.0F, 0.22F);
     private float scrollTarget = 0.0F;
@@ -119,12 +146,31 @@ public class LiquidClickGui extends Screen {
         return false;
     }
 
+    private static Identifier getCategoryIcon(Category cat) {
+        return switch (cat) {
+            case COMBAT -> Identifier.fromNamespaceAndPath("error", "textures/system/combat.png");
+            case MOVEMENT -> Identifier.fromNamespaceAndPath("error", "textures/system/movement.png");
+            case RENDER -> Identifier.fromNamespaceAndPath("error", "textures/system/visuals.png");
+            case COSMETICS -> Identifier.fromNamespaceAndPath("error", "textures/system/Folder 2.png");
+            case PLAYER -> Identifier.fromNamespaceAndPath("error", "textures/system/player.png");
+            case MISC -> Identifier.fromNamespaceAndPath("error", "textures/system/misc.png");
+            case THEMES -> Identifier.fromNamespaceAndPath("error", "textures/system/themes.png");
+            case EVENTS -> Identifier.fromNamespaceAndPath("error", "textures/system/Heartbeat 1.png");
+            case CONFIGS -> Identifier.fromNamespaceAndPath("error", "textures/system/configs.png");
+            case FRIENDS -> Identifier.fromNamespaceAndPath("error", "textures/system/player1.png");
+            default -> null;
+        };
+    }
+
     @Override
     public void extractRenderState(GuiGraphicsExtractor extractor, int mouseX, int mouseY, float partialTick) {
         super.extractRenderState(extractor, mouseX, mouseY, partialTick);
 
         openAnim.update();
         scrollAnim.update();
+        configsScrollAnim.update();
+        friendsScrollAnim.update();
+        cosmeticsScrollAnim.update();
 
         int screenW = this.width > 0 ? this.width : (this.minecraft != null ? this.minecraft.getWindow().getGuiScaledWidth() : 854);
         int screenH = this.height > 0 ? this.height : (this.minecraft != null ? this.minecraft.getWindow().getGuiScaledHeight() : 480);
@@ -152,7 +198,7 @@ public class LiquidClickGui extends Screen {
                 .color(Color.rgba(0, 0, 0, Math.round(75 * animVal)))
                 .render(extractor);
 
-        // 2. Liquid Glass Window (The exact frosted Kawase Blur from RenderDemo)
+        // 2. Liquid Glass Window (Exact frosted Kawase Blur from RenderDemo)
         Blur.of(x, y, WINDOW_W, WINDOW_H)
                 .radius(12)
                 .type(BlurType.KAWASE)
@@ -168,7 +214,7 @@ public class LiquidClickGui extends Screen {
                 .alpha(animVal)
                 .render(extractor);
 
-        // 3. Settings Modal Liquid Glass Window (Exact same Kawase shader pipeline)
+        // 3. Settings Modal Liquid Glass Window
         if (this.settingsModalOpen) {
             float modalW = 340.0F;
             float modalH = (this.activeEditingColorSetting != null) ? 175.0F : 208.0F;
@@ -201,12 +247,14 @@ public class LiquidClickGui extends Screen {
             // Winter snowflakes
             renderSnowflakes(screenW, screenH, animVal);
 
-            // Subtle divider line
+            // Subtle divider line between sidebar and content
             Render2D.drawRoundedRect(x + SIDEBAR_W, y + 10.0F, 1.0F, WINDOW_H - 20.0F, 0.5F, ColorUtil.rgba(255, 255, 255, (int) (16 * animVal)));
 
-            // Sidebar and Header
+            // Sidebar (with Logo tinted by theme color and system asset icons)
             renderSidebar(x, y, mouseX, mouseY, animVal, accentColor);
-            renderHeader(x + SIDEBAR_W + 12.0F, y + 14.0F, WINDOW_W - SIDEBAR_W - 24.0F, mouseX, mouseY, animVal, accentColor);
+
+            // Header (with Settings Gear at top-right and Search bar to its left)
+            renderHeader(x, y, mouseX, mouseY, animVal, accentColor);
 
             // Content Section
             float contentX = x + SIDEBAR_W + 12.0F;
@@ -217,8 +265,10 @@ public class LiquidClickGui extends Screen {
             if (activeCategory == Category.CONFIGS) {
                 renderConfigsTab(contentX, contentY, contentW, contentH, mouseX, mouseY, animVal, accentColor);
             } else if (activeCategory == Category.FRIENDS) {
-                renderFriendsTab(contentX, contentY, contentW, contentH, mouseX, mouseY, animVal);
-            } else if (activeCategory == Category.EVENTS || activeCategory == Category.COSMETICS) {
+                renderFriendsTab(contentX, contentY, contentW, contentH, mouseX, mouseY, animVal, accentColor);
+            } else if (activeCategory == Category.COSMETICS) {
+                renderCosmeticsTab(extractor, contentX, contentY, contentW, contentH, mouseX, mouseY, animVal, accentColor);
+            } else if (activeCategory == Category.EVENTS) {
                 renderEventsTab(contentX, contentY, contentW, contentH, mouseX, mouseY, animVal, accentColor);
             } else {
                 renderModulesGrid(contentX, contentY, contentW, contentH, mouseX, mouseY, animVal, accentColor);
@@ -250,34 +300,19 @@ public class LiquidClickGui extends Screen {
     }
 
     private void renderSidebar(float x, float y, int mouseX, int mouseY, float alphaVal, int accentColor) {
-        // Gear Settings Button in the very top-left corner
-        float gearX = x + 9.0F;
-        float gearY = y + 10.0F;
-        float gearSize = 18.0F;
-        boolean gearHovered = mouseX >= gearX && mouseX <= gearX + gearSize && mouseY >= gearY && mouseY <= gearY + gearSize;
-        int gearBg = settingsModalOpen ? ColorUtil.withAlpha(accentColor, (int) (180 * alphaVal)) : (gearHovered ? ColorUtil.rgba(255, 255, 255, (int) (35 * alphaVal)) : ColorUtil.rgba(255, 255, 255, (int) (14 * alphaVal)));
-        int gearOutline = settingsModalOpen ? ColorUtil.withAlpha(accentColor, (int) (220 * alphaVal)) : (gearHovered ? ColorUtil.rgba(255, 255, 255, (int) (45 * alphaVal)) : ColorUtil.rgba(255, 255, 255, (int) (22 * alphaVal)));
+        // Logo from "D:\Error logo nonfone.png" placed in top-left sidebar header
+        // Tinted with theme accent color (+ зависимость цвета от темы)
+        float logoX = x + 9.0F;
+        float logoY = y + 8.5F;
+        float logoSize = 21.0F;
+        int logoTint = ColorUtil.withAlpha(accentColor, (int) (240 * alphaVal));
+        Render2D.drawTexture(LOGO_NONFONE, logoX, logoY, logoSize, logoSize, logoTint);
 
-        Render2D.drawRoundedRect(gearX, gearY, gearSize, gearSize, 4.5F, gearBg);
-        Render2D.drawRoundedOutline(gearX, gearY, gearSize, gearSize, 4.5F, 0.65F, gearOutline);
+        // Branding next to the logo
+        Fonts.drawString(Fonts.SF_MEDIUM, "Error DLC", logoX + logoSize + 6.0F, y + 9.5F, 8.5F, 0xFFFFFFFF);
+        Fonts.drawString(Fonts.SF_MEDIUM, "Winter 26.2", logoX + logoSize + 6.0F, y + 20.0F, 4.8F, 0xFFA0B0C4);
 
-        // Crisp geometric settings / sliders icon (no broken font/texture dependencies!)
-        int iconCol = settingsModalOpen ? 0xFFFFFFFF : (gearHovered ? accentColor : 0xFFB0C0D4);
-        float cy = gearY + gearSize / 2.0F;
-        Render2D.drawRoundedRect(gearX + 3.5F, cy - 3.8F, 11.0F, 1.4F, 0.7F, iconCol);
-        Render2D.drawCircle(gearX + 6.0F, cy - 3.1F, 1.6F, iconCol);
-
-        Render2D.drawRoundedRect(gearX + 3.5F, cy - 0.7F, 11.0F, 1.4F, 0.7F, iconCol);
-        Render2D.drawCircle(gearX + 11.0F, cy, 1.6F, iconCol);
-
-        Render2D.drawRoundedRect(gearX + 3.5F, cy + 2.4F, 11.0F, 1.4F, 0.7F, iconCol);
-        Render2D.drawCircle(gearX + 7.5F, cy + 3.1F, 1.6F, iconCol);
-
-        // Branding next to the gear button
-        Fonts.drawString(Fonts.SF_MEDIUM, "Error DLC", gearX + gearSize + 7.0F, y + 9.5F, 8.5F, 0xFFFFFFFF);
-        Fonts.drawString(Fonts.SF_MEDIUM, "Winter 26.2", gearX + gearSize + 7.0F, y + 20.0F, 4.8F, 0xFFA0B0C4);
-
-        // Category List (Themes removed)
+        // Category List (Themes tab filtered out as requested)
         Category[] categories = Arrays.stream(Category.values()).filter(c -> c != Category.THEMES).toArray(Category[]::new);
         float catY = y + 36.0F;
         float catH = 21.0F;
@@ -302,12 +337,17 @@ public class LiquidClickGui extends Screen {
                 Render2D.drawRoundedRect(catX, catY, catW, catH, 5.0F, ColorUtil.rgba(255, 255, 255, (int) (hVal * 16 * alphaVal)));
             }
 
-            // Clean category indicator dot (no broken font characters!)
-            int dotCol = active ? accentColor : ColorUtil.rgba(255, 255, 255, (int) ((isHovered ? 120 : 50) * alphaVal));
-            Render2D.drawCircle(catX + 10.0F, catY + catH / 2.0F, 2.2F, dotCol);
+            // Real Category Icon from system assets
+            Identifier catIcon = getCategoryIcon(cat);
+            int iconCol = active ? 0xFFFFFFFF : (isHovered ? 0xFFFFFFFF : ColorUtil.rgba(160, 180, 200, (int) (180 * alphaVal)));
+            if (catIcon != null) {
+                Render2D.drawTexture(catIcon, catX + 8.0F, catY + 5.0F, 11.0F, 11.0F, iconCol);
+            } else {
+                Render2D.drawCircle(catX + 13.0F, catY + catH / 2.0F, 2.2F, active ? accentColor : 0xFF8090A0);
+            }
 
             int nameCol = active ? 0xFFFFFFFF : 0xFFC0D0E0;
-            Fonts.drawString(Fonts.SF_MEDIUM, cat.getDisplayName(), catX + 18.0F, catY + 6.5F, 6.2F, nameCol);
+            Fonts.drawString(Fonts.SF_MEDIUM, cat.getDisplayName(), catX + 24.0F, catY + 6.5F, 6.2F, nameCol);
 
             // Badge count
             long enabledCount = Client.getInstance().moduleManager.getModules().stream()
@@ -345,30 +385,58 @@ public class LiquidClickGui extends Screen {
         Fonts.drawString(Fonts.SF_MEDIUM, "Developer", profileX + 26.0F, profileY + 14.0F, 4.2F, 0xFFA0B4C8);
     }
 
-    private void renderHeader(float x, float y, float w, int mouseX, int mouseY, float alphaVal, int accentColor) {
+    private void renderHeader(float x, float y, int mouseX, int mouseY, float alphaVal, int accentColor) {
+        float headerX = x + SIDEBAR_W + 12.0F;
+        float headerY = y + 14.0F;
+
+        // Title on the left
         String titleText = searchQuery.isEmpty() ? activeCategory.getDisplayName() : "Поиск: \"" + searchQuery + "\"";
-        Fonts.drawString(Fonts.SF_MEDIUM, titleText, x, y + 2.0F, 9.5F, 0xFFFFFFFF);
+        Fonts.drawString(Fonts.SF_MEDIUM, titleText, headerX, headerY + 2.0F, 9.5F, 0xFFFFFFFF);
 
-        // Search Bar (Pill) - shifted left by 35px from right margin
-        float searchW = 135.0F;
-        float searchH = 19.0F;
-        float searchX = x + w - searchW - 35.0F;
+        // Gear Settings Button strictly at the TOP-RIGHT corner
+        float gearSize = 18.0F;
+        float gearX = x + WINDOW_W - 14.0F - gearSize;
+        float gearY = headerY;
 
-        boolean isHovered = mouseX >= searchX && mouseX <= searchX + searchW && mouseY >= y && mouseY <= y + searchH;
+        boolean gearHovered = mouseX >= gearX && mouseX <= gearX + gearSize && mouseY >= gearY && mouseY <= gearY + gearSize;
+        int gearBg = settingsModalOpen ? ColorUtil.withAlpha(accentColor, (int) (180 * alphaVal)) : (gearHovered ? ColorUtil.rgba(255, 255, 255, (int) (35 * alphaVal)) : ColorUtil.rgba(255, 255, 255, (int) (14 * alphaVal)));
+        int gearOutline = settingsModalOpen ? ColorUtil.withAlpha(accentColor, (int) (220 * alphaVal)) : (gearHovered ? ColorUtil.rgba(255, 255, 255, (int) (45 * alphaVal)) : ColorUtil.rgba(255, 255, 255, (int) (22 * alphaVal)));
+
+        Render2D.drawRoundedRect(gearX, gearY, gearSize, gearSize, 4.5F, gearBg);
+        Render2D.drawRoundedOutline(gearX, gearY, gearSize, gearSize, 4.5F, 0.65F, gearOutline);
+
+        // Geometric sliders / settings icon
+        int iconCol = settingsModalOpen ? 0xFFFFFFFF : (gearHovered ? accentColor : 0xFFB0C0D4);
+        float cy = gearY + gearSize / 2.0F;
+        Render2D.drawRoundedRect(gearX + 3.5F, cy - 3.8F, 11.0F, 1.4F, 0.7F, iconCol);
+        Render2D.drawCircle(gearX + 6.0F, cy - 3.1F, 1.6F, iconCol);
+
+        Render2D.drawRoundedRect(gearX + 3.5F, cy - 0.7F, 11.0F, 1.4F, 0.7F, iconCol);
+        Render2D.drawCircle(gearX + 11.0F, cy, 1.6F, iconCol);
+
+        Render2D.drawRoundedRect(gearX + 3.5F, cy + 2.4F, 11.0F, 1.4F, 0.7F, iconCol);
+        Render2D.drawCircle(gearX + 7.5F, cy + 3.1F, 1.6F, iconCol);
+
+        // Search Bar placed to the left of the Settings button ("в поиске чуть левее")
+        float searchW = 125.0F;
+        float searchH = 18.0F;
+        float searchX = gearX - 10.0F - searchW;
+
+        boolean isHovered = mouseX >= searchX && mouseX <= searchX + searchW && mouseY >= gearY && mouseY <= gearY + searchH;
         int boxBg = ColorUtil.rgba(255, 255, 255, (int) ((searchFocused ? 18 : (isHovered ? 12 : 8)) * alphaVal));
         int boxBorder = searchFocused ? ColorUtil.withAlpha(accentColor, (int) (180 * alphaVal)) : ColorUtil.rgba(255, 255, 255, (int) (26 * alphaVal));
 
-        Render2D.drawRoundedRect(searchX, y, searchW, searchH, 4.5F, boxBg);
-        Render2D.drawRoundedOutline(searchX, y, searchW, searchH, 4.5F, 0.65F, boxBorder);
+        Render2D.drawRoundedRect(searchX, gearY, searchW, searchH, 4.5F, boxBg);
+        Render2D.drawRoundedOutline(searchX, gearY, searchW, searchH, 4.5F, 0.65F, boxBorder);
 
-        // Magnifying glass icon (pure Render2D, no font dependencies)
+        // Magnifying glass icon
         int scCol = searchFocused ? accentColor : 0xFF98A8C0;
-        Render2D.drawCircleOutline(searchX + 10.0F, y + 8.5F, 3.0F, 0.85F, scCol);
-        Render2D.drawRoundedRect(searchX + 12.0F, y + 10.5F, 3.2F, 1.1F, 0.55F, scCol);
+        Render2D.drawCircleOutline(searchX + 9.5F, gearY + 8.5F, 3.0F, 0.85F, scCol);
+        Render2D.drawRoundedRect(searchX + 11.5F, gearY + 10.5F, 3.2F, 1.1F, 0.55F, scCol);
 
         String displayText = searchQuery.isEmpty() ? (searchFocused ? "" : "Поиск...") : searchQuery;
         int textCol = searchQuery.isEmpty() && !searchFocused ? 0xFF8898B0 : 0xFFFFFFFF;
-        Fonts.drawString(Fonts.SF_MEDIUM, displayText + (searchFocused && (System.currentTimeMillis() % 1000 > 500) ? "_" : ""), searchX + 20.0F, y + 5.5F, 5.8F, textCol);
+        Fonts.drawString(Fonts.SF_MEDIUM, displayText + (searchFocused && (System.currentTimeMillis() % 1000 > 500) ? "_" : ""), searchX + 19.0F, gearY + 5.0F, 5.6F, textCol);
     }
 
     private void renderModulesGrid(float x, float y, float w, float h, int mouseX, int mouseY, float alphaVal, int accentColor) {
@@ -430,18 +498,14 @@ public class LiquidClickGui extends Screen {
         Animation toggleAnim = moduleToggleAnims.computeIfAbsent(module, k -> new Animation(module.isEnabled() ? 1.0F : 0.0F, 0.18F));
         toggleAnim.setTarget(module.isEnabled() ? 1.0F : 0.0F);
         toggleAnim.update();
-        float tVal = toggleAnim.getValue();
 
-        // Distinct styling: noticeable frosted glass card, but NOT a solid blue block!
         if (module.isEnabled()) {
-            // Elegant dark graphite glass with soft accent tint
             int cardBg = ColorUtil.rgba(24, 32, 48, (int) (170 * alphaVal));
             int cardOutline = ColorUtil.withAlpha(accentColor, (int) ((120 + (isHovered ? 40 : 0)) * alphaVal));
 
             Render2D.drawRoundedRect(x, y, w, h, 6.0F, cardBg);
             Render2D.drawRoundedOutline(x, y, w, h, 6.0F, 0.85F, cardOutline);
         } else {
-            // Inactive clean frosted glass card
             int cardBg = ColorUtil.rgba(20, 24, 34, (int) ((isHovered ? 130 : 90) * alphaVal));
             int cardOutline = ColorUtil.rgba(255, 255, 255, (int) ((isHovered ? 28 : 16) * alphaVal));
 
@@ -449,154 +513,141 @@ public class LiquidClickGui extends Screen {
             Render2D.drawRoundedOutline(x, y, w, h, 6.0F, 0.75F, cardOutline);
         }
 
-        // Status Indicator Dot
-        int dotCol = module.isEnabled() ? accentColor : ColorUtil.rgba(110, 120, 140, (int) (120 * alphaVal));
-        Render2D.drawCircle(x + 10.0F, y + 12.0F, 2.6F, dotCol);
-
         // Module Name
-        int titleCol = module.isEnabled() ? 0xFFFFFFFF : 0xFFC0D0E0;
-        Fonts.drawString(Fonts.SF_MEDIUM, module.getName(), x + 18.0F, y + 6.5F, 6.8F, titleCol);
+        int titleCol = module.isEnabled() ? 0xFFFFFFFF : 0xFFB8C8D8;
+        Fonts.drawString(Fonts.SF_MEDIUM, module.getName(), x + 10.0F, y + 8.5F, 6.8F, titleCol);
 
-        // Module Description
+        // Subtitle / Description
         String desc = module.getDescription();
-        if (desc != null && !desc.isEmpty()) {
-            float maxDescW = w - 58.0F;
-            Render2DUtil.pushScissor(x + 18.0F, y + 18.0F, maxDescW, 11.0F);
+        if (desc == null || desc.isEmpty()) desc = "Нажмите чтобы включить";
+        if (desc.length() > 28) desc = desc.substring(0, 25) + "...";
+        Fonts.drawString(Fonts.SF_MEDIUM, desc, x + 10.0F, y + 20.0F, 4.6F, 0xFF7A8B9E);
+
+        // Switch Toggle Button (Right side)
+        float switchW = 24.0F;
+        float switchH = 13.0F;
+        float switchX = x + w - switchW - 9.0F;
+        float switchY = y + 10.5F;
+
+        int switchBg = module.isEnabled() ? ColorUtil.withAlpha(accentColor, (int) (220 * alphaVal)) : ColorUtil.rgba(255, 255, 255, (int) (24 * alphaVal));
+        Render2D.drawRoundedRect(switchX, switchY, switchW, switchH, 6.5F, switchBg);
+        Render2D.drawRoundedOutline(switchX, switchY, switchW, switchH, 6.5F, 0.65F, ColorUtil.rgba(255, 255, 255, (int) (35 * alphaVal)));
+
+        float knobX = module.isEnabled() ? switchX + switchW - 6.5F : switchX + 6.5F;
+        Render2D.drawCircle(knobX, switchY + switchH / 2.0F, 4.5F, 0xFFFFFFFF);
+
+        // Expanded Settings Section
+        if (expandVal > 0.01F) {
+            float settingsY = y + 33.0F;
+            Render2D.drawRoundedRect(x + 6.0F, settingsY, w - 12.0F, 1.0F, 0.5F, ColorUtil.rgba(255, 255, 255, (int) (expandVal * 14 * alphaVal)));
+
+            Render2DUtil.pushScissor(x, settingsY, w, h - 33.0F);
             try {
-                Fonts.drawString(Fonts.SF_MEDIUM, desc, x + 18.0F, y + 18.0F, 4.6F, 0xFF8898B0);
+                float curSetY = settingsY + 3.0F;
+                for (Setting<?> setting : module.getSettings()) {
+                    float sH = getSettingHeight(setting);
+                    renderSetting(setting, x + 8.0F, curSetY, w - 16.0F, sH, mouseX, mouseY, alphaVal * expandVal, accentColor);
+                    curSetY += sH;
+                }
             } finally {
                 Render2DUtil.popScissor();
             }
         }
-
-        // Toggle Switch Widget
-        float switchW = 24.0F;
-        float switchH = 12.0F;
-        float switchX = x + w - switchW - 8.0F;
-        float switchY = y + 11.0F;
-
-        int trackCol = tVal > 0.01F ? ColorUtil.withAlpha(accentColor, (int) (210 * alphaVal)) : ColorUtil.rgba(255, 255, 255, (int) (26 * alphaVal));
-        Render2D.drawRoundedRect(switchX, switchY, switchW, switchH, 6.0F, trackCol);
-
-        // Knob
-        float knobSize = 8.0F;
-        float knobX = switchX + 2.0F + (switchW - knobSize - 4.0F) * tVal;
-        float knobY = switchY + 2.0F;
-        Render2D.drawRoundedRect(knobX, knobY, knobSize, knobSize, 4.0F, 0xFFFFFFFF);
-
-        // Settings section
-        if (expandVal > 0.01F) {
-            float setY = y + 33.0F;
-            List<Setting<?>> settings = module.getSettings();
-            for (Setting<?> setting : settings) {
-                renderSettingRow(setting, x + 9.0F, setY, w - 18.0F, mouseX, mouseY, expandVal * alphaVal, accentColor);
-                setY += getSettingHeight(setting);
-            }
-        }
     }
 
-    private void renderSettingRow(Setting<?> setting, float x, float y, float w, int mouseX, int mouseY, float alphaVal, int accentColor) {
+    private void renderSetting(Setting<?> setting, float x, float y, float w, float h, int mouseX, int mouseY, float alphaVal, int accentColor) {
         if (setting instanceof CheckBox cb) {
-            Fonts.drawString(Fonts.SF_MEDIUM, cb.getName(), x, y + 2.0F, 5.6F, 0xFFE0E8F5);
+            Fonts.drawString(Fonts.SF_MEDIUM, cb.getName(), x + 4.0F, y + 4.5F, 5.2F, 0xFFD0E0F0);
 
-            float boxSize = 10.5F;
-            float boxX = x + w - boxSize;
-            boolean isHovered = mouseX >= boxX && mouseX <= boxX + boxSize && mouseY >= y && mouseY <= y + boxSize;
+            float boxSize = 10.0F;
+            float boxX = x + w - boxSize - 4.0F;
+            float boxY = y + 3.0F;
 
-            int boxBg = cb.getValue() ? accentColor : ColorUtil.rgba(255, 255, 255, (int) ((isHovered ? 35 : 20) * alphaVal));
-            Render2D.drawRoundedRect(boxX, y, boxSize, boxSize, 3.0F, boxBg);
+            int boxBg = cb.getValue() ? ColorUtil.withAlpha(accentColor, (int) (220 * alphaVal)) : ColorUtil.rgba(255, 255, 255, (int) (16 * alphaVal));
+            Render2D.drawRoundedRect(boxX, boxY, boxSize, boxSize, 2.5F, boxBg);
+            Render2D.drawRoundedOutline(boxX, boxY, boxSize, boxSize, 2.5F, 0.65F, ColorUtil.rgba(255, 255, 255, (int) (35 * alphaVal)));
 
             if (cb.getValue()) {
-                Fonts.drawCenteredString(Fonts.SF_MEDIUM, "✓", boxX + boxSize / 2.0F, y + 1.2F, 6.2F, 0xFFFFFFFF);
+                Fonts.drawCenteredString(Fonts.SF_MEDIUM, "✓", boxX + boxSize / 2.0F, boxY + 1.5F, 4.5F, 0xFFFFFFFF);
             }
-        } else if (setting instanceof SliderSetting sl) {
-            float val = sl.getValue();
-            float min = sl.getMin();
-            float max = sl.getMax();
-            float pct = (val - min) / (max - min);
+        } else if (setting instanceof SliderSetting slider) {
+            Fonts.drawString(Fonts.SF_MEDIUM, slider.getName(), x + 4.0F, y + 2.0F, 5.0F, 0xFFD0E0F0);
 
-            Fonts.drawString(Fonts.SF_MEDIUM, sl.getName(), x, y, 5.6F, 0xFFE0E8F5);
-            String valStr = String.format("%.1f", val);
-            float valW = Fonts.SF_MEDIUM.getWidth(valStr, 5.2F);
-            Fonts.drawString(Fonts.SF_MEDIUM, valStr, x + w - valW, y, 5.2F, 0xFFA0B4C8);
+            String valStr = String.format(Locale.US, "%.1f", slider.getValue());
+            float valW = Fonts.SF_MEDIUM.getWidth(valStr, 4.8F);
+            Fonts.drawString(Fonts.SF_MEDIUM, valStr, x + w - 4.0F - valW, y + 2.0F, 4.8F, 0xFFA0B4C8);
 
-            float barY = y + 9.5F;
-            float barH = 3.5F;
-            Render2D.drawRoundedRect(x, barY, w, barH, 1.8F, ColorUtil.rgba(255, 255, 255, (int) (22 * alphaVal)));
+            float trackY = y + 11.5F;
+            float trackH = 3.5F;
+            Render2D.drawRoundedRect(x + 4.0F, trackY, w - 8.0F, trackH, 1.75F, ColorUtil.rgba(255, 255, 255, (int) (18 * alphaVal)));
 
-            float fillW = Math.max(3.5F, w * pct);
-            Render2D.drawRoundedRect(x, barY, fillW, barH, 1.8F, accentColor);
+            float pct = (slider.getValue() - slider.getMin()) / (slider.getMax() - slider.getMin());
+            pct = Math.clamp(pct, 0.0F, 1.0F);
+            float fillW = (w - 8.0F) * pct;
 
-            float handleX = x + fillW - 2.0F;
-            Render2D.drawCircle(handleX, barY + 1.8F, 3.0F, 0xFFFFFFFF);
-        } else if (setting instanceof BindSetting b) {
-            Fonts.drawString(Fonts.SF_MEDIUM, "Назначение клавиши", x, y + 2.0F, 5.6F, 0xFFE0E8F5);
+            if (fillW > 0.5F) {
+                Render2D.drawRoundedRect(x + 4.0F, trackY, fillW, trackH, 1.75F, ColorUtil.withAlpha(accentColor, (int) (220 * alphaVal)));
+            }
 
-            String bindText = (activeBindingSetting == b) ? "[...]" : b.getDisplayValue();
-            float btnW = 46.0F;
-            float btnH = 12.0F;
-            float btnX = x + w - btnW;
+            Render2D.drawCircle(x + 4.0F + fillW, trackY + trackH / 2.0F, 3.5F, 0xFFFFFFFF);
+        } else if (setting instanceof ModeSetting mode) {
+            Fonts.drawString(Fonts.SF_MEDIUM, mode.getName(), x + 4.0F, y + 4.5F, 5.2F, 0xFFD0E0F0);
 
-            Render2D.drawRoundedRect(btnX, y, btnW, btnH, 3.0F, ColorUtil.rgba(255, 255, 255, (int) (20 * alphaVal)));
-            Fonts.drawCenteredString(Fonts.SF_MEDIUM, bindText, btnX + btnW / 2.0F, y + 2.5F, 5.0F, 0xFFFFFFFF);
-        } else if (setting instanceof ModeSetting ms) {
-            Fonts.drawString(Fonts.SF_MEDIUM, ms.getName(), x, y + 2.0F, 5.6F, 0xFFE0E8F5);
+            String val = mode.getValue();
+            float valW = Fonts.SF_MEDIUM.getWidth(val, 5.0F);
+            float btnW = Math.max(34.0F, valW + 8.0F);
+            float btnX = x + w - btnW - 4.0F;
+            float btnY = y + 2.5F;
 
-            String val = ms.getValue();
-            float valW = Fonts.SF_MEDIUM.getWidth(val, 5.2F);
-            float btnW = Math.max(42.0F, valW + 12.0F);
-            float btnH = 12.0F;
-            float btnX = x + w - btnW;
+            Render2D.drawRoundedRect(btnX, btnY, btnW, 11.5F, 3.0F, ColorUtil.rgba(255, 255, 255, (int) (18 * alphaVal)));
+            Render2D.drawRoundedOutline(btnX, btnY, btnW, 11.5F, 3.0F, 0.6F, ColorUtil.rgba(255, 255, 255, (int) (30 * alphaVal)));
+            Fonts.drawCenteredString(Fonts.SF_MEDIUM, val, btnX + btnW / 2.0F, btnY + 2.5F, 4.8F, 0xFFFFFFFF);
+        } else if (setting instanceof BindSetting bind) {
+            Fonts.drawString(Fonts.SF_MEDIUM, bind.getName(), x + 4.0F, y + 4.5F, 5.2F, 0xFFD0E0F0);
 
-            boolean isHovered = mouseX >= btnX && mouseX <= btnX + btnW && mouseY >= y && mouseY <= y + btnH;
-            int btnBg = ColorUtil.rgba(255, 255, 255, (int) ((isHovered ? 28 : 16) * alphaVal));
-            Render2D.drawRoundedRect(btnX, y, btnW, btnH, 3.0F, btnBg);
-            Render2D.drawRoundedOutline(btnX, y, btnW, btnH, 3.0F, 0.65F, isHovered ? accentColor : ColorUtil.rgba(255, 255, 255, (int) (26 * alphaVal)));
-            Fonts.drawCenteredString(Fonts.SF_MEDIUM, val, btnX + btnW / 2.0F, y + 2.5F, 5.0F, 0xFFFFFFFF);
-        } else if (setting instanceof ColorSetting cs) {
-            Fonts.drawString(Fonts.SF_MEDIUM, cs.getName(), x, y + 2.0F, 5.6F, 0xFFE0E8F5);
+            String keyText = (this.activeBindingSetting == bind) ? "[...]" : (bind.getValue().isEmpty() ? "NONE" : KeyUtil.getKeyName(bind.getValue().get(0)));
+            float valW = Fonts.SF_MEDIUM.getWidth(keyText, 5.0F);
+            float btnW = Math.max(26.0F, valW + 8.0F);
+            float btnX = x + w - btnW - 4.0F;
+            float btnY = y + 2.5F;
 
-            int curCol = cs.getValue();
-            String hex = String.format("#%06X", curCol & 0x00FFFFFF);
-            float hexW = Fonts.SF_MEDIUM.getWidth(hex, 4.8F);
-            float swatchSize = 9.5F;
-            float btnW = swatchSize + 5.0F + hexW + 6.0F;
-            float btnH = 12.0F;
-            float btnX = x + w - btnW;
+            int bg = (this.activeBindingSetting == bind) ? ColorUtil.withAlpha(accentColor, (int) (200 * alphaVal)) : ColorUtil.rgba(255, 255, 255, (int) (18 * alphaVal));
+            Render2D.drawRoundedRect(btnX, btnY, btnW, 11.5F, 3.0F, bg);
+            Render2D.drawRoundedOutline(btnX, btnY, btnW, 11.5F, 3.0F, 0.6F, ColorUtil.rgba(255, 255, 255, (int) (30 * alphaVal)));
+            Fonts.drawCenteredString(Fonts.SF_MEDIUM, keyText, btnX + btnW / 2.0F, btnY + 2.5F, 4.8F, 0xFFFFFFFF);
+        } else if (setting instanceof ColorSetting color) {
+            Fonts.drawString(Fonts.SF_MEDIUM, color.getName(), x + 4.0F, y + 4.5F, 5.2F, 0xFFD0E0F0);
 
-            boolean isHovered = mouseX >= btnX && mouseX <= btnX + btnW && mouseY >= y && mouseY <= y + btnH;
-            int btnBg = ColorUtil.rgba(255, 255, 255, (int) ((isHovered ? 28 : 16) * alphaVal));
-            Render2D.drawRoundedRect(btnX, y, btnW, btnH, 3.0F, btnBg);
-            Render2D.drawRoundedOutline(btnX, y, btnW, btnH, 3.0F, 0.65F, isHovered ? accentColor : ColorUtil.rgba(255, 255, 255, (int) (26 * alphaVal)));
+            float pillW = 22.0F;
+            float pillH = 10.0F;
+            float pillX = x + w - pillW - 4.0F;
+            float pillY = y + 3.0F;
 
-            Render2D.drawRoundedRect(btnX + 3.0F, y + 1.25F, swatchSize, swatchSize, 2.5F, curCol);
-            Render2D.drawRoundedOutline(btnX + 3.0F, y + 1.25F, swatchSize, swatchSize, 2.5F, 0.5F, 0xFFFFFFFF);
-            Fonts.drawString(Fonts.SF_MEDIUM, hex, btnX + 3.0F + swatchSize + 3.5F, y + 2.5F, 4.8F, 0xFFE0E8F5);
+            Render2D.drawRoundedRect(pillX, pillY, pillW, pillH, 3.0F, color.getValue());
+            Render2D.drawRoundedOutline(pillX, pillY, pillW, pillH, 3.0F, 0.65F, ColorUtil.rgba(255, 255, 255, (int) (50 * alphaVal)));
         }
     }
 
-    // ===================== SETTINGS MODAL & COLOR PICKER =====================
-
-    private void openSettingsModal() {
-        this.activeEditingColorSetting = null;
+    public void openSettingsModal() {
         this.settingsModalOpen = true;
+        this.activeEditingColorSetting = null;
         this.bindingClickGuiKey = false;
         syncPickerFromCurrent();
     }
 
-    private void openColorSettingModal(ColorSetting cs) {
-        this.activeEditingColorSetting = cs;
+    public void openColorSettingModal(ColorSetting setting) {
         this.settingsModalOpen = true;
+        this.activeEditingColorSetting = setting;
         this.bindingClickGuiKey = false;
-        float[] hsv = ColorUtil.toHsv(cs.getValue());
+        float[] hsv = ColorUtil.toHsv(setting.getValue());
         this.pickerHue = hsv[0];
         this.pickerSat = hsv[1];
         this.pickerBri = hsv[2];
     }
 
     private void syncPickerFromCurrent() {
-        int targetColor = editingSecondaryColor ? Theme.getSecondaryColor() : Theme.getAccentColor();
-        float[] hsv = ColorUtil.toHsv(targetColor);
+        int currentColor = editingSecondaryColor ? Theme.getSecondaryColor() : Theme.getAccentColor();
+        float[] hsv = ColorUtil.toHsv(currentColor);
         this.pickerHue = hsv[0];
         this.pickerSat = hsv[1];
         this.pickerBri = hsv[2];
@@ -664,7 +715,7 @@ public class LiquidClickGui extends Screen {
         // Dim background behind modal
         Render2D.drawRoundedRect(0, 0, screenW, screenH, 0.0F, ColorUtil.rgba(0, 0, 0, (int) (120 * alphaVal)));
 
-        // Shadow and subtle glass body (Kawase Blur & Outline are already flushed via DisplayBatcher!)
+        // Shadow and subtle glass body
         Render2D.drawShadow(modalX, modalY, modalW, modalH, 12.0F, 24.0F, ColorUtil.rgba(0, 0, 0, (int) (220 * alphaVal)));
         Render2D.drawRoundedRect(modalX, modalY, modalW, modalH, 12.0F, ColorUtil.rgba(14, 18, 28, (int) (85 * alphaVal)));
 
@@ -672,7 +723,7 @@ public class LiquidClickGui extends Screen {
         float headY = modalY + 8.0F;
         float iconX = modalX + 13.0F;
         float iconY = headY + 2.0F;
-        // Crisp geometric sliders icon
+
         Render2D.drawRoundedRect(iconX, iconY + 1.0F, 10.0F, 1.3F, 0.6F, accentColor);
         Render2D.drawCircle(iconX + 3.0F, iconY + 1.6F, 1.5F, accentColor);
         Render2D.drawRoundedRect(iconX, iconY + 4.5F, 10.0F, 1.3F, 0.6F, accentColor);
@@ -770,13 +821,12 @@ public class LiquidClickGui extends Screen {
             fieldY = modalY + 32.0F;
         }
 
-        // 2D Color Picker (Exact style from screenshot media_1791122441486.png)
+        // 2D Color Picker (Saturation / Brightness Field)
         float fieldX = modalX + 14.0F;
         float fieldW = 145.0F;
         float fieldH = 100.0F;
 
         int pureHue = ColorUtil.fromHsv(pickerHue, 1.0F, 1.0F, 255);
-        // 2D Gradient Box (Bilinear interpolation: Top-Left White, Top-Right Pure Hue, Bottom-Left & Bottom-Right Black)
         Render2D.drawGradientRound(fieldX, fieldY, fieldW, fieldH, 4.0F, 0xFFFFFFFF, pureHue, 0xFF000000, 0xFF000000);
         Render2D.drawRoundedOutline(fieldX, fieldY, fieldW, fieldH, 4.0F, 0.75F, ColorUtil.rgba(255, 255, 255, (int) (45 * alphaVal)));
 
@@ -799,29 +849,30 @@ public class LiquidClickGui extends Screen {
             float h2 = (float) (i + 1) / steps;
             int c1 = ColorUtil.fromHsv(h1, 1.0F, 1.0F, 255);
             int c2 = ColorUtil.fromHsv(h2, 1.0F, 1.0F, 255);
-            Render2D.drawGradientRound(hueX, hueY + i * stepH, hueW, stepH + 0.5F, 0.0F, c1, c1, c2, c2);
+            Render2D.drawGradientRound(hueX, hueY + i * stepH, hueW, stepH + 0.5F, 1.5F, c1, c1, c2, c2);
         }
-        Render2D.drawRoundedOutline(hueX, hueY, hueW, hueH, 3.0F, 0.75F, ColorUtil.rgba(255, 255, 255, (int) (45 * alphaVal)));
+        Render2D.drawRoundedOutline(hueX, hueY, hueW, hueH, 3.0F, 0.75F, ColorUtil.rgba(255, 255, 255, (int) (40 * alphaVal)));
 
-        // Slider Marker on Vertical Hue Bar
-        float markerY = Math.clamp(hueY + pickerHue * hueH, hueY, hueY + hueH);
-        Render2D.drawRoundedRect(hueX - 2.0F, markerY - 2.0F, hueW + 4.0F, 4.0F, 1.5F, 0xFFFFFFFF);
-        Render2D.drawRoundedOutline(hueX - 2.0F, markerY - 2.0F, hueW + 4.0F, 4.0F, 1.5F, 0.6F, 0xFF000000);
+        // Handle indicator on Hue Bar
+        float hueHandleY = Math.clamp(hueY + pickerHue * hueH, hueY + 2.0F, hueY + hueH - 2.0F);
+        Render2D.drawRoundedRect(hueX - 1.5F, hueHandleY - 1.5F, hueW + 3.0F, 3.0F, 1.5F, 0xFFFFFFFF);
+        Render2D.drawRoundedOutline(hueX - 1.5F, hueHandleY - 1.5F, hueW + 3.0F, 3.0F, 1.5F, 0.65F, 0xFF000000);
 
-        // Right side info panel
+        // Right side info & Quick Presets
         float rightX = hueX + hueW + 12.0F;
-        float rightW = modalX + modalW - 14.0F - rightX;
+        float rightW = modalW - (rightX - modalX) - 14.0F;
 
-        // Big live Color Swatch with HEX
-        int curChosen = ColorUtil.fromHsv(pickerHue, pickerSat, pickerBri, 255);
-        String hexStr = String.format("#%06X", curChosen & 0x00FFFFFF);
-        Render2D.drawRoundedRect(rightX, fieldY, rightW, 26.0F, 4.0F, curChosen);
-        Render2D.drawRoundedOutline(rightX, fieldY, rightW, 26.0F, 4.0F, 0.75F, 0xFFFFFFFF);
-        int textCol = (pickerBri > 0.65F && pickerSat < 0.4F) ? 0xFF000000 : 0xFFFFFFFF;
-        Fonts.drawCenteredString(Fonts.SF_MEDIUM, hexStr, rightX + rightW / 2.0F, fieldY + 8.5F, 6.5F, textCol);
+        int finalColor = ColorUtil.fromHsv(pickerHue, pickerSat, pickerBri, 255);
 
-        // Presets Header
-        Fonts.drawString(Fonts.SF_MEDIUM, "Быстрые цвета:", rightX, fieldY + 34.0F, 5.0F, 0xFFB0C0D4);
+        // Color Preview Box
+        Render2D.drawRoundedRect(rightX, fieldY, rightW, 22.0F, 4.0F, finalColor);
+        Render2D.drawRoundedOutline(rightX, fieldY, rightW, 22.0F, 4.0F, 0.75F, ColorUtil.rgba(255, 255, 255, (int) (40 * alphaVal)));
+
+        String hexText = String.format("#%06X", (finalColor & 0xFFFFFF));
+        Fonts.drawCenteredString(Fonts.SF_MEDIUM, hexText, rightX + rightW / 2.0F, fieldY + 6.0F, 6.2F, 0xFFFFFFFF);
+
+        // Quick Swatches
+        Fonts.drawString(Fonts.SF_MEDIUM, "Быстрые цвета:", rightX, fieldY + 31.0F, 5.0F, 0xFFA0B4C8);
 
         int[] presets = new int[]{
                 ColorUtil.rgb(0, 180, 255),    // Ice Blue
@@ -836,56 +887,393 @@ public class LiquidClickGui extends Screen {
 
         float pSize = 14.0F;
         float pGap = 6.0F;
-
         for (int i = 0; i < presets.length; i++) {
             float px = rightX + (i % 4) * (pSize + pGap);
             float py = fieldY + 45.0F + (i / 4) * 21.0F;
-            boolean pHover = mouseX >= px && mouseX <= px + pSize && mouseY >= py && mouseY <= py + pSize;
-
-            Render2D.drawRoundedRect(px, py, pSize, pSize, 3.5F, presets[i]);
-            Render2D.drawRoundedOutline(px, py, pSize, pSize, 3.5F, 0.65F, pHover ? 0xFFFFFFFF : ColorUtil.rgba(255, 255, 255, (int) (40 * alphaVal)));
+            Render2D.drawRoundedRect(px, py, pSize, pSize, 3.0F, presets[i]);
+            Render2D.drawRoundedOutline(px, py, pSize, pSize, 3.0F, 0.6F, ColorUtil.rgba(255, 255, 255, (int) (40 * alphaVal)));
         }
-
-        // Live HSB info
-        Fonts.drawString(Fonts.SF_MEDIUM, "H:" + Math.round(pickerHue * 360) + "° S:" + Math.round(pickerSat * 100) + "% V:" + Math.round(pickerBri * 100) + "%", rightX, fieldY + 89.0F, 4.6F, 0xFFA0B4C8);
-
-        // Footer Divider & Note
-        float footY = modalY + modalH - 26.0F;
-        Render2D.drawRoundedRect(modalX + 10.0F, footY, modalW - 20.0F, 1.0F, 0.5F, ColorUtil.rgba(255, 255, 255, (int) (14 * alphaVal)));
-        Fonts.drawCenteredString(Fonts.SF_MEDIUM, "✦ Кликните по палитре или двигайте ползунок для выбора любого цвета", modalX + modalW / 2.0F, footY + 8.0F, 4.8F, 0xFF8898B0);
     }
 
     private void renderConfigsTab(float x, float y, float w, float h, int mouseX, int mouseY, float alphaVal, int accentColor) {
         Render2D.drawRoundedRect(x, y, w, h, 7.0F, ColorUtil.rgba(20, 24, 34, (int) (90 * alphaVal)));
         Render2D.drawRoundedOutline(x, y, w, h, 7.0F, 0.7F, ColorUtil.rgba(255, 255, 255, (int) (20 * alphaVal)));
 
-        Fonts.drawString(Fonts.SF_MEDIUM, "Менеджер Конфигураций", x + 14.0F, y + 14.0F, 9.0F, 0xFFFFFFFF);
-        Fonts.drawString(Fonts.SF_MEDIUM, "Сохраняйте и загружайте настройки клиента", x + 14.0F, y + 26.0F, 5.5F, 0xFFA0B0C4);
+        // Top Action Bar: Create Config Input + Buttons
+        float row1Y = y + 8.0F;
+        float inputW = w - 145.0F;
+        float inputH = 19.0F;
 
-        String[] presets = new String[]{"default", "legit_funtime", "rage_hvh", "skywars_boost"};
-        float itemY = y + 46.0F;
-        for (String preset : presets) {
-            Render2D.drawRoundedRect(x + 14.0F, itemY, w - 28.0F, 24.0F, 5.0F, ColorUtil.rgba(255, 255, 255, (int) (14 * alphaVal)));
-            Render2D.drawRoundedOutline(x + 14.0F, itemY, w - 28.0F, 24.0F, 5.0F, 0.7F, ColorUtil.rgba(255, 255, 255, (int) (22 * alphaVal)));
+        // New Config Input Field
+        int inputBg = ColorUtil.rgba(255, 255, 255, (int) ((newConfigFocused ? 18 : 10) * alphaVal));
+        int inputBorder = newConfigFocused ? ColorUtil.withAlpha(accentColor, (int) (190 * alphaVal)) : ColorUtil.rgba(255, 255, 255, (int) (26 * alphaVal));
+        Render2D.drawRoundedRect(x + 10.0F, row1Y, inputW, inputH, 4.0F, inputBg);
+        Render2D.drawRoundedOutline(x + 10.0F, row1Y, inputW, inputH, 4.0F, 0.65F, inputBorder);
 
-            Fonts.drawString(Fonts.SF_MEDIUM, preset + ".json", x + 24.0F, itemY + 8.0F, 6.5F, 0xFFFFFFFF);
+        String newCfgDisplay = newConfigInput.isEmpty() ? (newConfigFocused ? "" : "Имя нового конфига...") : newConfigInput;
+        int newCfgColor = newConfigInput.isEmpty() && !newConfigFocused ? 0xFF8090A4 : 0xFFFFFFFF;
+        Fonts.drawString(Fonts.SF_MEDIUM, newCfgDisplay + (newConfigFocused && (System.currentTimeMillis() % 1000 > 500) ? "_" : ""), x + 16.0F, row1Y + 5.0F, 5.5F, newCfgColor);
 
-            float loadBtnX = x + w - 85.0F;
-            Render2D.drawRoundedRect(loadBtnX, itemY + 4.0F, 60.0F, 16.0F, 3.5F, ColorUtil.withAlpha(accentColor, (int) (190 * alphaVal)));
-            Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Загрузить", loadBtnX + 30.0F, itemY + 7.5F, 5.2F, 0xFFFFFFFF);
+        // "+ Создать" Button
+        float createBtnX = x + 10.0F + inputW + 6.0F;
+        float createBtnW = 64.0F;
+        boolean createHover = mouseX >= createBtnX && mouseX <= createBtnX + createBtnW && mouseY >= row1Y && mouseY <= row1Y + inputH;
+        int createBg = ColorUtil.withAlpha(accentColor, (int) ((createHover ? 220 : 180) * alphaVal));
+        Render2D.drawRoundedRect(createBtnX, row1Y, createBtnW, inputH, 4.0F, createBg);
+        Fonts.drawCenteredString(Fonts.SF_MEDIUM, "+ Создать", createBtnX + createBtnW / 2.0F, row1Y + 5.0F, 5.4F, 0xFFFFFFFF);
 
-            itemY += 28.0F;
+        // "Папка" Button
+        float folderBtnX = createBtnX + createBtnW + 5.0F;
+        float folderBtnW = 50.0F;
+        boolean folderHover = mouseX >= folderBtnX && mouseX <= folderBtnX + folderBtnW && mouseY >= row1Y && mouseY <= row1Y + inputH;
+        int folderBg = ColorUtil.rgba(255, 255, 255, (int) ((folderHover ? 26 : 14) * alphaVal));
+        Render2D.drawRoundedRect(folderBtnX, row1Y, folderBtnW, inputH, 4.0F, folderBg);
+        Render2D.drawRoundedOutline(folderBtnX, row1Y, folderBtnW, inputH, 4.0F, 0.65F, ColorUtil.rgba(255, 255, 255, (int) (30 * alphaVal)));
+        Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Папка", folderBtnX + folderBtnW / 2.0F, row1Y + 5.0F, 5.4F, 0xFFD0E0F0);
+
+        // Row 2: Share Key Import Field + "Импорт по ключу" Button
+        float row2Y = row1Y + 24.0F;
+        float keyInputW = w - 110.0F;
+        float keyInputH = 18.0F;
+
+        int keyBg = ColorUtil.rgba(255, 255, 255, (int) ((shareKeyFocused ? 18 : 10) * alphaVal));
+        int keyBorder = shareKeyFocused ? ColorUtil.withAlpha(accentColor, (int) (190 * alphaVal)) : ColorUtil.rgba(255, 255, 255, (int) (26 * alphaVal));
+        Render2D.drawRoundedRect(x + 10.0F, row2Y, keyInputW, keyInputH, 4.0F, keyBg);
+        Render2D.drawRoundedOutline(x + 10.0F, row2Y, keyInputW, keyInputH, 4.0F, 0.65F, keyBorder);
+
+        String keyDisplay = shareKeyInput.isEmpty() ? (shareKeyFocused ? "" : "Вставьте ключ (ERR$...)...") : shareKeyInput;
+        int keyColor = shareKeyInput.isEmpty() && !shareKeyFocused ? 0xFF8090A4 : 0xFFFFFFFF;
+        Fonts.drawString(Fonts.SF_MEDIUM, keyDisplay + (shareKeyFocused && (System.currentTimeMillis() % 1000 > 500) ? "_" : ""), x + 16.0F, row2Y + 4.5F, 5.2F, keyColor);
+
+        // "Импорт" Button
+        float importBtnX = x + 10.0F + keyInputW + 6.0F;
+        float importBtnW = w - 20.0F - keyInputW - 6.0F;
+        boolean importHover = mouseX >= importBtnX && mouseX <= importBtnX + importBtnW && mouseY >= row2Y && mouseY <= row2Y + keyInputH;
+        int importBg = ColorUtil.rgba(255, 255, 255, (int) ((importHover ? 26 : 14) * alphaVal));
+        Render2D.drawRoundedRect(importBtnX, row2Y, importBtnW, keyInputH, 4.0F, importBg);
+        Render2D.drawRoundedOutline(importBtnX, row2Y, importBtnW, keyInputH, 4.0F, 0.65F, ColorUtil.withAlpha(accentColor, (int) (160 * alphaVal)));
+        Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Импорт", importBtnX + importBtnW / 2.0F, row2Y + 4.5F, 5.2F, 0xFFFFFFFF);
+
+        // Divider
+        float divY = row2Y + 23.0F;
+        Render2D.drawRoundedRect(x + 10.0F, divY, w - 20.0F, 1.0F, 0.5F, ColorUtil.rgba(255, 255, 255, (int) (14 * alphaVal)));
+
+        // Configs List Section
+        List<String> configs = (Client.INSTANCE != null && Client.INSTANCE.configManager != null) ? Client.INSTANCE.configManager.getAvailableConfigs() : List.of("default");
+        String curConfig = (Client.INSTANCE != null && Client.INSTANCE.configManager != null) ? Client.INSTANCE.configManager.getCurrentConfig() : "default";
+
+        Fonts.drawString(Fonts.SF_MEDIUM, "Сохраненные конфигурации (" + configs.size() + ")", x + 12.0F, divY + 5.0F, 5.5F, 0xFFA0B4C8);
+
+        float listY = divY + 16.0F;
+        float listH = (y + h) - listY - 8.0F;
+
+        Render2DUtil.pushScissor(x + 8.0F, listY, w - 16.0F, listH);
+        try {
+            float startItemY = listY - configsScrollAnim.getValue();
+            float itemY = startItemY;
+
+            for (String cfg : configs) {
+                boolean isCurrent = cfg.equalsIgnoreCase(curConfig);
+                float itemH = 25.0F;
+                float itemW = w - 24.0F;
+                float itemX = x + 12.0F;
+
+                if (itemY + itemH >= listY && itemY <= listY + listH) {
+                    boolean itemHover = mouseX >= itemX && mouseX <= itemX + itemW && mouseY >= itemY && mouseY <= itemY + itemH;
+                    int cardBg = isCurrent ? ColorUtil.rgba(28, 36, 52, (int) (180 * alphaVal)) : ColorUtil.rgba(255, 255, 255, (int) ((itemHover ? 18 : 10) * alphaVal));
+                    int cardBorder = isCurrent ? ColorUtil.withAlpha(accentColor, (int) (140 * alphaVal)) : ColorUtil.rgba(255, 255, 255, (int) (18 * alphaVal));
+
+                    Render2D.drawRoundedRect(itemX, itemY, itemW, itemH, 4.5F, cardBg);
+                    Render2D.drawRoundedOutline(itemX, itemY, itemW, itemH, 4.5F, 0.65F, cardBorder);
+
+                    // Name & Badge
+                    Fonts.drawString(Fonts.SF_MEDIUM, cfg + ".json", itemX + 10.0F, itemY + 8.0F, 6.2F, 0xFFFFFFFF);
+                    if (isCurrent) {
+                        float curTagX = itemX + 16.0F + Fonts.SF_MEDIUM.getWidth(cfg + ".json", 6.2F);
+                        Render2D.drawRoundedRect(curTagX, itemY + 6.0F, 36.0F, 12.0F, 3.0F, ColorUtil.withAlpha(accentColor, (int) (180 * alphaVal)));
+                        Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Текущий", curTagX + 18.0F, itemY + 8.0F, 4.5F, 0xFFFFFFFF);
+                    }
+
+                    // Action Buttons: [Загрузить] [Сохранить] [Поделиться] [✕]
+                    float btnH = 15.0F;
+                    float btnY = itemY + 5.0F;
+
+                    // Delete [✕]
+                    float delBtnW = 18.0F;
+                    float delBtnX = itemX + itemW - delBtnW - 6.0F;
+                    boolean delHover = mouseX >= delBtnX && mouseX <= delBtnX + delBtnW && mouseY >= btnY && mouseY <= btnY + btnH;
+                    Render2D.drawRoundedRect(delBtnX, btnY, delBtnW, btnH, 3.0F, delHover ? ColorUtil.rgba(240, 70, 70, (int) (200 * alphaVal)) : ColorUtil.rgba(255, 255, 255, (int) (16 * alphaVal)));
+                    Fonts.drawCenteredString(Fonts.SF_MEDIUM, "✕", delBtnX + delBtnW / 2.0F, btnY + 3.0F, 5.2F, 0xFFFFFFFF);
+
+                    // Share Key [Поделиться]
+                    float shareBtnW = 44.0F;
+                    float shareBtnX = delBtnX - shareBtnW - 4.0F;
+                    boolean shareHover = mouseX >= shareBtnX && mouseX <= shareBtnX + shareBtnW && mouseY >= btnY && mouseY <= btnY + btnH;
+                    Render2D.drawRoundedRect(shareBtnX, btnY, shareBtnW, btnH, 3.0F, ColorUtil.rgba(255, 255, 255, (int) ((shareHover ? 26 : 14) * alphaVal)));
+                    Render2D.drawRoundedOutline(shareBtnX, btnY, shareBtnW, btnH, 3.0F, 0.6F, ColorUtil.rgba(255, 255, 255, (int) (24 * alphaVal)));
+                    Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Ключ", shareBtnX + shareBtnW / 2.0F, btnY + 3.5F, 4.8F, 0xFFB0C4DE);
+
+                    // Save [Сохранить]
+                    float saveBtnW = 48.0F;
+                    float saveBtnX = shareBtnX - saveBtnW - 4.0F;
+                    boolean saveHover = mouseX >= saveBtnX && mouseX <= saveBtnX + saveBtnW && mouseY >= btnY && mouseY <= btnY + btnH;
+                    Render2D.drawRoundedRect(saveBtnX, btnY, saveBtnW, btnH, 3.0F, ColorUtil.rgba(255, 255, 255, (int) ((saveHover ? 26 : 14) * alphaVal)));
+                    Render2D.drawRoundedOutline(saveBtnX, btnY, saveBtnW, btnH, 3.0F, 0.6F, ColorUtil.rgba(255, 255, 255, (int) (24 * alphaVal)));
+                    Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Сохранить", saveBtnX + saveBtnW / 2.0F, btnY + 3.5F, 4.8F, 0xFFB0C4DE);
+
+                    // Load [Загрузить]
+                    float loadBtnW = 48.0F;
+                    float loadBtnX = saveBtnX - loadBtnW - 4.0F;
+                    boolean loadHover = mouseX >= loadBtnX && mouseX <= loadBtnX + loadBtnW && mouseY >= btnY && mouseY <= btnY + btnH;
+                    Render2D.drawRoundedRect(loadBtnX, btnY, loadBtnW, btnH, 3.0F, ColorUtil.withAlpha(accentColor, (int) ((loadHover ? 220 : 180) * alphaVal)));
+                    Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Загрузить", loadBtnX + loadBtnW / 2.0F, btnY + 3.5F, 4.8F, 0xFFFFFFFF);
+                }
+
+                itemY += itemH + 4.0F;
+            }
+
+            float totalH = itemY - startItemY;
+            this.configsScrollTarget = Math.clamp(this.configsScrollTarget, 0.0F, Math.max(0.0F, totalH - listH));
+            this.configsScrollAnim.setTarget(this.configsScrollTarget);
+        } finally {
+            Render2DUtil.popScissor();
         }
     }
 
-    private void renderFriendsTab(float x, float y, float w, float h, int mouseX, int mouseY, float alphaVal) {
+    private void renderFriendsTab(float x, float y, float w, float h, int mouseX, int mouseY, float alphaVal, int accentColor) {
         Render2D.drawRoundedRect(x, y, w, h, 7.0F, ColorUtil.rgba(20, 24, 34, (int) (90 * alphaVal)));
         Render2D.drawRoundedOutline(x, y, w, h, 7.0F, 0.7F, ColorUtil.rgba(255, 255, 255, (int) (20 * alphaVal)));
 
-        Fonts.drawString(Fonts.SF_MEDIUM, "Список Друзей", x + 14.0F, y + 14.0F, 9.0F, 0xFFFFFFFF);
-        Fonts.drawString(Fonts.SF_MEDIUM, "Друзья автоматически игнорируются аимом и киллаурой", x + 14.0F, y + 26.0F, 5.5F, 0xFFA0B0C4);
+        // Top Row: Input field for friend nickname + "+ Добавить" button
+        float row1Y = y + 8.0F;
+        float inputW = w - 96.0F;
+        float inputH = 20.0F;
 
-        Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Список друзей пуст. Кликните ПКМ по игроку в игре чтобы добавить!", x + w / 2.0F, y + h / 2.0F, 6.5F, 0xFFA0B0C4);
+        int inputBg = ColorUtil.rgba(255, 255, 255, (int) ((friendInputFocused ? 18 : 10) * alphaVal));
+        int inputBorder = friendInputFocused ? ColorUtil.withAlpha(accentColor, (int) (190 * alphaVal)) : ColorUtil.rgba(255, 255, 255, (int) (26 * alphaVal));
+        Render2D.drawRoundedRect(x + 10.0F, row1Y, inputW, inputH, 4.0F, inputBg);
+        Render2D.drawRoundedOutline(x + 10.0F, row1Y, inputW, inputH, 4.0F, 0.65F, inputBorder);
+
+        String friendDisplay = friendInput.isEmpty() ? (friendInputFocused ? "" : "Введите никнейм игрока...") : friendInput;
+        int friendColor = friendInput.isEmpty() && !friendInputFocused ? 0xFF8090A4 : 0xFFFFFFFF;
+        Fonts.drawString(Fonts.SF_MEDIUM, friendDisplay + (friendInputFocused && (System.currentTimeMillis() % 1000 > 500) ? "_" : ""), x + 16.0F, row1Y + 5.5F, 5.6F, friendColor);
+
+        // "+ Добавить" Button
+        float addBtnX = x + 10.0F + inputW + 6.0F;
+        float addBtnW = 70.0F;
+        boolean addHover = mouseX >= addBtnX && mouseX <= addBtnX + addBtnW && mouseY >= row1Y && mouseY <= row1Y + inputH;
+        int addBg = ColorUtil.withAlpha(accentColor, (int) ((addHover ? 220 : 180) * alphaVal));
+        Render2D.drawRoundedRect(addBtnX, row1Y, addBtnW, inputH, 4.0F, addBg);
+        Fonts.drawCenteredString(Fonts.SF_MEDIUM, "+ Добавить", addBtnX + addBtnW / 2.0F, row1Y + 5.5F, 5.4F, 0xFFFFFFFF);
+
+        // Divider
+        float divY = row1Y + 26.0F;
+        Render2D.drawRoundedRect(x + 10.0F, divY, w - 20.0F, 1.0F, 0.5F, ColorUtil.rgba(255, 255, 255, (int) (14 * alphaVal)));
+
+        Set<String> friends = FriendManager.getInstance().getFriends();
+        Fonts.drawString(Fonts.SF_MEDIUM, "Список друзей (" + friends.size() + ")", x + 12.0F, divY + 6.0F, 5.6F, 0xFFA0B4C8);
+
+        float listY = divY + 18.0F;
+        float listH = (y + h) - listY - 8.0F;
+
+        if (friends.isEmpty()) {
+            Render2D.drawRoundedRect(x + 12.0F, listY + 10.0F, w - 24.0F, 65.0F, 6.0F, ColorUtil.rgba(255, 255, 255, (int) (8 * alphaVal)));
+            Render2D.drawRoundedOutline(x + 12.0F, listY + 10.0F, w - 24.0F, 65.0F, 6.0F, 0.65F, ColorUtil.rgba(255, 255, 255, (int) (18 * alphaVal)));
+            Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Список друзей пуст", x + w / 2.0F, listY + 28.0F, 7.0F, 0xFFD0E0F0);
+            Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Введите никнейм выше или нажмите ПКМ по игроку в игре", x + w / 2.0F, listY + 44.0F, 5.0F, 0xFF8898B0);
+            return;
+        }
+
+        Render2DUtil.pushScissor(x + 8.0F, listY, w - 16.0F, listH);
+        try {
+            float startItemY = listY - friendsScrollAnim.getValue();
+            float itemY = startItemY;
+
+            for (String f : friends) {
+                float itemH = 26.0F;
+                float itemW = w - 24.0F;
+                float itemX = x + 12.0F;
+
+                if (itemY + itemH >= listY && itemY <= listY + listH) {
+                    boolean itemHover = mouseX >= itemX && mouseX <= itemX + itemW && mouseY >= itemY && mouseY <= itemY + itemH;
+                    int cardBg = ColorUtil.rgba(255, 255, 255, (int) ((itemHover ? 18 : 10) * alphaVal));
+
+                    Render2D.drawRoundedRect(itemX, itemY, itemW, itemH, 4.5F, cardBg);
+                    Render2D.drawRoundedOutline(itemX, itemY, itemW, itemH, 4.5F, 0.65F, ColorUtil.rgba(255, 255, 255, (int) (18 * alphaVal)));
+
+                    // Avatar head icon
+                    Render2D.drawCustomAvatar(itemX + 5.0F, itemY + 4.0F, 18.0F, 3.5F, alphaVal);
+
+                    // Nickname
+                    Fonts.drawString(Fonts.SF_MEDIUM, f, itemX + 28.0F, itemY + 8.5F, 6.2F, 0xFFFFFFFF);
+
+                    // Badge "Друг"
+                    float badgeX = itemX + 32.0F + Fonts.SF_MEDIUM.getWidth(f, 6.2F);
+                    Render2D.drawRoundedRect(badgeX, itemY + 7.0F, 28.0F, 12.0F, 3.0F, ColorUtil.withAlpha(accentColor, (int) (160 * alphaVal)));
+                    Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Друг", badgeX + 14.0F, itemY + 8.5F, 4.5F, 0xFFFFFFFF);
+
+                    // Delete Button [✕ Удалить]
+                    float delBtnW = 54.0F;
+                    float delBtnH = 15.0F;
+                    float delBtnX = itemX + itemW - delBtnW - 6.0F;
+                    float delBtnY = itemY + 5.5F;
+                    boolean delHover = mouseX >= delBtnX && mouseX <= delBtnX + delBtnW && mouseY >= delBtnY && mouseY <= delBtnY + delBtnH;
+                    Render2D.drawRoundedRect(delBtnX, delBtnY, delBtnW, delBtnH, 3.0F, delHover ? ColorUtil.rgba(240, 70, 70, (int) (200 * alphaVal)) : ColorUtil.rgba(255, 255, 255, (int) (16 * alphaVal)));
+                    Fonts.drawCenteredString(Fonts.SF_MEDIUM, "✕ Удалить", delBtnX + delBtnW / 2.0F, delBtnY + 3.5F, 4.8F, 0xFFFFFFFF);
+                }
+
+                itemY += itemH + 4.0F;
+            }
+
+            float totalH = itemY - startItemY;
+            this.friendsScrollTarget = Math.clamp(this.friendsScrollTarget, 0.0F, Math.max(0.0F, totalH - listH));
+            this.friendsScrollAnim.setTarget(this.friendsScrollTarget);
+        } finally {
+            Render2DUtil.popScissor();
+        }
+    }
+
+    private void renderCosmeticsTab(GuiGraphicsExtractor extractor, float x, float y, float w, float h, int mouseX, int mouseY, float alphaVal, int accentColor) {
+        // Layout: Left side -> Cosmetics List with Filter Pills; Right side -> 3D Character Preview
+        float previewW = 138.0F;
+        float listW = w - previewW - 8.0F;
+
+        // --- Left Container: Cosmetics ---
+        Render2D.drawRoundedRect(x, y, listW, h, 7.0F, ColorUtil.rgba(20, 24, 34, (int) (90 * alphaVal)));
+        Render2D.drawRoundedOutline(x, y, listW, h, 7.0F, 0.7F, ColorUtil.rgba(255, 255, 255, (int) (20 * alphaVal)));
+
+        // Category Filter Pills
+        String[] filters = new String[]{"Все", "Модели", "Крылья", "Шапки", "Маски", "Питомцы"};
+        float pillX = x + 8.0F;
+        float pillY = y + 7.0F;
+        float pillH = 15.0F;
+
+        for (String fName : filters) {
+            boolean isSel = fName.equals(this.cosmeticFilter);
+            float fTextW = Fonts.SF_MEDIUM.getWidth(fName, 5.0F);
+            float fPillW = fTextW + 10.0F;
+
+            boolean pHover = mouseX >= pillX && mouseX <= pillX + fPillW && mouseY >= pillY && mouseY <= pillY + pillH;
+            int pBg = isSel ? ColorUtil.withAlpha(accentColor, (int) (190 * alphaVal)) : (pHover ? ColorUtil.rgba(255, 255, 255, (int) (22 * alphaVal)) : ColorUtil.rgba(255, 255, 255, (int) (12 * alphaVal)));
+            int pOutline = isSel ? accentColor : ColorUtil.rgba(255, 255, 255, (int) (24 * alphaVal));
+
+            Render2D.drawRoundedRect(pillX, pillY, fPillW, pillH, 3.5F, pBg);
+            Render2D.drawRoundedOutline(pillX, pillY, fPillW, pillH, 3.5F, 0.6F, pOutline);
+            Fonts.drawCenteredString(Fonts.SF_MEDIUM, fName, pillX + fPillW / 2.0F, pillY + 3.0F, 4.8F, isSel ? 0xFFFFFFFF : 0xFFB0C0D0);
+
+            pillX += fPillW + 4.0F;
+        }
+
+        // Cosmetics Items List
+        float listY = y + 27.0F;
+        float listH = h - 33.0F;
+
+        List<CosmeticItem> allItems = CosmeticsManager.getInstance().getCosmetics();
+        List<CosmeticItem> filtered = new ArrayList<>();
+        for (CosmeticItem it : allItems) {
+            if ("Все".equals(cosmeticFilter)) {
+                filtered.add(it);
+            } else if ("Модели".equals(cosmeticFilter) && it.getType() == CosmeticType.MODEL) {
+                filtered.add(it);
+            } else if ("Крылья".equals(cosmeticFilter) && it.getType() == CosmeticType.WINGS) {
+                filtered.add(it);
+            } else if ("Шапки".equals(cosmeticFilter) && it.getType() == CosmeticType.HAT) {
+                filtered.add(it);
+            } else if ("Маски".equals(cosmeticFilter) && it.getType() == CosmeticType.MASK) {
+                filtered.add(it);
+            } else if ("Питомцы".equals(cosmeticFilter) && it.getType() == CosmeticType.PET) {
+                filtered.add(it);
+            }
+        }
+
+        Render2DUtil.pushScissor(x + 4.0F, listY, listW - 8.0F, listH);
+        try {
+            float startItemY = listY - cosmeticsScrollAnim.getValue();
+            float itemY = startItemY;
+
+            for (CosmeticItem item : filtered) {
+                float itemH = 26.0F;
+                float itemCardW = listW - 16.0F;
+                float itemX = x + 8.0F;
+
+                if (itemY + itemH >= listY && itemY <= listY + listH) {
+                    boolean isHover = mouseX >= itemX && mouseX <= itemX + itemCardW && mouseY >= itemY && mouseY <= itemY + itemH;
+                    int cardBg = item.isEnabled() ? ColorUtil.rgba(24, 34, 50, (int) (180 * alphaVal)) : ColorUtil.rgba(255, 255, 255, (int) ((isHover ? 18 : 10) * alphaVal));
+                    int cardBorder = item.isEnabled() ? ColorUtil.withAlpha(accentColor, (int) (140 * alphaVal)) : ColorUtil.rgba(255, 255, 255, (int) (18 * alphaVal));
+
+                    Render2D.drawRoundedRect(itemX, itemY, itemCardW, itemH, 4.5F, cardBg);
+                    Render2D.drawRoundedOutline(itemX, itemY, itemCardW, itemH, 4.5F, 0.65F, cardBorder);
+
+                    // Indicator color circle
+                    Render2D.drawCircle(itemX + 10.0F, itemY + itemH / 2.0F, 3.2F, item.getColor());
+
+                    // Name & Type
+                    Fonts.drawString(Fonts.SF_MEDIUM, item.getName(), itemX + 18.0F, itemY + 4.5F, 5.8F, item.isEnabled() ? 0xFFFFFFFF : 0xFFC0D0E0);
+                    Fonts.drawString(Fonts.SF_MEDIUM, item.getType().getDisplayName(), itemX + 18.0F, itemY + 14.5F, 4.2F, 0xFF8090A4);
+
+                    // Toggle Button [ Надеть / Снять ]
+                    float btnW = item.isEnabled() ? 46.0F : 42.0F;
+                    float btnH = 14.5F;
+                    float btnX = itemX + itemCardW - btnW - 6.0F;
+                    float btnY = itemY + 5.5F;
+                    boolean bHover = mouseX >= btnX && mouseX <= btnX + btnW && mouseY >= btnY && mouseY <= btnY + btnH;
+
+                    int bBg = item.isEnabled() ? ColorUtil.withAlpha(accentColor, (int) ((bHover ? 230 : 190) * alphaVal)) : ColorUtil.rgba(255, 255, 255, (int) ((bHover ? 24 : 14) * alphaVal));
+                    Render2D.drawRoundedRect(btnX, btnY, btnW, btnH, 3.5F, bBg);
+                    Render2D.drawRoundedOutline(btnX, btnY, btnW, btnH, 3.5F, 0.6F, item.isEnabled() ? accentColor : ColorUtil.rgba(255, 255, 255, (int) (26 * alphaVal)));
+
+                    String btnLabel = item.isEnabled() ? "Снять" : "Надеть";
+                    Fonts.drawCenteredString(Fonts.SF_MEDIUM, btnLabel, btnX + btnW / 2.0F, btnY + 3.0F, 4.8F, 0xFFFFFFFF);
+                }
+
+                itemY += itemH + 4.0F;
+            }
+
+            float totalH = itemY - startItemY;
+            this.cosmeticsScrollTarget = Math.clamp(this.cosmeticsScrollTarget, 0.0F, Math.max(0.0F, totalH - listH));
+            this.cosmeticsScrollAnim.setTarget(this.cosmeticsScrollTarget);
+        } finally {
+            Render2DUtil.popScissor();
+        }
+
+        // --- Right Container: 3D Character Preview Panel ---
+        float charX = x + listW + 8.0F;
+        Render2D.drawRoundedRect(charX, y, previewW, h, 7.0F, ColorUtil.rgba(20, 24, 34, (int) (95 * alphaVal)));
+        Render2D.drawRoundedOutline(charX, y, previewW, h, 7.0F, 0.7F, ColorUtil.rgba(255, 255, 255, (int) (22 * alphaVal)));
+
+        // Header inside preview
+        Fonts.drawCenteredString(Fonts.SF_MEDIUM, "3D Персонаж", charX + previewW / 2.0F, y + 8.0F, 6.5F, 0xFFFFFFFF);
+
+        String activeModelName = (CustomModels.INSTANCE != null && CustomModels.INSTANCE.isEnabled() && !CustomModels.NONE.equalsIgnoreCase(CustomModels.INSTANCE.model.getValue()))
+                ? CustomModels.INSTANCE.model.getValue() : "Стив";
+        Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Модель: " + activeModelName, charX + previewW / 2.0F, y + 19.0F, 4.6F, accentColor);
+
+        // Pedestal glow circle under player
+        Render2D.drawCircle(charX + previewW / 2.0F, y + h - 35.0F, 28.0F, ColorUtil.withAlpha(accentColor, (int) (35 * alphaVal)));
+
+        // Flush 2D rendering before extracting 3D entity
+        Render2DUtil.flush();
+
+        // Extract 3D Player Entity following mouse angle
+        if (this.minecraft != null && this.minecraft.player != null) {
+            int pX1 = (int) (charX + 8.0F);
+            int pY1 = (int) (y + 30.0F);
+            int pX2 = (int) (charX + previewW - 8.0F);
+            int pY2 = (int) (y + h - 24.0F);
+
+            try {
+                InventoryScreen.extractEntityInInventoryFollowsMouse(
+                        extractor,
+                        pX1, pY1, pX2, pY2,
+                        52, 0.0625F,
+                        (float) mouseX, (float) mouseY,
+                        this.minecraft.player
+                );
+            } catch (Exception ignored) {}
+        }
+
+        // Bottom rotation hint
+        Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Вращение за курсором", charX + previewW / 2.0F, y + h - 13.0F, 4.4F, 0xFF7A8B9E);
     }
 
     private void renderEventsTab(float x, float y, float w, float h, int mouseX, int mouseY, float alphaVal, int accentColor) {
@@ -1088,12 +1476,12 @@ public class LiquidClickGui extends Screen {
                     }
                 }
 
-                // If click is anywhere inside modal window, consume it
+                // Consume click if inside modal window
                 if (mouseX >= modalX && mouseX <= modalX + modalW && mouseY >= modalY && mouseY <= modalY + modalH) {
                     return true;
                 }
 
-                // If clicked outside modal window, close modal
+                // Close modal if click outside
                 this.settingsModalOpen = false;
                 this.bindingClickGuiKey = false;
                 this.activeEditingColorSetting = null;
@@ -1101,18 +1489,34 @@ public class LiquidClickGui extends Screen {
                 return true;
             }
 
-            // Gear Settings Button (Top-Left corner)
-            float gearX = x + 9.0F;
-            float gearY = y + 10.0F;
+            // Gear Settings Button strictly at the TOP-RIGHT corner
             float gearSize = 18.0F;
+            float gearX = x + WINDOW_W - 14.0F - gearSize;
+            float gearY = y + 14.0F;
             if (mouseX >= gearX && mouseX <= gearX + gearSize && mouseY >= gearY && mouseY <= gearY + gearSize) {
                 openSettingsModal();
                 return true;
             }
 
-            // Sidebar Category Clicks (Themes tab filtered out)
+            // Search Bar Click (Left of Settings Button)
+            float searchW = 125.0F;
+            float searchH = 18.0F;
+            float searchX = gearX - 10.0F - searchW;
+            float searchY = y + 14.0F;
+
+            if (mouseX >= searchX && mouseX <= searchX + searchW && mouseY >= searchY && mouseY <= searchY + searchH) {
+                this.searchFocused = true;
+                this.newConfigFocused = false;
+                this.shareKeyFocused = false;
+                this.friendInputFocused = false;
+                return true;
+            } else {
+                this.searchFocused = false;
+            }
+
+            // Sidebar Category Clicks
             Category[] categories = Arrays.stream(Category.values()).filter(c -> c != Category.THEMES).toArray(Category[]::new);
-            float catY = y + 38.0F;
+            float catY = y + 36.0F;
             float catH = 21.0F;
             float catW = SIDEBAR_W - 16.0F;
             float catX = x + 8.0F;
@@ -1127,20 +1531,264 @@ public class LiquidClickGui extends Screen {
                 catY += catH + 2.0F;
             }
 
-            // Search Bar Click
-            float searchW = 135.0F;
-            float searchH = 19.0F;
-            float searchX = x + WINDOW_W - 12.0F - searchW - 35.0F;
-            float searchY = y + 14.0F;
+            float contentX = x + SIDEBAR_W + 12.0F;
+            float contentY = y + 44.0F;
+            float contentW = WINDOW_W - SIDEBAR_W - 24.0F;
+            float contentH = WINDOW_H - 54.0F;
 
-            if (mouseX >= searchX && mouseX <= searchX + searchW && mouseY >= searchY && mouseY <= searchY + searchH) {
-                this.searchFocused = true;
+            // Handle Interactions for CONFIGS Tab
+            if (activeCategory == Category.CONFIGS) {
+                float row1Y = contentY + 8.0F;
+                float inputW = contentW - 145.0F;
+                float inputH = 19.0F;
+
+                // New Config Input Field Click
+                if (mouseX >= contentX + 10.0F && mouseX <= contentX + 10.0F + inputW && mouseY >= row1Y && mouseY <= row1Y + inputH) {
+                    this.newConfigFocused = true;
+                    this.shareKeyFocused = false;
+                    this.friendInputFocused = false;
+                    return true;
+                } else {
+                    this.newConfigFocused = false;
+                }
+
+                // "+ Создать" Button Click
+                float createBtnX = contentX + 10.0F + inputW + 6.0F;
+                float createBtnW = 64.0F;
+                if (mouseX >= createBtnX && mouseX <= createBtnX + createBtnW && mouseY >= row1Y && mouseY <= row1Y + inputH) {
+                    if (!newConfigInput.trim().isEmpty() && Client.INSTANCE != null && Client.INSTANCE.configManager != null) {
+                        String name = newConfigInput.trim();
+                        Client.INSTANCE.configManager.saveConfig(name, true);
+                        newConfigInput = "";
+                    }
+                    return true;
+                }
+
+                // "Папка" Button Click
+                float folderBtnX = createBtnX + createBtnW + 5.0F;
+                float folderBtnW = 50.0F;
+                if (mouseX >= folderBtnX && mouseX <= folderBtnX + folderBtnW && mouseY >= row1Y && mouseY <= row1Y + inputH) {
+                    if (Client.INSTANCE != null && Client.INSTANCE.configManager != null) {
+                        Client.INSTANCE.configManager.openFolder();
+                    }
+                    return true;
+                }
+
+                // Key Input Field Click
+                float row2Y = row1Y + 24.0F;
+                float keyInputW = contentW - 110.0F;
+                float keyInputH = 18.0F;
+
+                if (mouseX >= contentX + 10.0F && mouseX <= contentX + 10.0F + keyInputW && mouseY >= row2Y && mouseY <= row2Y + keyInputH) {
+                    this.shareKeyFocused = true;
+                    this.newConfigFocused = false;
+                    this.friendInputFocused = false;
+                    return true;
+                } else {
+                    this.shareKeyFocused = false;
+                }
+
+                // "Импорт" Button Click
+                float importBtnX = contentX + 10.0F + keyInputW + 6.0F;
+                float importBtnW = contentW - 20.0F - keyInputW - 6.0F;
+                if (mouseX >= importBtnX && mouseX <= importBtnX + importBtnW && mouseY >= row2Y && mouseY <= row2Y + keyInputH) {
+                    handleImportConfigKey();
+                    return true;
+                }
+
+                // Config Rows Action Buttons
+                float divY = row2Y + 23.0F;
+                float listY = divY + 16.0F;
+                float listH = (contentY + contentH) - listY - 8.0F;
+
+                if (mouseY >= listY && mouseY <= listY + listH && Client.INSTANCE != null && Client.INSTANCE.configManager != null) {
+                    List<String> configs = Client.INSTANCE.configManager.getAvailableConfigs();
+                    float itemY = listY - configsScrollAnim.getValue();
+
+                    for (String cfg : configs) {
+                        float itemH = 25.0F;
+                        float itemW = contentW - 24.0F;
+                        float itemX = contentX + 12.0F;
+
+                        if (itemY + itemH >= listY && itemY <= listY + listH) {
+                            float btnH = 15.0F;
+                            float btnY = itemY + 5.0F;
+
+                            // Delete [✕]
+                            float delBtnW = 18.0F;
+                            float delBtnX = itemX + itemW - delBtnW - 6.0F;
+                            if (mouseX >= delBtnX && mouseX <= delBtnX + delBtnW && mouseY >= btnY && mouseY <= btnY + btnH) {
+                                Client.INSTANCE.configManager.deleteConfig(cfg);
+                                ChatUtil.info("Конфиг '" + cfg + "' удален.");
+                                return true;
+                            }
+
+                            // Share Key [Ключ]
+                            float shareBtnW = 44.0F;
+                            float shareBtnX = delBtnX - shareBtnW - 4.0F;
+                            if (mouseX >= shareBtnX && mouseX <= shareBtnX + shareBtnW && mouseY >= btnY && mouseY <= btnY + btnH) {
+                                handleShareConfig(cfg);
+                                return true;
+                            }
+
+                            // Save [Сохранить]
+                            float saveBtnW = 48.0F;
+                            float saveBtnX = shareBtnX - saveBtnW - 4.0F;
+                            if (mouseX >= saveBtnX && mouseX <= saveBtnX + saveBtnW && mouseY >= btnY && mouseY <= btnY + btnH) {
+                                Client.INSTANCE.configManager.saveConfig(cfg, true);
+                                return true;
+                            }
+
+                            // Load [Загрузить]
+                            float loadBtnW = 48.0F;
+                            float loadBtnX = saveBtnX - loadBtnW - 4.0F;
+                            if (mouseX >= loadBtnX && mouseX <= loadBtnX + loadBtnW && mouseY >= btnY && mouseY <= btnY + btnH) {
+                                Client.INSTANCE.configManager.loadConfig(cfg, true);
+                                return true;
+                            }
+                        }
+
+                        itemY += itemH + 4.0F;
+                    }
+                }
                 return true;
-            } else {
-                this.searchFocused = false;
             }
 
-            // Modules Clicks
+            // Handle Interactions for FRIENDS Tab
+            if (activeCategory == Category.FRIENDS) {
+                float row1Y = contentY + 8.0F;
+                float inputW = contentW - 96.0F;
+                float inputH = 20.0F;
+
+                if (mouseX >= contentX + 10.0F && mouseX <= contentX + 10.0F + inputW && mouseY >= row1Y && mouseY <= row1Y + inputH) {
+                    this.friendInputFocused = true;
+                    this.newConfigFocused = false;
+                    this.shareKeyFocused = false;
+                    return true;
+                } else {
+                    this.friendInputFocused = false;
+                }
+
+                // "+ Добавить" Button Click
+                float addBtnX = contentX + 10.0F + inputW + 6.0F;
+                float addBtnW = 70.0F;
+                if (mouseX >= addBtnX && mouseX <= addBtnX + addBtnW && mouseY >= row1Y && mouseY <= row1Y + inputH) {
+                    if (!friendInput.trim().isEmpty()) {
+                        String name = friendInput.trim();
+                        FriendManager.getInstance().addFriend(name);
+                        ChatUtil.success("Игрок '" + name + "' добавлен в друзья!");
+                        friendInput = "";
+                    }
+                    return true;
+                }
+
+                // Friends List Delete Clicks
+                float divY = row1Y + 26.0F;
+                float listY = divY + 18.0F;
+                float listH = (contentY + contentH) - listY - 8.0F;
+
+                if (mouseY >= listY && mouseY <= listY + listH) {
+                    Set<String> friends = FriendManager.getInstance().getFriends();
+                    float itemY = listY - friendsScrollAnim.getValue();
+
+                    for (String f : friends) {
+                        float itemH = 26.0F;
+                        float itemW = contentW - 24.0F;
+                        float itemX = contentX + 12.0F;
+
+                        if (itemY + itemH >= listY && itemY <= listY + listH) {
+                            float delBtnW = 54.0F;
+                            float delBtnH = 15.0F;
+                            float delBtnX = itemX + itemW - delBtnW - 6.0F;
+                            float delBtnY = itemY + 5.5F;
+
+                            if (mouseX >= delBtnX && mouseX <= delBtnX + delBtnW && mouseY >= delBtnY && mouseY <= delBtnY + delBtnH) {
+                                FriendManager.getInstance().removeFriend(f);
+                                ChatUtil.info("Игрок '" + f + "' удален из друзей.");
+                                return true;
+                            }
+                        }
+
+                        itemY += itemH + 4.0F;
+                    }
+                }
+                return true;
+            }
+
+            // Handle Interactions for COSMETICS Tab
+            if (activeCategory == Category.COSMETICS) {
+                float previewW = 138.0F;
+                float listW = contentW - previewW - 8.0F;
+
+                // Category Filter Pills Clicks
+                String[] filters = new String[]{"Все", "Модели", "Крылья", "Шапки", "Маски", "Питомцы"};
+                float pillX = contentX + 8.0F;
+                float pillY = contentY + 7.0F;
+                float pillH = 15.0F;
+
+                for (String fName : filters) {
+                    float fTextW = Fonts.SF_MEDIUM.getWidth(fName, 5.0F);
+                    float fPillW = fTextW + 10.0F;
+
+                    if (mouseX >= pillX && mouseX <= pillX + fPillW && mouseY >= pillY && mouseY <= pillY + pillH) {
+                        this.cosmeticFilter = fName;
+                        return true;
+                    }
+
+                    pillX += fPillW + 4.0F;
+                }
+
+                // Items List Toggle Clicks
+                float listY = contentY + 27.0F;
+                float listH = contentH - 33.0F;
+
+                if (mouseX >= contentX && mouseX <= contentX + listW && mouseY >= listY && mouseY <= listY + listH) {
+                    List<CosmeticItem> allItems = CosmeticsManager.getInstance().getCosmetics();
+                    List<CosmeticItem> filtered = new ArrayList<>();
+                    for (CosmeticItem it : allItems) {
+                        if ("Все".equals(cosmeticFilter)) {
+                            filtered.add(it);
+                        } else if ("Модели".equals(cosmeticFilter) && it.getType() == CosmeticType.MODEL) {
+                            filtered.add(it);
+                        } else if ("Крылья".equals(cosmeticFilter) && it.getType() == CosmeticType.WINGS) {
+                            filtered.add(it);
+                        } else if ("Шапки".equals(cosmeticFilter) && it.getType() == CosmeticType.HAT) {
+                            filtered.add(it);
+                        } else if ("Маски".equals(cosmeticFilter) && it.getType() == CosmeticType.MASK) {
+                            filtered.add(it);
+                        } else if ("Питомцы".equals(cosmeticFilter) && it.getType() == CosmeticType.PET) {
+                            filtered.add(it);
+                        }
+                    }
+
+                    float itemY = listY - cosmeticsScrollAnim.getValue();
+
+                    for (CosmeticItem item : filtered) {
+                        float itemH = 26.0F;
+                        float itemCardW = listW - 16.0F;
+                        float itemX = contentX + 8.0F;
+
+                        if (itemY + itemH >= listY && itemY <= listY + listH) {
+                            float btnW = item.isEnabled() ? 46.0F : 42.0F;
+                            float btnH = 14.5F;
+                            float btnX = itemX + itemCardW - btnW - 6.0F;
+                            float btnY = itemY + 5.5F;
+
+                            // Clicking toggle button or card row toggles cosmetic
+                            if (mouseX >= btnX && mouseX <= btnX + btnW && mouseY >= btnY && mouseY <= btnY + btnH) {
+                                item.setEnabled(!item.isEnabled());
+                                CosmeticsManager.getInstance().onToggleCosmetic(item);
+                                return true;
+                            }
+                        }
+
+                        itemY += itemH + 4.0F;
+                    }
+                }
+                return true;
+            }
+
+            // Modules Clicks (Default module grid)
             List<Module> modules = getFilteredModules();
             float gridX = x + SIDEBAR_W + 12.0F;
             float gridY = y + 44.0F;
@@ -1204,7 +1852,7 @@ public class LiquidClickGui extends Screen {
         } else if (event.button() == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
             if (this.settingsModalOpen) return true;
 
-            // Right-click expands settings
+            // Right-click expands module settings
             List<Module> modules = getFilteredModules();
             float gridX = x + SIDEBAR_W + 12.0F;
             float gridY = y + 44.0F;
@@ -1241,11 +1889,66 @@ public class LiquidClickGui extends Screen {
         return super.mouseClicked(event, isLeftClick);
     }
 
+    private void handleShareConfig(String cfgName) {
+        try {
+            if (Client.INSTANCE != null && Client.INSTANCE.configManager != null) {
+                File file = Client.INSTANCE.configManager.getConfigFile(cfgName);
+                if (file.exists()) {
+                    String json = Files.readString(file.toPath(), StandardCharsets.UTF_8);
+                    String key = "ERR$" + Base64.getUrlEncoder().encodeToString(json.getBytes(StandardCharsets.UTF_8));
+                    GLFW.glfwSetClipboardString(Minecraft.getInstance().getWindow().handle(), key);
+                    ChatUtil.success("Ключ конфига '" + cfgName + "' скопирован в буфер обмена!");
+                }
+            }
+        } catch (Exception e) {
+            ChatUtil.error("Не удалось скопировать ключ: " + e.getMessage());
+        }
+    }
+
+    private void handleImportConfigKey() {
+        if (shareKeyInput == null || shareKeyInput.trim().isEmpty()) {
+            ChatUtil.error("Сначала вставьте ключ конфигурации!");
+            return;
+        }
+
+        String raw = shareKeyInput.trim();
+        try {
+            if (raw.startsWith("ERR$")) {
+                raw = raw.substring(4);
+            }
+            byte[] bytes = Base64.getUrlDecoder().decode(raw);
+            String json = new String(bytes, StandardCharsets.UTF_8);
+
+            String importName = "shared_" + (System.currentTimeMillis() % 10000);
+            if (Client.INSTANCE != null && Client.INSTANCE.configManager != null) {
+                File file = Client.INSTANCE.configManager.getConfigFile(importName);
+                Files.writeString(file.toPath(), json, StandardCharsets.UTF_8);
+                Client.INSTANCE.configManager.loadConfig(importName, true);
+                shareKeyInput = "";
+                ChatUtil.success("Конфиг успешно импортирован как '" + importName + "'!");
+            }
+        } catch (Exception e) {
+            ChatUtil.error("Неверный формат ключа конфигурации!");
+        }
+    }
+
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
         if (this.settingsModalOpen) return true;
-        this.scrollTarget -= (float) (scrollY * 24.0D);
-        return true;
+
+        if (activeCategory == Category.CONFIGS) {
+            this.configsScrollTarget -= (float) (scrollY * 24.0D);
+            return true;
+        } else if (activeCategory == Category.FRIENDS) {
+            this.friendsScrollTarget -= (float) (scrollY * 24.0D);
+            return true;
+        } else if (activeCategory == Category.COSMETICS) {
+            this.cosmeticsScrollTarget -= (float) (scrollY * 24.0D);
+            return true;
+        } else {
+            this.scrollTarget -= (float) (scrollY * 24.0D);
+            return true;
+        }
     }
 
     @Override
@@ -1286,12 +1989,85 @@ public class LiquidClickGui extends Screen {
             return true;
         }
 
+        // Clipboard Paste Support (Ctrl+V)
+        boolean isPaste = (event.key() == GLFW.GLFW_KEY_V && (event.modifiers() & GLFW.GLFW_MOD_CONTROL) != 0);
+
+        // Handle Configs Text Inputs
+        if (this.newConfigFocused) {
+            if (event.key() == GLFW.GLFW_KEY_BACKSPACE) {
+                if (!this.newConfigInput.isEmpty()) {
+                    this.newConfigInput = this.newConfigInput.substring(0, this.newConfigInput.length() - 1);
+                }
+                return true;
+            } else if (event.key() == GLFW.GLFW_KEY_ENTER) {
+                if (!newConfigInput.trim().isEmpty() && Client.INSTANCE != null && Client.INSTANCE.configManager != null) {
+                    Client.INSTANCE.configManager.saveConfig(newConfigInput.trim(), true);
+                    newConfigInput = "";
+                }
+                return true;
+            } else if (isPaste) {
+                String clip = GLFW.glfwGetClipboardString(Minecraft.getInstance().getWindow().handle());
+                if (clip != null) newConfigInput += clip.trim();
+                return true;
+            } else if (event.key() == GLFW.GLFW_KEY_ESCAPE) {
+                this.newConfigFocused = false;
+                return true;
+            }
+        }
+
+        if (this.shareKeyFocused) {
+            if (event.key() == GLFW.GLFW_KEY_BACKSPACE) {
+                if (!this.shareKeyInput.isEmpty()) {
+                    this.shareKeyInput = this.shareKeyInput.substring(0, this.shareKeyInput.length() - 1);
+                }
+                return true;
+            } else if (event.key() == GLFW.GLFW_KEY_ENTER) {
+                handleImportConfigKey();
+                return true;
+            } else if (isPaste) {
+                String clip = GLFW.glfwGetClipboardString(Minecraft.getInstance().getWindow().handle());
+                if (clip != null) shareKeyInput += clip.trim();
+                return true;
+            } else if (event.key() == GLFW.GLFW_KEY_ESCAPE) {
+                this.shareKeyFocused = false;
+                return true;
+            }
+        }
+
+        // Handle Friends Text Input
+        if (this.friendInputFocused) {
+            if (event.key() == GLFW.GLFW_KEY_BACKSPACE) {
+                if (!this.friendInput.isEmpty()) {
+                    this.friendInput = this.friendInput.substring(0, this.friendInput.length() - 1);
+                }
+                return true;
+            } else if (event.key() == GLFW.GLFW_KEY_ENTER) {
+                if (!friendInput.trim().isEmpty()) {
+                    FriendManager.getInstance().addFriend(friendInput.trim());
+                    ChatUtil.success("Игрок '" + friendInput.trim() + "' добавлен в друзья!");
+                    friendInput = "";
+                }
+                return true;
+            } else if (isPaste) {
+                String clip = GLFW.glfwGetClipboardString(Minecraft.getInstance().getWindow().handle());
+                if (clip != null) friendInput += clip.trim();
+                return true;
+            } else if (event.key() == GLFW.GLFW_KEY_ESCAPE) {
+                this.friendInputFocused = false;
+                return true;
+            }
+        }
+
         // Handle Search Bar Input
         if (this.searchFocused) {
             if (event.key() == GLFW.GLFW_KEY_BACKSPACE) {
                 if (!this.searchQuery.isEmpty()) {
                     this.searchQuery = this.searchQuery.substring(0, this.searchQuery.length() - 1);
                 }
+                return true;
+            } else if (isPaste) {
+                String clip = GLFW.glfwGetClipboardString(Minecraft.getInstance().getWindow().handle());
+                if (clip != null) searchQuery += clip.trim();
                 return true;
             } else if (event.key() == GLFW.GLFW_KEY_ESCAPE) {
                 this.searchFocused = false;
@@ -1330,10 +2106,20 @@ public class LiquidClickGui extends Screen {
 
     @Override
     public boolean charTyped(CharacterEvent event) {
-        if (this.searchFocused) {
-            int codePoint = event.codepoint();
-            if (codePoint >= 32 && codePoint != 127) {
-                this.searchQuery += new String(Character.toChars(codePoint));
+        int codePoint = event.codepoint();
+        if (codePoint >= 32 && codePoint != 127) {
+            String ch = new String(Character.toChars(codePoint));
+            if (this.newConfigFocused) {
+                this.newConfigInput += ch;
+                return true;
+            } else if (this.shareKeyFocused) {
+                this.shareKeyInput += ch;
+                return true;
+            } else if (this.friendInputFocused) {
+                this.friendInput += ch;
+                return true;
+            } else if (this.searchFocused) {
+                this.searchQuery += ch;
                 return true;
             }
         }
