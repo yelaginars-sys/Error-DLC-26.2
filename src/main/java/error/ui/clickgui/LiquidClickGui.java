@@ -55,6 +55,8 @@ public class LiquidClickGui extends Screen {
 
     public LiquidClickGui() {
         super(Component.literal("ClickGUI"));
+        this.openAnim.setValue(1.0F);
+        this.openAnim.setTarget(1.0F);
     }
 
     @Override
@@ -79,8 +81,7 @@ public class LiquidClickGui extends Screen {
         int screenW = this.width > 0 ? this.width : (this.minecraft != null ? this.minecraft.getWindow().getGuiScaledWidth() : 854);
         int screenH = this.height > 0 ? this.height : (this.minecraft != null ? this.minecraft.getWindow().getGuiScaledHeight() : 480);
 
-        float animVal = openAnim.getValue();
-        if (animVal <= 0.01F) return;
+        float animVal = Math.max(0.1F, openAnim.getValue());
 
         float x = (screenW - WINDOW_W) / 2.0F;
         float y = (screenH - WINDOW_H) / 2.0F;
