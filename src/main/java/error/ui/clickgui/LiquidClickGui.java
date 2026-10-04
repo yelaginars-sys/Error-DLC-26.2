@@ -71,6 +71,8 @@ public class LiquidClickGui extends Screen {
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor extractor, int mouseX, int mouseY, float partialTick) {
+        super.extractRenderState(extractor, mouseX, mouseY, partialTick);
+
         openAnim.update();
         scrollAnim.update();
 

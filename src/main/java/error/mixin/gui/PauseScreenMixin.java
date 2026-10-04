@@ -34,7 +34,9 @@ public abstract class PauseScreenMixin extends Screen {
             if (child instanceof AbstractWidget widget) {
                 String text = widget.getMessage() != null ? widget.getMessage().getString().toLowerCase() : "";
 
-                if (text.contains("вернуться") || text.contains("back to game") || text.contains("return")) {
+                if (text.equals("меню") || text.equals("menu") || text.contains("друзья") || text.contains("жалобы") || text.contains("friends") || text.contains("reports")) {
+                    widget.visible = false; // Hide top title pill & extra overlapping social buttons
+                } else if (text.contains("вернуться") || text.contains("back to game") || text.contains("return")) {
                     returnButton = widget;
                 } else if (text.contains("достижения") || text.contains("advancements")) {
                     advancementsButton = widget;
@@ -50,8 +52,6 @@ public abstract class PauseScreenMixin extends Screen {
                     lanButton = widget;
                 } else if (text.contains("сохранить") || text.contains("выйти") || text.contains("disconnect") || text.contains("quit")) {
                     quitButton = widget;
-                } else if (text.contains("друзья") || text.contains("жалобы") || text.contains("friends") || text.contains("reports")) {
-                    widget.visible = false; // Hide extra overlapping social buttons
                 }
             }
         }
@@ -60,7 +60,7 @@ public abstract class PauseScreenMixin extends Screen {
         float wHalf = 102.0F;
         float h = 20.0F;
         float gap = 5.0F;
-        float startY = centerY - 52.0F;
+        float startY = centerY - 85.0F;
 
         // 1. Return to Game (Top Wide Button)
         if (returnButton != null) {
