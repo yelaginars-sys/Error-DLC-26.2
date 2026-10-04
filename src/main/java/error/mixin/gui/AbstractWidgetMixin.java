@@ -32,7 +32,7 @@ public abstract class AbstractWidgetMixin {
 
     @Unique private float error$hoverAnim = 0.0F;
 
-    @Inject(method = "extractWidgetRenderState", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "extractRenderState", at = @At("HEAD"), cancellable = true)
     private void renderCustomWidget(GuiGraphicsExtractor extractor, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
         if (!this.visible) return;
 
