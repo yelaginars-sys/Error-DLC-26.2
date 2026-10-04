@@ -266,7 +266,7 @@ public class LiquidClickGui extends Screen {
                     .radius(12)
                     .type(BlurType.KAWASE)
                     .strength(4)
-                    .tint(Color.rgba(0, 0, 0, Math.round(65 * animVal)))
+                    .tint(Color.rgba(0, 0, 0, Math.round(110 * animVal)))
                     .alpha(animVal)
                     .render(extractor);
 
@@ -289,7 +289,7 @@ public class LiquidClickGui extends Screen {
                     .radius(10)
                     .type(BlurType.KAWASE)
                     .strength(4)
-                    .tint(Color.rgba(0, 0, 0, Math.round(65 * animVal)))
+                    .tint(Color.rgba(0, 0, 0, Math.round(110 * animVal)))
                     .alpha(animVal)
                     .render(extractor);
 
@@ -804,14 +804,14 @@ public class LiquidClickGui extends Screen {
         float modalX = (screenW - modalW) / 2.0F;
         float modalY = (screenH - modalH) / 2.0F;
 
-        // Translucent liquid glass body (exact same frosted glass as GUI)
-        int modalDarken = ColorUtil.rgba(12, 16, 28, (int) (40 * alphaVal));
-        int modalFrosted = ColorUtil.rgba(255, 255, 255, (int) (14 * alphaVal));
-        Render2D.drawShadow(modalX, modalY, modalW, modalH, 12.0F, 24.0F, ColorUtil.rgba(0, 0, 0, (int) (120 * alphaVal)));
+        // Deep acrylic liquid glass body - dark enough to cleanly separate from underlying GUI cards
+        int modalDarken = ColorUtil.rgba(10, 13, 22, (int) (210 * alphaVal));
+        int modalFrosted = ColorUtil.rgba(255, 255, 255, (int) (12 * alphaVal));
+        Render2D.drawShadow(modalX, modalY, modalW, modalH, 12.0F, 28.0F, ColorUtil.rgba(0, 0, 0, (int) (160 * alphaVal)));
         Render2D.drawRoundedRect(modalX, modalY, modalW, modalH, 12.0F, modalDarken);
         Render2D.drawRoundedRect(modalX, modalY, modalW, modalH, 12.0F, modalFrosted);
-        Render2D.drawRoundedOutline(modalX, modalY, modalW, modalH, 12.0F, 0.8F, ColorUtil.rgba(255, 255, 255, (int) (35 * alphaVal)));
-        Render2D.drawRoundedOutline(modalX, modalY, modalW, modalH, 12.0F, 0.5F, ColorUtil.withAlpha(accentColor, (int) (65 * alphaVal)));
+        Render2D.drawRoundedOutline(modalX, modalY, modalW, modalH, 12.0F, 0.8F, ColorUtil.rgba(255, 255, 255, (int) (38 * alphaVal)));
+        Render2D.drawRoundedOutline(modalX, modalY, modalW, modalH, 12.0F, 0.5F, ColorUtil.withAlpha(accentColor, (int) (80 * alphaVal)));
 
         // Header: Settings Icon + Title + Close Button
         float headY = modalY + 8.0F;
@@ -997,14 +997,14 @@ public class LiquidClickGui extends Screen {
         float modalX = (screenW - modalW) / 2.0F;
         float modalY = (screenH - modalH) / 2.0F;
 
-        // Translucent liquid glass body (exact same frosted glass as GUI)
-        int modalDarken = ColorUtil.rgba(12, 16, 28, (int) (40 * alphaVal));
-        int modalFrosted = ColorUtil.rgba(255, 255, 255, (int) (14 * alphaVal));
-        Render2D.drawShadow(modalX, modalY, modalW, modalH, 10.0F, 20.0F, ColorUtil.rgba(0, 0, 0, (int) (120 * alphaVal)));
+        // Deep acrylic liquid glass body - dark enough to cleanly separate from underlying GUI cards
+        int modalDarken = ColorUtil.rgba(10, 13, 22, (int) (210 * alphaVal));
+        int modalFrosted = ColorUtil.rgba(255, 255, 255, (int) (12 * alphaVal));
+        Render2D.drawShadow(modalX, modalY, modalW, modalH, 10.0F, 24.0F, ColorUtil.rgba(0, 0, 0, (int) (160 * alphaVal)));
         Render2D.drawRoundedRect(modalX, modalY, modalW, modalH, 10.0F, modalDarken);
         Render2D.drawRoundedRect(modalX, modalY, modalW, modalH, 10.0F, modalFrosted);
-        Render2D.drawRoundedOutline(modalX, modalY, modalW, modalH, 10.0F, 0.8F, ColorUtil.rgba(255, 255, 255, (int) (35 * alphaVal)));
-        Render2D.drawRoundedOutline(modalX, modalY, modalW, modalH, 10.0F, 0.5F, ColorUtil.withAlpha(accentColor, (int) (65 * alphaVal)));
+        Render2D.drawRoundedOutline(modalX, modalY, modalW, modalH, 10.0F, 0.8F, ColorUtil.rgba(255, 255, 255, (int) (38 * alphaVal)));
+        Render2D.drawRoundedOutline(modalX, modalY, modalW, modalH, 10.0F, 0.5F, ColorUtil.withAlpha(accentColor, (int) (80 * alphaVal)));
 
         // Header: :: dots + Module Name + Close button
         float headY = modalY + 8.0F;

@@ -104,7 +104,7 @@ public class GpsHud extends HudElement {
 
         int lightDarken = ColorUtil.rgba(12, 16, 28, (int) (45 * alpha));
         int frostedTint = ColorUtil.rgba(255, 255, 255, (int) (16 * alpha));
-        int glassBorder = ColorUtil.withAlpha(primaryAccent, (int) (95 * alpha));
+        int glassBorder = ColorUtil.withAlpha(primaryAccent, (int) (65 * alpha));
 
         Render2D.drawRoundedRect(x, y, w, h, 6.0F, lightDarken);
         Render2D.drawRoundedRect(x, y, w, h, 6.0F, frostedTint);
