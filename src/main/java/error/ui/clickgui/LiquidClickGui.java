@@ -156,18 +156,26 @@ public class LiquidClickGui extends Screen {
         return false;
     }
 
+    private static Identifier safeId(String path) {
+        try {
+            return Identifier.fromNamespaceAndPath("error", path);
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
     private static Identifier getCategoryIcon(Category cat) {
         return switch (cat) {
-            case COMBAT -> Identifier.fromNamespaceAndPath("error", "textures/system/combat.png");
-            case MOVEMENT -> Identifier.fromNamespaceAndPath("error", "textures/system/movement.png");
-            case RENDER -> Identifier.fromNamespaceAndPath("error", "textures/system/visuals.png");
-            case COSMETICS -> Identifier.fromNamespaceAndPath("error", "textures/system/Folder 2.png");
-            case PLAYER -> Identifier.fromNamespaceAndPath("error", "textures/system/player.png");
-            case MISC -> Identifier.fromNamespaceAndPath("error", "textures/system/misc.png");
-            case THEMES -> Identifier.fromNamespaceAndPath("error", "textures/system/themes.png");
-            case EVENTS -> Identifier.fromNamespaceAndPath("error", "textures/system/Heartbeat 1.png");
-            case CONFIGS -> Identifier.fromNamespaceAndPath("error", "textures/system/configs.png");
-            case FRIENDS -> Identifier.fromNamespaceAndPath("error", "textures/system/player1.png");
+            case COMBAT -> safeId("textures/system/combat.png");
+            case MOVEMENT -> safeId("textures/system/movement.png");
+            case RENDER -> safeId("textures/system/visuals.png");
+            case COSMETICS -> safeId("textures/system/folder2.png");
+            case PLAYER -> safeId("textures/system/player.png");
+            case MISC -> safeId("textures/system/misc.png");
+            case THEMES -> safeId("textures/system/themes.png");
+            case EVENTS -> safeId("textures/system/heartbeat1.png");
+            case CONFIGS -> safeId("textures/system/configs.png");
+            case FRIENDS -> safeId("textures/system/player1.png");
             default -> null;
         };
     }
