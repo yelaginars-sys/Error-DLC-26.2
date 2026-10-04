@@ -24,6 +24,11 @@ public final class Interface extends Module {
     public final CheckBox cooldownsHud     = checkbox("Cooldowns", true);
     public final CheckBox keybindsHud      = checkbox("Keybinds", true);
     public final CheckBox armorHud         = checkbox("Armor HUD", true);
+    public final CheckBox staffList        = checkbox("Staff List", true);
+    public final CheckBox itemHud          = checkbox("Item HUD", true);
+    public final CheckBox arrayList        = checkbox("Array List", true);
+    public final CheckBox customHotbar     = checkbox("Hotbar", true);
+    public final CheckBox useTracker       = checkbox("Use Tracker", true);
     public final CheckBox blurBackground   = checkbox("Blur Background", true);
     public final CheckBox dynamicIsland    = checkbox("Dynamic Island", false);
     public final CheckBox gps              = checkbox("GPS Navigation", false);
@@ -85,6 +90,16 @@ public final class Interface extends Module {
                 el.setEnabled(active && this.keybindsHud.getValue());
             } else if (el instanceof error.ui.hud.impl.ArmorHudElement) {
                 el.setEnabled(active && this.armorHud.getValue());
+            } else if (el instanceof error.ui.hud.impl.StaffListHudElement) {
+                el.setEnabled(active && this.staffList.getValue());
+            } else if (el instanceof error.ui.hud.impl.ItemHudElement) {
+                el.setEnabled(active && this.itemHud.getValue());
+            } else if (el instanceof error.ui.hud.impl.ArrayListHudElement) {
+                el.setEnabled(active && this.arrayList.getValue());
+            } else if (el instanceof error.ui.hud.impl.HotbarHudElement) {
+                el.setEnabled(active && this.customHotbar.getValue());
+            } else if (el instanceof error.ui.hud.impl.UseTrackerHudElement) {
+                el.setEnabled(active && this.useTracker.getValue());
             } else if (el instanceof error.ui.hud.impl.DynamicIslandHud) {
                 el.setEnabled(active && this.dynamicIsland.getValue());
             } else if (el instanceof error.ui.hud.impl.GpsHud) {

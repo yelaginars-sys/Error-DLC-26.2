@@ -47,6 +47,11 @@ public final class HudManager implements IMinecraft {
         register(new KeybindsHudElement());
         register(new TargetHudElement());
         register(new ArmorHudElement());
+        register(new StaffListHudElement());
+        register(new ItemHudElement());
+        register(new HotbarHudElement());
+        register(new ArrayListHudElement());
+        register(new UseTrackerHudElement());
         register(new DynamicIslandHud());
         register(new GpsHud());
     }
