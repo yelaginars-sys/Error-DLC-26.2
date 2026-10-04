@@ -566,18 +566,11 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
             Render2D.drawRoundedRect(x, y, w, h, radius, pvpFill);
             Render2D.drawRoundedOutline(x, y, w, h, radius, 1.0F, pvpBorder);
         } else {
-            int shadowCol = ColorUtil.rgba(0, 0, 0, (int) (140 * alpha));
             int primaryAccent = getHudAccent();
-
-            int haloCol = ColorUtil.rgba(ColorUtil.red(primaryAccent), ColorUtil.green(primaryAccent), ColorUtil.blue(primaryAccent), (int) (35 * alpha));
             int lightDarken = ColorUtil.rgba(12, 16, 28, (int) (45 * alpha));
             int frostedTint = ColorUtil.rgba(255, 255, 255, (int) (16 * alpha));
             int glassBorder = ColorUtil.withAlpha(primaryAccent, (int) (65 * alpha));
 
-            if (shadowBlur > 1.0F) {
-                Render2D.drawShadow(x, y, w, h, radius, shadowBlur, shadowCol);
-                Render2D.drawShadow(x, y, w, h, radius, Math.min(shadowBlur, 6.0F), haloCol);
-            }
             Render2D.drawRoundedRect(x, y, w, h, radius, lightDarken);
             Render2D.drawRoundedRect(x, y, w, h, radius, frostedTint);
             Render2D.drawRoundedOutline(x, y, w, h, radius, 0.7F, glassBorder);
@@ -590,12 +583,10 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
         float subRadius = h / 2.0F;
         int primaryAccent = getHudAccent();
 
-        int shadowCol = ColorUtil.rgba(0, 0, 0, (int) (110 * alpha));
         int lightDarken = ColorUtil.rgba(12, 16, 28, (int) (45 * alpha));
         int frostedTint = ColorUtil.rgba(255, 255, 255, (int) (16 * alpha));
         int glassBorder = ColorUtil.withAlpha(primaryAccent, (int) (65 * alpha));
 
-        Render2D.drawShadow(x, y, w, h, subRadius, 6.0F, shadowCol);
         Render2D.drawRoundedRect(x, y, w, h, subRadius, lightDarken);
         Render2D.drawRoundedRect(x, y, w, h, subRadius, frostedTint);
         Render2D.drawRoundedOutline(x, y, w, h, subRadius, 0.7F, glassBorder);

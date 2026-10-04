@@ -28,13 +28,11 @@ public abstract class HudMixin {
     @Inject(method = "extractRenderState", at = @At("TAIL"))
     private void onExtractRenderState(GuiGraphicsExtractor guiGraphicsExtractor, DeltaTracker deltaTracker, CallbackInfo ci) {
         RenderExtend.enter2D(null, guiGraphicsExtractor, deltaTracker);
-        error.util.display.batch.DisplayBatcher.begin(guiGraphicsExtractor);
         try {
             Render2DUtil.beginFrame();
             Client.getInstance().getEventManager().call(EVENT.set(this.minecraft, null, guiGraphicsExtractor, deltaTracker));
             Render2DUtil.flush();
         } finally {
-            error.util.display.batch.DisplayBatcher.end();
             RenderExtend.exit2D();
         }
     }

@@ -38,9 +38,6 @@ public final class BatchRenderState implements GuiElementRenderState {
 
     void reset() {
         members.clear();
-        pipeline = null;
-        textureSetup = null;
-        scissor = null;
         bounds = null;
     }
 
