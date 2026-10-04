@@ -289,8 +289,12 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
         return !trackTitle.isBlank();
     }
 
+    private boolean isInteractiveScreen() {
+        return mc.gui != null && (mc.gui.screen() instanceof ChatScreen || mc.gui.screen() instanceof error.ui.clickgui.LiquidClickGui);
+    }
+
     private boolean shouldShowExpandedMusic(long now) {
-        return hasTrack() && (now < musicExpandedUntil || mc.gui.screen() instanceof ChatScreen);
+        return hasTrack() && (now < musicExpandedUntil || isInteractiveScreen());
     }
 
     private void updateContentState(IslandState nextState, long now) {
@@ -301,7 +305,7 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
     }
 
     private float getTargetWidth(IslandState state) {
-        boolean chatOpen = mc.gui.screen() instanceof ChatScreen;
+        boolean chatOpen = isInteractiveScreen();
 
         return switch (state) {
             case PVP -> {
@@ -336,7 +340,7 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
         return switch (state) {
             case PVP -> PVP_HEIGHT;
             case NOTIFICATION -> NOTIFICATION_HEIGHT;
-            case MUSIC -> mc.gui.screen() instanceof ChatScreen ? MUSIC_CHAT_HEIGHT : MUSIC_HEIGHT;
+            case MUSIC -> isInteractiveScreen() ? MUSIC_CHAT_HEIGHT : MUSIC_HEIGHT;
             case NORMAL -> NORMAL_HEIGHT;
         };
     }
@@ -378,14 +382,18 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
         return totalW;
     }
 
+    private int getHudAccent() {
+        return error.module.impl.render.Interface.INSTANCE != null ? error.module.impl.render.Interface.INSTANCE.getHudColor() : Theme.getAccentColor();
+    }
+
     @Override
     public boolean shouldRender() {
-        return enabled && mc.gui != null && mc.gui.screen() == null;
+        return enabled && mc.gui != null;
     }
 
     @Override
     public void draw(Render2DEvent event) {
-        if (mc.player == null || mc.gui == null || mc.gui.screen() != null) return;
+        if (mc.player == null || mc.gui == null) return;
 
         fadeAnim.setTarget(1.0F);
         fadeAnim.update();
@@ -459,7 +467,7 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
         float islandX = centerX - (curIslandW / 2.0F);
         float islandY = boundsY;
 
-        int themeAccent = Theme.getAccentColor();
+        int themeAccent = getHudAccent();
 
         // 1. RENDER TOP DYNAMIC ISLAND
         renderIslandShell(islandX, islandY, curIslandW, curIslandH, themeAccent, alpha);
@@ -504,7 +512,7 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
             Render2D.drawRoundedOutline(x, y, w, h, radius, 1.0F, pvpBorder);
         } else {
             int shadowCol = ColorUtil.rgba(0, 0, 0, (int) (140 * alpha));
-            int primaryAccent = Theme.getAccentColor();
+            int primaryAccent = getHudAccent();
             int secondaryAccent = Theme.getSecondaryColor();
 
             int haloCol = ColorUtil.rgba(ColorUtil.red(primaryAccent), ColorUtil.green(primaryAccent), ColorUtil.blue(primaryAccent), (int) (45 * alpha));
@@ -529,7 +537,7 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
         if (w <= 0.0F) return;
 
         float subRadius = h / 2.0F;
-        int primaryAccent = Theme.getAccentColor();
+        int primaryAccent = getHudAccent();
         int secondaryAccent = Theme.getSecondaryColor();
 
         int shadowCol = ColorUtil.rgba(0, 0, 0, (int) (130 * alpha));
@@ -787,7 +795,7 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
         int shadowCol = ColorUtil.rgba(0, 0, 0, (int) (180 * alpha));
         int glassFill = ColorUtil.rgba(20, 18, 28, (int) (235 * alpha));
         int glassBorder = ColorUtil.rgba(255, 255, 255, (int) (45 * alpha));
-        int themeAccent = Theme.getAccentColor();
+        int themeAccent = getHudAccent();
 
         Render2D.drawShadow(menuX, menuY, width, height, 7.0F, 10.0F, shadowCol);
         Render2D.drawBlur(menuX, menuY, width, height, 7.0F, 16.0F, glassFill, alpha);

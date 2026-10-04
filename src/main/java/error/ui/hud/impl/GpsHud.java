@@ -68,7 +68,7 @@ public class GpsHud extends HudElement {
         var extractor = event.getGuiGraphicsExtractor();
         if (extractor == null) return;
 
-        int primaryAccent = Theme.getAccentColor();
+        int primaryAccent = error.module.impl.render.Interface.INSTANCE != null ? error.module.impl.render.Interface.INSTANCE.getHudColor() : Theme.getAccentColor();
         int secondaryAccent = Theme.getSecondaryColor();
 
         int bgFill = ColorUtil.rgba(16, 18, 28, (int) (210 * alpha));

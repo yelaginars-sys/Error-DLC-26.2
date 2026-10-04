@@ -16,13 +16,10 @@ public final class Interface extends Module {
 
     public static Interface INSTANCE;
 
-    public final ModeSetting style         = mode("Style", "Liquid Glass", "Liquid Glass", "Default Black");
-    public final ColorSetting accentColor  = color("Accent Color", ColorUtil.rgba(75, 124, 248, 255));
     public final CheckBox dynamicIsland    = checkbox("Dynamic Island", true);
-    public final CheckBox gps              = checkbox("GPS Navigation", true);
-    public final CheckBox snapping         = checkbox("Snapping", true);
-    public final CheckBox collisions       = checkbox("Collisions", true);
-    public final CheckBox guidelines       = checkbox("Guidelines", true);
+    public final CheckBox gps              = checkbox("GPS Навигация", true);
+    public final ModeSetting colorMode     = mode("Цвет HUD", "Тема", "Тема", "Свой");
+    public final ColorSetting customColor  = color("Свой цвет", ColorUtil.rgba(0, 180, 255, 255));
 
     public Interface() {
         super("HUD", "Отображение ХУДа и элементов интерфейса", Category.RENDER);
@@ -32,6 +29,13 @@ public final class Interface extends Module {
 
     public static Interface getInstance() {
         return INSTANCE;
+    }
+
+    public int getHudColor() {
+        if ("Свой".equalsIgnoreCase(colorMode.getValue())) {
+            return customColor.getValue();
+        }
+        return Theme.getAccentColor();
     }
 
     @Override
@@ -52,17 +56,8 @@ public final class Interface extends Module {
     }
 
     public void updateHudState() {
-        if (!error.config.ConfigManager.isLoadingConfig) {
-            this.accentColor.setValue(Theme.getAccentColor());
-        }
-        Theme.setGlassStyle(this.style.getValue());
-        Theme.setBackgroundMode("None");
-
         HudManager manager = HudManager.getInstance();
         if (manager == null) return;
-        manager.setSnappingEnabled(this.snapping.getValue());
-        manager.setCollisionsEnabled(this.collisions.getValue());
-        manager.setShowGuidelines(this.guidelines.getValue());
 
         boolean active = this.isEnabled();
         for (HudElement el : manager.getElements()) {
