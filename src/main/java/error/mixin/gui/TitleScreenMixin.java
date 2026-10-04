@@ -1,10 +1,15 @@
 package error.mixin.gui;
 
+import error.ui.account.AccountManagerScreen;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.network.chat.Component;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -14,6 +19,8 @@ import java.util.List;
 
 @Mixin(TitleScreen.class)
 public abstract class TitleScreenMixin extends Screen {
+
+    @Unique private Button error$accountButton;
 
     protected TitleScreenMixin(Component title) {
         super(title);
@@ -53,6 +60,10 @@ public abstract class TitleScreenMixin extends Screen {
             }
         }
 
+        if (realmsButton != null) {
+            realmsButton.visible = false;
+        }
+
         float w = 204.0F;
         float h = 20.0F;
         float gap = 4.0F;
@@ -73,13 +84,19 @@ public abstract class TitleScreenMixin extends Screen {
             currentY += h + gap;
         }
 
-        if (realmsButton != null) {
-            realmsButton.setX((int) (centerX - w / 2.0F));
-            realmsButton.setY((int) currentY);
-            realmsButton.setWidth((int) w);
-            realmsButton.setHeight((int) h);
-            currentY += h + gap;
+        if (error$accountButton == null) {
+            error$accountButton = Button.builder(Component.literal("Аккаунт менеджер"), b -> {
+                Minecraft.getInstance().setScreenAndShow(new AccountManagerScreen(this));
+            }).bounds((int) (centerX - w / 2.0F), (int) currentY, (int) w, (int) h).build();
+            this.addRenderableWidget(error$accountButton);
+        } else {
+            error$accountButton.setX((int) (centerX - w / 2.0F));
+            error$accountButton.setY((int) currentY);
+            error$accountButton.setWidth((int) w);
+            error$accountButton.setHeight((int) h);
+            error$accountButton.visible = true;
         }
+        currentY += h + gap;
 
         float optionsW = 98.0F;
         if (optionsButton != null) {
@@ -96,7 +113,6 @@ public abstract class TitleScreenMixin extends Screen {
             quitButton.setHeight((int) h);
         }
 
-        // Align small icon buttons neatly on the sides of the bottom row (Options / Quit)
         float smallW = 20.0F;
         float smallH = 20.0F;
         float leftX = centerX - w / 2.0F - gap - smallW;
@@ -120,5 +136,11 @@ public abstract class TitleScreenMixin extends Screen {
                 rightCount++;
             }
         }
+    }
+
+    @Inject(method = "extractRenderState", at = @At("HEAD"), cancellable = true)
+    private void hideDefaultTitleElements(GuiGraphicsExtractor extractor, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
+        super.extractRenderState(extractor, mouseX, mouseY, partialTick);
+        ci.cancel();
     }
 }
