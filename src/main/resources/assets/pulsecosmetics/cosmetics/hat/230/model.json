@@ -1,0 +1,97 @@
+{
+  "name": "Шапка - Cyber Visor",
+  "id": 230,
+  "category": 1,
+  "scale": 1.0,
+  "x": 0.0,
+  "y": 0.0,
+  "z": 0.0,
+  "model": {
+    "format_version": "1.12.0",
+    "minecraft:geometry": [
+      {
+        "description": {
+          "identifier": "geometry.hat_cyber_visor",
+          "texture_width": 64,
+          "texture_height": 64
+        },
+        "bones": [
+          {
+            "name": "root",
+            "pivot": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "cubes": [
+              {
+                "origin": [
+                  -4.5,
+                  2.0,
+                  -4.75
+                ],
+                "size": [
+                  9.0,
+                  3.0,
+                  1.0
+                ],
+                "uv": [
+                  0.0,
+                  0.0
+                ]
+              },
+              {
+                "origin": [
+                  4.25,
+                  2.0,
+                  -4.5
+                ],
+                "size": [
+                  0.75,
+                  2.5,
+                  9.0
+                ],
+                "uv": [
+                  22.0,
+                  0.0
+                ]
+              },
+              {
+                "origin": [
+                  -5.0,
+                  2.0,
+                  -4.5
+                ],
+                "size": [
+                  0.75,
+                  2.5,
+                  9.0
+                ],
+                "uv": [
+                  34.0,
+                  0.0
+                ]
+              },
+              {
+                "origin": [
+                  -4.25,
+                  -1.5,
+                  -4.75
+                ],
+                "size": [
+                  8.5,
+                  3.5,
+                  2.5
+                ],
+                "uv": [
+                  0.0,
+                  12.0
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

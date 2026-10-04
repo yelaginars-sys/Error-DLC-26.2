@@ -1,0 +1,194 @@
+{
+  "kolokolnia_kill": {
+    "sounds": [
+      "sadnes:other/kill_effect/kolokolnia_kill"
+    ]
+  },
+  "moan1": {
+    "sounds": [
+      "sadnes:hit_sounds/moan1"
+    ]
+  },
+  "moan2": {
+    "sounds": [
+      "sadnes:hit_sounds/moan2"
+    ]
+  },
+  "moan3": {
+    "sounds": [
+      "sadnes:hit_sounds/moan3"
+    ]
+  },
+  "moan4": {
+    "sounds": [
+      "sadnes:hit_sounds/moan4"
+    ]
+  },
+  "fu_daun": {
+    "sounds": [
+      "sadnes:hit_sounds/fu_daun"
+    ]
+  },
+  "module_disable": {
+    "sounds": [
+      "sadnes:module_sounds/off"
+    ]
+  },
+  "module_enable": {
+    "sounds": [
+      "sadnes:module_sounds/on"
+    ]
+  },
+  "off": {
+    "sounds": [
+      "sadnes:module_sounds/off2"
+    ]
+  },
+  "on": {
+    "sounds": [
+      "sadnes:module_sounds/on2"
+    ]
+  },
+  "crime": {
+    "sounds": [
+      "sadnes:hit_sounds/crime"
+    ]
+  },
+  "frag_effect_echo_main": {
+    "sounds": [
+      "sadnes:charmsfxpack/echocharmmain"
+    ]
+  },
+  "frag_effect_knock_main": {
+    "sounds": [
+      "sadnes:charmsfxpack/knockcharmmain"
+    ]
+  },
+  "frag_effect_pulse": {
+    "sounds": [
+      "sadnes:charmsfxpack/pulsecharmdistant0",
+      "sadnes:charmsfxpack/pulsecharmdistant1",
+      "sadnes:charmsfxpack/pulsecharmdistant2",
+      "sadnes:charmsfxpack/pulsecharmdistant3",
+      "sadnes:charmsfxpack/pulsecharmdistant4"
+    ]
+  },
+  "frag_effect_sparks_collision": {
+    "sounds": [
+      "sadnes:charmsfxpack/sparkscollisionneared"
+    ]
+  },
+  "metallic": {
+    "sounds": [
+      "sadnes:hit_sounds/metallic"
+    ]
+  },
+  "welcome": {
+    "sounds": [
+      "sadnes:other/notification/notif"
+    ]
+  },
+  "module_enable_type2": {
+    "sounds": [
+      "sadnes:module_sounds/on1"
+    ]
+  },
+  "module_disable_type2": {
+    "sounds": [
+      "sadnes:module_sounds/off1"
+    ]
+  },
+  "mine": {
+    "sounds": [
+      "sadnes:other/auto_mine/mine"
+    ]
+  },
+  "accountswitch": {
+    "sounds": [
+      "sadnes:alt_manager/accountswitch"
+    ]
+  },
+  "searchtyping": {
+    "sounds": [
+      "sadnes:clickgui/searchtyping"
+    ]
+  },
+  "slider": {
+    "sounds": [
+      "sadnes:clickgui/slider"
+    ]
+  },
+  "switchcategory": {
+    "sounds": [
+      "sadnes:clickgui/switchcategory"
+    ]
+  },
+  "no-settings": {
+    "sounds": [
+      "sadnes:clickgui/no-settings"
+    ]
+  },
+  "buttonclick": {
+    "sounds": [
+      "sadnes:clickgui/buttonclick"
+    ]
+  },
+  "unknowncommand": {
+    "sounds": [
+      "sadnes:commands/unknowncommand"
+    ]
+  },
+  "chelegg": {
+    "sounds": [
+      "sadnes:other/chelegg"
+    ]
+  },
+  "crit1": {
+    "sounds": [
+      "sadnes:kobiljon/crit1"
+    ]
+  },
+  "crit2": {
+    "sounds": [
+      "sadnes:kobiljon/crit2"
+    ]
+  },
+  "crit3": {
+    "sounds": [
+      "sadnes:kobiljon/crit3"
+    ]
+  },
+  "use_totem": {
+    "sounds": [
+      "sadnes:kobiljon/use_totem"
+    ]
+  },
+  "entity.ribbit.ambient": {
+    "sounds": [
+      "sadnes:entity/ribbit_ambient1",
+      "sadnes:entity/ribbit_ambient2",
+      "sadnes:entity/ribbit_ambient3",
+      "sadnes:entity/ribbit_ambient4",
+      "sadnes:entity/ribbit_ambient5"
+    ]
+  },
+  "entity.ribbit.step": {
+    "sounds": [
+      "sadnes:entity/ribbit_step1",
+      "sadnes:entity/ribbit_step2"
+    ]
+  },
+  "entity.ribbit.hurt": {
+    "sounds": [
+      "sadnes:entity/ribbit_hurt1",
+      "sadnes:entity/ribbit_hurt2",
+      "sadnes:entity/ribbit_hurt3"
+    ]
+  },
+  "entity.ribbit.death": {
+    "sounds": [
+      "sadnes:entity/ribbit_death1",
+      "sadnes:entity/ribbit_death2"
+    ]
+  }
+}
