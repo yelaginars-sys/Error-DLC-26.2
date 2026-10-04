@@ -20,7 +20,7 @@ import java.util.UUID;
 public class BetterMinecraft extends Module {
 
     public static BetterMinecraft INSTANCE;
-    public final MultiModeSetting modes = multiMode("Mode","Chat","BossBar","Ф6");
+    public final MultiModeSetting modes = multiMode("Mode", "BossBar", "Ф6");
     public final CheckBox kinematicCamera = checkbox("Пьян Ф5", false).visible(()->modes.isEnabled("Ф6"));
     public final SliderSetting animSpeed = slider("Speed Animation", 250.0F, 100.0F, 600.0F, 10);
 

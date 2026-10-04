@@ -14,6 +14,11 @@ import error.util.render.Render2D;
 import error.util.render.font.Fonts;
 import error.util.render.font.IconUse;
 import error.util.render.font.MsdfFont;
+import error.util.display.batch.DisplayBatcher;
+import error.util.display.blur.Blur;
+import error.util.display.blur.BlurType;
+import error.util.display.color.Color;
+import error.util.display.outline.Outline;
 import net.minecraft.client.gui.components.LerpingBossEvent;
 import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.client.player.AbstractClientPlayer;
@@ -388,15 +393,23 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
 
     @Override
     public boolean shouldRender() {
+        if (error.module.impl.render.Interface.INSTANCE == null
+                || !error.module.impl.render.Interface.INSTANCE.isEnabled()
+                || !error.module.impl.render.Interface.INSTANCE.dynamicIsland.getValue()) {
+            return false;
+        }
         return enabled && mc.gui != null;
     }
 
     @Override
     public void draw(Render2DEvent event) {
         if (mc.player == null || mc.gui == null) return;
+        if (error.module.impl.render.Interface.INSTANCE == null
+                || !error.module.impl.render.Interface.INSTANCE.isEnabled()
+                || !error.module.impl.render.Interface.INSTANCE.dynamicIsland.getValue()) {
+            return;
+        }
 
-        fadeAnim.setTarget(1.0F);
-        fadeAnim.update();
         float alpha = fadeAnim.getValue();
         if (alpha <= 0.01F) return;
 
@@ -469,6 +482,48 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
 
         int themeAccent = getHudAccent();
 
+        var extractor = event.getGuiGraphicsExtractor();
+        if (extractor != null) {
+            float shellRadius = curIslandH / 2.0F;
+            Blur.of(islandX, islandY, curIslandW, curIslandH)
+                    .radius(Math.round(shellRadius))
+                    .type(BlurType.KAWASE)
+                    .strength(4)
+                    .tint(Color.rgba(0, 0, 0, Math.round(75 * alpha)))
+                    .alpha(alpha)
+                    .render(extractor);
+
+            Outline.of(islandX, islandY, curIslandW, curIslandH)
+                    .radius(Math.round(shellRadius))
+                    .thickness(1.0F)
+                    .verticalGradient(Color.WHITE, Color.rgba(255, 255, 255, 32))
+                    .alpha(alpha)
+                    .render(extractor);
+
+            if (subIslandAlpha > 0.01F && animatedInfoW > 1.0F) {
+                float infoX = centerX - (animatedInfoW / 2.0F);
+                float infoY = islandY + curIslandH + GAP_BETWEEN;
+                float subRadius = INFO_HEIGHT / 2.0F;
+
+                Blur.of(infoX, infoY, animatedInfoW, INFO_HEIGHT)
+                        .radius(Math.round(subRadius))
+                        .type(BlurType.KAWASE)
+                        .strength(4)
+                        .tint(Color.rgba(0, 0, 0, Math.round(75 * subIslandAlpha)))
+                        .alpha(subIslandAlpha)
+                        .render(extractor);
+
+                Outline.of(infoX, infoY, animatedInfoW, INFO_HEIGHT)
+                        .radius(Math.round(subRadius))
+                        .thickness(1.0F)
+                        .verticalGradient(Color.WHITE, Color.rgba(255, 255, 255, 32))
+                        .alpha(subIslandAlpha)
+                        .render(extractor);
+            }
+
+            DisplayBatcher.flush();
+        }
+
         // 1. RENDER TOP DYNAMIC ISLAND
         renderIslandShell(islandX, islandY, curIslandW, curIslandH, themeAccent, alpha);
 
@@ -516,7 +571,7 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
             int secondaryAccent = Theme.getSecondaryColor();
 
             int haloCol = ColorUtil.rgba(ColorUtil.red(primaryAccent), ColorUtil.green(primaryAccent), ColorUtil.blue(primaryAccent), (int) (45 * alpha));
-            int glassFill = ColorUtil.rgba(14, 16, 24, (int) (200 * alpha));
+            int glassFill = ColorUtil.rgba(14, 16, 24, (int) (140 * alpha));
             int glassBorder = ColorUtil.withAlpha(primaryAccent, (int) (130 * alpha));
 
             if (shadowBlur > 1.0F) {
@@ -541,7 +596,7 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
         int secondaryAccent = Theme.getSecondaryColor();
 
         int shadowCol = ColorUtil.rgba(0, 0, 0, (int) (130 * alpha));
-        int glassFill = ColorUtil.rgba(18, 16, 24, (int) (210 * alpha));
+        int glassFill = ColorUtil.rgba(16, 18, 26, (int) (140 * alpha));
 
         Render2D.drawShadow(x, y, w, h, subRadius, 8.0F, shadowCol);
         Render2D.drawGradientRound(x, y, w, h, subRadius,

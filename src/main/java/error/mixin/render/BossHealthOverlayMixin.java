@@ -25,9 +25,13 @@ public class BossHealthOverlayMixin {
 
     @Inject(method = "extractRenderState", at = @At("HEAD"), cancellable = true)
     private void onExtractRenderState(GuiGraphicsExtractor extractor, CallbackInfo ci) {
-        if (error.ui.hud.impl.DynamicIslandHud.interceptBossBars(this.events)) {
-            ci.cancel();
-            return;
+        if (error.module.impl.render.Interface.INSTANCE != null 
+                && error.module.impl.render.Interface.INSTANCE.isEnabled() 
+                && error.module.impl.render.Interface.INSTANCE.dynamicIsland.getValue()) {
+            if (error.ui.hud.impl.DynamicIslandHud.interceptBossBars(this.events)) {
+                ci.cancel();
+                return;
+            }
         }
         if (BetterMinecraft.INSTANCE != null && BetterMinecraft.INSTANCE.isEnabled() && BetterMinecraft.INSTANCE.modes.isEnabled("BossBar")) {
             ci.cancel();

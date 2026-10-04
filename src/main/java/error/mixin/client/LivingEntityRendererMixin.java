@@ -56,16 +56,16 @@ public abstract class LivingEntityRendererMixin<T extends LivingEntity, S extend
                     error.util.render.model.RabbitModel.of(avatarState.id).submit(playerModel, avatarState, pose, collector, light, overlay, color, outlineColor, net.minecraft.resources.Identifier.fromNamespaceAndPath("error", "models/skycore/rabbit.png"));
                     return;
                 } else if (error.module.impl.render.CustomModels.AMOGUS.equalsIgnoreCase(custom)) {
-                    error.util.render.model.RabbitModel.of(avatarState.id).submit(playerModel, avatarState, pose, collector, light, overlay, color, outlineColor, net.minecraft.resources.Identifier.fromNamespaceAndPath("error", "models/skycore/amogus.png"));
+                    error.util.render.model.AmogusModel.of(avatarState.id).submit(playerModel, avatarState, pose, collector, light, overlay, color, outlineColor, net.minecraft.resources.Identifier.fromNamespaceAndPath("error", "models/skycore/amogus.png"));
                     return;
                 } else if (error.module.impl.render.CustomModels.FREDDY.equalsIgnoreCase(custom)) {
-                    error.util.render.model.RabbitModel.of(avatarState.id).submit(playerModel, avatarState, pose, collector, light, overlay, color, outlineColor, net.minecraft.resources.Identifier.fromNamespaceAndPath("error", "models/skycore/freddy.png"));
+                    error.util.render.model.FreddyModel.of(avatarState.id).submit(playerModel, avatarState, pose, collector, light, overlay, color, outlineColor, net.minecraft.resources.Identifier.fromNamespaceAndPath("error", "models/skycore/freddy.png"));
                     return;
                 } else if (error.module.impl.render.CustomModels.RED_DEMON.equalsIgnoreCase(custom)) {
-                    error.util.render.model.RabbitModel.of(avatarState.id).submit(playerModel, avatarState, pose, collector, light, overlay, color, outlineColor, net.minecraft.resources.Identifier.fromNamespaceAndPath("error", "models/skycore/reddemon.png"));
+                    error.util.render.model.DemonModel.of(avatarState.id).submit(playerModel, avatarState, pose, collector, light, overlay, color, outlineColor, net.minecraft.resources.Identifier.fromNamespaceAndPath("error", "models/skycore/reddemon.png"));
                     return;
                 } else if (error.module.impl.render.CustomModels.WHITE_DEMON.equalsIgnoreCase(custom)) {
-                    error.util.render.model.RabbitModel.of(avatarState.id).submit(playerModel, avatarState, pose, collector, light, overlay, color, outlineColor, net.minecraft.resources.Identifier.fromNamespaceAndPath("error", "models/skycore/whitedemon.png"));
+                    error.util.render.model.DemonModel.of(avatarState.id).submit(playerModel, avatarState, pose, collector, light, overlay, color, outlineColor, net.minecraft.resources.Identifier.fromNamespaceAndPath("error", "models/skycore/whitedemon.png"));
                     return;
                 }
             }

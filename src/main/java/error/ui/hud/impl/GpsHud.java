@@ -12,6 +12,11 @@ import error.util.client.clients.Theme;
 import error.util.render.Render2D;
 import error.util.render.Render3DUtil;
 import error.util.render.font.Fonts;
+import error.util.display.batch.DisplayBatcher;
+import error.util.display.blur.Blur;
+import error.util.display.blur.BlurType;
+import error.util.display.color.Color;
+import error.util.display.outline.Outline;
 
 public class GpsHud extends HudElement {
     private static final Identifier POINTER_TEX = Identifier.fromNamespaceAndPath("error", "images/ui/pointer.png");
@@ -80,15 +85,28 @@ public class GpsHud extends HudElement {
         this.width = w;
         this.height = h;
 
-        Render2D.drawShadow(x, y, w, h, 6.0F, 6.0F, shadowCol);
-        Render2D.drawShadow(x, y, w, h, 6.0F, 4.0F, accentGlow);
+        Blur.of(x, y, w, h)
+                .radius(6)
+                .type(BlurType.KAWASE)
+                .strength(4)
+                .tint(Color.rgba(0, 0, 0, Math.round(75 * alpha)))
+                .alpha(alpha)
+                .render(extractor);
 
-        Render2D.drawGradientRound(x, y, w, h, 6.0F,
-                ColorUtil.withAlpha(primaryAccent, (int)(150 * alpha)),
-                ColorUtil.withAlpha(secondaryAccent, (int)(150 * alpha)),
-                ColorUtil.withAlpha(primaryAccent, (int)(150 * alpha)),
-                ColorUtil.withAlpha(secondaryAccent, (int)(150 * alpha)));
-        Render2D.drawRoundedRect(x + 0.8F, y + 0.8F, w - 1.6F, h - 1.6F, 5.2F, bgFill);
+        Outline.of(x, y, w, h)
+                .radius(6)
+                .thickness(1.0F)
+                .verticalGradient(Color.WHITE, Color.rgba(255, 255, 255, 32))
+                .alpha(alpha)
+                .render(extractor);
+
+        DisplayBatcher.flush();
+
+        int glassFill = ColorUtil.rgba(14, 18, 28, (int) (140 * alpha));
+        int glassBorder = ColorUtil.withAlpha(primaryAccent, (int) (110 * alpha));
+
+        Render2D.drawRoundedRect(x, y, w, h, 6.0F, glassFill);
+        Render2D.drawRoundedOutline(x, y, w, h, 6.0F, 0.7F, glassBorder);
 
         float arrowSize = 9.0F;
         float arrowCenterX = x + 8.0F;

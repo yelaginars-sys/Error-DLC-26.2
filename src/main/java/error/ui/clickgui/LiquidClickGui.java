@@ -88,6 +88,14 @@ public class LiquidClickGui extends Screen {
     public String cosmeticFilter = "Все";
     private final Animation cosmeticsScrollAnim = new Animation(0.0F, 0.22F);
     private float cosmeticsScrollTarget = 0.0F;
+    private float cosmeticsPlayerYaw = 0.0F;
+    private boolean draggingCosmeticsPlayer = false;
+    private double lastCosmeticsMouseX = 0;
+
+    // Module Middle-Click Bind Modal States
+    public Module moduleModalModule = null;
+    public boolean moduleModalOpen = false;
+    public boolean moduleModalBinding = false;
 
     // General UI Animations & State
     private final Animation openAnim = new Animation(1.0F, 0.20F);
@@ -135,6 +143,8 @@ public class LiquidClickGui extends Screen {
         this.openTime = System.currentTimeMillis();
         this.draggingSlider = null;
         this.draggingPicker = DragTarget.NONE;
+        this.moduleModalOpen = false;
+        this.moduleModalBinding = false;
         if (this.activeCategory == Category.THEMES) {
             this.activeCategory = Category.COMBAT;
         }
@@ -191,6 +201,14 @@ public class LiquidClickGui extends Screen {
             this.draggingSlider = null;
         }
 
+        if (this.draggingCosmeticsPlayer && GLFW.glfwGetMouseButton(Minecraft.getInstance().getWindow().handle(), GLFW.GLFW_MOUSE_BUTTON_LEFT) == GLFW.GLFW_PRESS) {
+            float deltaX = (float) (mouseX - lastCosmeticsMouseX);
+            this.cosmeticsPlayerYaw += deltaX * 1.5F;
+            this.lastCosmeticsMouseX = mouseX;
+        } else {
+            this.draggingCosmeticsPlayer = false;
+        }
+
         int accentColor = Theme.getAccentColor();
 
         // 1. Subtle World Dimmer
@@ -237,10 +255,33 @@ public class LiquidClickGui extends Screen {
                     .render(extractor);
         }
 
+        // 4. Module Middle-Click Bind Modal Liquid Glass Window
+        if (this.moduleModalOpen && this.moduleModalModule != null) {
+            float mModalW = 180.0F;
+            float mModalH = 98.0F;
+            float mModalX = (screenW - mModalW) / 2.0F;
+            float mModalY = (screenH - mModalH) / 2.0F;
+
+            Blur.of(mModalX, mModalY, mModalW, mModalH)
+                    .radius(10)
+                    .type(BlurType.KAWASE)
+                    .strength(4)
+                    .tint(Color.rgba(0, 0, 0, Math.round(90 * animVal)))
+                    .alpha(animVal)
+                    .render(extractor);
+
+            Outline.of(mModalX, mModalY, mModalW, mModalH)
+                    .radius(10)
+                    .thickness(1.0F)
+                    .verticalGradient(Color.WHITE, FADE_WHITE)
+                    .alpha(animVal)
+                    .render(extractor);
+        }
+
         // Flush the glass background first
         DisplayBatcher.flush();
 
-        // 4. Render Cards, Buttons, and Fonts via Render2D & Render2DUtil
+        // 5. Render Cards, Buttons, and Fonts via Render2D & Render2DUtil
         RenderExtend.enter2D(null, extractor, null);
         Render2DUtil.beginFrame();
         try {
@@ -277,6 +318,11 @@ public class LiquidClickGui extends Screen {
             // Settings Modal Popup
             if (this.settingsModalOpen) {
                 renderSettingsModal(screenW, screenH, mouseX, mouseY, animVal, accentColor);
+            }
+
+            // Module Middle-Click Bind Modal Popup
+            if (this.moduleModalOpen && this.moduleModalModule != null) {
+                renderModuleModal(screenW, screenH, mouseX, mouseY, animVal, accentColor);
             }
         } finally {
             Render2DUtil.flush();
@@ -500,17 +546,17 @@ public class LiquidClickGui extends Screen {
         toggleAnim.update();
 
         if (module.isEnabled()) {
-            int cardBg = ColorUtil.rgba(24, 32, 48, (int) (170 * alphaVal));
-            int cardOutline = ColorUtil.withAlpha(accentColor, (int) ((120 + (isHovered ? 40 : 0)) * alphaVal));
+            int cardBg = ColorUtil.rgba(255, 255, 255, (int) ((isHovered ? 24 : 14) * alphaVal));
+            int cardOutline = ColorUtil.withAlpha(accentColor, (int) ((isHovered ? 180 : 130) * alphaVal));
 
             Render2D.drawRoundedRect(x, y, w, h, 6.0F, cardBg);
             Render2D.drawRoundedOutline(x, y, w, h, 6.0F, 0.85F, cardOutline);
         } else {
-            int cardBg = ColorUtil.rgba(20, 24, 34, (int) ((isHovered ? 130 : 90) * alphaVal));
-            int cardOutline = ColorUtil.rgba(255, 255, 255, (int) ((isHovered ? 28 : 16) * alphaVal));
+            int cardBg = ColorUtil.rgba(255, 255, 255, (int) ((isHovered ? 14 : 7) * alphaVal));
+            int cardOutline = ColorUtil.rgba(255, 255, 255, (int) ((isHovered ? 22 : 12) * alphaVal));
 
             Render2D.drawRoundedRect(x, y, w, h, 6.0F, cardBg);
-            Render2D.drawRoundedOutline(x, y, w, h, 6.0F, 0.75F, cardOutline);
+            Render2D.drawRoundedOutline(x, y, w, h, 6.0F, 0.65F, cardOutline);
         }
 
         // Module Name
@@ -559,17 +605,18 @@ public class LiquidClickGui extends Screen {
         if (setting instanceof CheckBox cb) {
             Fonts.drawString(Fonts.SF_MEDIUM, cb.getName(), x + 4.0F, y + 4.5F, 5.2F, 0xFFD0E0F0);
 
-            float boxSize = 10.0F;
-            float boxX = x + w - boxSize - 4.0F;
-            float boxY = y + 3.0F;
+            float switchW = 20.0F;
+            float switchH = 11.0F;
+            float switchX = x + w - switchW - 4.0F;
+            float switchY = y + 2.5F;
 
-            int boxBg = cb.getValue() ? ColorUtil.withAlpha(accentColor, (int) (220 * alphaVal)) : ColorUtil.rgba(255, 255, 255, (int) (16 * alphaVal));
-            Render2D.drawRoundedRect(boxX, boxY, boxSize, boxSize, 2.5F, boxBg);
-            Render2D.drawRoundedOutline(boxX, boxY, boxSize, boxSize, 2.5F, 0.65F, ColorUtil.rgba(255, 255, 255, (int) (35 * alphaVal)));
+            int switchBg = cb.getValue() ? ColorUtil.withAlpha(accentColor, (int) (220 * alphaVal)) : ColorUtil.rgba(255, 255, 255, (int) (18 * alphaVal));
+            int switchOutline = cb.getValue() ? accentColor : ColorUtil.rgba(255, 255, 255, (int) (26 * alphaVal));
+            Render2D.drawRoundedRect(switchX, switchY, switchW, switchH, 5.5F, switchBg);
+            Render2D.drawRoundedOutline(switchX, switchY, switchW, switchH, 5.5F, 0.6F, switchOutline);
 
-            if (cb.getValue()) {
-                Fonts.drawCenteredString(Fonts.SF_MEDIUM, "✓", boxX + boxSize / 2.0F, boxY + 1.5F, 4.5F, 0xFFFFFFFF);
-            }
+            float knobX = cb.getValue() ? (switchX + switchW - 5.5F) : (switchX + 5.5F);
+            Render2D.drawCircle(knobX, switchY + switchH / 2.0F, 3.8F, 0xFFFFFFFF);
         } else if (setting instanceof SliderSetting slider) {
             Fonts.drawString(Fonts.SF_MEDIUM, slider.getName(), x + 4.0F, y + 2.0F, 5.0F, 0xFFD0E0F0);
 
@@ -893,6 +940,116 @@ public class LiquidClickGui extends Screen {
             Render2D.drawRoundedRect(px, py, pSize, pSize, 3.0F, presets[i]);
             Render2D.drawRoundedOutline(px, py, pSize, pSize, 3.0F, 0.6F, ColorUtil.rgba(255, 255, 255, (int) (40 * alphaVal)));
         }
+    }
+
+    private void renderModuleModal(int screenW, int screenH, int mouseX, int mouseY, float alphaVal, int accentColor) {
+        if (moduleModalModule == null) return;
+
+        float modalW = 180.0F;
+        float modalH = 98.0F;
+        float modalX = (screenW - modalW) / 2.0F;
+        float modalY = (screenH - modalH) / 2.0F;
+
+        // Dim background behind modal
+        Render2D.drawRoundedRect(0, 0, screenW, screenH, 0.0F, ColorUtil.rgba(0, 0, 0, (int) (110 * alphaVal)));
+
+        // Shadow and subtle dark glass body
+        Render2D.drawShadow(modalX, modalY, modalW, modalH, 10.0F, 20.0F, ColorUtil.rgba(0, 0, 0, (int) (200 * alphaVal)));
+        Render2D.drawRoundedRect(modalX, modalY, modalW, modalH, 10.0F, ColorUtil.rgba(14, 18, 26, (int) (95 * alphaVal)));
+
+        // Header: :: dots + Module Name + Close button
+        float headY = modalY + 8.0F;
+        float dotX = modalX + 11.0F;
+        float dotY = headY + 2.0F;
+        int dotCol = 0xFF7A8B9E;
+        Render2D.drawCircle(dotX, dotY, 1.2F, dotCol);
+        Render2D.drawCircle(dotX + 3.2F, dotY, 1.2F, dotCol);
+        Render2D.drawCircle(dotX, dotY + 3.2F, 1.2F, dotCol);
+        Render2D.drawCircle(dotX + 3.2F, dotY + 3.2F, 1.2F, dotCol);
+        Render2D.drawCircle(dotX, dotY + 6.4F, 1.2F, dotCol);
+        Render2D.drawCircle(dotX + 3.2F, dotY + 6.4F, 1.2F, dotCol);
+
+        Fonts.drawString(Fonts.SF_MEDIUM, moduleModalModule.getName(), dotX + 9.0F, headY + 1.5F, 6.2F, 0xFFFFFFFF);
+
+        // Close Button ✕
+        float closeX = modalX + modalW - 20.0F;
+        float closeY = modalY + 6.0F;
+        float closeSize = 13.0F;
+        boolean closeHover = mouseX >= closeX && mouseX <= closeX + closeSize && mouseY >= closeY && mouseY <= closeY + closeSize;
+        Render2D.drawRoundedRect(closeX, closeY, closeSize, closeSize, 3.0F, closeHover ? ColorUtil.rgba(240, 70, 70, (int) (190 * alphaVal)) : ColorUtil.rgba(255, 255, 255, (int) (12 * alphaVal)));
+        Fonts.drawCenteredString(Fonts.SF_MEDIUM, "✕", closeX + closeSize / 2.0F, closeY + 2.0F, 5.5F, 0xFFFFFFFF);
+
+        // Divider
+        Render2D.drawRoundedRect(modalX + 10.0F, modalY + 22.0F, modalW - 20.0F, 1.0F, 0.5F, ColorUtil.rgba(255, 255, 255, (int) (14 * alphaVal)));
+
+        // Row 1: Бинд
+        float r1Y = modalY + 28.0F;
+        Fonts.drawString(Fonts.SF_MEDIUM, "Бинд", modalX + 12.0F, r1Y + 3.0F, 5.5F, 0xFFD0E0F0);
+
+        float bindBtnW = 44.0F;
+        float bindBtnH = 15.0F;
+        float bindBtnX = modalX + modalW - 12.0F - bindBtnW;
+        boolean bindHover = mouseX >= bindBtnX && mouseX <= bindBtnX + bindBtnW && mouseY >= r1Y && mouseY <= r1Y + bindBtnH;
+
+        int bindBg = moduleModalBinding ? ColorUtil.withAlpha(accentColor, (int) (210 * alphaVal)) : ColorUtil.rgba(255, 255, 255, (int) ((bindHover ? 22 : 14) * alphaVal));
+        Render2D.drawRoundedRect(bindBtnX, r1Y, bindBtnW, bindBtnH, 4.0F, bindBg);
+        Render2D.drawRoundedOutline(bindBtnX, r1Y, bindBtnW, bindBtnH, 4.0F, 0.6F, moduleModalBinding ? accentColor : ColorUtil.rgba(255, 255, 255, (int) (24 * alphaVal)));
+
+        String bindText;
+        if (moduleModalBinding) {
+            bindText = "[...]";
+        } else if (moduleModalModule.getBind() != null && !moduleModalModule.getBind().isEmpty()) {
+            bindText = KeyUtil.getKeyName(moduleModalModule.getBind().get(0));
+        } else {
+            bindText = "n/a";
+        }
+        Fonts.drawCenteredString(Fonts.SF_MEDIUM, bindText, bindBtnX + bindBtnW / 2.0F, r1Y + 3.5F, 4.8F, 0xFFFFFFFF);
+
+        // Row 2: Видимость (Hidden from HUD)
+        float r2Y = modalY + 50.0F;
+        Fonts.drawString(Fonts.SF_MEDIUM, "Видимость", modalX + 12.0F, r2Y + 3.0F, 5.5F, 0xFFD0E0F0);
+
+        boolean visibleOnHud = !moduleModalModule.isHiddenFromHud();
+        float visW = 22.0F;
+        float visH = 12.0F;
+        float visX = modalX + modalW - 12.0F - visW;
+        float visY = r2Y + 1.5F;
+
+        int visBg = visibleOnHud ? ColorUtil.withAlpha(accentColor, (int) (220 * alphaVal)) : ColorUtil.rgba(255, 255, 255, (int) (20 * alphaVal));
+        Render2D.drawRoundedRect(visX, visY, visW, visH, 6.0F, visBg);
+        Render2D.drawRoundedOutline(visX, visY, visW, visH, 6.0F, 0.6F, visibleOnHud ? accentColor : ColorUtil.rgba(255, 255, 255, (int) (26 * alphaVal)));
+
+        float visKnobX = visibleOnHud ? (visX + visW - 6.0F) : (visX + 6.0F);
+        Render2D.drawCircle(visKnobX, visY + visH / 2.0F, 4.2F, 0xFFFFFFFF);
+
+        // Row 3: Тип (Hold / Toggle)
+        float r3Y = modalY + 72.0F;
+        Fonts.drawString(Fonts.SF_MEDIUM, "Тип", modalX + 12.0F, r3Y + 3.5F, 5.5F, 0xFFD0E0F0);
+
+        boolean isHold = "Hold".equalsIgnoreCase(moduleModalModule.getBindType());
+        float segContainerW = 76.0F;
+        float segContainerH = 16.0F;
+        float segX = modalX + modalW - 12.0F - segContainerW;
+        float segY = r3Y;
+
+        Render2D.drawRoundedRect(segX, segY, segContainerW, segContainerH, 4.5F, ColorUtil.rgba(255, 255, 255, (int) (12 * alphaVal)));
+        Render2D.drawRoundedOutline(segX, segY, segContainerW, segContainerH, 4.5F, 0.6F, ColorUtil.rgba(255, 255, 255, (int) (20 * alphaVal)));
+
+        float segBtnW = 37.0F;
+        float holdX = segX + 1.0F;
+        float toggleX = segX + 1.0F + segBtnW;
+
+        // Hold segment
+        if (isHold) {
+            Render2D.drawRoundedRect(holdX, segY + 1.0F, segBtnW, segContainerH - 2.0F, 3.5F, ColorUtil.withAlpha(accentColor, (int) (210 * alphaVal)));
+        }
+        Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Hold", holdX + segBtnW / 2.0F, segY + 3.5F, 4.8F, isHold ? 0xFFFFFFFF : 0xFF8090A4);
+
+        // Toggle segment
+        if (!isHold) {
+            Render2D.drawRoundedRect(toggleX, segY + 1.0F, segBtnW, segContainerH - 2.0F, 3.5F, ColorUtil.withAlpha(accentColor, (int) (210 * alphaVal)));
+        }
+        Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Toggle", toggleX + segBtnW / 2.0F, segY + 3.5F, 4.8F, !isHold ? 0xFFFFFFFF : 0xFF8090A4);
     }
 
     private void renderConfigsTab(float x, float y, float w, float h, int mouseX, int mouseY, float alphaVal, int accentColor) {
@@ -1254,7 +1411,7 @@ public class LiquidClickGui extends Screen {
         // Flush 2D rendering before extracting 3D entity
         Render2DUtil.flush();
 
-        // Extract 3D Player Entity following mouse angle
+        // Extract 3D Player Entity standing still (rotated freely via drag, not following cursor)
         if (this.minecraft != null && this.minecraft.player != null) {
             int pX1 = (int) (charX + 8.0F);
             int pY1 = (int) (y + 30.0F);
@@ -1262,18 +1419,28 @@ public class LiquidClickGui extends Screen {
             int pY2 = (int) (y + h - 24.0F);
 
             try {
-                InventoryScreen.extractEntityInInventoryFollowsMouse(
-                        extractor,
-                        pX1, pY1, pX2, pY2,
-                        52, 0.0625F,
-                        (float) mouseX, (float) mouseY,
-                        this.minecraft.player
-                );
+                net.minecraft.client.renderer.entity.EntityRenderDispatcher dispatcher = this.minecraft.getEntityRenderDispatcher();
+                net.minecraft.client.renderer.entity.EntityRenderer renderer = dispatcher.getRenderer(this.minecraft.player);
+                net.minecraft.client.renderer.entity.state.EntityRenderState renderState = renderer.createRenderState(this.minecraft.player, 1.0F);
+                renderState.shadowPieces.clear();
+                renderState.outlineColor = 0;
+                if (renderState instanceof net.minecraft.client.renderer.entity.state.LivingEntityRenderState livingState) {
+                    livingState.bodyRot = 180.0F + this.cosmeticsPlayerYaw;
+                    livingState.yRot = 180.0F + this.cosmeticsPlayerYaw;
+                    livingState.xRot = 0.0F;
+                    livingState.boundingBoxWidth /= livingState.scale;
+                    livingState.boundingBoxHeight /= livingState.scale;
+                    livingState.scale = 1.0F;
+                }
+                org.joml.Quaternionf q1 = new org.joml.Quaternionf().rotateZ((float) Math.PI);
+                org.joml.Quaternionf q2 = new org.joml.Quaternionf();
+                org.joml.Vector3f translation = new org.joml.Vector3f(0.0F, renderState.boundingBoxHeight / 2.0F + 0.0625F, 0.0F);
+                extractor.entity(renderState, 52.0F, translation, q1, q2, pX1, pY1, pX2, pY2);
             } catch (Exception ignored) {}
         }
 
         // Bottom rotation hint
-        Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Вращение за курсором", charX + previewW / 2.0F, y + h - 13.0F, 4.4F, 0xFF7A8B9E);
+        Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Зажмите ЛКМ для вращения", charX + previewW / 2.0F, y + h - 13.0F, 4.4F, 0xFF7A8B9E);
     }
 
     private void renderEventsTab(float x, float y, float w, float h, int mouseX, int mouseY, float alphaVal, int accentColor) {
@@ -1349,6 +1516,82 @@ public class LiquidClickGui extends Screen {
                     return true;
                 }
             }
+        }
+
+        // Handle Module Middle-Click Bind Modal Clicks if Open
+        if (this.moduleModalOpen && this.moduleModalModule != null) {
+            float mModalW = 180.0F;
+            float mModalH = 98.0F;
+            float mModalX = (screenW - mModalW) / 2.0F;
+            float mModalY = (screenH - mModalH) / 2.0F;
+
+            // Close button [✕]
+            float closeX = mModalX + mModalW - 20.0F;
+            float closeY = mModalY + 6.0F;
+            float closeSize = 13.0F;
+            if (mouseX >= closeX && mouseX <= closeX + closeSize && mouseY >= closeY && mouseY <= closeY + closeSize) {
+                this.moduleModalOpen = false;
+                this.moduleModalBinding = false;
+                return true;
+            }
+
+            // Row 1: Бинд button
+            float r1Y = mModalY + 28.0F;
+            float bindBtnW = 44.0F;
+            float bindBtnH = 15.0F;
+            float bindBtnX = mModalX + mModalW - 12.0F - bindBtnW;
+            if (mouseX >= bindBtnX && mouseX <= bindBtnX + bindBtnW && mouseY >= r1Y && mouseY <= r1Y + bindBtnH) {
+                this.moduleModalBinding = !this.moduleModalBinding;
+                return true;
+            }
+
+            // Row 2: Видимость (Hidden from HUD) toggle switch
+            float r2Y = mModalY + 50.0F;
+            float visW = 22.0F;
+            float visH = 12.0F;
+            float visX = mModalX + mModalW - 12.0F - visW;
+            float visY = r2Y + 1.5F;
+            if (mouseX >= visX && mouseX <= visX + visW && mouseY >= visY && mouseY <= visY + visH) {
+                this.moduleModalModule.setHiddenFromHud(!this.moduleModalModule.isHiddenFromHud());
+                if (Client.INSTANCE != null && Client.INSTANCE.configManager != null) {
+                    Client.INSTANCE.configManager.autoSave();
+                }
+                return true;
+            }
+
+            // Row 3: Тип (Hold / Toggle) buttons
+            float r3Y = mModalY + 72.0F;
+            float segContainerW = 76.0F;
+            float segContainerH = 16.0F;
+            float segX = mModalX + mModalW - 12.0F - segContainerW;
+            float segY = r3Y;
+            float segBtnW = 37.0F;
+            float holdX = segX + 1.0F;
+            float toggleX = segX + 1.0F + segBtnW;
+            if (mouseX >= holdX && mouseX <= holdX + segBtnW && mouseY >= segY && mouseY <= segY + segContainerH) {
+                this.moduleModalModule.setBindType("Hold");
+                if (Client.INSTANCE != null && Client.INSTANCE.configManager != null) {
+                    Client.INSTANCE.configManager.autoSave();
+                }
+                return true;
+            }
+            if (mouseX >= toggleX && mouseX <= toggleX + segBtnW && mouseY >= segY && mouseY <= segY + segContainerH) {
+                this.moduleModalModule.setBindType("Toggle");
+                if (Client.INSTANCE != null && Client.INSTANCE.configManager != null) {
+                    Client.INSTANCE.configManager.autoSave();
+                }
+                return true;
+            }
+
+            // Consume click inside modal
+            if (mouseX >= mModalX && mouseX <= mModalX + mModalW && mouseY >= mModalY && mouseY <= mModalY + mModalH) {
+                return true;
+            }
+
+            // Click outside closes modal
+            this.moduleModalOpen = false;
+            this.moduleModalBinding = false;
+            return true;
         }
 
         if (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
@@ -1785,6 +2028,15 @@ public class LiquidClickGui extends Screen {
                         itemY += itemH + 4.0F;
                     }
                 }
+
+                // Character Preview Drag Rotation Click
+                float charX = contentX + listW + 8.0F;
+                if (mouseX >= charX && mouseX <= charX + previewW && mouseY >= contentY && mouseY <= contentY + contentH) {
+                    this.draggingCosmeticsPlayer = true;
+                    this.lastCosmeticsMouseX = mouseX;
+                    return true;
+                }
+
                 return true;
             }
 
@@ -1885,6 +2137,44 @@ public class LiquidClickGui extends Screen {
                     leftY += cardH + 7.0F;
                 }
             }
+        } else if (event.button() == GLFW.GLFW_MOUSE_BUTTON_MIDDLE) {
+            if (this.settingsModalOpen || this.moduleModalOpen) return true;
+
+            List<Module> modules = getFilteredModules();
+            float gridX = x + SIDEBAR_W + 12.0F;
+            float gridY = y + 44.0F;
+            float gridW = WINDOW_W - SIDEBAR_W - 24.0F;
+            float cardW = (gridW - 10.0F) / 2.0F;
+            float startY = gridY - scrollAnim.getValue();
+
+            float leftY = startY;
+            float rightY = startY;
+
+            for (int i = 0; i < modules.size(); i++) {
+                Module module = modules.get(i);
+                boolean isRightColumn = (i % 2 != 0);
+
+                float cardX = isRightColumn ? gridX + cardW + 10.0F : gridX;
+                float currentY = isRightColumn ? rightY : leftY;
+
+                Animation expandAnim = moduleExpandAnims.computeIfAbsent(module, k -> new Animation(0.0F, 0.20F));
+                float eVal = expandAnim.getValue();
+                float cardH = 34.0F + (eVal * calculateSettingsHeight(module));
+
+                if (mouseX >= cardX && mouseX <= cardX + cardW && mouseY >= currentY && mouseY <= currentY + 34.0F) {
+                    this.moduleModalModule = module;
+                    this.moduleModalOpen = true;
+                    this.moduleModalBinding = false;
+                    return true;
+                }
+
+                if (isRightColumn) {
+                    rightY += cardH + 7.0F;
+                } else {
+                    leftY += cardH + 7.0F;
+                }
+            }
+            return true;
         }
         return super.mouseClicked(event, isLeftClick);
     }
@@ -1967,6 +2257,26 @@ public class LiquidClickGui extends Screen {
             }
             this.bindingClickGuiKey = false;
             return true;
+        }
+
+        // Handle Module Middle-Click Bind Modal Key Handler
+        if (this.moduleModalOpen && this.moduleModalModule != null) {
+            if (this.moduleModalBinding) {
+                if (event.key() == GLFW.GLFW_KEY_ESCAPE) {
+                    this.moduleModalModule.getBind().clear();
+                } else {
+                    this.moduleModalModule.getBind().setSingle(event.key());
+                }
+                this.moduleModalBinding = false;
+                if (Client.INSTANCE != null && Client.INSTANCE.configManager != null) {
+                    Client.INSTANCE.configManager.autoSave();
+                }
+                return true;
+            }
+            if (event.key() == GLFW.GLFW_KEY_ESCAPE) {
+                this.moduleModalOpen = false;
+                return true;
+            }
         }
 
         // Close modal on Escape

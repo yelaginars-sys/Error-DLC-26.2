@@ -22,23 +22,6 @@ public abstract class ChatScreenMixin {
 
     @Shadow protected EditBox input;
 
-    @Inject(method = "init", at = @At("TAIL"))
-    private void enlargeChatInput(CallbackInfo ci) {
-        if (this.input != null) {
-            float screenW = Minecraft.getInstance().getWindow().getGuiScaledWidth();
-            float screenH = Minecraft.getInstance().getWindow().getGuiScaledHeight();
-
-            float chatW = Math.min(360.0F, screenW - 20.0F);
-            float chatH = 18.0F;
-            float chatX = 8.0F;
-            float chatY = screenH - 24.0F;
-
-            this.input.setX((int) chatX);
-            this.input.setY((int) chatY);
-            this.input.setWidth((int) chatW);
-            this.input.setHeight((int) chatH);
-        }
-    }
 
     @Inject(method = "handleChatInput", at = @At("HEAD"), cancellable = true)
     private void onChatInput(String message, boolean addToRecentChat, CallbackInfo ci) {

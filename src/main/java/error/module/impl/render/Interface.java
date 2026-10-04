@@ -62,11 +62,25 @@ public final class Interface extends Module {
         boolean active = this.isEnabled();
         for (HudElement el : manager.getElements()) {
             if (el instanceof error.ui.hud.impl.DynamicIslandHud) {
-                el.setEnabled(active && this.dynamicIsland.getValue());
+                boolean on = active && this.dynamicIsland.getValue();
+                el.setEnabled(on);
+                if (!on) {
+                    el.getFadeAnim().setTarget(0.0F);
+                    el.getFadeAnim().setValue(0.0F);
+                }
             } else if (el instanceof error.ui.hud.impl.GpsHud) {
-                el.setEnabled(active && this.gps.getValue());
+                boolean on = active && this.gps.getValue();
+                el.setEnabled(on);
+                if (!on) {
+                    el.getFadeAnim().setTarget(0.0F);
+                    el.getFadeAnim().setValue(0.0F);
+                }
             } else {
                 el.setEnabled(active);
+                if (!active) {
+                    el.getFadeAnim().setTarget(0.0F);
+                    el.getFadeAnim().setValue(0.0F);
+                }
             }
         }
     }
