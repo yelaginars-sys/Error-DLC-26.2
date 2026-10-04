@@ -95,26 +95,5 @@ public abstract class TitleScreenMixin extends Screen {
             quitButton.setWidth((int) optionsW);
             quitButton.setHeight((int) h);
         }
-
-        // Position small icon buttons neatly to the sides of Options/Quit row
-        float iconLeftX = centerX - w / 2.0F - 24.0F;
-        float iconRightX = centerX + w / 2.0F + 4.0F;
-        boolean rightSide = false;
-
-        for (AbstractWidget iconBtn : smallIconButtons) {
-            iconBtn.setWidth(20);
-            iconBtn.setHeight(20);
-            if (!rightSide) {
-                iconBtn.setX((int) iconLeftX);
-                iconBtn.setY((int) currentY);
-                iconLeftX -= 24.0F;
-                rightSide = true;
-            } else {
-                iconBtn.setX((int) iconRightX);
-                iconBtn.setY((int) currentY);
-                iconRightX += 24.0F;
-                rightSide = false;
-            }
-        }
     }
 }
