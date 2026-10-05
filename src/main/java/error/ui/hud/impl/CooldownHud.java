@@ -45,13 +45,13 @@ public final class CooldownHud extends HudElement implements error.IMinecraft {
     private final Animation widthAnim = new Animation(85.0F, 0.22F);
     private final Animation heightAnim = new Animation(18.0F, 0.22F);
 
-    private static final float ROW_H = 15.0F;
-    private static final float HEADER_H = 17.0F;
-    private static final float PILL_R = 7.5F;
-    private static final float GAP_Y = 3.0F;
+    private static final float ROW_H = 13.0F;
+    private static final float HEADER_H = 14.5F;
+    private static final float PILL_R = 6.25F;
+    private static final float GAP_Y = 2.0F;
 
     public CooldownHud() {
-        super("cooldowns", "Cooldowns", 20.0F, 100.0F, 90.0F, 20.0F, true);
+        super("cooldowns", "Cooldowns", 20.0F, 100.0F, 75.0F, 20.0F, true);
     }
 
     @Override
@@ -124,15 +124,15 @@ public final class CooldownHud extends HudElement implements error.IMinecraft {
         }
 
         // Calculate dynamic width
-        float maxRowW = 85.0F;
-        float headerTitleW = Fonts.SF_MEDIUM.getWidth("Cooldowns", 9.0F);
-        float headerMinW = 20.0F + headerTitleW + 8.0F;
+        float maxRowW = 72.0F;
+        float headerTitleW = Fonts.SF_MEDIUM.getWidth("Cooldowns", 7.5F);
+        float headerMinW = 18.0F + headerTitleW + 6.0F;
         maxRowW = Math.max(maxRowW, headerMinW);
 
         for (Entry e : entries) {
-            float nameW = Fonts.SF_MEDIUM.getWidth(e.def.name, 8.5F);
-            float timeW = Fonts.SF_MEDIUM.getWidth(e.timeStr, 8.0F);
-            float rowTotalW = (16.0F + nameW + 8.0F) + 6.0F + (timeW + 12.0F);
+            float nameW = Fonts.SF_MEDIUM.getWidth(e.def.name, 7.0F);
+            float timeW = Fonts.SF_MEDIUM.getWidth(e.timeStr, 6.5F);
+            float rowTotalW = (13.5F + nameW + 6.0F) + 5.0F + (timeW + 9.0F);
             maxRowW = Math.max(maxRowW, rowTotalW);
         }
 
@@ -154,7 +154,7 @@ public final class CooldownHud extends HudElement implements error.IMinecraft {
         float curY = this.y;
 
         // 1. Header Capsule in Liquid Glass
-        Render2D.drawShadow(curX, curY, this.width, HEADER_H, PILL_R, 6.0F, ColorUtil.rgba(0, 0, 0, 75));
+        Render2D.drawShadow(curX, curY, this.width, HEADER_H, PILL_R, 5.0F, ColorUtil.rgba(0, 0, 0, 70));
         GuiGraphicsExtractor extractor = event.getGuiGraphicsExtractor();
         if (extractor != null) {
             Render2DUtil.flush();
@@ -168,15 +168,15 @@ public final class CooldownHud extends HudElement implements error.IMinecraft {
 
             Outline.of(curX, curY, this.width, HEADER_H)
                     .radius(Math.round(PILL_R))
-                    .thickness(0.85F)
+                    .thickness(0.75F)
                     .verticalGradient(Color.WHITE, Color.rgba(255, 255, 255, 32))
                     .alpha(1.0F)
                     .render(extractor);
         }
 
         // Energy Glyph "s"
-        Fonts.drawString(Fonts.ENERGY, "s", curX + 6.0F, curY + 2.5F, 10.0F, accent);
-        Fonts.drawString(Fonts.SF_MEDIUM, "Cooldowns", curX + 19.0F, curY + 3.0F, 9.0F, 0xFFFFFFFF);
+        Fonts.drawString(Fonts.ENERGY, "s", curX + 5.0F, curY + 2.0F, 8.5F, accent);
+        Fonts.drawString(Fonts.SF_MEDIUM, "Cooldowns", curX + 16.0F, curY + 2.2F, 7.5F, 0xFFFFFFFF);
 
         curY += HEADER_H + GAP_Y;
 
@@ -187,16 +187,16 @@ public final class CooldownHud extends HudElement implements error.IMinecraft {
             int textWhite = ColorUtil.rgba(255, 255, 255, (int) (245 * e.alpha));
             int timeCol = getTimeColor(e.seconds, e.alpha);
 
-            float nameW = Fonts.SF_MEDIUM.getWidth(e.def.name, 8.5F);
-            float timeW = Fonts.SF_MEDIUM.getWidth(e.timeStr, 8.0F);
+            float nameW = Fonts.SF_MEDIUM.getWidth(e.def.name, 7.0F);
+            float timeW = Fonts.SF_MEDIUM.getWidth(e.timeStr, 6.5F);
 
-            float leftPillW = 16.0F + nameW + 8.0F;
-            float rightPillW = timeW + 12.0F;
+            float leftPillW = 13.5F + nameW + 6.0F;
+            float rightPillW = timeW + 9.0F;
             float rightPillX = curX + this.width - rightPillW;
 
             // Shadows
-            Render2D.drawShadow(curX, curY, leftPillW, ROW_H, PILL_R, 4.0F, ColorUtil.rgba(0, 0, 0, (int) (50 * e.alpha)));
-            Render2D.drawShadow(rightPillX, curY, rightPillW, ROW_H, PILL_R, 4.0F, ColorUtil.rgba(0, 0, 0, (int) (50 * e.alpha)));
+            Render2D.drawShadow(curX, curY, leftPillW, ROW_H, PILL_R, 3.5F, ColorUtil.rgba(0, 0, 0, (int) (45 * e.alpha)));
+            Render2D.drawShadow(rightPillX, curY, rightPillW, ROW_H, PILL_R, 3.5F, ColorUtil.rgba(0, 0, 0, (int) (45 * e.alpha)));
 
             // Liquid Glass Kawase Blur & Specular Outlines
             if (extractor != null) {
@@ -213,7 +213,7 @@ public final class CooldownHud extends HudElement implements error.IMinecraft {
 
                 Outline.of(curX, curY, leftPillW, ROW_H)
                         .radius(Math.round(PILL_R))
-                        .thickness(0.7F)
+                        .thickness(0.65F)
                         .verticalGradient(Color.rgba(255, 255, 255, (int) (28 * e.alpha)), Color.rgba(255, 255, 255, (int) (6 * e.alpha)))
                         .alpha(e.alpha)
                         .render(extractor);
@@ -229,7 +229,7 @@ public final class CooldownHud extends HudElement implements error.IMinecraft {
 
                 Outline.of(rightPillX, curY, rightPillW, ROW_H)
                         .radius(Math.round(PILL_R))
-                        .thickness(0.7F)
+                        .thickness(0.65F)
                         .verticalGradient(Color.rgba(255, 255, 255, (int) (28 * e.alpha)), Color.rgba(255, 255, 255, (int) (6 * e.alpha)))
                         .alpha(e.alpha)
                         .render(extractor);
@@ -241,18 +241,18 @@ public final class CooldownHud extends HudElement implements error.IMinecraft {
                 try {
                     var pose = extractor.pose();
                     pose.pushMatrix();
-                    pose.translate(curX + 3.0F, curY + 2.5F);
-                    pose.scale(0.625F, 0.625F); // 10px / 16px
+                    pose.translate(curX + 2.5F, curY + 2.0F);
+                    pose.scale(0.50F, 0.50F); // 8px / 16px
                     extractor.item(new ItemStack(e.def.item), 0, 0);
                     pose.popMatrix();
                 } catch (Throwable ignored) {}
             }
 
             // Name
-            Fonts.drawString(Fonts.SF_MEDIUM, e.def.name, curX + 16.0F, curY + 2.0F, 8.5F, textWhite);
+            Fonts.drawString(Fonts.SF_MEDIUM, e.def.name, curX + 13.5F, curY + 1.8F, 7.0F, textWhite);
 
             // Time centered in right capsule
-            Fonts.drawCenteredString(Fonts.SF_MEDIUM, e.timeStr, rightPillX + rightPillW * 0.5F, curY + 2.2F, 8.0F, timeCol);
+            Fonts.drawCenteredString(Fonts.SF_MEDIUM, e.timeStr, rightPillX + rightPillW * 0.5F, curY + 1.8F, 6.5F, timeCol);
 
             curY += (ROW_H + GAP_Y) * e.alpha;
         }

@@ -153,6 +153,13 @@ public final class NameTags extends Module {
         lastAttackTime = 0L;
     }
 
+    public void removeLoggedPlayer(UUID uuid) {
+        if (uuid != null) {
+            playerCache.remove(uuid);
+            loggedOutPlayers.remove(uuid);
+        }
+    }
+
     @EventTarget
     public void onAttack(AttackEvent event) {
         if (event.getTarget() instanceof LivingEntity living && living != mc.player) {
@@ -218,23 +225,26 @@ public final class NameTags extends Module {
 
             if (entity instanceof LivingEntity living) {
                 if (living instanceof AbstractClientPlayer player && player != mc.player) {
-                    currentFramePlayers.add(player.getUUID());
-                    loggedOutPlayers.remove(player.getUUID());
+                    boolean isFake = player instanceof error.module.impl.misc.FakePlayerEntity;
+                    if (!isFake) {
+                        currentFramePlayers.add(player.getUUID());
+                        loggedOutPlayers.remove(player.getUUID());
 
-                    boolean isFriend = FriendManager.getInstance().isFriend(player);
-                    playerCache.put(player.getUUID(), new CachedPlayer(
-                            player.getUUID(),
-                            player.getGameProfile().name(),
-                            player.getSkin().body().texturePath(),
-                            player.position(),
-                            player.getBbHeight(),
-                            equipment(player),
-                            donates(player),
-                            (int) Math.ceil(player.getHealth() + player.getAbsorptionAmount()),
-                            player.getMaxHealth(),
-                            isFriend,
-                            player.isAlive() && !player.isDeadOrDying()
-                    ));
+                        boolean isFriend = FriendManager.getInstance().isFriend(player);
+                        playerCache.put(player.getUUID(), new CachedPlayer(
+                                player.getUUID(),
+                                player.getGameProfile().name(),
+                                player.getSkin().body().texturePath(),
+                                player.position(),
+                                player.getBbHeight(),
+                                equipment(player),
+                                donates(player),
+                                (int) Math.ceil(player.getHealth() + player.getAbsorptionAmount()),
+                                player.getMaxHealth(),
+                                isFriend,
+                                player.isAlive() && !player.isDeadOrDying()
+                        ));
+                    }
                 }
 
                 if (!living.isAlive() || living.isSpectator()) {

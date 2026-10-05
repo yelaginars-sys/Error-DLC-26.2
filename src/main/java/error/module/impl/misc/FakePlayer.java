@@ -35,6 +35,17 @@ public final class FakePlayer extends Module {
 
     private void removeFakePlayer() {
         if (this.fakePlayer != null) {
+            java.util.UUID fakeUuid = this.fakePlayer.getUUID();
+            try {
+                error.Client client = error.Client.getInstance();
+                if (client != null && client.getModuleManager() != null) {
+                    error.module.impl.render.NameTags nameTags = client.getModuleManager().getNameTags();
+                    if (nameTags != null) {
+                        nameTags.removeLoggedPlayer(fakeUuid);
+                    }
+                }
+            } catch (Throwable ignored) {}
+
             Minecraft mc = Minecraft.getInstance();
             if (mc.level != null && !this.fakePlayer.isRemoved()) {
                 mc.level.removeEntity(this.fakePlayer.getId(), Entity.RemovalReason.DISCARDED);

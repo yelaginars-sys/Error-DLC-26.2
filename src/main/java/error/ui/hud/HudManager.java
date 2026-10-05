@@ -142,6 +142,10 @@ public final class HudManager implements IMinecraft {
             snapAlphaY.setValue(0.0F);
         }
 
+        float hudScale = error.module.impl.render.Interface.getInstance() != null ? error.module.impl.render.Interface.getInstance().hudScale.getValue() : 1.0F;
+        boolean needScale = Math.abs(hudScale - 1.0F) > 0.005F;
+        var extractor = event.getGuiGraphicsExtractor();
+
         for (HudElement element : elements) {
             boolean visible = element.isEnabled() && (element.shouldRender() || isEditMode);
             element.getFadeAnim().setTarget(visible ? 1.0F : 0.0F);
@@ -151,12 +155,28 @@ public final class HudManager implements IMinecraft {
             if (animVal <= 0.001F) continue;
 
             Render2DUtil.flush();
-            element.draw(event);
             DisplayBatcher.flush();
 
-            if (isEditMode && element == draggedElement && !(element instanceof ArmorHud)) {
+            if (needScale && extractor != null) {
+                var pose = extractor.pose();
+                pose.pushMatrix();
+                pose.translate(element.getX(), element.getY());
+                pose.scale(hudScale, hudScale);
+                pose.translate(-element.getX(), -element.getY());
+            }
+
+            element.draw(event);
+
+            Render2DUtil.flush();
+            DisplayBatcher.flush();
+
+            if (needScale && extractor != null) {
+                extractor.pose().popMatrix();
+            }
+
+            if (isEditMode && element == draggedElement) {
                 Render2D.drawRoundedOutline(element.getX() - 1.0F, element.getY() - 1.0F,
-                        element.getWidth() + 2.0F, element.getHeight() + 2.0F, 3.5F, 1.0F,
+                        element.getWidth() * hudScale + 2.0F, element.getHeight() * hudScale + 2.0F, 3.5F, 1.0F,
                         ColorUtil.rgba(255, 255, 255, 160));
             }
         }
@@ -172,7 +192,6 @@ public final class HudManager implements IMinecraft {
                 double localMy = (mouseY - contextMenuY) / scale;
                 contextMenuElement.handleContextMenuClick(0.0F, 0.0F, localMx, localMy, 0);
             }
-            var extractor = event.getGuiGraphicsExtractor();
             if (extractor != null) {
                 Render2DUtil.flush();
                 extractor.pose().pushMatrix();
@@ -205,28 +224,32 @@ public final class HudManager implements IMinecraft {
         float screenW = mc.getWindow().getGuiScaledWidth();
         float screenH = mc.getWindow().getGuiScaledHeight();
 
+        float s = target.getScale();
+        float targetW = target.getWidth() * s;
+        float targetH = target.getHeight() * s;
+
         float desiredX = (float) mouseX - target.dragOffsetX;
         float desiredY = (float) mouseY - target.dragOffsetY;
 
         if (snappingEnabled) {
-            desiredX = applySnappingX(target, desiredX, target.getWidth(), screenW);
-            desiredY = applySnappingY(target, desiredY, target.getHeight(), screenH);
+            desiredX = applySnappingX(target, desiredX, targetW, screenW);
+            desiredY = applySnappingY(target, desiredY, targetH, screenH);
         }
 
-        desiredX = Math.max(0.0F, Math.min(screenW - target.getWidth(), desiredX));
-        desiredY = Math.max(0.0F, Math.min(screenH - target.getHeight(), desiredY));
+        desiredX = Math.max(0.0F, Math.min(screenW - targetW, desiredX));
+        desiredY = Math.max(0.0F, Math.min(screenH - targetH, desiredY));
 
         if (collisionsEnabled) {
             float originalX = target.getTargetX();
             float originalY = target.getTargetY();
 
             target.setTargetX(desiredX);
-            if (checkOverlapBoxes(target.getTargetX(), target.getTargetY(), target.getWidth(), target.getHeight(), target)) {
+            if (checkOverlapBoxes(target.getTargetX(), target.getTargetY(), targetW, targetH, target)) {
                 target.setTargetX(originalX);
             }
 
             target.setTargetY(desiredY);
-            if (checkOverlapBoxes(target.getTargetX(), target.getTargetY(), target.getWidth(), target.getHeight(), target)) {
+            if (checkOverlapBoxes(target.getTargetX(), target.getTargetY(), targetW, targetH, target)) {
                 target.setTargetY(originalY);
             }
         } else {

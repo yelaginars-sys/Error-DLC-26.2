@@ -24,7 +24,12 @@ public abstract class AvatarRendererMixin {
     private void captureCustomModel(Avatar avatar, AvatarRenderState state, float tickDelta, CallbackInfo ci) {
         CustomModels models = CustomModels.INSTANCE;
         if (state instanceof CustomModelCarrier carrier) {
-            carrier.error$setCustomModel(models == null ? null : models.modelFor(avatar));
+            String custom = models == null ? null : models.modelFor(avatar);
+            carrier.error$setCustomModel(custom);
+            if (custom != null && !CustomModels.NONE.equalsIgnoreCase(custom)) {
+                state.isInvisible = false;
+                state.isInvisibleToPlayer = false;
+            }
         }
     }
 

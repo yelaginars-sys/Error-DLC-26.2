@@ -56,14 +56,21 @@ public abstract class HudElement {
         return false;
     }
 
+    public float getScale() {
+        error.module.impl.render.Interface iface = error.module.impl.render.Interface.getInstance();
+        return iface != null ? iface.hudScale.getValue() : 1.0F;
+    }
+
     public List<Box> getCollisionBoxes() {
         if (width <= 0 || height <= 0) return List.of();
-        return List.of(new Box(x, y, width, height, this));
+        float s = getScale();
+        return List.of(new Box(x, y, width * s, height * s, this));
     }
 
     public boolean isHovered(double mouseX, double mouseY) {
-        return mouseX >= this.x && mouseX <= this.x + this.width &&
-                mouseY >= this.y && mouseY <= this.y + this.height;
+        float s = getScale();
+        return mouseX >= this.x && mouseX <= this.x + this.width * s &&
+                mouseY >= this.y && mouseY <= this.y + this.height * s;
     }
 
     public void startDragging(double mouseX, double mouseY) {

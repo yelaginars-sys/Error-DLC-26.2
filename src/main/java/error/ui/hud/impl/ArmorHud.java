@@ -26,6 +26,7 @@ public class ArmorHud extends HudElement implements error.IMinecraft {
     };
 
     private List<ItemStack> previewStacks;
+    private boolean initializedPos = false;
 
     public ArmorHud() {
         super("armor_hud", "Armor HUD", 10.0F, 100.0F, 76.0F, 22.0F, true);
@@ -111,30 +112,14 @@ public class ArmorHud extends HudElement implements error.IMinecraft {
         this.width = totalW;
         this.height = totalH;
 
-        String posMode = iface != null ? iface.armorPosition.getValue() : "Над хотбаром";
-        float screenW = mc.getWindow().getGuiScaledWidth();
-        float screenH = mc.getWindow().getGuiScaledHeight();
-
-        if (!this.dragging) {
-            if ("Справа от хотбара".equalsIgnoreCase(posMode)) {
-                this.x = screenW * 0.5F + 96.0F;
-                this.y = screenH - totalH - 3.0F;
-            } else if ("Слева от хотбара".equalsIgnoreCase(posMode)) {
-                this.x = screenW * 0.5F - 96.0F - totalW;
-                this.y = screenH - totalH - 3.0F;
-            } else if (!"Свободная".equalsIgnoreCase(posMode)) {
-                // "Над хотбаром" - safely elevated above health/hunger and air bubbles
-                float baseY = screenH - 58.0F - totalH;
-                if (mc.player != null) {
-                    if (mc.player.isCreative()) {
-                        baseY = screenH - 32.0F - totalH;
-                    } else if (mc.player.getAirSupply() < mc.player.getMaxAirSupply()) {
-                        baseY -= 12.0F;
-                    }
-                }
-                this.x = (screenW - totalW) * 0.5F;
-                this.y = baseY;
-            }
+        if (!this.initializedPos && this.x == 10.0F && this.y == 100.0F) {
+            float screenW = mc.getWindow().getGuiScaledWidth();
+            float screenH = mc.getWindow().getGuiScaledHeight();
+            this.x = (screenW - totalW) * 0.5F;
+            this.targetX = this.x;
+            this.y = screenH - 58.0F - totalH;
+            this.targetY = this.y;
+            this.initializedPos = true;
         }
 
         float renderX = this.x;

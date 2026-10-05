@@ -33,14 +33,14 @@ public final class PotionsHud extends HudElement implements error.IMinecraft {
     private final Animation widthAnim = new Animation(85.0F, 0.22F);
     private final Animation heightAnim = new Animation(18.0F, 0.22F);
 
-    private static final float ROW_H = 15.0F;
-    private static final float HEADER_H = 17.0F;
-    private static final float PILL_R = 7.5F;
-    private static final float ICON_SIZE = 9.0F;
-    private static final float GAP_Y = 3.0F;
+    private static final float ROW_H = 13.0F;
+    private static final float HEADER_H = 14.5F;
+    private static final float PILL_R = 6.25F;
+    private static final float ICON_SIZE = 7.5F;
+    private static final float GAP_Y = 2.0F;
 
     public PotionsHud() {
-        super("potions", "Potions", 10.0F, 160.0F, 90.0F, 40.0F, true);
+        super("potions", "Potions", 10.0F, 160.0F, 75.0F, 35.0F, true);
     }
 
     @Override
@@ -132,15 +132,15 @@ public final class PotionsHud extends HudElement implements error.IMinecraft {
         }
 
         // Calculate dynamic width
-        float maxRowW = 85.0F;
-        float headerTitleW = Fonts.SF_MEDIUM.getWidth("Potions", 9.0F);
-        float headerMinW = 20.0F + headerTitleW + 8.0F;
+        float maxRowW = 72.0F;
+        float headerTitleW = Fonts.SF_MEDIUM.getWidth("Potions", 7.5F);
+        float headerMinW = 18.0F + headerTitleW + 6.0F;
         maxRowW = Math.max(maxRowW, headerMinW);
 
         for (EffectEntry e : entries) {
-            float nameW = Fonts.SF_MEDIUM.getWidth(e.name + e.lvl, 8.5F);
-            float durW = Fonts.SF_MEDIUM.getWidth(e.durationStr, 8.0F);
-            float rowTotalW = (16.0F + nameW + 8.0F) + 6.0F + (durW + 12.0F);
+            float nameW = Fonts.SF_MEDIUM.getWidth(e.name + e.lvl, 7.0F);
+            float durW = Fonts.SF_MEDIUM.getWidth(e.durationStr, 6.8F);
+            float rowTotalW = (13.5F + nameW + 6.0F) + 5.0F + (durW + 9.0F);
             maxRowW = Math.max(maxRowW, rowTotalW);
         }
 
@@ -162,7 +162,7 @@ public final class PotionsHud extends HudElement implements error.IMinecraft {
         float curY = this.y;
 
         // 1. Header Capsule in Liquid Glass
-        Render2D.drawShadow(curX, curY, this.width, HEADER_H, PILL_R, 6.0F, ColorUtil.rgba(0, 0, 0, 75));
+        Render2D.drawShadow(curX, curY, this.width, HEADER_H, PILL_R, 5.0F, ColorUtil.rgba(0, 0, 0, 70));
         GuiGraphicsExtractor extractor = event.getGuiGraphicsExtractor();
         if (extractor != null) {
             Render2DUtil.flush();
@@ -176,15 +176,15 @@ public final class PotionsHud extends HudElement implements error.IMinecraft {
 
             Outline.of(curX, curY, this.width, HEADER_H)
                     .radius(Math.round(PILL_R))
-                    .thickness(0.85F)
+                    .thickness(0.75F)
                     .verticalGradient(Color.WHITE, Color.rgba(255, 255, 255, 32))
                     .alpha(1.0F)
                     .render(extractor);
         }
 
         // Energy Glyph "q"
-        Fonts.drawString(Fonts.ENERGY, "q", curX + 6.0F, curY + 2.5F, 10.0F, accent);
-        Fonts.drawString(Fonts.SF_MEDIUM, "Potions", curX + 19.0F, curY + 3.0F, 9.0F, 0xFFFFFFFF);
+        Fonts.drawString(Fonts.ENERGY, "q", curX + 5.0F, curY + 2.0F, 8.5F, accent);
+        Fonts.drawString(Fonts.SF_MEDIUM, "Potions", curX + 16.0F, curY + 2.2F, 7.5F, 0xFFFFFFFF);
 
         curY += HEADER_H + GAP_Y;
 
@@ -195,17 +195,17 @@ public final class PotionsHud extends HudElement implements error.IMinecraft {
             int textWhite = ColorUtil.rgba(255, 255, 255, (int) (245 * e.alpha));
             int durColor = getDurationColor(e.durationTicks, e.alpha);
 
-            float nameW = Fonts.SF_MEDIUM.getWidth(e.name, 8.5F);
-            float lvlW = e.lvl.isEmpty() ? 0 : Fonts.SF_MEDIUM.getWidth(e.lvl, 8.0F);
-            float durTextW = Fonts.SF_MEDIUM.getWidth(e.durationStr, 8.0F);
+            float nameW = Fonts.SF_MEDIUM.getWidth(e.name, 7.0F);
+            float lvlW = e.lvl.isEmpty() ? 0 : Fonts.SF_MEDIUM.getWidth(e.lvl, 6.5F);
+            float durTextW = Fonts.SF_MEDIUM.getWidth(e.durationStr, 6.8F);
 
-            float leftPillW = 16.0F + nameW + lvlW + 8.0F;
-            float rightPillW = durTextW + 12.0F;
+            float leftPillW = 13.5F + nameW + lvlW + 6.0F;
+            float rightPillW = durTextW + 9.0F;
             float rightPillX = curX + this.width - rightPillW;
 
             // Shadows
-            Render2D.drawShadow(curX, curY, leftPillW, ROW_H, PILL_R, 4.0F, ColorUtil.rgba(0, 0, 0, (int) (50 * e.alpha)));
-            Render2D.drawShadow(rightPillX, curY, rightPillW, ROW_H, PILL_R, 4.0F, ColorUtil.rgba(0, 0, 0, (int) (50 * e.alpha)));
+            Render2D.drawShadow(curX, curY, leftPillW, ROW_H, PILL_R, 3.5F, ColorUtil.rgba(0, 0, 0, (int) (45 * e.alpha)));
+            Render2D.drawShadow(rightPillX, curY, rightPillW, ROW_H, PILL_R, 3.5F, ColorUtil.rgba(0, 0, 0, (int) (45 * e.alpha)));
 
             // Liquid Glass Kawase Blur & Specular Outlines
             if (extractor != null) {
@@ -222,7 +222,7 @@ public final class PotionsHud extends HudElement implements error.IMinecraft {
 
                 Outline.of(curX, curY, leftPillW, ROW_H)
                         .radius(Math.round(PILL_R))
-                        .thickness(0.7F)
+                        .thickness(0.65F)
                         .verticalGradient(Color.rgba(255, 255, 255, (int) (28 * e.alpha)), Color.rgba(255, 255, 255, (int) (6 * e.alpha)))
                         .alpha(e.alpha)
                         .render(extractor);
@@ -238,7 +238,7 @@ public final class PotionsHud extends HudElement implements error.IMinecraft {
 
                 Outline.of(rightPillX, curY, rightPillW, ROW_H)
                         .radius(Math.round(PILL_R))
-                        .thickness(0.7F)
+                        .thickness(0.65F)
                         .verticalGradient(Color.rgba(255, 255, 255, (int) (28 * e.alpha)), Color.rgba(255, 255, 255, (int) (6 * e.alpha)))
                         .alpha(e.alpha)
                         .render(extractor);
@@ -248,7 +248,7 @@ public final class PotionsHud extends HudElement implements error.IMinecraft {
             Identifier sprite = Hud.getMobEffectSprite(e.holder);
             if (extractor != null && sprite != null) {
                 Render2DUtil.flush();
-                float iconX = curX + 4.5F;
+                float iconX = curX + 3.5F;
                 float iconY = curY + (ROW_H - ICON_SIZE) / 2.0F;
                 int iconTint = ColorUtil.rgba(255, 255, 255, (int) (240 * e.alpha));
                 try {
@@ -257,17 +257,17 @@ public final class PotionsHud extends HudElement implements error.IMinecraft {
                     extractor.blitSprite(RenderPipelines.GUI_TEXTURED, sprite, (int) iconX, (int) iconY, (int) Math.round(ICON_SIZE), (int) Math.round(ICON_SIZE));
                 }
             } else {
-                Render2D.drawCircle(curX + 8.0F, curY + ROW_H * 0.5F, 2.0F, ColorUtil.withAlpha(accent, (int) (230 * e.alpha)));
+                Render2D.drawCircle(curX + 6.5F, curY + ROW_H * 0.5F, 1.8F, ColorUtil.withAlpha(accent, (int) (230 * e.alpha)));
             }
 
             // Name + Level
-            Fonts.drawString(Fonts.SF_MEDIUM, e.name, curX + 16.0F, curY + 2.0F, 8.5F, textWhite);
+            Fonts.drawString(Fonts.SF_MEDIUM, e.name, curX + 13.5F, curY + 1.8F, 7.0F, textWhite);
             if (!e.lvl.isEmpty()) {
-                Fonts.drawString(Fonts.SF_MEDIUM, e.lvl, curX + 16.0F + nameW, curY + 2.2F, 8.0F, ColorUtil.withAlpha(accent, (int) (240 * e.alpha)));
+                Fonts.drawString(Fonts.SF_MEDIUM, e.lvl, curX + 13.5F + nameW, curY + 1.9F, 6.5F, ColorUtil.withAlpha(accent, (int) (240 * e.alpha)));
             }
 
             // Duration text centered in right capsule
-            Fonts.drawCenteredString(Fonts.SF_MEDIUM, e.durationStr, rightPillX + rightPillW * 0.5F, curY + 2.2F, 8.0F, durColor);
+            Fonts.drawCenteredString(Fonts.SF_MEDIUM, e.durationStr, rightPillX + rightPillW * 0.5F, curY + 1.8F, 6.8F, durColor);
 
             curY += (ROW_H + GAP_Y) * e.alpha;
         }

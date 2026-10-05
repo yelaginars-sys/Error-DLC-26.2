@@ -75,8 +75,8 @@ public abstract class AbstractButtonMixin {
         }
 
         Color blurTint = self.active
-                ? Color.rgba(0, 0, 0, Math.round(75 + this.error$hoverAnim * 15))
-                : Color.rgba(0, 0, 0, 50);
+                ? Color.rgba(0, 0, 0, Math.round(65 + this.error$hoverAnim * 15))
+                : Color.rgba(0, 0, 0, 45);
 
         Blur.of(x, y, w, h)
                 .radius(radius)
@@ -85,22 +85,22 @@ public abstract class AbstractButtonMixin {
                 .tint(blurTint)
                 .render(extractor);
 
-        // 2. Liquid Glass Outline Pass (top-to-bottom specular light gradient matching ClickGUI)
+        // 2. Liquid Glass Outline Pass matching ClickGUI cards (subtle, pure, no harsh white glare)
         Color topOutline;
         Color bottomOutline;
         if (self.active) {
-            Color hoverTop = Color.of(themeAccent).lerp(Color.WHITE, 0.35F);
-            Color hoverBottom = ERROR$FADE_WHITE.lerp(Color.of(themeAccent).withAlpha(0.40F), this.error$hoverAnim);
-            topOutline = Color.WHITE.lerp(hoverTop, this.error$hoverAnim);
-            bottomOutline = ERROR$FADE_WHITE.lerp(hoverBottom, this.error$hoverAnim);
+            Color hoverTop = Color.of(themeAccent).withAlpha(0.65F);
+            Color hoverBottom = Color.of(themeAccent).withAlpha(0.35F);
+            topOutline = Color.rgba(255, 255, 255, 36).lerp(hoverTop, this.error$hoverAnim);
+            bottomOutline = Color.rgba(255, 255, 255, 14).lerp(hoverBottom, this.error$hoverAnim);
         } else {
-            topOutline = Color.rgba(255, 255, 255, 22);
-            bottomOutline = Color.rgba(255, 255, 255, 8);
+            topOutline = Color.rgba(255, 255, 255, 16);
+            bottomOutline = Color.rgba(255, 255, 255, 6);
         }
 
         Outline.of(x, y, w, h)
                 .radius(radius)
-                .thickness(1.0F)
+                .thickness(0.75F)
                 .verticalGradient(topOutline, bottomOutline)
                 .render(extractor);
 
@@ -109,50 +109,37 @@ public abstract class AbstractButtonMixin {
             DisplayBatcher.end();
         }
 
-        // 3. 2D Elements Pass: Liquid Shadow, Darken Layer, Frosted Sheen, Specular Highlight & Typography
+        // 3. 2D Elements Pass: Soft ambient glass shadow, pure translucent glass fill, and crisp typography
         error.util.RenderExtend.enter2D(null, extractor, null);
         Render2DUtil.beginFrame();
         try {
             // Ambient glass shadow
-            Render2D.drawShadow(x, y, w, h, radius + 1.0F, 3.5F,
-                    ColorUtil.rgba(0, 0, 0, (int) (65 * (self.active ? 1.0F : 0.4F))));
+            Render2D.drawShadow(x, y, w, h, radius, 4.0F,
+                    ColorUtil.rgba(0, 0, 0, (int) (50 * (self.active ? 1.0F : 0.3F))));
 
             // Dynamic accent glow shadow when hovered
             if (self.active && this.error$hoverAnim > 0.02F) {
-                Render2D.drawShadow(x, y, w, h, radius + 2.0F, 6.0F,
-                        ColorUtil.withAlpha(themeAccent, (int) (75 * this.error$hoverAnim)));
+                Render2D.drawShadow(x, y, w, h, radius + 1.0F, 5.0F,
+                        ColorUtil.withAlpha(themeAccent, (int) (55 * this.error$hoverAnim)));
             }
 
-            // Dark translucent liquid base (cardDarken from ClickGUI)
-            int cardDarken = self.active
-                    ? ColorUtil.rgba(18, 22, 34, (int) (130 + 35 * this.error$hoverAnim))
-                    : ColorUtil.rgba(14, 16, 24, 85);
-            Render2D.drawRoundedRect(x, y, w, h, radius, cardDarken);
-
-            // Frosted glass sheen (cardFrosted from ClickGUI)
-            int cardFrosted = self.active
-                    ? ColorUtil.rgba(255, 255, 255, (int) (12 + 18 * this.error$hoverAnim))
+            // Pure translucent frosted liquid glass fill (matching ClickGUI cards)
+            int glassFill = self.active
+                    ? ColorUtil.rgba(255, 255, 255, (int) (12 + 12 * this.error$hoverAnim))
                     : ColorUtil.rgba(255, 255, 255, 6);
-            Render2D.drawRoundedRect(x, y, w, h, radius, cardFrosted);
+            Render2D.drawRoundedRect(x, y, w, h, radius, glassFill);
 
-            // Inner liquid glow tinted by accent color when hovered
+            // Subtle accent tint on hover
             if (self.active && this.error$hoverAnim > 0.02F) {
                 Render2D.drawRoundedRect(x, y, w, h, radius,
-                        ColorUtil.withAlpha(themeAccent, (int) (35 * this.error$hoverAnim)));
-            }
-
-            // Top specular glass highlight (soft reflection across top half)
-            if (self.active && h > 10.0F) {
-                float shineH = Math.max(2.0F, h * 0.44F);
-                Render2D.drawRoundedRect(x + 1.2F, y + 1.0F, w - 2.4F, shineH, Math.max(1.0F, radius - 1.0F),
-                        ColorUtil.rgba(255, 255, 255, (int) (14 + 18 * this.error$hoverAnim)));
+                        ColorUtil.withAlpha(themeAccent, (int) (22 * this.error$hoverAnim)));
             }
 
             // Crisp 2D rounded outline
             int outlineCol = self.active
-                    ? ColorUtil.interpolateColor(ColorUtil.rgba(255, 255, 255, 28), ColorUtil.withAlpha(themeAccent, 210), this.error$hoverAnim)
-                    : ColorUtil.rgba(255, 255, 255, 14);
-            Render2D.drawRoundedOutline(x, y, w, h, radius, 0.75F, outlineCol);
+                    ? ColorUtil.interpolateColor(ColorUtil.rgba(255, 255, 255, 22), ColorUtil.withAlpha(themeAccent, 170), this.error$hoverAnim)
+                    : ColorUtil.rgba(255, 255, 255, 10);
+            Render2D.drawRoundedOutline(x, y, w, h, radius, 0.65F, outlineCol);
 
             // Slider progress bar if widget is a slider
             if (self instanceof AbstractSliderButton slider && self instanceof AbstractSliderButtonAccessor accessor) {

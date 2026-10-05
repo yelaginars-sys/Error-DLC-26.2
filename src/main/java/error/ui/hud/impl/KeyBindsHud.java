@@ -31,13 +31,13 @@ public final class KeyBindsHud extends HudElement implements error.IMinecraft {
     private final Animation widthAnim = new Animation(80.0F, 0.22F);
     private final Animation heightAnim = new Animation(18.0F, 0.22F);
 
-    private static final float ROW_H = 15.0F;
-    private static final float HEADER_H = 17.0F;
-    private static final float PILL_R = 7.5F;
-    private static final float GAP_Y = 3.0F;
+    private static final float ROW_H = 13.0F;
+    private static final float HEADER_H = 14.5F;
+    private static final float PILL_R = 6.25F;
+    private static final float GAP_Y = 2.0F;
 
     public KeyBindsHud() {
-        super("keybinds", "Hotkeys", 10.0F, 100.0F, 85.0F, 40.0F, true);
+        super("keybinds", "Hotkeys", 10.0F, 100.0F, 70.0F, 35.0F, true);
     }
 
     @Override
@@ -107,15 +107,16 @@ public final class KeyBindsHud extends HudElement implements error.IMinecraft {
         }
 
         // Calculate dynamic width
-        float maxRowW = 75.0F;
-        float headerTitleW = Fonts.SF_MEDIUM.getWidth("Hotkeys", 9.0F);
-        float headerMinW = 20.0F + headerTitleW + 8.0F;
+        // Calculate dynamic width
+        float maxRowW = 68.0F;
+        float headerTitleW = Fonts.SF_MEDIUM.getWidth("Hotkeys", 7.5F);
+        float headerMinW = 18.0F + headerTitleW + 6.0F;
         maxRowW = Math.max(maxRowW, headerMinW);
 
         for (Entry e : entries) {
-            float nameW = Fonts.SF_MEDIUM.getWidth(e.name, 8.5F);
-            float keyW = Fonts.SF_MEDIUM.getWidth(e.keyName, 8.0F);
-            float rowTotalW = (16.0F + nameW + 8.0F) + 6.0F + (keyW + 12.0F);
+            float nameW = Fonts.SF_MEDIUM.getWidth(e.name, 7.0F);
+            float keyW = Fonts.SF_MEDIUM.getWidth(e.keyName, 6.5F);
+            float rowTotalW = (13.5F + nameW + 6.0F) + 5.0F + (keyW + 9.0F);
             maxRowW = Math.max(maxRowW, rowTotalW);
         }
 
@@ -138,7 +139,7 @@ public final class KeyBindsHud extends HudElement implements error.IMinecraft {
         GuiGraphicsExtractor extractor = event.getGuiGraphicsExtractor();
 
         // 1. Header Capsule matching Energy HUD in Liquid Glass
-        Render2D.drawShadow(curX, curY, this.width, HEADER_H, PILL_R, 6.0F, ColorUtil.rgba(0, 0, 0, 75));
+        Render2D.drawShadow(curX, curY, this.width, HEADER_H, PILL_R, 5.0F, ColorUtil.rgba(0, 0, 0, 70));
         if (extractor != null) {
             Render2DUtil.flush();
             Blur.of(curX, curY, this.width, HEADER_H)
@@ -151,15 +152,15 @@ public final class KeyBindsHud extends HudElement implements error.IMinecraft {
 
             Outline.of(curX, curY, this.width, HEADER_H)
                     .radius(Math.round(PILL_R))
-                    .thickness(0.85F)
+                    .thickness(0.75F)
                     .verticalGradient(Color.WHITE, Color.rgba(255, 255, 255, 32))
                     .alpha(1.0F)
                     .render(extractor);
         }
 
         // Header Energy Icon "p" or NURIK_BIND
-        Fonts.drawString(Fonts.ENERGY, "p", curX + 6.0F, curY + 2.5F, 10.0F, accent);
-        Fonts.drawString(Fonts.SF_MEDIUM, "Hotkeys", curX + 19.0F, curY + 3.0F, 9.0F, 0xFFFFFFFF);
+        Fonts.drawString(Fonts.ENERGY, "p", curX + 5.0F, curY + 2.0F, 8.5F, accent);
+        Fonts.drawString(Fonts.SF_MEDIUM, "Hotkeys", curX + 16.0F, curY + 2.2F, 7.5F, 0xFFFFFFFF);
 
         curY += HEADER_H + GAP_Y;
 
@@ -170,16 +171,16 @@ public final class KeyBindsHud extends HudElement implements error.IMinecraft {
             int textWhite = ColorUtil.rgba(255, 255, 255, (int) (245 * e.alpha));
             int keyColor = ColorUtil.rgba(215, 225, 240, (int) (235 * e.alpha));
 
-            float nameW = Fonts.SF_MEDIUM.getWidth(e.name, 8.5F);
-            float keyW = Fonts.SF_MEDIUM.getWidth(e.keyName, 8.0F);
+            float nameW = Fonts.SF_MEDIUM.getWidth(e.name, 7.0F);
+            float keyW = Fonts.SF_MEDIUM.getWidth(e.keyName, 6.5F);
 
-            float leftPillW = 16.0F + nameW + 8.0F;
-            float rightPillW = keyW + 12.0F;
+            float leftPillW = 13.5F + nameW + 6.0F;
+            float rightPillW = keyW + 9.0F;
             float rightPillX = curX + this.width - rightPillW;
 
             // Shadows
-            Render2D.drawShadow(curX, curY, leftPillW, ROW_H, PILL_R, 4.0F, ColorUtil.rgba(0, 0, 0, (int) (50 * e.alpha)));
-            Render2D.drawShadow(rightPillX, curY, rightPillW, ROW_H, PILL_R, 4.0F, ColorUtil.rgba(0, 0, 0, (int) (50 * e.alpha)));
+            Render2D.drawShadow(curX, curY, leftPillW, ROW_H, PILL_R, 3.5F, ColorUtil.rgba(0, 0, 0, (int) (45 * e.alpha)));
+            Render2D.drawShadow(rightPillX, curY, rightPillW, ROW_H, PILL_R, 3.5F, ColorUtil.rgba(0, 0, 0, (int) (45 * e.alpha)));
 
             // Liquid Glass Kawase Blur & Specular Outlines
             if (extractor != null) {
@@ -196,7 +197,7 @@ public final class KeyBindsHud extends HudElement implements error.IMinecraft {
 
                 Outline.of(curX, curY, leftPillW, ROW_H)
                         .radius(Math.round(PILL_R))
-                        .thickness(0.7F)
+                        .thickness(0.65F)
                         .verticalGradient(Color.rgba(255, 255, 255, (int) (28 * e.alpha)), Color.rgba(255, 255, 255, (int) (6 * e.alpha)))
                         .alpha(e.alpha)
                         .render(extractor);
@@ -212,7 +213,7 @@ public final class KeyBindsHud extends HudElement implements error.IMinecraft {
 
                 Outline.of(rightPillX, curY, rightPillW, ROW_H)
                         .radius(Math.round(PILL_R))
-                        .thickness(0.7F)
+                        .thickness(0.65F)
                         .verticalGradient(Color.rgba(255, 255, 255, (int) (28 * e.alpha)), Color.rgba(255, 255, 255, (int) (6 * e.alpha)))
                         .alpha(e.alpha)
                         .render(extractor);
@@ -220,16 +221,16 @@ public final class KeyBindsHud extends HudElement implements error.IMinecraft {
 
             // Category Icon in left capsule
             if (e.categoryIcon != null && !e.categoryIcon.equals("•")) {
-                Fonts.drawString(Fonts.ICONS_NURIK, e.categoryIcon, curX + 5.5F, curY + 2.0F, 8.0F, ColorUtil.withAlpha(accent, (int) (230 * e.alpha)));
+                Fonts.drawString(Fonts.ICONS_NURIK, e.categoryIcon, curX + 4.5F, curY + 1.8F, 6.8F, ColorUtil.withAlpha(accent, (int) (230 * e.alpha)));
             } else {
-                Render2D.drawCircle(curX + 8.0F, curY + ROW_H * 0.5F, 2.0F, ColorUtil.withAlpha(accent, (int) (230 * e.alpha)));
+                Render2D.drawCircle(curX + 6.5F, curY + ROW_H * 0.5F, 1.8F, ColorUtil.withAlpha(accent, (int) (230 * e.alpha)));
             }
 
             // Module Name
-            Fonts.drawString(Fonts.SF_MEDIUM, e.name, curX + 16.0F, curY + 2.0F, 8.5F, textWhite);
+            Fonts.drawString(Fonts.SF_MEDIUM, e.name, curX + 13.5F, curY + 1.8F, 7.0F, textWhite);
 
             // Key name centered in right capsule
-            Fonts.drawCenteredString(Fonts.SF_MEDIUM, e.keyName, rightPillX + rightPillW * 0.5F, curY + 2.2F, 8.0F, keyColor);
+            Fonts.drawCenteredString(Fonts.SF_MEDIUM, e.keyName, rightPillX + rightPillW * 0.5F, curY + 1.8F, 6.5F, keyColor);
 
             curY += (ROW_H + GAP_Y) * e.alpha;
         }
