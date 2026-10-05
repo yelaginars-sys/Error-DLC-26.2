@@ -50,6 +50,12 @@ public abstract class GameRendererMixin {
 
     @ModifyArg(method = "renderLevel", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/ProjectionMatrixBuffer;getBuffer(Lorg/joml/Matrix4f;)Lcom/mojang/blaze3d/buffers/GpuBufferSlice;"))
     private Matrix4f captureLevelProjection(Matrix4f projectionMatrix) {
+        if (error.module.impl.render.AspectRatio.INSTANCE != null && error.module.impl.render.AspectRatio.INSTANCE.isEnabled()) {
+            float r = error.module.impl.render.AspectRatio.INSTANCE.getRatio();
+            if (r > 0.01F) {
+                projectionMatrix.scaleLocal(1.0F / r, 1.0F, 1.0F);
+            }
+        }
         Render3DUtil.captureLevelProjection(projectionMatrix);
         return projectionMatrix;
     }

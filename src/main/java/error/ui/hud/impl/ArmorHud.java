@@ -111,29 +111,34 @@ public class ArmorHud extends HudElement implements error.IMinecraft {
         this.width = totalW;
         this.height = totalH;
 
-        String posMode = iface != null ? iface.armorPosition.getValue() : "Над иконками голода";
-        float renderX = this.x;
-        float renderY = this.y;
-
+        String posMode = iface != null ? iface.armorPosition.getValue() : "Над хотбаром";
         float screenW = mc.getWindow().getGuiScaledWidth();
         float screenH = mc.getWindow().getGuiScaledHeight();
 
-        if ("Над иконками голода".equalsIgnoreCase(posMode)) {
-            renderX = screenW / 2.0F + 20.0F;
-            float baseY = screenH - 58.0F;
-
-            if (mc.player != null) {
-                if (mc.player.isCreative()) {
-                    baseY = screenH - 46.0F; // right above the hotbar on the right in creative
-                } else if (mc.player.getAirSupply() < mc.player.getMaxAirSupply()) {
-                    baseY -= 10.0F; // moved up if bubbles are shown above hunger
+        if (!this.dragging) {
+            if ("Справа от хотбара".equalsIgnoreCase(posMode)) {
+                this.x = screenW * 0.5F + 96.0F;
+                this.y = screenH - totalH - 3.0F;
+            } else if ("Слева от хотбара".equalsIgnoreCase(posMode)) {
+                this.x = screenW * 0.5F - 96.0F - totalW;
+                this.y = screenH - totalH - 3.0F;
+            } else if (!"Свободная".equalsIgnoreCase(posMode)) {
+                // "Над хотбаром" - safely elevated above health/hunger and air bubbles
+                float baseY = screenH - 58.0F - totalH;
+                if (mc.player != null) {
+                    if (mc.player.isCreative()) {
+                        baseY = screenH - 32.0F - totalH;
+                    } else if (mc.player.getAirSupply() < mc.player.getMaxAirSupply()) {
+                        baseY -= 12.0F;
+                    }
                 }
+                this.x = (screenW - totalW) * 0.5F;
+                this.y = baseY;
             }
-
-            renderY = baseY;
-            this.x = renderX;
-            this.y = renderY;
         }
+
+        float renderX = this.x;
+        float renderY = this.y;
 
         float animAlpha = fadeAnim.getValue();
         if (animAlpha <= 0.01F) return;
@@ -141,8 +146,7 @@ public class ArmorHud extends HudElement implements error.IMinecraft {
         var extractor = event.getGuiGraphicsExtractor();
         if (extractor == null) return;
 
-        // Draw Liquid Glass HUD background card with shadow
-        Render2D.drawShadow(renderX, renderY, totalW, totalH, 6.0F, 5.0F, ColorUtil.rgba(0, 0, 0, (int) (60 * animAlpha)));
+        // Draw Liquid Glass HUD background card (drawHudCard handles shadow)
         Render2D.drawHudCard(renderX, renderY, totalW, totalH, 6.0F, animAlpha);
 
         Render2DUtil.flush();

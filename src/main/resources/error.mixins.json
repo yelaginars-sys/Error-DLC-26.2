@@ -43,6 +43,7 @@
     "gui.ScreenMixin",
     "gui.ContainerEventHandlerMixin",
     "gui.AbstractButtonMixin",
+    "gui.AbstractSliderButtonMixin",
     "render.VulkanDeviceMixin",
     "render.RenderPipelinesMixin",
     "render.CameraMixin",

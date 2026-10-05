@@ -6,9 +6,6 @@ import error.module.Category;
 import error.module.Module;
 import error.setting.impl.CheckBox;
 import error.setting.impl.SliderSetting;
-import net.minecraft.core.BlockPos;
-import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
-import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.AABB;
@@ -26,33 +23,23 @@ public final class MaceHelper extends Module {
     public final CheckBox checkCooldown = checkbox("Учитывать кулдаун", true);
     public final SliderSetting cooldownDelay = slider("Задержка кд", 250.0F, 0.0F, 1000.0F, 50.0F);
 
-    // Wind Charge settings
-    public final CheckBox windCharge = checkbox("Заряд ветра", true);
-    public final SliderSetting windChargeDelay = slider("Задержка заряда (тиков)", 20.0F, 5.0F, 100.0F, 1.0F);
-    public final CheckBox checkCeiling = checkbox("Учитывать потолок", true);
-    public final SliderSetting minCeiling = slider("Мин. потолок", 5.0F, 0.0F, 20.0F, 1.0F);
-    public final CheckBox onlyWithTarget = checkbox("Заряд только с целью", false);
-
     private int previousSlot = -1;
     private boolean isMaceEquipped = false;
     private long swapTimestamp = 0L;
-    private int chargeCooldown = 0;
 
     public MaceHelper() {
-        super("MaceHelper", "Булава: авто-взятие, крит-удар и бросок заряда ветра под себя", Category.COMBAT);
+        super("MaceHelper", "Булава: авто-взятие и крит-удар при падении", Category.COMBAT);
         INSTANCE = this;
     }
 
     @Override
     public void onEnable() {
         super.onEnable();
-        chargeCooldown = 0;
         reset();
     }
 
     @Override
     public void onDisable() {
-        chargeCooldown = 0;
         reset();
     }
 
@@ -88,13 +75,6 @@ public final class MaceHelper extends Module {
     public void onTick(PlayerTickEvent event) {
         if (mc.player == null || mc.level == null || event.getPhase() != PlayerTickEvent.Phase.PRE) return;
 
-        // Wind Charge handling: throws wind charge directly under self (pitch = 90)
-        if (chargeCooldown > 0) {
-            chargeCooldown--;
-        } else if (windCharge.getValue()) {
-            handleWindCharge();
-        }
-
         if (targetOnly.getValue() && AuraModule.INSTANCE != null && AuraModule.INSTANCE.getTarget() == null) {
             if (isMaceEquipped) reset();
             return;
@@ -118,66 +98,6 @@ public final class MaceHelper extends Module {
         }
     }
 
-    private void handleWindCharge() {
-        if (mc.player == null || mc.gameMode == null || mc.getConnection() == null) return;
-
-        if (onlyWithTarget.getValue() && (AuraModule.INSTANCE == null || AuraModule.INSTANCE.getTarget() == null)) {
-            return;
-        }
-
-        if (checkCeiling.getValue()) {
-            double clearance = getCeilingClearance();
-            if (clearance < minCeiling.getValue()) return;
-        }
-
-        // Only throw when on ground or beginning jump, avoid spamming while falling
-        if (!mc.player.onGround() && mc.player.fallDistance > 1.2F) {
-            return;
-        }
-
-        executeWindJump();
-    }
-
-    public boolean executeWindJump() {
-        if (mc.player == null || mc.gameMode == null || mc.getConnection() == null) return false;
-
-        InteractionHand hand = null;
-        int slot = -1;
-
-        if (mc.player.getOffhandItem().is(Items.WIND_CHARGE)) {
-            hand = InteractionHand.OFF_HAND;
-        } else {
-            for (int i = 0; i < 9; i++) {
-                ItemStack stack = mc.player.getInventory().getItem(i);
-                if (stack.is(Items.WIND_CHARGE)) {
-                    slot = i;
-                    break;
-                }
-            }
-            if (slot == -1) return false;
-            hand = InteractionHand.MAIN_HAND;
-        }
-
-        int prevSlot = mc.player.getInventory().getSelectedSlot();
-        if (slot != -1) {
-            mc.player.getInventory().setSelectedSlot(slot);
-        }
-
-        // Always throw directly under feet: pitch 90.0F
-        mc.getConnection().send(new ServerboundMovePlayerPacket.Rot(
-                mc.player.getYRot(), 90.0F, mc.player.onGround(), false
-        ));
-        mc.gameMode.useItem(mc.player, hand);
-        mc.player.swing(hand);
-
-        if (slot != -1) {
-            mc.player.getInventory().setSelectedSlot(prevSlot);
-        }
-
-        chargeCooldown = Math.max(1, Math.round(windChargeDelay.getValue()));
-        return true;
-    }
-
     private int findMaceSlot() {
         if (mc.player == null) return -1;
         for (int i = 0; i < 9; i++) {
@@ -185,18 +105,6 @@ public final class MaceHelper extends Module {
             if (stack.is(Items.MACE)) return i;
         }
         return -1;
-    }
-
-    private double getCeilingClearance() {
-        if (mc.player == null || mc.level == null) return 20.0D;
-        double startY = mc.player.getY() + mc.player.getEyeHeight();
-        for (double y = startY; y <= startY + 20.0D; y += 0.5D) {
-            BlockPos pos = BlockPos.containing(mc.player.getX(), y, mc.player.getZ());
-            if (!mc.level.getBlockState(pos).isAir()) {
-                return y - startY;
-            }
-        }
-        return 20.0D;
     }
 
     private double calculateDistanceToGround() {

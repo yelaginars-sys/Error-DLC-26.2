@@ -42,6 +42,38 @@ public final class TargetHud extends HudElement implements error.IMinecraft {
 
     private static final Identifier STEVE_SKIN = Identifier.fromNamespaceAndPath("minecraft", "textures/entity/player/wide/steve.png");
 
+    private static final class HeadParticle {
+        float x, y;
+        float vx, vy;
+        float size;
+        float life;
+        float maxLife;
+        int color;
+
+        HeadParticle(float x, float y, float vx, float vy, float size, float maxLife, int color) {
+            this.x = x;
+            this.y = y;
+            this.vx = vx;
+            this.vy = vy;
+            this.size = size;
+            this.maxLife = maxLife;
+            this.life = maxLife;
+            this.color = color;
+        }
+
+        boolean update() {
+            x += vx;
+            y += vy;
+            vx *= 0.93F;
+            vy *= 0.93F;
+            life -= 0.045F;
+            return life > 0;
+        }
+    }
+
+    private final List<HeadParticle> headParticles = new ArrayList<>();
+    private int lastTargetHurtTime = 0;
+
     public TargetHud() {
         super("target_hud", "Target HUD", 100.0F, 150.0F, CARD_W, CARD_H, true);
     }
@@ -183,11 +215,57 @@ public final class TargetHud extends HudElement implements error.IMinecraft {
 
         float avatarX = curX + 5.0F;
         float avatarY = curY + 5.0F;
+
+        // Head particle spawning & simulation
+        int currentHurt = this.target.hurtTime;
+        if (currentHurt > 0 && currentHurt > lastTargetHurtTime) {
+            for (int i = 0; i < 5; i++) {
+                if (headParticles.size() >= 40) break;
+                float px = avatarX + (float) Math.random() * AVATAR_SIZE;
+                float py = avatarY + (float) Math.random() * AVATAR_SIZE;
+                float angle = (float) (Math.random() * Math.PI * 2.0);
+                float spd = 0.4F + (float) Math.random() * 1.4F;
+                float pvx = (float) Math.cos(angle) * spd;
+                float pvy = (float) Math.sin(angle) * spd - 0.4F;
+                int pColor = Math.random() < 0.65 ? ColorUtil.rgba(255, 45, 45, 240) : ColorUtil.withAlpha(accent, 240);
+                headParticles.add(new HeadParticle(px, py, pvx, pvy, 1.4F + (float) Math.random() * 1.4F, 1.0F, pColor));
+            }
+        } else if (Math.random() < 0.22) {
+            if (headParticles.size() < 25) {
+                float px = avatarX + (float) Math.random() * AVATAR_SIZE;
+                float py = avatarY + (float) Math.random() * (AVATAR_SIZE * 0.7F);
+                float pvx = ((float) Math.random() - 0.5F) * 0.5F;
+                float pvy = -0.25F - (float) Math.random() * 0.4F;
+                int pColor = ColorUtil.withAlpha(accent, 200);
+                headParticles.add(new HeadParticle(px, py, pvx, pvy, 1.1F + (float) Math.random() * 1.1F, 1.0F, pColor));
+            }
+        }
+        lastTargetHurtTime = currentHurt;
+
+        // Render head particles
+        headParticles.removeIf(p -> {
+            boolean alive = p.update();
+            if (alive) {
+                float progress = p.life / p.maxLife;
+                int col = ColorUtil.withAlpha(p.color, (int) (ColorUtil.alpha(p.color) * progress * a));
+                Render2D.drawRoundedRect(p.x, p.y, p.size, p.size, p.size / 2.0F, col);
+            }
+            return !alive;
+        });
+
         Render2D.drawRoundedRect(avatarX - 0.5F, avatarY - 0.5F, AVATAR_SIZE + 1.0F, AVATAR_SIZE + 1.0F, AVATAR_R, ColorUtil.rgba(255, 255, 255, (int) (20 * a)));
         Render2D.drawHead(skin, avatarX, avatarY, AVATAR_SIZE, AVATAR_R, a);
+
+        // Head red hurt flash on hit
+        if (this.target.hurtTime > 0) {
+            float hurtProg = (float) this.target.hurtTime / 10.0F;
+            Render2D.drawRoundedRect(avatarX, avatarY, AVATAR_SIZE, AVATAR_SIZE, AVATAR_R,
+                    ColorUtil.rgba(255, 30, 30, (int) (150 * hurtProg * a)));
+        }
+
         Render2D.drawRoundedOutline(avatarX - 0.5F, avatarY - 0.5F, AVATAR_SIZE + 1.0F, AVATAR_SIZE + 1.0F, AVATAR_R, 0.5F, ColorUtil.rgba(255, 255, 255, (int) (40 * a)));
 
-        // 3. Top Row: HP in top-left + Nickname next to it
+        // 3. Top Row: Nickname on the left + HP in the right corner
         float startX = curX + 31.0F;
         float topY = curY + 4.5F;
 
@@ -197,18 +275,21 @@ public final class TargetHud extends HudElement implements error.IMinecraft {
         }
 
         float hpW = Fonts.SF_MEDIUM.getWidth(hpText, 7.5F);
-        Fonts.drawString(Fonts.SF_MEDIUM, hpText, startX, topY, 7.5F, ColorUtil.withAlpha(accent, (int) (255 * a)));
+        float rightX = curX + CARD_W - 6.0F;
+        float hpX = rightX - hpW;
 
         String name = this.target.getName().getString();
-        float nameX = startX + hpW + 4.0F;
-        float maxNameW = (curX + CARD_W - 5.0F) - nameX;
-        if (Fonts.SF_MEDIUM.getWidth(name, 7.5F) > maxNameW) {
+        float nameX = startX;
+        float maxNameW = hpX - 4.0F - nameX;
+        if (Fonts.SF_MEDIUM.getWidth(name, 7.5F) > maxNameW && maxNameW > 5.0F) {
             while (name.length() > 2 && Fonts.SF_MEDIUM.getWidth(name + "..", 7.5F) > maxNameW) {
                 name = name.substring(0, name.length() - 1);
             }
             name += "..";
         }
+
         Fonts.drawString(Fonts.SF_MEDIUM, name, nameX, topY, 7.5F, ColorUtil.rgba(255, 255, 255, (int) (240 * a)));
+        Fonts.drawString(Fonts.SF_MEDIUM, hpText, hpX, topY, 7.5F, ColorUtil.withAlpha(accent, (int) (255 * a)));
 
         // 4. Middle Row: Armor with durability bars + Hand items under HP & Nick
         float itemsY = curY + 15.0F;

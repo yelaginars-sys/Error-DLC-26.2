@@ -57,7 +57,8 @@ public final class CustomHotbarHud extends HudElement {
 
         int accent = Theme.getAccentColor();
 
-        // 1. Draw Liquid Glass Background Capsule
+        // 1. Draw Liquid Glass Background Capsule with Shadow
+        Render2D.drawShadow(this.x, this.y, BAR_W, BAR_H, 7.0F, 6.0F, ColorUtil.rgba(0, 0, 0, 75));
         Render2D.drawLiquidGlass(this.x, this.y, BAR_W, BAR_H, 7.0F, 1.0F, accent);
 
         Player player = error.IMinecraft.mc.player;

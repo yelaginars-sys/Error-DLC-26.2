@@ -20,7 +20,7 @@ public final class Interface extends Module {
     public final CheckBox dynamicIsland    = checkbox("Dynamic Island", true);
     public final CheckBox gps              = checkbox("GPS Навигация", true);
     public final CheckBox armorHud         = checkbox("Armor HUD", true);
-    public final ModeSetting armorPosition = mode("Позиция брони", "Над иконками голода", "Над иконками голода", "Свободная");
+    public final ModeSetting armorPosition = mode("Позиция брони", "Над хотбаром", "Над хотбаром", "Справа от хотбара", "Слева от хотбара", "Свободная");
     public final CheckBox targetHud        = checkbox("Target HUD", true);
     public final CheckBox targetHudParticles = checkbox("Частицы TargetHud", true);
     public final CheckBox cooldowns        = checkbox("Cooldowns", true);

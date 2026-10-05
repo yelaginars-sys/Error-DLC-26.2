@@ -319,6 +319,7 @@ public class Render2D {
     public static void drawHudPill(float x, float y, float width, float height, float alpha, int accentColor) {
         if (alpha <= 0.001F || width <= 0.0F || height <= 0.0F) return;
         float radius = height / 2.0F;
+        Render2D.drawShadow(x, y, width, height, radius, 5.0F, ColorUtil.rgba(0, 0, 0, (int) (60 * alpha)));
         drawLiquidGlass(x, y, width, height, radius, alpha, accentColor);
     }
 
@@ -328,6 +329,7 @@ public class Render2D {
 
     public static void drawHudCard(float x, float y, float width, float height, float radius, float alpha, int accentColor) {
         if (alpha <= 0.001F || width <= 0.0F || height <= 0.0F) return;
+        Render2D.drawShadow(x, y, width, height, radius, 6.0F, ColorUtil.rgba(0, 0, 0, (int) (65 * alpha)));
         drawLiquidGlass(x, y, width, height, radius, alpha, accentColor);
     }
 }

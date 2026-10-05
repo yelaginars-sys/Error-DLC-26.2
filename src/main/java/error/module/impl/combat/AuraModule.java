@@ -29,7 +29,8 @@ public class AuraModule extends Module {
 
     public final ModeSetting rotMode = mode("Ротация", "Funtime", "Funtime", "HolyLegit", "HolyWorld", "SpookyTime", "4pookyTime", "Spooky", "ReallyWorld", "HelixWave", "Artygrief", "Sloth", "Legit", "Linear", "Matrix", "Builder", "Lumen", "Grim", "Snap", "Smooth", "Spooky (En)", "ReallyWorld (En)", "FunTime (En)", "AimAssist (En)", "HolyWorld (En)", "ML (En)", "Ares/FT (En)", "Snap (En)");
     public final ModeSetting moveFix = mode("Коррекция", "Свободная", "Нет", "Свободная", "Сфокусированная", "Полная");
-    public final ModeSetting sprintReset = mode("Сброс спринта", "Legit", "None", "Legit", "Packet");
+    public final ModeSetting sprintReset = mode("Сброс спринта", "Legit", "None", "Legit", "Packet")
+            .visible(() -> !rotMode.getValue().endsWith("(En)"));
 
     // Energy Rotations Settings
     public final SliderSetting enAimAssistPower = slider("Сила AimAssist", 0.5f, 0.05f, 1.0f, 0.05f)
@@ -54,14 +55,18 @@ public class AuraModule extends Module {
     public final CheckBox randomFallDistance = checkbox("Случайный падающий крит", false);
 
     public final CheckBox throughWalls = checkbox("Бить через стены", false);
-    public final CheckBox bypassRwWalls = checkbox("Обход рв стен", false);
-    public final CheckBox lookDownBypass = checkbox("Смотреть вниз", false).visible(bypassRwWalls::getValue);
+    public final CheckBox bypassRwWalls = checkbox("Обход рв стен", false)
+            .visible(() -> rotMode.is("ReallyWorld") || rotMode.is("ReallyWorld (En)"));
+    public final CheckBox lookDownBypass = checkbox("Смотреть вниз", false)
+            .visible(() -> bypassRwWalls.getValue() && (rotMode.is("ReallyWorld") || rotMode.is("ReallyWorld (En)")));
 
     public final CheckBox unshield = checkbox("Отжимать щит", false);
     public final CheckBox shieldBreaker = checkbox("Ломать щит", true);
     public final CheckBox pauseEating = checkbox("Не бить когда ешь", true);
-    public final CheckBox autoCerberus = checkbox("Авто цербер", false);
-    public final SliderSetting swapDelay = slider("Задержка свапа", 4.0f, 2.0f, 10.0f, 1.0f).visible(autoCerberus::getValue);
+    public final CheckBox autoCerberus = checkbox("Авто цербер", false)
+            .visible(() -> rotMode.is("Funtime") || rotMode.is("FunTime (En)") || rotMode.is("Ares/FT (En)"));
+    public final SliderSetting swapDelay = slider("Задержка свапа", 4.0f, 2.0f, 10.0f, 1.0f)
+            .visible(() -> autoCerberus.getValue() && (rotMode.is("Funtime") || rotMode.is("FunTime (En)") || rotMode.is("Ares/FT (En)")));
     public final CheckBox clientLook = checkbox("Наводка от первого лица", false);
 
     private LivingEntity target = null;

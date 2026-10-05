@@ -28,8 +28,8 @@ public class ServerHelper extends Module {
     public static ServerHelper INSTANCE;
 
     public final ModeSetting spookyMode = mode("Режим", "HolyWorld", "Funtime", "HolyWorld", "ReallyWorld", "LonyGrief");
-    public final BindSetting bindHealing = bind("Исцеление", GLFW.GLFW_KEY_UNKNOWN);
-    public final BindSetting bindChorus = bind("Хорус", GLFW.GLFW_KEY_UNKNOWN);
+    public final BindSetting bindHealing = bind("Исцеление", GLFW.GLFW_KEY_UNKNOWN).visible(() -> spookyMode.is("Funtime") || spookyMode.is("HolyWorld"));
+    public final BindSetting bindChorus = bind("Хорус", GLFW.GLFW_KEY_UNKNOWN).visible(() -> spookyMode.is("Funtime") || spookyMode.is("HolyWorld"));
 
     // Funtime binds
     public final BindSetting bindDisorient = bind("Дезориентация", GLFW.GLFW_KEY_UNKNOWN).visible(() -> spookyMode.is("Funtime"));
@@ -100,11 +100,11 @@ public class ServerHelper extends Module {
         boolean isConsumable = false;
         Predicate<ItemStack> pred = null;
 
-        if (matches(bindHealing, keyOrBtn, isMouse)) {
+        if ((spookyMode.is("Funtime") || spookyMode.is("HolyWorld")) && matches(bindHealing, keyOrBtn, isMouse)) {
             targetItem = Items.POTION;
             isConsumable = true;
             pred = ServerHelper::isHealingPotion;
-        } else if (matches(bindChorus, keyOrBtn, isMouse)) {
+        } else if ((spookyMode.is("Funtime") || spookyMode.is("HolyWorld")) && matches(bindChorus, keyOrBtn, isMouse)) {
             targetItem = Items.CHORUS_FRUIT;
             isConsumable = true;
         } else if (spookyMode.is("Funtime")) {
@@ -206,6 +206,11 @@ public class ServerHelper extends Module {
                     useStage = 2;
                     useTicks = 0;
                 } else {
+                    if (currentItem == Items.WIND_CHARGE && mc.getConnection() != null) {
+                        mc.getConnection().send(new net.minecraft.network.protocol.game.ServerboundMovePlayerPacket.Rot(
+                                mc.player.getYRot(), 90.0F, mc.player.onGround(), false
+                        ));
+                    }
                     mc.gameMode.useItem(mc.player, InteractionHand.MAIN_HAND);
                     mc.player.swing(InteractionHand.MAIN_HAND);
                     useStage = 2;
