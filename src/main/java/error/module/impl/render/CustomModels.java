@@ -63,7 +63,7 @@ public class CustomModels extends Module {
         }
 
         // 3. Check Friends
-        if (avatar instanceof Player player && Client.INSTANCE.friendManager.isFriend(player.getGameProfile().name())) {
+        if (avatar instanceof Player player && error.friend.FriendManager.getInstance().isFriend(player.getGameProfile().name())) {
             return friends.getValue() && !NONE.equalsIgnoreCase(model.getValue()) ? model.getValue() : null;
         }
 

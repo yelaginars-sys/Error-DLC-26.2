@@ -16,7 +16,7 @@ public class Client implements ModInitializer {
     public final EventManager eventManager = new EventManager();
     public CommandManager commandManager;
     public ConfigManager configManager;
-    public FriendManager friendManager;
+    public final FriendManager friendManager = FriendManager.getInstance();
     public final Modules moduleManager = new Modules();
     public static float Timer = 1.0f;
 
