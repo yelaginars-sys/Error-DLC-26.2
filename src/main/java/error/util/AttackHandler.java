@@ -62,7 +62,8 @@ public class AttackHandler {
                 || player.isUnderWater()
                 || player.isInLava()
                 || player.onClimbable()
-                || isInCobweb(player);
+                || isInCobweb(player)
+                || (error.module.impl.player.AirStuck.INSTANCE != null && error.module.impl.player.AirStuck.INSTANCE.isFrozen());
 
         if (bypassCrit) {
             return true;

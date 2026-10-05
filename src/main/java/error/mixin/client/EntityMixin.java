@@ -11,6 +11,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import error.util.RotationHandler;
 import error.event.EventManager;
 import error.event.list.EventTravel;
@@ -59,16 +60,18 @@ public abstract class EntityMixin {
             }
         }
     }
-    @Inject(method = "move", at = @At("HEAD"), cancellable = true)
-    private void onMove(MoverType moverType, Vec3 movement, CallbackInfo ci) {
+    @ModifyVariable(method = "move", at = @At("HEAD"), argsOnly = true)
+    private Vec3 onMove(Vec3 movement, MoverType moverType) {
         if ((Object) this instanceof LocalPlayer) {
-            EventTravel event = new EventTravel();
+            EventTravel event = new EventTravel(movement);
             EventManager.call(event);
 
             if (event.isCancelled()) {
-                ci.cancel();
+                return Vec3.ZERO;
             }
+            return event.getMovement() != null ? event.getMovement() : movement;
         }
+        return movement;
     }
 
     @Inject(method = "isPushedByFluid", at = @At("HEAD"), cancellable = true)

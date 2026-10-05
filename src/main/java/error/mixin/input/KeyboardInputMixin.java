@@ -49,6 +49,11 @@ public abstract class KeyboardInputMixin extends ClientInput {
             this.keyPresses = new Input(cur.forward(), cur.backward(), cur.left(), cur.right(), false, cur.shift(), false);
         }
 
+        if (error.module.impl.player.AirStuck.isSneakSuppressed()) {
+            Input cur = this.keyPresses;
+            this.keyPresses = new Input(cur.forward(), cur.backward(), cur.left(), cur.right(), cur.jump(), false, cur.sprint());
+        }
+
         PlayerInputEvent event = new PlayerInputEvent((KeyboardInput) (Object) this, this.keyPresses, this.getMoveVector());
         Client.getInstance().getEventManager().call(event);
         this.keyPresses = event.getKeyPresses();
