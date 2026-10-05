@@ -60,21 +60,21 @@ import static error.util.client.clients.Theme.*;
 public final class NameTags extends Module {
 
     private static final float SCALE = 1;
-    private static final float PILL_HEIGHT = 30;
-    private static final float RADIUS = 8;
-    private static final float PADDING = 7;
-    private static final float GAP = 6;
+    private static final float PILL_HEIGHT = 20;
+    private static final float RADIUS = 6;
+    private static final float PADDING = 5;
+    private static final float GAP = 4;
 
-    private static final float BASE_HEAD_SIZE = 16;
-    private static final float BIG_HEAD_SIZE = 20;
+    private static final float BASE_HEAD_SIZE = 12;
+    private static final float BIG_HEAD_SIZE = 15;
 
     private static final float ITEM_SIZE = 14;
 
-    private static final float EQUIP_ITEM_SIZE = 18;
-    private static final float EQUIP_VALUABLE_SIZE = 22;
+    private static final float EQUIP_ITEM_SIZE = 16;
+    private static final float EQUIP_VALUABLE_SIZE = 20;
 
-    private static final float DIVIDER_HEIGHT = 12;
-    private static final float TEXT_SIZE = 11;
+    private static final float DIVIDER_HEIGHT = 10;
+    private static final float TEXT_SIZE = 9.5f;
     private static final float HEAD_OFFSET = 0.28f;
 
     private static final EquipmentSlot[] EQUIPMENT_ORDER = {
@@ -119,6 +119,7 @@ public final class NameTags extends Module {
 
     private final Map<UUID, CachedPlayer> playerCache = new HashMap<>();
     private final Map<UUID, LoggedOutPlayer> loggedOutPlayers = new ConcurrentHashMap<>();
+    private Object currentLevel = null;
 
     private int targetId = -1;
     private long firstAttackTime = 0L;
@@ -137,7 +138,6 @@ public final class NameTags extends Module {
     public final CheckBox health = checkbox("Отображает хп", true);
     public final CheckBox items = checkbox("Предметы брони", true);
     public final ModeSetting itemsPos = mode("Позиция брони", "Под ногами", "Под ногами", "Сверху").visible(items::getValue);
-    public final ModeSetting mode = mode("Режим", "Error", "Error", "Lumen");
 
     public NameTags() {
         super("NameTags", "Включаешь такой предметы и комп тако скыбыдышь", Category.RENDER);
@@ -147,6 +147,7 @@ public final class NameTags extends Module {
     protected void onDisable() {
         loggedOutPlayers.clear();
         playerCache.clear();
+        currentLevel = null;
         targetId = -1;
         firstAttackTime = 0L;
         lastAttackTime = 0L;
@@ -172,7 +173,14 @@ public final class NameTags extends Module {
         if (mc == null || mc.level == null || mc.player == null) {
             loggedOutPlayers.clear();
             playerCache.clear();
+            currentLevel = null;
             return;
+        }
+
+        if (this.currentLevel != mc.level) {
+            this.currentLevel = mc.level;
+            this.loggedOutPlayers.clear();
+            this.playerCache.clear();
         }
 
         float tickDelta = event.getDeltaTracker().getGameTimeDeltaPartialTick(false);
@@ -459,10 +467,6 @@ public final class NameTags extends Module {
     }
 
     private void drawTag(Render2DEvent event, LivingEntity entity, float tickDelta, float baseUnit) {
-        if ("Lumen".equalsIgnoreCase(this.mode.getValue())) {
-            drawLumenTag(event, entity, tickDelta, baseUnit);
-            return;
-        }
         Minecraft mc = event.getClient();
 
         float targetFactor = 0.0F;

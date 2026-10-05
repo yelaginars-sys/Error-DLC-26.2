@@ -26,11 +26,27 @@ public abstract class ItemInHandRendererMixin {
                                float attack, ItemStack itemStack, float inverseArmHeight, PoseStack poseStack,
                                SubmitNodeCollector submitNodeCollector, int lightCoords, CallbackInfo ci) {
         if (player.isScoping()) return;
-        if (HoldMyItems.INSTANCE == null || !HoldMyItems.INSTANCE.isEnabled()) return;
+        if (HoldMyItems.INSTANCE != null && HoldMyItems.INSTANCE.isEnabled()) {
+            ItemInHandRenderer renderer = (ItemInHandRenderer) (Object) this;
+            HoldMyItems.INSTANCE.handleRenderItem(renderer, player, frameInterp, xRot, hand, attack, itemStack,
+                    inverseArmHeight, poseStack, submitNodeCollector, lightCoords);
+            ci.cancel();
+            return;
+        }
 
-        ItemInHandRenderer renderer = (ItemInHandRenderer) (Object) this;
-        HoldMyItems.INSTANCE.handleRenderItem(renderer, player, frameInterp, xRot, hand, attack, itemStack,
-                inverseArmHeight, poseStack, submitNodeCollector, lightCoords);
-        ci.cancel();
+        if (error.module.impl.render.ViewModel.INSTANCE != null && error.module.impl.render.ViewModel.INSTANCE.isEnabled()) {
+            var vm = error.module.impl.render.ViewModel.INSTANCE;
+            boolean isMainHand = hand == InteractionHand.MAIN_HAND;
+            net.minecraft.world.entity.HumanoidArm arm = isMainHand ? player.getMainArm() : player.getMainArm().getOpposite();
+            if (arm == net.minecraft.world.entity.HumanoidArm.RIGHT) {
+                poseStack.translate(vm.rightX.getValue(), vm.rightY.getValue(), vm.rightZ.getValue());
+                float s = vm.rightScale.getValue();
+                poseStack.scale(s, s, s);
+            } else {
+                poseStack.translate(vm.leftX.getValue(), vm.leftY.getValue(), vm.leftZ.getValue());
+                float s = vm.leftScale.getValue();
+                poseStack.scale(s, s, s);
+            }
+        }
     }
 }

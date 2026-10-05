@@ -127,6 +127,19 @@ public class HoldMyItems extends Module {
         poseStack.pushPose();
         poseStack.pushPose();
 
+        if (error.module.impl.render.ViewModel.INSTANCE != null && error.module.impl.render.ViewModel.INSTANCE.isEnabled()) {
+            var vm = error.module.impl.render.ViewModel.INSTANCE;
+            if (arm == HumanoidArm.RIGHT) {
+                poseStack.translate(vm.rightX.getValue(), vm.rightY.getValue(), vm.rightZ.getValue());
+                float s = vm.rightScale.getValue();
+                poseStack.scale(s, s, s);
+            } else {
+                poseStack.translate(vm.leftX.getValue(), vm.leftY.getValue(), vm.leftZ.getValue());
+                float s = vm.leftScale.getValue();
+                poseStack.scale(s, s, s);
+            }
+        }
+
         double tt = (1.0 / Math.max(mc.getFps(), 1)) * 30.0;
         float smoothnessFactor = Mth.clamp(smoothness.getValue(), 0.35F, 2.5F);
         float hmiProgress = (float) Math.pow(Mth.clamp(swingProgress, 0.0F, 1.0F), smoothnessFactor);

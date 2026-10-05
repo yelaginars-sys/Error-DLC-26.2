@@ -50,7 +50,7 @@ public abstract class PauseScreenMixin extends Screen {
                     optionsButton = widget;
                 } else if (text.contains("открыть") || text.contains("lan") || text.contains("открытый")) {
                     lanButton = widget;
-                } else if (text.contains("сохранить") || text.contains("выйти") || text.contains("disconnect") || text.contains("quit")) {
+                } else if (text.contains("сохранить") || text.contains("выйти") || text.contains("отключ") || text.contains("disconnect") || text.contains("quit")) {
                     quitButton = widget;
                 }
             }
@@ -104,16 +104,22 @@ public abstract class PauseScreenMixin extends Screen {
         // 4. Options & Open to LAN
         float row3Y = (feedbackButton != null || bugsButton != null) ? (row2Y + h + gap) : row2Y;
         if (optionsButton != null) {
-            optionsButton.setX((int) (centerX - wFull / 2.0F));
-            optionsButton.setY((int) row3Y);
-            optionsButton.setWidth((int) wHalf);
-            optionsButton.setHeight((int) h);
-        }
-        if (lanButton != null) {
-            lanButton.setX((int) (centerX + wFull / 2.0F - wHalf));
-            lanButton.setY((int) row3Y);
-            lanButton.setWidth((int) wHalf);
-            lanButton.setHeight((int) h);
+            if (lanButton != null) {
+                optionsButton.setX((int) (centerX - wFull / 2.0F));
+                optionsButton.setY((int) row3Y);
+                optionsButton.setWidth((int) wHalf);
+                optionsButton.setHeight((int) h);
+
+                lanButton.setX((int) (centerX + wFull / 2.0F - wHalf));
+                lanButton.setY((int) row3Y);
+                lanButton.setWidth((int) wHalf);
+                lanButton.setHeight((int) h);
+            } else {
+                optionsButton.setX((int) (centerX - wFull / 2.0F));
+                optionsButton.setY((int) row3Y);
+                optionsButton.setWidth((int) wFull);
+                optionsButton.setHeight((int) h);
+            }
         }
 
         // 5. Save & Quit (Bottom Wide Button)

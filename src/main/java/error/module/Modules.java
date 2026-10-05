@@ -281,6 +281,12 @@ public class Modules {
         if (error.ui.clickgui.LiquidClickGui.isOpen) return;
         net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
         if (mc != null && mc.gui != null && mc.gui.screen() != null) return;
+        if (this.clickGui != null && this.clickGui.getBind() != null && this.clickGui.getBind().matches(key)) {
+            if (action == GLFW.GLFW_PRESS) {
+                this.clickGui.toggle();
+                return;
+            }
+        }
         for (Module module : modules) {
             if (module != null && module.getBind() != null && module.getBind().matches(key)) {
                 BindMode mode = module.getBind().getMode(0, BindMode.TOGGLE);
@@ -303,6 +309,12 @@ public class Modules {
         if (error.ui.clickgui.LiquidClickGui.isOpen) return;
         net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
         if (mc != null && mc.gui != null && mc.gui.screen() != null) return;
+        if (this.clickGui != null && this.clickGui.getBind() != null && this.clickGui.getBind().matchesMouse(button)) {
+            if (action == GLFW.GLFW_PRESS) {
+                this.clickGui.toggle();
+                return;
+            }
+        }
         for (Module module : modules) {
             if (module != null && module.getBind() != null && module.getBind().matchesMouse(button)) {
                 BindMode mode = module.getBind().getMode(0, BindMode.TOGGLE);
