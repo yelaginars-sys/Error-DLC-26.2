@@ -34,12 +34,13 @@ public abstract class EditBoxMixin {
 
     @Inject(method = "extractWidgetRenderState", at = @At("HEAD"))
     private void onExtractRenderStateHead(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a, CallbackInfo ci) {
-        BetterMinecraft mod = BetterMinecraft.INSTANCE;
-        if (mod == null || !mod.isEnabled() || !mod.modes.isEnabled("Chat")) return;
-
         String currentVal = this.getValue();
         if (!currentVal.equals(error$prevValue)) {
             long now = System.currentTimeMillis();
+
+            if (!error$prevValue.isEmpty() || !currentVal.isEmpty()) {
+                error.util.client.ClientSoundPlayer.playSound("searchtyping.wav", 0.35, 0.95F + (float) (Math.random() * 0.1));
+            }
 
             int len = currentVal.length();
             int prevLen = error$prevValue.length();
@@ -54,6 +55,9 @@ public abstract class EditBoxMixin {
 
             error$prevValue = currentVal;
         }
+
+        BetterMinecraft mod = BetterMinecraft.INSTANCE;
+        if (mod == null || !mod.isEnabled() || !mod.modes.isEnabled("Chat")) return;
     }
 
     @WrapOperation(

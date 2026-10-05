@@ -29,6 +29,11 @@ public abstract class AbstractButtonMixin {
             return;
         }
 
+        String className = self.getClass().getName();
+        if (className.contains("Tab") || className.contains("Recipe") || className.contains("Page") || className.contains("Book") || className.contains("Creative")) {
+            return;
+        }
+
         error.util.RenderExtend.enter2D(null, extractor, null);
         Render2DUtil.beginFrame();
         try {

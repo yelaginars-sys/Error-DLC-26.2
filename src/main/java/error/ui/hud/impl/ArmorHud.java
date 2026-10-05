@@ -6,6 +6,7 @@ import error.ui.hud.HudElement;
 import error.util.client.clients.ColorUtil;
 import error.util.render.Render2D;
 import error.util.render.Render2DUtil;
+import error.util.render.font.Fonts;
 
 import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -101,9 +102,11 @@ public class ArmorHud extends HudElement implements error.IMinecraft {
 
         float itemSize = 16.0F;
         float itemGap = 3.0F;
+        float padX = 4.0F;
+        float padY = 2.5F;
 
-        float totalW = count * itemSize + (count - 1) * itemGap;
-        float totalH = itemSize + 4.0F;
+        float totalW = padX * 2 + count * itemSize + (count - 1) * itemGap;
+        float totalH = itemSize + padY * 2 + 3.0F;
 
         this.width = totalW;
         this.height = totalH;
@@ -116,8 +119,8 @@ public class ArmorHud extends HudElement implements error.IMinecraft {
         float screenH = mc.getWindow().getGuiScaledHeight();
 
         if ("Над иконками голода".equalsIgnoreCase(posMode)) {
-            renderX = screenW / 2.0F + 10.0F;
-            renderY = screenH - 68.0F;
+            renderX = (screenW - totalW) / 2.0F + 10.0F;
+            renderY = screenH - 78.0F;
             this.x = renderX;
             this.y = renderY;
         }
@@ -128,31 +131,47 @@ public class ArmorHud extends HudElement implements error.IMinecraft {
         var extractor = event.getGuiGraphicsExtractor();
         if (extractor == null) return;
 
+        // Draw Liquid Glass HUD background card
+        Render2D.drawHudCard(renderX, renderY, totalW, totalH, 6.0F, animAlpha);
+
         Render2DUtil.flush();
+
+        float startX = renderX + padX;
+        float startY = renderY + padY + 1.0F;
 
         for (int i = 0; i < count; i++) {
             ItemStack stack = visibleStacks.get(i);
-            float ix = renderX + i * (itemSize + itemGap);
-            float iy = renderY;
+            float ix = startX + i * (itemSize + itemGap);
+            float iy = startY;
 
-            // Item icon
-            try {
-                var pose = extractor.pose();
-                pose.pushMatrix();
-                pose.translate(ix, iy);
-                extractor.item(stack, 0, 0);
-                pose.popMatrix();
-            } catch (Throwable ignored) {}
+            if (stack.isEmpty()) {
+                // Empty slot number preview (1..4)
+                String slotNum = String.valueOf(i + 1);
+                float numW = Fonts.SF_MEDIUM.getWidth(slotNum, 9.0F);
+                Fonts.drawString(Fonts.SF_MEDIUM, slotNum, ix + (itemSize - numW) * 0.5F, iy + 3.0F, 9.0F, ColorUtil.rgba(255, 255, 255, (int) (140 * animAlpha)));
+            } else {
+                // Item icon
+                try {
+                    var pose = extractor.pose();
+                    pose.pushMatrix();
+                    pose.translate(ix, iy);
+                    extractor.item(stack, 0, 0);
+                    pose.popMatrix();
+                } catch (Throwable ignored) {}
 
-            // Durability bar underneath icon
-            if (stack.isDamaged() && stack.getMaxDamage() > 0) {
-                float durRatio = 1.0F - ((float) stack.getDamageValue() / (float) stack.getMaxDamage());
-                float fillW = Math.max(2.0F, (itemSize - 2.0F) * durRatio);
-                int durColor = durRatio > 0.5F ? ColorUtil.rgba(34, 197, 94, (int) (240 * animAlpha)) :
-                        (durRatio > 0.2F ? ColorUtil.rgba(234, 179, 8, (int) (240 * animAlpha)) :
-                                ColorUtil.rgba(239, 68, 68, (int) (240 * animAlpha)));
+                // Durability bar underneath icon
+                if (stack.isDamaged() && stack.getMaxDamage() > 0) {
+                    float durRatio = 1.0F - ((float) stack.getDamageValue() / (float) stack.getMaxDamage());
+                    float fillW = Math.max(1.0F, (itemSize - 2.0F) * durRatio);
+                    int durColor = durRatio > 0.6F ? ColorUtil.rgba(0, 255, 100, (int) (240 * animAlpha)) :
+                            (durRatio > 0.3F ? ColorUtil.rgba(255, 200, 0, (int) (240 * animAlpha)) :
+                                    ColorUtil.rgba(255, 50, 50, (int) (240 * animAlpha)));
 
-                Render2D.drawRoundedRect(ix + 1.0F, iy + itemSize + 1.5F, fillW, 1.5F, 0.75F, durColor);
+                    // Background track
+                    Render2D.drawRoundedRect(ix + 1.0F, iy + itemSize + 1.0F, itemSize - 2.0F, 2.0F, 0.5F, ColorUtil.rgba(0, 0, 0, (int) (120 * animAlpha)));
+                    // Filled progress
+                    Render2D.drawRoundedRect(ix + 1.0F, iy + itemSize + 1.0F, fillW, 2.0F, 0.5F, durColor);
+                }
             }
         }
     }

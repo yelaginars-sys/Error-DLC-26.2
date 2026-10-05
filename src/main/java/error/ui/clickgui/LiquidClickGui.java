@@ -117,6 +117,7 @@ public class LiquidClickGui extends Screen {
 
     // Mode Setting Dropdown Popup States
     public ModeSetting activeDropdownMode = null;
+    public MultiModeSetting activeDropdownMultiMode = null;
     public float dropdownPopupX = 0.0F;
     public float dropdownPopupY = 0.0F;
     public float dropdownPopupW = 85.0F;
@@ -388,7 +389,7 @@ public class LiquidClickGui extends Screen {
         }
 
         // 5. Active Mode Dropdown Liquid Glass Window
-        if (this.activeDropdownMode != null) {
+        if (this.activeDropdownMode != null || this.activeDropdownMultiMode != null) {
             Blur.of(this.dropdownPopupX, this.dropdownPopupY, this.dropdownPopupW, this.dropdownPopupH)
                     .radius(6)
                     .type(BlurType.KAWASE)
@@ -455,6 +456,9 @@ public class LiquidClickGui extends Screen {
             // Dropdown Menu Popup (floating on top of everything)
             if (this.activeDropdownMode != null) {
                 renderModeDropdown(screenW, screenH, mouseX, mouseY, animVal, accentColor);
+            }
+            if (this.activeDropdownMultiMode != null) {
+                renderMultiModeDropdown(screenW, screenH, mouseX, mouseY, animVal, accentColor);
             }
         } finally {
             Render2DUtil.flush();
@@ -799,6 +803,22 @@ public class LiquidClickGui extends Screen {
             float btnY = y + 2.5F;
 
             boolean isOpen = (this.activeDropdownMode == mode);
+            int bg = isOpen ? ColorUtil.withAlpha(accentColor, (int) (180 * alphaVal)) : ColorUtil.rgba(255, 255, 255, (int) (18 * alphaVal));
+            Render2D.drawRoundedRect(btnX, btnY, btnW, 11.5F, 3.0F, bg);
+            Render2D.drawRoundedOutline(btnX, btnY, btnW, 11.5F, 3.0F, 0.6F, isOpen ? accentColor : ColorUtil.rgba(255, 255, 255, (int) (30 * alphaVal)));
+            Fonts.drawString(Fonts.SF_MEDIUM, val, btnX + 4.0F, btnY + 2.5F, 4.8F, 0xFFFFFFFF);
+            Fonts.drawString(Fonts.SF_MEDIUM, isOpen ? "▲" : "▼", btnX + btnW - 8.0F, btnY + 2.8F, 4.2F, isOpen ? 0xFFFFFFFF : 0xFF90A4B8);
+        } else if (setting instanceof MultiModeSetting multi) {
+            Fonts.drawString(Fonts.SF_MEDIUM, multi.getName(), x + 4.0F, y + 4.5F, 5.2F, 0xFFD0E0F0);
+
+            List<String> active = multi.getValue();
+            String val = active.isEmpty() ? "Никакие" : String.join(", ", active);
+            float valW = Fonts.SF_MEDIUM.getWidth(val, 5.0F);
+            float btnW = Math.max(36.0F, valW + 14.0F);
+            float btnX = x + w - btnW - 4.0F;
+            float btnY = y + 2.5F;
+
+            boolean isOpen = (this.activeDropdownMultiMode == multi);
             int bg = isOpen ? ColorUtil.withAlpha(accentColor, (int) (180 * alphaVal)) : ColorUtil.rgba(255, 255, 255, (int) (18 * alphaVal));
             Render2D.drawRoundedRect(btnX, btnY, btnW, 11.5F, 3.0F, bg);
             Render2D.drawRoundedOutline(btnX, btnY, btnW, 11.5F, 3.0F, 0.6F, isOpen ? accentColor : ColorUtil.rgba(255, 255, 255, (int) (30 * alphaVal)));
@@ -1255,6 +1275,47 @@ public class LiquidClickGui extends Screen {
         for (int i = 0; i < this.activeDropdownMode.getModes().size(); i++) {
             String opt = this.activeDropdownMode.getModes().get(i);
             boolean isSelected = opt.equalsIgnoreCase(this.activeDropdownMode.getValue());
+            boolean isHovered = mouseX >= dx + 2.0F && mouseX <= dx + dw - 2.0F && mouseY >= rowY && mouseY <= rowY + rowH;
+
+            if (isHovered) {
+                Render2D.drawRoundedRect(dx + 2.5F, rowY, dw - 5.0F, rowH, 3.5F, ColorUtil.rgba(255, 255, 255, (int) (22 * alphaVal)));
+            } else if (isSelected) {
+                Render2D.drawRoundedRect(dx + 2.5F, rowY, dw - 5.0F, rowH, 3.5F, ColorUtil.withAlpha(accentColor, (int) (40 * alphaVal)));
+            }
+
+            int textColor = isSelected ? 0xFFFFFFFF : (isHovered ? 0xFFE0EBF8 : 0xFFA0B4C8);
+            Fonts.drawString(Fonts.SF_MEDIUM, opt, dx + 6.0F, rowY + 3.5F, 5.0F, textColor);
+
+            if (isSelected) {
+                Fonts.drawString(Fonts.SF_MEDIUM, "✓", dx + dw - 12.0F, rowY + 2.5F, 5.2F, accentColor);
+            }
+
+            rowY += 16.0F;
+        }
+    }
+
+    private void renderMultiModeDropdown(int screenW, int screenH, int mouseX, int mouseY, float alphaVal, int accentColor) {
+        if (this.activeDropdownMultiMode == null) return;
+
+        float dx = this.dropdownPopupX;
+        float dy = this.dropdownPopupY;
+        float dw = this.dropdownPopupW;
+        float dh = this.dropdownPopupH;
+
+        Render2D.drawShadow(dx, dy, dw, dh, 6.0F, 12.0F, ColorUtil.rgba(0, 0, 0, (int) (110 * alphaVal)));
+        int dropDarken = ColorUtil.rgba(12, 16, 28, (int) (40 * alphaVal));
+        int dropFrosted = ColorUtil.rgba(255, 255, 255, (int) (14 * alphaVal));
+        Render2D.drawRoundedRect(dx, dy, dw, dh, 6.0F, dropDarken);
+        Render2D.drawRoundedRect(dx, dy, dw, dh, 6.0F, dropFrosted);
+        Render2D.drawRoundedOutline(dx, dy, dw, dh, 6.0F, 0.75F, ColorUtil.rgba(255, 255, 255, (int) (35 * alphaVal)));
+        Render2D.drawRoundedOutline(dx, dy, dw, dh, 6.0F, 0.5F, ColorUtil.withAlpha(accentColor, (int) (65 * alphaVal)));
+
+        float rowY = dy + 3.0F;
+        float rowH = 15.0F;
+
+        for (int i = 0; i < this.activeDropdownMultiMode.getModes().size(); i++) {
+            String opt = this.activeDropdownMultiMode.getModes().get(i);
+            boolean isSelected = this.activeDropdownMultiMode.isEnabled(opt);
             boolean isHovered = mouseX >= dx + 2.0F && mouseX <= dx + dw - 2.0F && mouseY >= rowY && mouseY <= rowY + rowH;
 
             if (isHovered) {
@@ -1953,6 +2014,31 @@ public class LiquidClickGui extends Screen {
             }
             // Click outside closes dropdown
             this.activeDropdownMode = null;
+        }
+
+        if (this.activeDropdownMultiMode != null) {
+            float dx = this.dropdownPopupX;
+            float dy = this.dropdownPopupY;
+            float dw = this.dropdownPopupW;
+            float dh = this.dropdownPopupH;
+
+            if (mouseX >= dx && mouseX <= dx + dw && mouseY >= dy && mouseY <= dy + dh) {
+                float rowY = dy + 3.0F;
+                float rowH = 15.0F;
+                for (String opt : this.activeDropdownMultiMode.getModes()) {
+                    if (mouseY >= rowY && mouseY <= rowY + rowH) {
+                        this.activeDropdownMultiMode.toggle(opt);
+                        error.util.client.ClientSoundPlayer.playGuiClick();
+                        if (Client.INSTANCE != null && Client.INSTANCE.configManager != null) {
+                            Client.INSTANCE.configManager.autoSave();
+                        }
+                        return true;
+                    }
+                    rowY += 16.0F;
+                }
+                return true;
+            }
+            this.activeDropdownMultiMode = null;
         }
 
         // Handle Module Middle-Click Bind Modal Clicks if Open
@@ -2935,11 +3021,13 @@ public class LiquidClickGui extends Screen {
             if (event.key() == GLFW.GLFW_KEY_BACKSPACE) {
                 if (!this.searchQuery.isEmpty()) {
                     this.searchQuery = this.searchQuery.substring(0, this.searchQuery.length() - 1);
+                    error.util.client.ClientSoundPlayer.playSound("searchtyping.wav", 0.35, 0.95F + (float) (Math.random() * 0.1));
                 }
                 return true;
             } else if (isPaste) {
                 String clip = GLFW.glfwGetClipboardString(Minecraft.getInstance().getWindow().handle());
                 if (clip != null) searchQuery += clip.trim();
+                error.util.client.ClientSoundPlayer.playSound("searchtyping.wav", 0.35, 0.95F + (float) (Math.random() * 0.1));
                 return true;
             } else if (event.key() == GLFW.GLFW_KEY_ESCAPE) {
                 this.searchFocused = false;
@@ -2981,17 +3069,22 @@ public class LiquidClickGui extends Screen {
         int codePoint = event.codepoint();
         if (codePoint >= 32 && codePoint != 127) {
             String ch = new String(Character.toChars(codePoint));
+            boolean typed = false;
             if (this.newConfigFocused) {
                 this.newConfigInput += ch;
-                return true;
+                typed = true;
             } else if (this.shareKeyFocused) {
                 this.shareKeyInput += ch;
-                return true;
+                typed = true;
             } else if (this.friendInputFocused) {
                 this.friendInput += ch;
-                return true;
+                typed = true;
             } else if (this.searchFocused) {
                 this.searchQuery += ch;
+                typed = true;
+            }
+            if (typed) {
+                error.util.client.ClientSoundPlayer.playSound("searchtyping.wav", 0.35, 0.95F + (float) (Math.random() * 0.1));
                 return true;
             }
         }

@@ -247,15 +247,20 @@ public final class CustomScoreboardHud extends HudElement {
 
     @Override
     public float drawContextMenu(float menuX, float menuY, double mouseX, double mouseY, float alpha) {
-        float width = 130.0F;
+        float width = 145.0F;
         Interface iface = Interface.getInstance();
         float currentScale = iface != null ? iface.scoreboardScale.getValue() : 1.0F;
+        boolean hideScores = iface != null && iface.scoreboardRemoveScores.getValue();
+        boolean shadow = iface == null || iface.scoreboardShadow.getValue();
+
         String[] options = {
             "Размер: 0.75x" + (Math.abs(currentScale - 0.75F) < 0.01F ? " ✔" : ""),
             "Размер: 1.0x" + (Math.abs(currentScale - 1.0F) < 0.01F ? " ✔" : ""),
             "Размер: 1.25x" + (Math.abs(currentScale - 1.25F) < 0.01F ? " ✔" : ""),
             "Размер: 1.5x" + (Math.abs(currentScale - 1.5F) < 0.01F ? " ✔" : ""),
-            "Размер: 2.0x" + (Math.abs(currentScale - 2.0F) < 0.01F ? " ✔" : "")
+            "Размер: 2.0x" + (Math.abs(currentScale - 2.0F) < 0.01F ? " ✔" : ""),
+            "Числа: " + (hideScores ? "Скрыты ✔" : "Видны"),
+            "Тень текста: " + (shadow ? "Вкл ✔" : "Выкл")
         };
         float height = options.length * 18.0F + 8.0F;
 
@@ -276,15 +281,23 @@ public final class CustomScoreboardHud extends HudElement {
                 Render2D.drawRoundedRect(menuX + 4.0F, itemY, width - 8.0F, 17.0F, 4.0F, ColorUtil.rgba(255, 255, 255, (int) (20 * alpha)));
             }
 
-            float optionScale = switch (i) {
-                case 0 -> 0.75F;
-                case 1 -> 1.0F;
-                case 2 -> 1.25F;
-                case 3 -> 1.5F;
-                case 4 -> 2.0F;
-                default -> 1.0F;
-            };
-            boolean active = Math.abs(currentScale - optionScale) < 0.01F;
+            boolean active = false;
+            if (i < 5) {
+                float optionScale = switch (i) {
+                    case 0 -> 0.75F;
+                    case 1 -> 1.0F;
+                    case 2 -> 1.25F;
+                    case 3 -> 1.5F;
+                    case 4 -> 2.0F;
+                    default -> 1.0F;
+                };
+                active = Math.abs(currentScale - optionScale) < 0.01F;
+            } else if (i == 5) {
+                active = hideScores;
+            } else if (i == 6) {
+                active = shadow;
+            }
+
             int textColor = active ? themeAccent : ColorUtil.rgba(220, 220, 235, (int) (220 * alpha));
             Fonts.drawString(Fonts.SF_MEDIUM, options[i], menuX + 10.0F, itemY + 4.0F, 7.5F, textColor);
             itemY += 18.0F;
@@ -296,20 +309,27 @@ public final class CustomScoreboardHud extends HudElement {
     @Override
     public boolean handleContextMenuClick(float menuX, float menuY, double mouseX, double mouseY, int button) {
         if (button != 0) return false;
-        float width = 130.0F;
+        float width = 145.0F;
         float itemY = menuY + 4.0F;
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 7; i++) {
             if (mouseX >= menuX && mouseX <= menuX + width && mouseY >= itemY && mouseY <= itemY + 18.0F) {
-                float newScale = switch (i) {
-                    case 0 -> 0.75F;
-                    case 1 -> 1.0F;
-                    case 2 -> 1.25F;
-                    case 3 -> 1.5F;
-                    case 4 -> 2.0F;
-                    default -> 1.0F;
-                };
-                if (Interface.getInstance() != null) {
-                    Interface.getInstance().scoreboardScale.setValue(newScale);
+                Interface iface = Interface.getInstance();
+                if (iface != null) {
+                    if (i < 5) {
+                        float newScale = switch (i) {
+                            case 0 -> 0.75F;
+                            case 1 -> 1.0F;
+                            case 2 -> 1.25F;
+                            case 3 -> 1.5F;
+                            case 4 -> 2.0F;
+                            default -> 1.0F;
+                        };
+                        iface.scoreboardScale.setValue(newScale);
+                    } else if (i == 5) {
+                        iface.scoreboardRemoveScores.setValue(!iface.scoreboardRemoveScores.getValue());
+                    } else if (i == 6) {
+                        iface.scoreboardShadow.setValue(!iface.scoreboardShadow.getValue());
+                    }
                 }
                 return true;
             }
