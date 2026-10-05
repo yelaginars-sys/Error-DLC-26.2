@@ -117,7 +117,7 @@ public class ArmorHud extends HudElement implements error.IMinecraft {
 
         if ("Над иконками голода".equalsIgnoreCase(posMode)) {
             renderX = screenW / 2.0F + 10.0F;
-            renderY = screenH - 55.0F;
+            renderY = screenH - 68.0F;
             this.x = renderX;
             this.y = renderY;
         }

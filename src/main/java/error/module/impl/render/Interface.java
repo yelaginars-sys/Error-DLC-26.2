@@ -9,6 +9,7 @@ import error.module.Module;
 import error.setting.impl.CheckBox;
 import error.setting.impl.ColorSetting;
 import error.setting.impl.ModeSetting;
+import error.setting.impl.SliderSetting;
 import error.util.client.clients.ColorUtil;
 import error.util.client.clients.Theme;
 
@@ -32,6 +33,7 @@ public final class Interface extends Module {
     public final ModeSetting scoreboardMode = mode("Режим Скорборда", "Кастомный", "Кастомный", "Ванильный", "Скрыт");
     public final CheckBox scoreboardRemoveScores = checkbox("Скрывать числа скорборда", true);
     public final CheckBox scoreboardShadow = checkbox("Тень текста Скорборда", true);
+    public final SliderSetting scoreboardScale = slider("Размер Скорборда", 1.0F, 0.5F, 2.0F, 0.05F);
     public final ModeSetting colorMode     = mode("Цвет HUD", "Тема", "Тема", "Свой");
     public final ColorSetting customColor  = color("Свой цвет", ColorUtil.rgba(0, 180, 255, 255));
 

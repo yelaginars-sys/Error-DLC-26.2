@@ -46,12 +46,12 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
 
     private static final float NORMAL_HEIGHT = 20.0F;
     private static final float NOTIFICATION_HEIGHT = 20.0F;
-    private static final float MUSIC_HEIGHT = 26.0F;
+    private static final float MUSIC_HEIGHT = 28.0F;
     private static final float MUSIC_CHAT_HEIGHT = 30.0F;
     private static final float PVP_HEIGHT = 22.0F;
 
-    private static final float INFO_HEIGHT = 12.0F;
-    private static final float GAP_BETWEEN = 3.0F;
+    private static final float INFO_HEIGHT = 14.0F;
+    private static final float GAP_BETWEEN = 6.0F;
 
     private static final float RADIUS = 8.5F;
     private static final float HEAD_SIZE = 9.0F;
