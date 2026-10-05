@@ -131,11 +131,6 @@ public class ArmorHud extends HudElement implements error.IMinecraft {
         var extractor = event.getGuiGraphicsExtractor();
         if (extractor == null) return;
 
-        // Draw Liquid Glass HUD background card (drawHudCard handles shadow)
-        Render2D.drawHudCard(renderX, renderY, totalW, totalH, 6.0F, animAlpha);
-
-        Render2DUtil.flush();
-
         float startX = renderX + padX;
         float startY = renderY + padY + 1.0F;
 
