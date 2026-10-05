@@ -40,7 +40,18 @@ public abstract class ChatScreenMixin {
             ClientCommandSuggestions.getInstance().update(input.getValue());
             float screenW = Minecraft.getInstance().getWindow().getGuiScaledWidth();
             float screenH = Minecraft.getInstance().getWindow().getGuiScaledHeight();
-            ClientCommandSuggestions.getInstance().render(screenW, screenH, 1.0F);
+
+            boolean setExtractor = error.util.RenderExtend.currentGuiGraphicsExtractor() == null;
+            if (setExtractor && graphics != null) {
+                error.util.RenderExtend.enter2D(Minecraft.getInstance().gui, graphics, null);
+            }
+            try {
+                ClientCommandSuggestions.getInstance().render(screenW, screenH, 1.0F);
+            } finally {
+                if (setExtractor) {
+                    error.util.RenderExtend.exit2D();
+                }
+            }
         }
     }
 

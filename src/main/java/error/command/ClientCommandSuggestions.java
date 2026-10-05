@@ -34,20 +34,19 @@ public class ClientCommandSuggestions {
         lastQuery = currentText;
 
         currentSuggestions.clear();
-        String raw = currentText.substring(1).trim();
-        String[] parts = raw.split("\\s+", -1);
+        String raw = currentText.substring(1);
+        String searchRaw = raw.trim().toLowerCase();
 
         CommandManager cm = Client.INSTANCE.commandManager;
         if (cm == null) return;
 
-        if (!currentText.contains(" ")) {
-            // Typing command name: e.g. ".c" or "."
-            String search = raw.toLowerCase();
+        if (!raw.contains(" ")) {
+            // Typing command name: e.g. "." or ".c" or ".cfg"
             for (Command cmd : cm.getCommands()) {
-                boolean matchesName = cmd.name().toLowerCase().startsWith(search);
-                boolean matchesAlias = cmd.aliases().stream().anyMatch(a -> a.toLowerCase().startsWith(search));
+                boolean matchesName = cmd.name().toLowerCase().startsWith(searchRaw);
+                boolean matchesAlias = cmd.aliases().stream().anyMatch(a -> a.toLowerCase().startsWith(searchRaw));
 
-                if (matchesName || matchesAlias) {
+                if (matchesName || matchesAlias || searchRaw.isEmpty()) {
                     String aliasStr = cmd.aliases().isEmpty() ? "" : " (" + String.join(", ", cmd.aliases()) + ")";
                     currentSuggestions.add(new SuggestionEntry(
                             "." + cmd.name(),
@@ -58,48 +57,145 @@ public class ClientCommandSuggestions {
                 }
             }
         } else {
-            // Typing arguments for a command: e.g. ".cfg " or ".friend "
-            String cmdName = parts[0];
+            // Typing arguments for a command: e.g. ".cfg " or ".friend add "
+            int firstSpace = raw.indexOf(' ');
+            String cmdName = raw.substring(0, firstSpace).toLowerCase();
+            String argsStr = raw.substring(firstSpace + 1);
+
             Command cmd = cm.find(cmdName);
             if (cmd != null) {
-                String argSearch = parts.length > 1 ? parts[1].toLowerCase() : "";
+                String normalizedCmd = cmd.name();
 
-                if ("cfg".equalsIgnoreCase(cmd.name())) {
-                    for (String sub : List.of("save", "load", "list", "dir")) {
-                        if (sub.startsWith(argSearch)) {
-                            String desc = switch (sub) {
-                                case "save" -> "Сохранить конфигурацию";
-                                case "load" -> "Загрузить конфигурацию";
-                                case "list" -> "Список конфигураций";
-                                case "dir" -> "Открыть папку с конфигами";
-                                default -> "";
-                            };
-                            currentSuggestions.add(new SuggestionEntry("." + cmdName + " " + sub, sub, desc, true));
+                if ("cfg".equalsIgnoreCase(normalizedCmd)) {
+                    int nextSpace = argsStr.indexOf(' ');
+                    if (nextSpace == -1) {
+                        String subSearch = argsStr.toLowerCase();
+                        for (String sub : List.of("save", "load", "list", "dir")) {
+                            if (sub.startsWith(subSearch)) {
+                                String desc = switch (sub) {
+                                    case "save" -> "Сохранить текущую конфигурацию";
+                                    case "load" -> "Загрузить конфигурацию из файла";
+                                    case "list" -> "Список всех сохраненных конфигураций";
+                                    case "dir" -> "Открыть папку с конфигурациями";
+                                    default -> "";
+                                };
+                                currentSuggestions.add(new SuggestionEntry("." + cmdName + " " + sub, sub, desc, true));
+                            }
+                        }
+                    } else {
+                        String sub = argsStr.substring(0, nextSpace).toLowerCase();
+                        String valSearch = argsStr.substring(nextSpace + 1).toLowerCase();
+
+                        if (("load".equals(sub) || "save".equals(sub)) && Client.INSTANCE.configManager != null) {
+                            for (String cfg : Client.INSTANCE.configManager.getAvailableConfigs()) {
+                                if (cfg.toLowerCase().startsWith(valSearch)) {
+                                    currentSuggestions.add(new SuggestionEntry(
+                                            "." + cmdName + " " + sub + " " + cfg,
+                                            cfg,
+                                            "Конфигурация",
+                                            true
+                                    ));
+                                }
+                            }
                         }
                     }
-                } else if ("friend".equalsIgnoreCase(cmd.name())) {
-                    for (String sub : List.of("add", "remove", "list", "clear")) {
-                        if (sub.startsWith(argSearch)) {
-                            String desc = switch (sub) {
-                                case "add" -> "Добавить игрока в друзья";
-                                case "remove" -> "Удалить игрока из друзей";
-                                case "list" -> "Список сохраненных друзей";
-                                case "clear" -> "Очистить список друзей";
-                                default -> "";
-                            };
-                            currentSuggestions.add(new SuggestionEntry("." + cmdName + " " + sub, sub, desc, true));
+                } else if ("friend".equalsIgnoreCase(normalizedCmd)) {
+                    int nextSpace = argsStr.indexOf(' ');
+                    if (nextSpace == -1) {
+                        String subSearch = argsStr.toLowerCase();
+                        for (String sub : List.of("add", "remove", "list", "clear")) {
+                            if (sub.startsWith(subSearch)) {
+                                String desc = switch (sub) {
+                                    case "add" -> "Добавить игрока в друзья";
+                                    case "remove" -> "Удалить игрока из друзей";
+                                    case "list" -> "Список сохраненных друзей";
+                                    case "clear" -> "Очистить список друзей";
+                                    default -> "";
+                                };
+                                currentSuggestions.add(new SuggestionEntry("." + cmdName + " " + sub, sub, desc, true));
+                            }
+                        }
+                    } else {
+                        String sub = argsStr.substring(0, nextSpace).toLowerCase();
+                        String valSearch = argsStr.substring(nextSpace + 1).toLowerCase();
+
+                        if ("add".equals(sub)) {
+                            Minecraft mc = Minecraft.getInstance();
+                            if (mc.getConnection() != null) {
+                                for (net.minecraft.client.multiplayer.PlayerInfo info : mc.getConnection().getOnlinePlayers()) {
+                                    String name = info.getProfile().name();
+                                    if (!error.friend.FriendManager.getInstance().isFriend(name) &&
+                                            name.toLowerCase().startsWith(valSearch)) {
+                                        currentSuggestions.add(new SuggestionEntry("." + cmdName + " add " + name, name, "Игрок онлайн", true));
+                                    }
+                                }
+                            }
+                        } else if ("remove".equals(sub) || "del".equals(sub)) {
+                            for (String friend : error.friend.FriendManager.getInstance().getFriends()) {
+                                if (friend.toLowerCase().startsWith(valSearch)) {
+                                    currentSuggestions.add(new SuggestionEntry("." + cmdName + " " + sub + " " + friend, friend, "Друг", true));
+                                }
+                            }
                         }
                     }
-                } else if ("gps".equalsIgnoreCase(cmd.name())) {
+                } else if ("staff".equalsIgnoreCase(normalizedCmd)) {
+                    int nextSpace = argsStr.indexOf(' ');
+                    if (nextSpace == -1) {
+                        String subSearch = argsStr.toLowerCase();
+                        for (String sub : List.of("add", "remove", "list", "clear")) {
+                            if (sub.startsWith(subSearch)) {
+                                String desc = switch (sub) {
+                                    case "add" -> "Добавить игрока в стафф";
+                                    case "remove" -> "Удалить игрока из стаффа";
+                                    case "list" -> "Список стаффа";
+                                    case "clear" -> "Очистить список стаффа";
+                                    default -> "";
+                                };
+                                currentSuggestions.add(new SuggestionEntry("." + cmdName + " " + sub, sub, desc, true));
+                            }
+                        }
+                    } else {
+                        String sub = argsStr.substring(0, nextSpace).toLowerCase();
+                        String valSearch = argsStr.substring(nextSpace + 1).toLowerCase();
+
+                        if ("add".equals(sub)) {
+                            Minecraft mc = Minecraft.getInstance();
+                            if (mc.getConnection() != null) {
+                                for (net.minecraft.client.multiplayer.PlayerInfo info : mc.getConnection().getOnlinePlayers()) {
+                                    String name = info.getProfile().name();
+                                    if (!error.staff.StaffManager.getInstance().isStaff(name) &&
+                                            name.toLowerCase().startsWith(valSearch)) {
+                                        currentSuggestions.add(new SuggestionEntry("." + cmdName + " add " + name, name, "Игрок онлайн", true));
+                                    }
+                                }
+                            }
+                        } else if ("remove".equals(sub)) {
+                            for (String s : error.staff.StaffManager.getInstance().getStaff()) {
+                                if (s.toLowerCase().startsWith(valSearch)) {
+                                    currentSuggestions.add(new SuggestionEntry("." + cmdName + " remove " + s, s, "Стафф", true));
+                                }
+                            }
+                        }
+                    }
+                } else if ("gps".equalsIgnoreCase(normalizedCmd)) {
+                    String subSearch = argsStr.toLowerCase();
                     for (String sub : List.of("off", "clear", "stop")) {
-                        if (sub.startsWith(argSearch)) {
-                            currentSuggestions.add(new SuggestionEntry("." + cmdName + " " + sub, sub, "Отключить GPS метку", true));
+                        if (sub.startsWith(subSearch)) {
+                            currentSuggestions.add(new SuggestionEntry("." + cmdName + " " + sub, sub, "Управление GPS меткой", true));
                         }
                     }
-                } else if ("builder".equalsIgnoreCase(cmd.name())) {
+                } else if ("builder".equalsIgnoreCase(normalizedCmd)) {
+                    String subSearch = argsStr.toLowerCase();
                     for (String sub : List.of("start", "stop", "train", "load", "dir")) {
-                        if (sub.startsWith(argSearch)) {
-                            currentSuggestions.add(new SuggestionEntry("." + cmdName + " " + sub, sub, "Управление нейро-ротацией", true));
+                        if (sub.startsWith(subSearch)) {
+                            currentSuggestions.add(new SuggestionEntry("." + cmdName + " " + sub, sub, "Нейро-ротация", true));
+                        }
+                    }
+                } else if ("help".equalsIgnoreCase(normalizedCmd)) {
+                    String subSearch = argsStr.toLowerCase();
+                    for (Command c : cm.getCommands()) {
+                        if (c.name().toLowerCase().startsWith(subSearch)) {
+                            currentSuggestions.add(new SuggestionEntry("." + cmdName + " " + c.name(), c.name(), c.description(), true));
                         }
                     }
                 }
