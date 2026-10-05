@@ -38,10 +38,6 @@ public abstract class EditBoxMixin {
         if (!currentVal.equals(error$prevValue)) {
             long now = System.currentTimeMillis();
 
-            if (!error$prevValue.isEmpty() || !currentVal.isEmpty()) {
-                error.util.client.ClientSoundPlayer.playSound("searchtyping.wav", 0.35, 0.95F + (float) (Math.random() * 0.1));
-            }
-
             int len = currentVal.length();
             int prevLen = error$prevValue.length();
 

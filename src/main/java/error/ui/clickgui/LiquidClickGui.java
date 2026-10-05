@@ -2955,6 +2955,7 @@ public class LiquidClickGui extends Screen {
             if (event.key() == GLFW.GLFW_KEY_BACKSPACE) {
                 if (!this.newConfigInput.isEmpty()) {
                     this.newConfigInput = this.newConfigInput.substring(0, this.newConfigInput.length() - 1);
+                    error.util.client.ClientSoundPlayer.playSound("searchtyping.wav", 0.35, 0.95F + (float) (Math.random() * 0.1));
                 }
                 return true;
             } else if (event.key() == GLFW.GLFW_KEY_ENTER) {
@@ -2966,6 +2967,7 @@ public class LiquidClickGui extends Screen {
             } else if (isPaste) {
                 String clip = GLFW.glfwGetClipboardString(Minecraft.getInstance().getWindow().handle());
                 if (clip != null) newConfigInput += clip.trim();
+                error.util.client.ClientSoundPlayer.playSound("searchtyping.wav", 0.35, 0.95F + (float) (Math.random() * 0.1));
                 return true;
             } else if (event.key() == GLFW.GLFW_KEY_ESCAPE) {
                 this.newConfigFocused = false;
@@ -2977,6 +2979,7 @@ public class LiquidClickGui extends Screen {
             if (event.key() == GLFW.GLFW_KEY_BACKSPACE) {
                 if (!this.shareKeyInput.isEmpty()) {
                     this.shareKeyInput = this.shareKeyInput.substring(0, this.shareKeyInput.length() - 1);
+                    error.util.client.ClientSoundPlayer.playSound("searchtyping.wav", 0.35, 0.95F + (float) (Math.random() * 0.1));
                 }
                 return true;
             } else if (event.key() == GLFW.GLFW_KEY_ENTER) {
@@ -2985,6 +2988,7 @@ public class LiquidClickGui extends Screen {
             } else if (isPaste) {
                 String clip = GLFW.glfwGetClipboardString(Minecraft.getInstance().getWindow().handle());
                 if (clip != null) shareKeyInput += clip.trim();
+                error.util.client.ClientSoundPlayer.playSound("searchtyping.wav", 0.35, 0.95F + (float) (Math.random() * 0.1));
                 return true;
             } else if (event.key() == GLFW.GLFW_KEY_ESCAPE) {
                 this.shareKeyFocused = false;
@@ -2997,6 +3001,7 @@ public class LiquidClickGui extends Screen {
             if (event.key() == GLFW.GLFW_KEY_BACKSPACE) {
                 if (!this.friendInput.isEmpty()) {
                     this.friendInput = this.friendInput.substring(0, this.friendInput.length() - 1);
+                    error.util.client.ClientSoundPlayer.playSound("searchtyping.wav", 0.35, 0.95F + (float) (Math.random() * 0.1));
                 }
                 return true;
             } else if (event.key() == GLFW.GLFW_KEY_ENTER) {

@@ -34,26 +34,6 @@ public abstract class ChatScreenMixin {
         }
     }
 
-    @Inject(method = "extractRenderState", at = @At("TAIL"), require = 0)
-    private void onRender(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
-        if (input != null && !error.module.impl.misc.UnHook.unhooked) {
-            ClientCommandSuggestions.getInstance().update(input.getValue());
-            float screenW = Minecraft.getInstance().getWindow().getGuiScaledWidth();
-            float screenH = Minecraft.getInstance().getWindow().getGuiScaledHeight();
-
-            boolean setExtractor = error.util.RenderExtend.currentGuiGraphicsExtractor() == null;
-            if (setExtractor && graphics != null) {
-                error.util.RenderExtend.enter2D(Minecraft.getInstance().gui, graphics, null);
-            }
-            try {
-                ClientCommandSuggestions.getInstance().render(screenW, screenH, 1.0F);
-            } finally {
-                if (setExtractor) {
-                    error.util.RenderExtend.exit2D();
-                }
-            }
-        }
-    }
 
     @Inject(method = "keyPressed", at = @At("HEAD"), cancellable = true)
     private void onKeyPressed(KeyEvent event, CallbackInfoReturnable<Boolean> cir) {

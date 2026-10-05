@@ -60,6 +60,15 @@ public abstract class ScreenMixin {
                 }
             }
         }
+        if (self instanceof net.minecraft.client.gui.screens.ChatScreen chatScreen) {
+            net.minecraft.client.gui.components.EditBox input = ((error.mixin.accessor.ChatScreenAccessor) chatScreen).getInput();
+            if (input != null && !error.module.impl.misc.UnHook.unhooked) {
+                error.command.ClientCommandSuggestions.getInstance().update(input.getValue());
+                float screenW = Minecraft.getInstance().getWindow().getGuiScaledWidth();
+                float screenH = Minecraft.getInstance().getWindow().getGuiScaledHeight();
+                error.command.ClientCommandSuggestions.getInstance().render(screenW, screenH, 1.0F);
+            }
+        }
         error.util.display.batch.DisplayBatcher.end();
         error.util.RenderExtend.exit2D();
     }
