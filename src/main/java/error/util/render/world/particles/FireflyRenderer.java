@@ -398,8 +398,10 @@ public final class FireflyRenderer {
                     Vector4f g3 = Render3DUtil.toViewSpace(new Vec3(nextX - sideX * glowW2, nextY - sideY * glowW2, nextZ - sideZ * glowW2), camPos, viewPose);
                     Vector4f g4 = Render3DUtil.toViewSpace(new Vec3(nextX + sideX * glowW2, nextY + sideY * glowW2, nextZ + sideZ * glowW2), camPos, viewPose);
 
-                    addQuad(builder, g1, g2, g3, g4, glowC1, glowC2);
-                    drawnVertices += 6;
+                    if (g1.z < -0.15F && g2.z < -0.15F && g3.z < -0.15F && g4.z < -0.15F) {
+                        addQuad(builder, g1, g2, g3, g4, glowC1, glowC2);
+                        drawnVertices += 6;
+                    }
 
                     float coreW1 = 0.006f * (1.0f - t1 * 0.8f);
                     float coreW2 = 0.006f * (1.0f - t2 * 0.8f);
@@ -411,8 +413,10 @@ public final class FireflyRenderer {
                     Vector4f c3 = Render3DUtil.toViewSpace(new Vec3(nextX - sideX * coreW2, nextY - sideY * coreW2, nextZ - sideZ * coreW2), camPos, viewPose);
                     Vector4f c4 = Render3DUtil.toViewSpace(new Vec3(nextX + sideX * coreW2, nextY + sideY * coreW2, nextZ + sideZ * coreW2), camPos, viewPose);
 
-                    addQuad(builder, c1, c2, c3, c4, coreC1, coreC2);
-                    drawnVertices += 6;
+                    if (c1.z < -0.15F && c2.z < -0.15F && c3.z < -0.15F && c4.z < -0.15F) {
+                        addQuad(builder, c1, c2, c3, c4, coreC1, coreC2);
+                        drawnVertices += 6;
+                    }
 
                     currX = nextX; currY = nextY; currZ = nextZ;
                 }
@@ -452,6 +456,8 @@ public final class FireflyRenderer {
             int remainingBytes = vertexData.remaining();
             ensureVertexCapacity(remainingBytes);
 
+            device.createCommandEncoder().writeToBuffer(this.vertexBuffer.slice(0, remainingBytes), vertexData);
+
             try (RenderPass pass = device.createCommandEncoder().createRenderPass(
                     () -> "Error Firefly Laser & Bloom",
                     targetRT.getColorTextureView(),
@@ -471,6 +477,7 @@ public final class FireflyRenderer {
 
     private static int addSoftDisc(BufferBuilder b, Vec3 worldPos, float radius, int innerColor, int outerColor, Vec3 camPos, Matrix4f viewPose) {
         Vector4f center = Render3DUtil.toViewSpace(worldPos, camPos, viewPose);
+        if (center.z >= -0.2F) return 0;
         int segments = 12;
 
         for (int i = 0; i < segments; i++) {

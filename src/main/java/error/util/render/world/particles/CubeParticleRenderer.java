@@ -131,6 +131,9 @@ public final class CubeParticleRenderer {
             float alpha = p.getAlphaProgress();
             if (alpha <= 0.005F) continue;
 
+            Vector4f centerV = Render3DUtil.toViewSpace(p.pos, cameraPos, viewPose);
+            if (centerV.z >= -0.25F) continue;
+
             float h = p.size * (0.4F + alpha * 0.6F) * 0.5F;
             float coreH = h * 0.38F;
 
@@ -218,6 +221,8 @@ public final class CubeParticleRenderer {
             ByteBuffer vertexData = meshData.vertexBuffer();
             int remainingBytes = vertexData.remaining();
             ensureVertexCapacity(remainingBytes);
+
+            device.createCommandEncoder().writeToBuffer(this.vertexBuffer.slice(0, remainingBytes), vertexData);
 
             try (RenderPass pass = device.createCommandEncoder().createRenderPass(
                     () -> "Error World Cube Particles",
