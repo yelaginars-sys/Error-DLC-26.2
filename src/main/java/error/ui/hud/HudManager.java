@@ -28,7 +28,7 @@ public final class HudManager implements IMinecraft {
     private static final float COLLISION_MARGIN = 2.0F;
 
     private HudElement draggedElement = null;
-    private boolean collisionsEnabled = true;
+    private boolean collisionsEnabled = false;
     private boolean snappingEnabled = true;
     private boolean showGuidelines = true;
 
@@ -199,8 +199,16 @@ public final class HudManager implements IMinecraft {
                 target.setY(originalY);
             }
         } else {
-            target.setX(desiredX);
-            target.setY(desiredY);
+            // Smooth lerp movement towards target position
+            float smoothX = target.getX() + (desiredX - target.getX()) * 0.45F;
+            float smoothY = target.getY() + (desiredY - target.getY()) * 0.45F;
+
+            // Direct snap if close enough to prevent infinite micro-adjustments
+            if (Math.abs(desiredX - smoothX) < 0.1F) smoothX = desiredX;
+            if (Math.abs(desiredY - smoothY) < 0.1F) smoothY = desiredY;
+
+            target.setX(smoothX);
+            target.setY(smoothY);
         }
     }
 

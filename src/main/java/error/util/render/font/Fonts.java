@@ -44,17 +44,17 @@ public final class Fonts {
 
     public static void drawIcon(IconUse icon, float x, float y, float size, int color) {
         if (icon == null || icon.glyph == null) return;
-        draw(ICONS_NURIK, icon.glyph.toUpperCase(java.util.Locale.ROOT), x, y, size, color, TextAlign.LEFT);
+        draw(ICONS_NURIK, icon.glyph, x, y, size, color, TextAlign.LEFT);
     }
 
     public static void drawCenteredIcon(IconUse icon, float x, float y, float size, int color) {
         if (icon == null || icon.glyph == null) return;
-        draw(ICONS_NURIK, icon.glyph.toUpperCase(java.util.Locale.ROOT), x, y, size, color, TextAlign.CENTER);
+        draw(ICONS_NURIK, icon.glyph, x, y, size, color, TextAlign.CENTER);
     }
 
     public static float getIconWidth(IconUse icon, float size) {
         if (icon == null || icon.glyph == null) return 0.0F;
-        return ICONS_NURIK.getWidth(icon.glyph.toUpperCase(java.util.Locale.ROOT), size);
+        return ICONS_NURIK.getWidth(icon.glyph, size);
     }
 
     private static void draw(MsdfFont font, String text, float x, float y, float size, int color, TextAlign align) {
