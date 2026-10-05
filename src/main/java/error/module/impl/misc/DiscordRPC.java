@@ -8,7 +8,7 @@ import error.rpc.DiscordRichPresence;
 public class DiscordRPC extends Module {
     public static DiscordRPC INSTANCE;
 
-    public static final String CLIENT_ID = "1552411841509200013";
+    public static final String CLIENT_ID = "1556662831880081558";
     private DiscordIPCClient ipcClient;
     private DiscordRichPresence presence;
     private Thread thread;
