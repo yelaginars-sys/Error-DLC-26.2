@@ -1,5 +1,23 @@
 package error.module.impl.misc;
 
+import error.event.EventTarget;
+import error.event.list.PlayerInputEvent;
+import error.event.list.PlayerTickEvent;
+import error.event.list.Render3DEvent;
+import error.friend.FriendManager;
+import error.module.Category;
+import error.module.Module;
+import error.module.impl.combat.AntiBot;
+import error.module.impl.combat.AutoTotem;
+import error.setting.impl.CheckBox;
+import error.setting.impl.HeaderSetting;
+import error.setting.impl.ModeSetting;
+import error.setting.impl.SliderSetting;
+import error.util.RotationHandler;
+import error.util.client.clients.ColorUtil;
+import error.util.client.clients.Theme;
+import error.util.player.MoveUtility;
+import error.util.render.Render3D;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -8,56 +26,37 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
-import error.util.client.clients.ColorUtil;
-import error.util.client.clients.Theme;
-import error.util.player.MoveUtility;
-import error.util.render.Render3D;
-import error.util.RotationHandler;
-import error.event.EventTarget;
-import error.event.list.PlayerInputEvent;
-import error.event.list.PlayerTickEvent;
-import error.event.list.Render3DEvent;
-import error.module.Category;
-import error.module.Module;
-import error.module.impl.combat.AutoTotem;
-import error.setting.impl.CheckBox;
-import error.setting.impl.HeaderSetting;
-import error.setting.impl.ModeSetting;
-import error.setting.impl.SliderSetting;
 
 import java.awt.Color;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 
 /**
+ * WebTrap module ported from Energy client.
+ * Places cobwebs around predicted target position (Solo & Multi modes, RageMode).
  */
 public final class WebTrap extends Module {
 
-    public final ModeSetting mode = mode("Mode", "Silent", "Silent", "Packet");
-    public final ModeSetting fillMode = mode("Fill", "All hitbox", "Only feet", "All hitbox");
-    public final SliderSetting range = slider("Range", 4.5f, 1.0f, 6.0f, 0.5f);
-    public final SliderSetting delay = slider("Delay", 1.0f, 0.0f, 10.0f, 1.0f);
+    public final ModeSetting mode = mode("Режим", "Solo", "Solo", "Multi");
+    public final CheckBox rageMode = checkbox("RageMode", false);
+    public final SliderSetting range = slider("Дистанция", 4.5f, 2.0f, 6.0f, 0.1f);
 
-    public final CheckBox predict = checkbox("Predict", true);
-    public final SliderSetting predictTicks = slider("Tick predict", 2.0f, 0.0f, 6.0f, 0.5f).visible(predict::getValue);
-
-    private final HeaderSetting renderHeader = header("Display");
-    public final CheckBox render = checkbox("Render", true);
-    public final ModeSetting renderType = mode("Mode", "Tile", "Tile", "Cube").visible(render::getValue);
+    private final HeaderSetting renderHeader = header("Отображение");
+    public final CheckBox render = checkbox("Рендер", true);
+    public final ModeSetting renderType = mode("Тип рендера", "Tile", "Tile", "Cube").visible(render::getValue);
 
     private final List<BlockPos> targetPositions = new ArrayList<>();
     private int prevSlot = -1;
     private boolean needsSwapBack = false;
     private boolean wasRotating = false;
-    private int delayTimer = 0;
 
     public WebTrap() {
-        super("WebTrap", "Застраивает цель паутиной", Category.MISC);
+        super("WebTrap", "Ставит паутину по предсказанной позиции цели", Category.COMBAT);
     }
 
     @Override
@@ -73,7 +72,6 @@ public final class WebTrap extends Module {
             RotationHandler.disengage("Instant");
         }
 
-        delayTimer = 0;
         prevSlot = -1;
         needsSwapBack = false;
         wasRotating = false;
@@ -103,8 +101,9 @@ public final class WebTrap extends Module {
             }
         }
 
-        if (delayTimer > 0) {
-            delayTimer--;
+        int webSlot = findWebHotbarSlot(player);
+        if (webSlot == -1) {
+            targetPositions.clear();
             return;
         }
 
@@ -118,121 +117,101 @@ public final class WebTrap extends Module {
             return;
         }
 
-        int webSlot = findWebHotbarSlot(player);
-        if (webSlot == -1) {
-            targetPositions.clear();
-            return;
-        }
-
-        Vec3 targetPos = getTargetPlacementPos(target);
-
-        if (fillMode.is("Only Feet")) {
-            placeAtFeet(targetPos, webSlot);
-        } else {
-            placeFullHeight(target, targetPos, webSlot);
-        }
-
-        delayTimer = delay.getValue().intValue();
-    }
-
-    private Vec3 getTargetPlacementPos(Player target) {
-        if (!predict.getValue() || predictTicks.getValue() <= 0.0f) {
-            return target.position();
-        }
-        Vec3 motion = target.getDeltaMovement();
-        return target.position().add(motion.scale(predictTicks.getValue()));
-    }
-
-    @EventTarget
-    public void onInput(PlayerInputEvent event) {
-        if (!inGame() || player() == null) return;
-
-        if (wasRotating && RotationHandler.isActive()) {
-            MoveUtility.fixMovement(event, RotationHandler.getFreeYaw());
-        }
-    }
-
-    private Player findTarget() {
-        if (mc.player == null || mc.level == null) return null;
-
-        return mc.level.players().stream()
-                .filter(p -> p != mc.player && p.isAlive() && !p.isSpectator())
-                .filter(p -> mc.player.distanceTo(p) <= range.getValue())
-                .min(Comparator.comparingDouble(p -> mc.player.distanceTo(p)))
-                .orElse(null);
-    }
-
-    private int findWebHotbarSlot(LocalPlayer player) {
-        for (int slot = 0; slot < 9; slot++) {
-            if (player.getInventory().getItem(slot).is(Items.COBWEB)) {
-                return slot;
-            }
-        }
-        return -1;
-    }
-
-    private void placeAtFeet(Vec3 targetPos, int webSlot) {
+        // Energy uses 7 ticks movement prediction
+        BlockPos predictedBase = getPredictedBlockPos(target);
+        List<BlockPos> placeQueue = calculateTrapPositions(predictedBase);
         targetPositions.clear();
-        BlockPos feetPos = new BlockPos(
-                Mth.floor(targetPos.x),
-                Mth.floor(targetPos.y),
-                Mth.floor(targetPos.z)
-        );
+        targetPositions.addAll(placeQueue);
 
-        if (mc.level.getBlockState(feetPos).isAir()) {
-            targetPositions.add(feetPos);
-            tryPlace(feetPos, webSlot);
-        }
-    }
-
-    private void placeFullHeight(Player target, Vec3 predictedPos, int webSlot) {
-        targetPositions.clear();
-        List<BlockPos> blocksToPlace = new ArrayList<>();
-
-        AABB box = target.getBoundingBox().move(predictedPos.subtract(target.position()));
-        int minX = Mth.floor(box.minX);
-        int minY = Mth.floor(box.minY);
-        int minZ = Mth.floor(box.minZ);
-        int maxX = Mth.floor(box.maxX - 0.001D);
-        int maxY = Mth.floor(box.maxY - 0.001D);
-        int maxZ = Mth.floor(box.maxZ - 0.001D);
-
-        for (int y = minY; y <= maxY; y++) {
-            for (int x = minX; x <= maxX; x++) {
-                for (int z = minZ; z <= maxZ; z++) {
-                    BlockPos pos = new BlockPos(x, y, z);
-                    if (mc.level.getBlockState(pos).isAir()) {
-                        blocksToPlace.add(pos);
-                    }
-                }
-            }
-        }
-
-        if (blocksToPlace.isEmpty()) {
-            BlockPos feet = new BlockPos(Mth.floor(predictedPos.x), Mth.floor(predictedPos.y), Mth.floor(predictedPos.z));
-            BlockPos head = feet.above();
-            if (mc.level.getBlockState(feet).isAir()) blocksToPlace.add(feet);
-            if (mc.level.getBlockState(head).isAir()) blocksToPlace.add(head);
-        }
-
-        targetPositions.addAll(blocksToPlace);
-
-        if (mode.is("Packet")) {
-            for (BlockPos pos : blocksToPlace) {
-                tryPlace(pos, webSlot);
-            }
-        } else {
-            for (BlockPos pos : blocksToPlace) {
-                if (tryPlace(pos, webSlot)) {
+        for (BlockPos pos : placeQueue) {
+            if (tryPlace(pos, webSlot)) {
+                if (!rageMode.getValue()) {
                     break;
                 }
             }
         }
     }
 
+    private BlockPos getPredictedBlockPos(Player target) {
+        Vec3 motion = new Vec3(
+                target.getX() - target.xOld,
+                target.getY() - target.yOld,
+                target.getZ() - target.zOld
+        );
+        Vec3 predicted = target.position().add(motion.scale(7.0));
+        return BlockPos.containing(predicted.x, predicted.y, predicted.z);
+    }
+
+    private Player findTarget() {
+        if (player() == null || mc.level == null) return null;
+
+        Player bestTarget = null;
+        double bestDistSq = Double.MAX_VALUE;
+        double maxDist = range.getValue();
+
+        for (Player other : mc.level.players()) {
+            if (other == player() || !other.isAlive() || other.isSpectator()) continue;
+            if (AntiBot.isBot(other)) continue;
+            if (FriendManager.getInstance().isFriend(other)) continue;
+
+            double dist = player().getEyePosition().distanceTo(other.getEyePosition());
+            if (dist > maxDist) continue;
+
+            if (!hasLineOfSight(other)) continue;
+
+            double distSq = other.distanceToSqr(player());
+            if (distSq < bestDistSq) {
+                bestDistSq = distSq;
+                bestTarget = other;
+            }
+        }
+
+        return bestTarget;
+    }
+
+    private boolean hasLineOfSight(Player target) {
+        Vec3 eye = player().getEyePosition();
+        Vec3 targetEye = target.getEyePosition();
+        double dist = eye.distanceTo(targetEye);
+        Vec3 dir = targetEye.subtract(eye).normalize();
+        return target.getBoundingBox().clip(eye, eye.add(dir.scale(dist))).isPresent();
+    }
+
+    private List<BlockPos> calculateTrapPositions(BlockPos base) {
+        List<BlockPos> positions = new ArrayList<>();
+        addCandidate(positions, base);
+        addCandidate(positions, base.above());
+
+        if (mode.is("Multi")) {
+            for (BlockPos pos : List.of(
+                    base.east(), base.west(), base.south(), base.north(),
+                    base.east().above(), base.west().above(), base.south().above(), base.north().above()
+            )) {
+                addCandidate(positions, pos);
+            }
+        } else {
+            addCandidate(positions, base.above(2));
+        }
+
+        return positions;
+    }
+
+    private void addCandidate(List<BlockPos> list, BlockPos pos) {
+        if (player() == null || mc.level == null) return;
+        BlockPos playerPos = player().blockPosition();
+
+        if (pos.equals(playerPos) || pos.equals(playerPos.above())) return;
+        if (player().getBoundingBox().intersects(new AABB(pos))) return;
+
+        BlockState state = mc.level.getBlockState(pos);
+        if (!state.isAir() && !state.canBeReplaced()) return;
+        if (state.is(Blocks.COBWEB)) return;
+
+        list.add(pos);
+    }
+
     private boolean tryPlace(BlockPos pos, int webSlot) {
-        BlockState currentState = mc.level.getBlockState(pos);
-        if (!currentState.isAir() && !currentState.canBeReplaced()) return false;
+        if (mc.level == null || player() == null) return false;
 
         Direction supportDir = null;
         BlockPos supportPos = null;
@@ -240,7 +219,7 @@ public final class WebTrap extends Module {
         for (Direction dir : Direction.values()) {
             BlockPos neighbor = pos.relative(dir);
             BlockState neighborState = mc.level.getBlockState(neighbor);
-            if (!neighborState.isAir()) {
+            if (!neighborState.isAir() && !neighborState.canBeReplaced()) {
                 supportDir = dir.getOpposite();
                 supportPos = neighbor;
                 break;
@@ -257,18 +236,8 @@ public final class WebTrap extends Module {
 
         BlockHitResult hitResult = new BlockHitResult(hitVec, supportDir, supportPos, false);
 
-        if (mode.is("Silent")) {
-            placeSilent(webSlot, hitResult, hitVec);
-        } else {
-            placePacket(webSlot, hitResult);
-        }
-
-        return true;
-    }
-
-    private void placeSilent(int webSlot, BlockHitResult hitResult, Vec3 hitVec) {
         LocalPlayer player = player();
-        if (player == null || mc.gameMode == null) return;
+        if (player == null || mc.gameMode == null) return false;
 
         Vec3 eye = player.getEyePosition();
         double diffX = hitVec.x - eye.x;
@@ -293,24 +262,25 @@ public final class WebTrap extends Module {
 
         mc.gameMode.useItemOn(player, InteractionHand.MAIN_HAND, hitResult);
         player.swing(InteractionHand.MAIN_HAND);
+
+        return true;
     }
 
-    private void placePacket(int webSlot, BlockHitResult hitResult) {
-        LocalPlayer player = player();
-        if (player == null || mc.gameMode == null || mc.getConnection() == null) return;
-
-        int currentSlot = player.getInventory().getSelectedSlot();
-
-        if (currentSlot != webSlot) {
-            mc.getConnection().send(new ServerboundSetCarriedItemPacket(webSlot));
+    @EventTarget
+    public void onInput(PlayerInputEvent event) {
+        if (!inGame() || player() == null) return;
+        if (wasRotating && RotationHandler.isActive()) {
+            MoveUtility.fixMovement(event, RotationHandler.getFreeYaw());
         }
+    }
 
-        mc.gameMode.useItemOn(player, InteractionHand.MAIN_HAND, hitResult);
-        player.swing(InteractionHand.MAIN_HAND);
-
-        if (currentSlot != webSlot) {
-            mc.getConnection().send(new ServerboundSetCarriedItemPacket(currentSlot));
+    private int findWebHotbarSlot(LocalPlayer player) {
+        for (int slot = 0; slot < 9; slot++) {
+            if (player.getInventory().getItem(slot).is(Items.COBWEB)) {
+                return slot;
+            }
         }
+        return -1;
     }
 
     @EventTarget

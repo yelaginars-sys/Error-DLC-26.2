@@ -1,26 +1,27 @@
 package error.module.impl.combat;
 
-import com.mojang.blaze3d.PrimitiveTopology;
-import com.mojang.blaze3d.buffers.GpuBuffer;
-import com.mojang.blaze3d.pipeline.BlendFunction;
-import com.mojang.blaze3d.pipeline.ColorTargetState;
-import com.mojang.blaze3d.pipeline.DepthStencilState;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.platform.CompareOp;
-import com.mojang.blaze3d.systems.RenderPass;
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.ByteBufferBuilder;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.MeshData;
-import net.minecraft.client.Camera;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.BindGroupLayouts;
+import error.event.EventTarget;
+import error.event.list.PlayerInputEvent;
+import error.event.list.PlayerTickEvent;
+import error.event.list.Render3DEvent;
+import error.friend.FriendManager;
+import error.module.Category;
+import error.module.Module;
+import error.setting.impl.CheckBox;
+import error.setting.impl.HeaderSetting;
+import error.setting.impl.ModeSetting;
+import error.setting.impl.SliderSetting;
+import error.util.RotationHandler;
+import error.util.player.MoveUtility;
+import error.util.render.Render3D;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.protocol.game.ServerboundSetCarriedItemPacket;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.util.Mth;
+import net.minecraft.world.Difficulty;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -33,75 +34,82 @@ import net.minecraft.world.entity.boss.enderdragon.EndCrystal;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Projectile;
+import net.minecraft.world.item.AxeItem;
+import net.minecraft.world.item.DiggerItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.SwordItem;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.ClipContext;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.RespawnAnchorBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import org.joml.Matrix4f;
-import org.joml.Vector4f;
-import error.util.client.clients.ColorUtil;
-import error.util.player.MoveUtility;
-import error.util.render.Render3D;
-import error.util.render.Render3DUtil;
-import error.util.RotationHandler;
-import error.event.EventTarget;
-import error.event.list.PlayerInputEvent;
-import error.event.list.PlayerTickEvent;
-import error.event.list.Render3DEvent;
-import error.module.Category;
-import error.module.Module;
-import error.setting.impl.CheckBox;
-import error.setting.impl.HeaderSetting;
-import error.setting.impl.ModeSetting;
-import error.setting.impl.SliderSetting;
 
-import java.awt.*;
-import java.nio.ByteBuffer;
+import java.awt.Color;
 import java.util.*;
-import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
+/**
+ * CrystalAura ported from energy client with complete logic:
+ * - Precise explosion damage computation (armor, toughness, EPF, resistance, difficulty, exposure raycasting)
+ * - Auto-Obsidian placement
+ * - Anti-Weakness weapon swapping
+ * - Anti-Suicide safety checks
+ * - Auto-Dig for blocked / burrow targets
+ * - Self-Save / Shield protection
+ * - Friend ignore check via FriendManager
+ * - Legit mode with rotation convergence
+ * - Fading 3D box visualizer
+ */
 public final class CrystalAura extends Module {
-    public final SliderSetting targetRange = slider("Range search", 10.0f, 1.0f, 16.0f, 0.5f);
-    public final SliderSetting range = slider("Range action", 4.5f, 1.0f, 6.0f, 0.1f);
-    public final SliderSetting maxSelf = slider("Max damage yourself", 9.0f, 0.0f, 20.0f, 0.1f);
-    public final SliderSetting minTargetDamage = slider("Min damage targets", 3.5f, 0.0f, 20.0f, 0.1f);
-    public final SliderSetting predictTicks = slider("Tick predict", 1.5f, 0.0f, 5.0f, 0.5f);
 
-    public final SliderSetting breakDelay = slider("Break delay", 0.0f, 0.0f, 5.0f, 1.0f);
-    public final SliderSetting placeDelay = slider("Place delay", 0.0f, 0.0f, 5.0f, 1.0f);
-    public final CheckBox fastExplode = checkbox("Instant", true);
+    public final SliderSetting targetRange = slider("Радиус цели", 8.0f, 4.0f, 12.0f, 0.5f);
+    public final SliderSetting placeRange = slider("Дальность установки", 4.5f, 3.0f, 6.0f, 0.1f);
+    public final SliderSetting breakRange = slider("Дальность взрыва", 4.5f, 1.0f, 6.0f, 0.1f);
+    public final SliderSetting minTargetDamage = slider("Мин. урон врагу", 6.0f, 1.0f, 20.0f, 0.5f);
+    public final SliderSetting minWebDamage = slider("Мин. урон в паутине", 3.0f, 1.0f, 10.0f, 0.5f);
+    public final SliderSetting faceplaceHp = slider("Фейсплейс здоровье", 8.0f, 0.0f, 20.0f, 0.5f);
+    public final SliderSetting maxSelfDamage = slider("Макс. урон себе", 8.0f, 0.0f, 20.0f, 0.5f);
+    public final SliderSetting delay = slider("Задержка", 100.0f, 0.0f, 500.0f, 10.0f);
+    public final SliderSetting predictTicks = slider("Предикт тиков", 2.0f, 0.0f, 4.0f, 1.0f);
 
-    public final CheckBox anchor = checkbox("Anchor aura", true);
-    public final CheckBox autoObsidian = checkbox("Place obsidian", true);
+    public final CheckBox autoObsidian = checkbox("Ставить обсидиан", true);
+    public final CheckBox legit = checkbox("Легитный", false);
+    public final CheckBox antiWeakness = checkbox("Анти-слабость", true);
+    public final CheckBox antiSuicide = checkbox("Анти-суицид", true);
+    public final CheckBox autoDig = checkbox("Авто подкоп", true);
+    public final CheckBox selfSave = checkbox("Сейвить себя", false);
+    public final CheckBox ignoreFriends = checkbox("Игнорировать друзей", true);
 
-    private final HeaderSetting renderHeader = header("Render");
-    public final CheckBox render = checkbox("Display", true);
-    public final ModeSetting renderType = mode("Modes", "Tile", "Tile", "Cube").visible(render::getValue);
+    private final HeaderSetting renderHeader = header("Визуализация");
+    public final CheckBox render = checkbox("Визуализация", true);
+    public final ModeSetting renderType = mode("Режим рендера", "Куб", "Куб", "Плитка").visible(render::getValue);
 
+    private long lastActionTime = 0L;
     private int lastSentSlot = -1;
-    private int breakCooldownTicks = 0;
-    private int placeCooldownTicks = 0;
+    private int originalSlot = -1;
 
-    private BlockPos currentAnchorPos = null;
-    private int anchorStageTicks = 0;
+    // Digging state
+    private BlockPos miningPos = null;
+    private BlockPos miningBaseTarget = null;
+    private int miningTicks = 0;
 
-    private BlockPos lockObsidianPos = null;
-    private int lockObsidianTicks = 0;
+    // Shield state
+    private BlockPos shieldPos = null;
+    private int shieldTicks = 0;
 
-    private BlockPos renderPos = null;
-    private int renderColor = 0;
-    private int renderTicks = 0;
-
+    // Active targets for rendering
+    private EndCrystal targetCrystal = null;
+    private BlockPos targetActionPos = null;
+    private final List<RenderAction> renderActions = new CopyOnWriteArrayList<>();
 
     public CrystalAura() {
-        super("CrystalAura", "ЧЧЧЧ", Category.COMBAT);
+        super("CrystalAura", "Автоматически ставит и взрывает кристаллы", Category.COMBAT);
     }
 
     @Override
@@ -109,12 +117,14 @@ public final class CrystalAura extends Module {
         resetState();
         if (mc.player != null) {
             lastSentSlot = mc.player.getInventory().getSelectedSlot();
+            originalSlot = lastSentSlot;
         }
     }
 
     @Override
     protected void onDisable() {
         RotationHandler.disengage("Smooth");
+        restoreSlot();
         resetState();
     }
 
@@ -129,7 +139,7 @@ public final class CrystalAura extends Module {
     @EventTarget
     public void onTick(PlayerTickEvent event) {
         if (event.getPhase() != PlayerTickEvent.Phase.PRE) return;
-        if (!inGame() || player() == null || mc.level == null || mc.getConnection() == null || mc.gameMode == null) {
+        if (!inGame() || player() == null || mc.level == null || mc.gameMode == null || mc.getConnection() == null) {
             resetState();
             return;
         }
@@ -139,121 +149,78 @@ public final class CrystalAura extends Module {
             return;
         }
 
-        if (renderTicks > 0 && --renderTicks == 0) renderPos = null;
-        if (breakCooldownTicks > 0) breakCooldownTicks--;
-        if (placeCooldownTicks > 0) placeCooldownTicks--;
-
-        if (lockObsidianPos != null && ++lockObsidianTicks > 4) {
-            lockObsidianPos = null;
-            lockObsidianTicks = 0;
+        if (shieldPos != null && ++shieldTicks > 10) {
+            shieldPos = null;
+            shieldTicks = 0;
         }
+
+        cleanRenderActions();
+
+        long now = System.currentTimeMillis();
+        boolean canAct = (now - lastActionTime) >= delay.getValue().longValue();
 
         Player target = findTarget();
         if (target == null) {
             resetRotation();
-            currentAnchorPos = null;
+            cancelMining();
+            targetCrystal = null;
+            targetActionPos = null;
             return;
         }
 
-        if (breakCooldownTicks <= 0) {
-            Action breakCrystal = findBestCrystalBreak(target);
-            if (breakCrystal != null) {
-                syncRotation(breakCrystal.lookVec(), true);
-                setRender(breakCrystal.pos(), ColorUtil.rgba(255, 0, 50, 255));
-                attack(breakCrystal.crystal());
-
-                if (!fastExplode.getValue()) return;
-            }
-        }
-
-        if (anchor.getValue() && canExplodeAnchors()) {
-            if (currentAnchorPos != null) {
-                if (!isBlockInReach(currentAnchorPos) || ++anchorStageTicks > 8) {
-                    currentAnchorPos = null;
-                    anchorStageTicks = 0;
-                } else {
-                    BlockState aState = mc.level.getBlockState(currentAnchorPos);
-                    if (aState.is(Blocks.RESPAWN_ANCHOR)) {
-                        int charge = aState.getValue(RespawnAnchorBlock.CHARGE);
-                        BlockHitResult hit = getVisibleHitResult(currentAnchorPos);
-
-                        if (hit != null) {
-                            if (charge > 0) {
-                                if (!syncRotation(hit.getLocation(), false)) return;
-                                setRender(currentAnchorPos, ColorUtil.rgba(255, 140, 0, 255));
-                                explodeAnchor(hit);
-                                currentAnchorPos = null;
-                                anchorStageTicks = 0;
-                                return;
-                            } else if (findGlowstoneSlot() != -1) {
-                                if (!syncRotation(hit.getLocation(), false)) return;
-                                setRender(currentAnchorPos, ColorUtil.rgba(255, 220, 0, 255));
-                                chargeAnchor(hit);
-                                return;
-                            }
-                        }
-                    } else if (!aState.isAir() && !aState.canBeReplaced()) {
-                        currentAnchorPos = null;
-                    }
-                }
-            }
-
-            Action readyAnchor = findExistingChargedAnchor(target);
-            if (readyAnchor != null) {
-                if (!syncRotation(readyAnchor.lookVec(), false)) return;
-                setRender(readyAnchor.pos(), ColorUtil.rgba(255, 140, 0, 255));
-                explodeAnchor(readyAnchor.hitResult());
-                currentAnchorPos = null;
-                return;
-            }
-
-            if (findGlowstoneSlot() != -1) {
-                Action emptyAnchor = findExistingUnchargedAnchor(target);
-                if (emptyAnchor != null) {
-                    if (!syncRotation(emptyAnchor.lookVec(), false)) return;
-                    setRender(emptyAnchor.pos(), ColorUtil.rgba(255, 220, 0, 255));
-                    chargeAnchor(emptyAnchor.hitResult());
-                    currentAnchorPos = emptyAnchor.pos();
-                    anchorStageTicks = 0;
-                    return;
-                }
-            }
-
-            if (currentAnchorPos == null && findAnchorSlot() != -1 && findGlowstoneSlot() != -1 && placeCooldownTicks <= 0) {
-                Action placeAnchor = findBestAnchorPlacement(target);
-                if (placeAnchor != null) {
-                    if (!syncRotation(placeAnchor.lookVec(), false)) return;
-                    setRender(placeAnchor.pos(), ColorUtil.rgba(255, 140, 0, 255));
-                    placeBlock(placeAnchor.hitResult(), findAnchorSlot());
-                    currentAnchorPos = placeAnchor.pos();
-                    anchorStageTicks = 0;
-                    return;
-                }
-            }
-        }
-
-        if (placeCooldownTicks <= 0 && findCrystalSlot() != -1) {
-            Action readyPlace = findReadyObsidianPlace(target);
-            if (readyPlace != null) {
-                if (!syncRotation(readyPlace.lookVec(), false)) return;
-
-                setRender(readyPlace.pos(), ColorUtil.rgba(255, 50, 110, 255));
-                placeCrystal(readyPlace.hitResult());
+        // 1. Self-Save / Shield check
+        if (selfSave.getValue() && canAct && shieldPos == null) {
+            if (trySelfShield(target)) {
+                lastActionTime = now;
                 return;
             }
         }
 
-        if (lockObsidianPos != null) return;
+        // 2. Explode existing crystal (highest priority)
+        EndCrystal bestCrystal = findBestCrystal(target);
+        if (bestCrystal != null) {
+            targetCrystal = bestCrystal;
+            Vec3 crystalVec = bestCrystal.position().add(0, 0.5, 0);
+            if (!syncRotation(crystalVec)) return;
 
-        if (autoObsidian.getValue() && placeCooldownTicks <= 0 && findObsidianSlot() != -1 && findCrystalSlot() != -1) {
-            Action placeObby = findBestObsidianPlacement(target);
-            if (placeObby != null) {
-                if (!syncRotation(placeObby.lookVec(), false)) return;
+            if (canAct) {
+                explodeCrystal(bestCrystal);
+                lastActionTime = now;
+            }
+            return;
+        } else {
+            targetCrystal = null;
+        }
 
-                setRender(placeObby.pos(), ColorUtil.rgba(140, 40, 255, 255));
-                placeBlock(placeObby.hitResult(), findObsidianSlot());
-                lockObsidianPos = placeObby.pos();
-                lockObsidianTicks = 0;
+        // 3. Auto-Dig if target is blocked / burrowed
+        if (autoDig.getValue()) {
+            if (handleAutoDig(target, canAct, now)) {
+                return;
+            }
+        }
+
+        // 4. Place crystal on existing obsidian/bedrock
+        if (canAct && findCrystalSlot() != -1) {
+            PlacementSpot readySpot = findBestPlacement(target, false);
+            if (readySpot != null) {
+                targetActionPos = readySpot.pos();
+                if (!syncRotation(readySpot.lookVec())) return;
+
+                placeCrystal(readySpot);
+                lastActionTime = now;
+                return;
+            }
+        }
+
+        // 5. Auto-Obsidian placement
+        if (autoObsidian.getValue() && canAct && findObsidianSlot() != -1 && findCrystalSlot() != -1) {
+            PlacementSpot obbySpot = findBestPlacement(target, true);
+            if (obbySpot != null) {
+                targetActionPos = obbySpot.pos();
+                if (!syncRotation(obbySpot.lookVec())) return;
+
+                placeObsidian(obbySpot);
+                lastActionTime = now;
                 return;
             }
         }
@@ -261,220 +228,252 @@ public final class CrystalAura extends Module {
         resetRotation();
     }
 
-    private boolean syncRotation(Vec3 vec, boolean fastBreakMode) {
-        if (vec == null) return false;
-        float[] rots = calculateRotations(mc.player.getEyePosition(), vec);
-        RotationHandler.setRotation(rots[0], rots[1]);
+    private boolean trySelfShield(Player enemy) {
+        if (findObsidianSlot() == -1) return false;
+        Vec3 diff = enemy.position().subtract(mc.player.position());
+        if (Math.abs(diff.y) > 1.2 || diff.horizontalDistance() > (placeRange.getValue() + 1.2)) return false;
 
-        if (fastBreakMode) return true;
+        Direction dir = Math.abs(diff.x) > Math.abs(diff.z)
+                ? (diff.x > 0 ? Direction.EAST : Direction.WEST)
+                : (diff.z > 0 ? Direction.SOUTH : Direction.NORTH);
 
-        float curYaw = RotationHandler.isActive() ? RotationHandler.getServerYaw() : mc.player.getYRot();
-        float curPitch = RotationHandler.isActive() ? RotationHandler.getServerPitch() : mc.player.getXRot();
-        float yawDiff = Math.abs(Mth.wrapDegrees(rots[0] - curYaw));
-        float pitchDiff = Math.abs(rots[1] - curPitch);
+        BlockPos shieldTarget = mc.player.blockPosition().relative(dir);
+        if (!canPlaceBlockAt(shieldTarget)) return false;
 
-        return yawDiff <= 45.0f && pitchDiff <= 45.0f;
+        BlockHitResult hit = getPlacementHitResult(shieldTarget);
+        if (hit == null) return false;
+
+        if (!syncRotation(hit.getLocation())) return false;
+
+        int obbySlot = findObsidianSlot();
+        placeBlock(hit, obbySlot, true);
+        shieldPos = shieldTarget;
+        shieldTicks = 0;
+        return true;
     }
 
-    private void resetRotation() {
-        RotationHandler.disengage("Smooth");
+    private boolean handleAutoDig(Player target, boolean canAct, long now) {
+        if (miningPos != null) {
+            BlockState state = mc.level.getBlockState(miningPos);
+            if (state.isAir() || !isBlockInReach(miningPos, placeRange.getValue()) || ++miningTicks > 120) {
+                cancelMining();
+            } else {
+                Vec3 center = Vec3.atCenterOf(miningPos);
+                if (!syncRotation(center)) return true;
+
+                int pickSlot = findPickaxeSlot();
+                if (pickSlot != -1) switchToSlot(pickSlot);
+
+                mc.gameMode.continueDestroyBlock(miningPos, Direction.UP);
+                mc.player.swing(InteractionHand.MAIN_HAND);
+                return true;
+            }
+        }
+
+        if (canAct && findPickaxeSlot() != -1) {
+            BlockPos blockingPos = findObstructingBlock(target);
+            if (blockingPos != null && isBlockInReach(blockingPos, placeRange.getValue())) {
+                miningPos = blockingPos;
+                miningTicks = 0;
+                miningBaseTarget = target.blockPosition();
+
+                Vec3 center = Vec3.atCenterOf(miningPos);
+                if (!syncRotation(center)) return true;
+
+                int pickSlot = findPickaxeSlot();
+                if (pickSlot != -1) switchToSlot(pickSlot);
+
+                mc.gameMode.startDestroyBlock(miningPos, Direction.UP);
+                mc.player.swing(InteractionHand.MAIN_HAND);
+                lastActionTime = now;
+                return true;
+            }
+        }
+
+        return false;
     }
 
-    private void setRender(BlockPos pos, int color) {
-        this.renderPos = pos;
-        this.renderColor = color;
-        this.renderTicks = 5;
+    private BlockPos findObstructingBlock(Player target) {
+        BlockPos head = target.blockPosition().above();
+        BlockState headState = mc.level.getBlockState(head);
+        if (!headState.isAir() && headState.getDestroySpeed(mc.level, head) >= 0) {
+            return head;
+        }
+
+        for (Direction dir : Direction.Plane.HORIZONTAL) {
+            BlockPos side = target.blockPosition().relative(dir);
+            BlockState sideState = mc.level.getBlockState(side);
+            if (sideState.is(Blocks.COBWEB) || (!sideState.isAir() && sideState.getDestroySpeed(mc.level, side) >= 0 && sideState.getDestroySpeed(mc.level, side) <= 50.0f)) {
+                return side;
+            }
+        }
+        return null;
     }
 
-    private boolean canExplodeAnchors() {
-        return mc.level != null && mc.level.dimension() != Level.NETHER;
+    private void cancelMining() {
+        if (miningPos != null && mc.gameMode != null) {
+            mc.gameMode.stopDestroyBlock();
+        }
+        miningPos = null;
+        miningBaseTarget = null;
+        miningTicks = 0;
     }
 
-    private Action findBestCrystalBreak(Player target) {
-        Action best = null;
+    private EndCrystal findBestCrystal(Player target) {
+        EndCrystal best = null;
         float maxDmg = 0f;
+        double maxDistSq = breakRange.getValue() * breakRange.getValue();
+
+        Vec3 eye = mc.player.getEyePosition();
 
         for (Entity entity : mc.level.entitiesForRendering()) {
             if (!(entity instanceof EndCrystal crystal) || !crystal.isAlive() || crystal.isRemoved()) continue;
+            if (crystal.distanceToSqr(mc.player) > maxDistSq) continue;
 
-            Vec3 pos = crystal.position();
-            if (!isPosInReach(pos.add(0, 0.5, 0))) continue;
-
-            float targetDmg = calculateDamage(pos, target, 0.0, 6.0f, null);
-            float selfDmg = calculateDamage(pos, mc.player, 0.0, 6.0f, null);
+            Vec3 crystalPos = crystal.position();
+            float targetDmg = calculateCrystalDamage(crystalPos, target, null, null);
+            float selfDmg = calculateCrystalDamage(crystalPos, mc.player, null, null);
 
             if (isGoodDamage(targetDmg, selfDmg, target) && targetDmg > maxDmg) {
                 maxDmg = targetDmg;
-                best = new Action(ActionType.BREAK, crystal.blockPosition(), crystal, null, pos.add(0, 0.5, 0), targetDmg, selfDmg);
+                best = crystal;
             }
         }
         return best;
     }
 
-    private Action findExistingChargedAnchor(Player target) {
+    private void explodeCrystal(EndCrystal crystal) {
+        int antiWeakSlot = findAntiWeaknessSlot();
+        if (antiWeakSlot != -1 && antiWeakSlot != mc.player.getInventory().getSelectedSlot()) {
+            switchToSlot(antiWeakSlot);
+        }
+
+        mc.gameMode.attack(mc.player, crystal);
+        mc.player.swing(InteractionHand.MAIN_HAND);
+        renderActions.add(new RenderAction(crystal.blockPosition(), false, System.currentTimeMillis()));
+    }
+
+    private PlacementSpot findBestPlacement(Player target, boolean needsObsidianPlacement) {
         List<BlockPos> spots = getTacticalSpots(target);
-        Action best = null;
-        float maxDmg = 0f;
+        PlacementSpot best = null;
+        float bestScore = Float.NEGATIVE_INFINITY;
+
+        Vec3 predPos = predictEntityPosition(target, predictTicks.getValue());
+        AABB predBox = target.getBoundingBox().move(predPos.subtract(target.position()));
 
         for (BlockPos pos : spots) {
-            if (!isBlockInReach(pos)) continue;
-            BlockState state = mc.level.getBlockState(pos);
-            if (!state.is(Blocks.RESPAWN_ANCHOR)) continue;
+            if (!isBlockInReach(pos, placeRange.getValue())) continue;
 
-            if (state.getValue(RespawnAnchorBlock.CHARGE) > 0) {
-                Vec3 center = Vec3.atCenterOf(pos);
-                float targetDmg = calculateDamage(center, target, 0.0, 5.0f, pos);
-                float selfDmg = calculateDamage(center, mc.player, 0.0, 5.0f, pos);
+            if (needsObsidianPlacement) {
+                if (!canPlaceBlockAt(pos)) continue;
+                if (!isCrystalPlacementClear(pos)) continue;
 
-                if (isGoodDamage(targetDmg, selfDmg, target) && targetDmg > maxDmg) {
-                    BlockHitResult hit = getVisibleHitResult(pos);
-                    if (hit != null) {
-                        maxDmg = targetDmg;
-                        best = new Action(ActionType.EXPLODE_ANCHOR, pos.immutable(), null, hit, hit.getLocation(), targetDmg, selfDmg);
+                BlockHitResult hit = getPlacementHitResult(pos);
+                if (hit == null) continue;
+
+                Vec3 crystalVec = new Vec3(pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5);
+                float curDmg = calculateCrystalDamage(crystalVec, target, pos, null);
+                float predDmg = calculateCrystalDamage(crystalVec, target, predBox, pos, null);
+                float targetDmg = Math.max(curDmg, predDmg);
+                float selfDmg = calculateCrystalDamage(crystalVec, mc.player, pos, null);
+
+                if (isGoodDamage(targetDmg, selfDmg, target)) {
+                    float distToTarget = (float) pos.distToCenterSqr(target.position());
+                    float score = targetDmg - (selfDmg * 2.0f) - (distToTarget * 0.1f) - 2.5f;
+
+                    if (score > bestScore) {
+                        bestScore = score;
+                        best = new PlacementSpot(pos, hit, hit.getLocation(), targetDmg, selfDmg, true);
+                    }
+                }
+            } else {
+                BlockState base = mc.level.getBlockState(pos);
+                if (!base.is(Blocks.OBSIDIAN) && !base.is(Blocks.BEDROCK)) continue;
+                if (!isCrystalPlacementClear(pos)) continue;
+
+                BlockHitResult hit = getVisibleHitResult(pos);
+                if (hit == null) continue;
+
+                Vec3 crystalVec = new Vec3(pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5);
+                float curDmg = calculateCrystalDamage(crystalVec, target, null, null);
+                float predDmg = calculateCrystalDamage(crystalVec, target, predBox, null, null);
+                float targetDmg = Math.max(curDmg, predDmg);
+                float selfDmg = calculateCrystalDamage(crystalVec, mc.player, null, null);
+
+                if (isGoodDamage(targetDmg, selfDmg, target)) {
+                    float distToTarget = (float) pos.distToCenterSqr(target.position());
+                    float score = targetDmg - (selfDmg * 2.0f) - (distToTarget * 0.1f);
+
+                    if (score > bestScore) {
+                        bestScore = score;
+                        best = new PlacementSpot(pos, hit, hit.getLocation(), targetDmg, selfDmg, false);
                     }
                 }
             }
         }
+
         return best;
     }
 
-    private Action findExistingUnchargedAnchor(Player target) {
-        List<BlockPos> spots = getTacticalSpots(target);
-        Action best = null;
-        float maxDmg = 0f;
+    private void placeCrystal(PlacementSpot spot) {
+        int crystalSlot = findCrystalSlot();
+        if (crystalSlot == -1) return;
 
-        for (BlockPos pos : spots) {
-            if (!isBlockInReach(pos)) continue;
-            BlockState state = mc.level.getBlockState(pos);
-            if (!state.is(Blocks.RESPAWN_ANCHOR)) continue;
-
-            if (state.getValue(RespawnAnchorBlock.CHARGE) == 0) {
-                Vec3 center = Vec3.atCenterOf(pos);
-                float targetDmg = calculateDamage(center, target, 0.0, 5.0f, pos);
-                float selfDmg = calculateDamage(center, mc.player, 0.0, 5.0f, pos);
-
-                if (isGoodDamage(targetDmg, selfDmg, target) && targetDmg > maxDmg) {
-                    BlockHitResult hit = getVisibleHitResult(pos);
-                    if (hit != null) {
-                        maxDmg = targetDmg;
-                        best = new Action(ActionType.CHARGE_ANCHOR, pos.immutable(), null, hit, hit.getLocation(), targetDmg, selfDmg);
-                    }
-                }
-            }
+        InteractionHand hand = (crystalSlot == 40) ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND;
+        if (hand == InteractionHand.MAIN_HAND) {
+            switchToSlot(crystalSlot);
         }
-        return best;
+
+        mc.gameMode.useItemOn(mc.player, hand, spot.hit());
+        mc.player.swing(hand);
+        renderActions.add(new RenderAction(spot.pos(), false, System.currentTimeMillis()));
     }
 
-    private Action findReadyObsidianPlace(Player target) {
-        List<BlockPos> spots = getTacticalSpots(target);
-        Action best = null;
-        float maxDmg = 0f;
+    private void placeObsidian(PlacementSpot spot) {
+        int obbySlot = findObsidianSlot();
+        if (obbySlot == -1) return;
 
-        for (BlockPos obbyPos : spots) {
-            if (!isBlockInReach(obbyPos)) continue;
-
-            BlockState base = mc.level.getBlockState(obbyPos);
-            BlockPos crystalSpace = obbyPos.above();
-
-            if ((base.is(Blocks.OBSIDIAN) || base.is(Blocks.BEDROCK))
-                    && (mc.level.getBlockState(crystalSpace).isAir() || mc.level.getBlockState(crystalSpace).canBeReplaced())
-                    && !hasBlockingEntityForCrystal(obbyPos)) {
-
-                Vec3 crystalVec = getCrystalVec(obbyPos);
-                float dmgCurrent = calculateDamage(crystalVec, target, 0.0, 6.0f, null);
-                float dmgPred = calculateDamage(crystalVec, target, predictTicks.getValue(), 6.0f, null);
-                float targetDmg = Math.max(dmgCurrent, dmgPred);
-                float selfDmg = calculateDamage(crystalVec, mc.player, 0.0, 6.0f, null);
-
-                if (isGoodDamage(targetDmg, selfDmg, target) && targetDmg > maxDmg) {
-                    BlockHitResult hit = getVisibleHitResult(obbyPos);
-                    if (hit != null) {
-                        maxDmg = targetDmg;
-                        best = new Action(ActionType.PLACE_CRYSTAL, obbyPos.immutable(), null, hit, hit.getLocation(), targetDmg, selfDmg);
-                    }
-                }
-            }
-        }
-        return best;
+        placeBlock(spot.hit(), obbySlot, true);
+        renderActions.add(new RenderAction(spot.pos(), true, System.currentTimeMillis()));
     }
 
-    private Action findBestAnchorPlacement(Player target) {
-        List<BlockPos> spots = getTacticalSpots(target);
-        Action bestAnchor = null;
-        float maxScore = 0f;
+    private void placeBlock(BlockHitResult hit, int slot, boolean swing) {
+        if (slot == -1 || hit == null) return;
 
-        for (BlockPos pos : spots) {
-            if (!isBlockInReach(pos)) continue;
-            if (!canPlaceBlockAt(pos)) continue;
-
-            BlockHitResult hit = getPlacementHitResult(pos);
-            if (hit == null) continue;
-
-            Vec3 center = Vec3.atCenterOf(pos);
-            float dmgCurrent = calculateDamage(center, target, 0.0, 5.0f, pos);
-            float dmgPred = calculateDamage(center, target, predictTicks.getValue(), 5.0f, pos);
-            float targetDmg = Math.max(dmgCurrent, dmgPred);
-            float selfDmg = calculateDamage(center, mc.player, 0.0, 5.0f, pos);
-
-            if (!isGoodDamage(targetDmg, selfDmg, target)) continue;
-
-            float score = targetDmg;
-            if (pos.getY() >= target.getY() + 1.0) score += 3.0f;
-
-            if (score > maxScore) {
-                maxScore = score;
-                bestAnchor = new Action(ActionType.PLACE_ANCHOR, pos.immutable(), null, hit, hit.getLocation(), targetDmg, selfDmg);
-            }
+        InteractionHand hand = (slot == 40) ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND;
+        if (hand == InteractionHand.MAIN_HAND) {
+            switchToSlot(slot);
         }
-        return bestAnchor;
+
+        mc.gameMode.useItemOn(mc.player, hand, hit);
+        if (swing) {
+            mc.player.swing(hand);
+        }
     }
 
-    private Action findBestObsidianPlacement(Player target) {
-        List<BlockPos> spots = getTacticalSpots(target);
-        Action bestObsidian = null;
-        float maxObbyDmg = 0f;
+    private boolean isCrystalPlacementClear(BlockPos pos) {
+        BlockPos above = pos.above();
+        BlockState aboveState = mc.level.getBlockState(above);
+        if (!aboveState.isAir() && !aboveState.canBeReplaced()) return false;
 
-        for (BlockPos obbyPos : spots) {
-            if (!isBlockInReach(obbyPos)) continue;
-            if (!canPlaceBlockAt(obbyPos)) continue;
-
-            BlockPos crystalSpace = obbyPos.above();
-            if ((mc.level.getBlockState(crystalSpace).isAir() || mc.level.getBlockState(crystalSpace).canBeReplaced())
-                    && !hasBlockingEntityForCrystal(obbyPos)) {
-                BlockHitResult hit = getPlacementHitResult(obbyPos);
-                if (hit != null) {
-                    Vec3 crystalVec = getCrystalVec(obbyPos);
-                    float dmgCurrent = calculateDamage(crystalVec, target, 0.0, 6.0f, obbyPos);
-                    float dmgPred = calculateDamage(crystalVec, target, predictTicks.getValue(), 6.0f, obbyPos);
-                    float targetDmg = Math.max(dmgCurrent, dmgPred);
-                    float selfDmg = calculateDamage(crystalVec, mc.player, 0.0, 6.0f, obbyPos);
-
-                    if (isGoodDamage(targetDmg, selfDmg, target) && targetDmg > maxObbyDmg) {
-                        maxObbyDmg = targetDmg;
-                        bestObsidian = new Action(ActionType.PLACE_OBSIDIAN, obbyPos.immutable(), null, hit, hit.getLocation(), targetDmg, selfDmg);
-                    }
-                }
-            }
-        }
-        return bestObsidian;
+        AABB crystalBox = new AABB(pos.getX(), pos.getY() + 1.0, pos.getZ(), pos.getX() + 1.0, pos.getY() + 3.0, pos.getZ() + 1.0);
+        return mc.level.getEntities((Entity) null, crystalBox, e -> e.isAlive() && !e.isRemoved()
+                && !(e instanceof ItemEntity) && !(e instanceof ExperienceOrb) && !(e instanceof Projectile)).isEmpty();
     }
 
-    /**
-     * Плотный поиск позиций вокруг и строго под ногами цели
-     */
     private List<BlockPos> getTacticalSpots(Player target) {
-        List<BlockPos> validSpots = new ArrayList<>();
+        List<BlockPos> spots = new ArrayList<>();
         Set<BlockPos> set = new LinkedHashSet<>();
 
-        BlockPos curFeet = target.blockPosition();
+        BlockPos feet = target.blockPosition();
         Vec3 pred = predictEntityPosition(target, predictTicks.getValue());
         BlockPos predFeet = BlockPos.containing(pred);
 
-        for (BlockPos center : List.of(curFeet, predFeet)) {
+        for (BlockPos center : List.of(feet, predFeet)) {
             for (int dx = -3; dx <= 3; dx++) {
                 for (int dz = -3; dz <= 3; dz++) {
                     for (int dy = -2; dy <= 2; dy++) {
-                        if (dx * dx + dz * dz > 9) continue;
+                        if (dx * dx + dz * dz > 10) continue;
                         set.add(center.offset(dx, dy, dz));
                     }
                 }
@@ -482,220 +481,193 @@ public final class CrystalAura extends Module {
         }
 
         for (BlockPos p : set) {
-            if (isBlockInReach(p)) {
-                validSpots.add(p);
+            if (isBlockInReach(p, placeRange.getValue())) {
+                spots.add(p);
             }
         }
 
-        validSpots.sort(Comparator.comparingDouble(p -> p.distToCenterSqr(target.getX(), target.getY() - 0.5, target.getZ())));
-        return validSpots;
+        spots.sort(Comparator.comparingDouble(p -> p.distToCenterSqr(target.position())));
+        return spots;
     }
 
-    private void switchToSlot(int slot) {
-        if (slot < 0 || slot >= 9) return;
-        if (mc.player.getInventory().getSelectedSlot() != slot) {
-            mc.player.getInventory().setSelectedSlot(slot);
-        }
-        if (lastSentSlot != slot) {
-            mc.getConnection().send(new ServerboundSetCarriedItemPacket(slot));
-            lastSentSlot = slot;
-        }
-    }
+    // =========================================================================
+    // Precise Damage Calculation (Ported from energy Util35)
+    // =========================================================================
 
-    private void placeBlock(BlockHitResult hit, int slot) {
-        if (slot == -1 || hit == null) return;
-
-        switchToSlot(slot);
-        InteractionHand hand = (slot == 40) ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND;
-
-        mc.gameMode.useItemOn(mc.player, hand, hit);
-        mc.player.swing(hand);
-        placeCooldownTicks = breakDelay.getValue().intValue();
-    }
-
-    private void placeCrystal(BlockHitResult hit) {
-        int slot = findCrystalSlot();
-        if (slot == -1 || hit == null) return;
-
-        switchToSlot(slot);
-        InteractionHand hand = (slot == 40) ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND;
-
-        mc.gameMode.useItemOn(mc.player, hand, hit);
-        mc.player.swing(hand);
-        placeCooldownTicks = placeDelay.getValue().intValue();
-    }
-
-    private void chargeAnchor(BlockHitResult hit) {
-        int glowSlot = findGlowstoneSlot();
-        if (glowSlot == -1 || hit == null) return;
-
-        switchToSlot(glowSlot);
-        InteractionHand hand = (glowSlot == 40) ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND;
-
-        mc.gameMode.useItemOn(mc.player, hand, hit);
-        mc.player.swing(hand);
-        placeCooldownTicks = placeDelay.getValue().intValue();
-    }
-
-    private void explodeAnchor(BlockHitResult hit) {
-        if (hit == null) return;
-        int safeSlot = findNonGlowstoneSlot();
-        switchToSlot(safeSlot);
-
-        mc.gameMode.useItemOn(mc.player, InteractionHand.MAIN_HAND, hit);
-        mc.player.swing(InteractionHand.MAIN_HAND);
-        breakCooldownTicks = breakDelay.getValue().intValue();
-    }
-
-    private void attack(EndCrystal crystal) {
-        if (crystal == null || !crystal.isAlive() || crystal.isRemoved()) return;
-        mc.gameMode.attack(mc.player, crystal);
-        mc.player.swing(InteractionHand.MAIN_HAND);
-        breakCooldownTicks = breakDelay.getValue().intValue();
-    }
-
-    private BlockHitResult getVisibleHitResult(BlockPos pos) {
-        Vec3 eye = mc.player.getEyePosition();
-        Direction[] faces = {Direction.UP, Direction.NORTH, Direction.SOUTH, Direction.WEST, Direction.EAST, Direction.DOWN};
-        BlockHitResult bestHit = null;
-        double bestDist = Double.MAX_VALUE;
-
-        for (Direction face : faces) {
-            Vec3 testPoint = new Vec3(
-                    pos.getX() + 0.5 + face.getStepX() * 0.48,
-                    pos.getY() + 0.5 + face.getStepY() * 0.48,
-                    pos.getZ() + 0.5 + face.getStepZ() * 0.48
-            );
-
-            BlockHitResult hit = mc.level.clip(new ClipContext(eye, testPoint, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, mc.player));
-            if (hit != null && hit.getType() == HitResult.Type.BLOCK && hit.getBlockPos().equals(pos)) {
-                double dist = eye.distanceToSqr(hit.getLocation());
-                if (dist < bestDist && dist <= (range.getValue() * range.getValue())) {
-                    bestDist = dist;
-                    bestHit = hit;
-                }
-            }
-        }
-        return bestHit != null ? bestHit : new BlockHitResult(Vec3.atCenterOf(pos), Direction.UP, pos, false);
-    }
-
-    private BlockHitResult getPlacementHitResult(BlockPos targetPos) {
-        Vec3 eye = mc.player.getEyePosition();
-        Direction[] sides = {Direction.UP, Direction.DOWN, Direction.NORTH, Direction.SOUTH, Direction.WEST, Direction.EAST};
-
-        BlockHitResult best = null;
-        double bestDist = Double.MAX_VALUE;
-
-        for (Direction side : sides) {
-            BlockPos neighbor = targetPos.relative(side);
-            BlockState state = mc.level.getBlockState(neighbor);
-            if (state.isAir() || state.canBeReplaced() || !state.isSolid()) continue;
-
-            Direction clickFace = side.getOpposite();
-            Vec3 testPoint = new Vec3(
-                    neighbor.getX() + 0.5 + clickFace.getStepX() * 0.48,
-                    neighbor.getY() + 0.5 + clickFace.getStepY() * 0.48,
-                    neighbor.getZ() + 0.5 + clickFace.getStepZ() * 0.48
-            );
-
-            BlockHitResult hit = mc.level.clip(new ClipContext(eye, testPoint, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, mc.player));
-            if (hit != null && hit.getType() == HitResult.Type.BLOCK && hit.getBlockPos().equals(neighbor)) {
-                double dist = eye.distanceToSqr(hit.getLocation());
-                if (dist < bestDist && dist <= (range.getValue() * range.getValue())) {
-                    bestDist = dist;
-                    best = hit;
-                }
-            }
-        }
-        return best;
-    }
-
-    private boolean isGoodDamage(float targetDamage, float selfDamage, Player target) {
-        if (targetDamage < minTargetDamage.getValue()) return false;
-        if (selfDamage > maxSelf.getValue()) return false;
-
-        if (target != null && targetDamage >= (target.getHealth() + target.getAbsorptionAmount())) {
-            return selfDamage < (mc.player.getHealth() + mc.player.getAbsorptionAmount() - 0.5f);
-        }
-
-        return !(selfDamage >= targetDamage && selfDamage > 2.0f);
-    }
-
-    private float calculateDamage(Vec3 explosionCenter, Player target, double predTicks, float power, BlockPos ignoredBlock) {
+    public float calculateCrystalDamage(Vec3 explosionCenter, LivingEntity target, BlockPos placedObsidian, BlockPos ignoredBlock) {
         if (explosionCenter == null || target == null || mc.level == null) return 0.0f;
+        return calculateCrystalDamage(explosionCenter, target, target.getBoundingBox(), placedObsidian, ignoredBlock);
+    }
 
-        AABB box = predictBoundingBox(target, predTicks);
-        Vec3 targetFeet = new Vec3((box.minX + box.maxX) / 2.0, box.minY, (box.minZ + box.maxZ) / 2.0);
-        double maxDist = power * 2.0;
-        double dist = explosionCenter.distanceTo(targetFeet);
-        if (dist > maxDist) return 0.0f;
+    public float calculateCrystalDamage(Vec3 explosionCenter, LivingEntity target, AABB targetBox, BlockPos placedObsidian, BlockPos ignoredBlock) {
+        if (explosionCenter == null || target == null || mc.level == null || targetBox == null) return 0.0f;
 
-        double exposure = calculateExposure(explosionCenter, box, ignoredBlock);
+        Vec3 center = new Vec3((targetBox.minX + targetBox.maxX) * 0.5, targetBox.minY, (targetBox.minZ + targetBox.maxZ) * 0.5);
+        double dist = center.distanceTo(explosionCenter) / 12.0;
+        if (dist > 1.0) return 0.0f;
+
+        double exposure = calculateExposure(explosionCenter, target, targetBox, placedObsidian, ignoredBlock);
         if (exposure <= 0.0) return 0.0f;
 
-        double impact = (1.0 - dist / maxDist) * exposure;
-        double rawDamage = (impact * impact + impact) / 2.0 * 7.0 * maxDist + 1.0;
-        return (float) applyArmorAndResistance(target, rawDamage);
+        double impact = (1.0 - dist) * exposure;
+        float damage = (float) ((impact * impact + impact) * 42.0 + 1.0);
+
+        if (target instanceof Player) {
+            Difficulty diff = mc.level.getDifficulty();
+            damage = switch (diff) {
+                case PEACEFUL -> 0.0f;
+                case EASY -> Math.min(damage * 0.5f + 1.0f, damage);
+                case HARD -> damage * 1.5f;
+                case NORMAL -> damage;
+            };
+        }
+
+        // Armor & Toughness reduction
+        float armor = target.getArmorValue();
+        float toughness = (float) target.getAttributeValue(Attributes.ARMOR_TOUGHNESS);
+        float effectiveArmor = Mth.clamp(armor - damage / (2.0f + toughness / 4.0f), armor * 0.2f, 20.0f);
+        damage *= (1.0f - effectiveArmor / 25.0f);
+
+        // Protection & Blast Protection reduction
+        int epf = 0;
+        for (EquipmentSlot slot : new EquipmentSlot[]{EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET}) {
+            ItemStack stack = target.getItemBySlot(slot);
+            epf += getEnchantmentLevel(target, stack, Enchantments.PROTECTION);
+            epf += getEnchantmentLevel(target, stack, Enchantments.BLAST_PROTECTION) * 2;
+        }
+        epf = Mth.clamp(epf, 0, 20);
+        damage *= (1.0f - epf / 25.0f);
+
+        // Resistance effect reduction
+        MobEffectInstance res = target.getEffect(MobEffects.RESISTANCE);
+        if (res != null) {
+            float resReduction = Mth.clamp((res.getAmplifier() + 1) * 0.2f, 0.0f, 1.0f);
+            damage *= (1.0f - resReduction);
+        }
+
+        return Math.max(0.0f, damage);
     }
 
-    private double calculateExposure(Vec3 center, AABB box, BlockPos ignoredBlock) {
-        int total = 0;
+    private double calculateExposure(Vec3 explosionCenter, LivingEntity target, AABB box, BlockPos placedObsidian, BlockPos ignoredBlock) {
+        double stepX = 1.0 / ((box.maxX - box.minX) * 2.0 + 1.0);
+        double stepY = 1.0 / ((box.maxY - box.minY) * 2.0 + 1.0);
+        double stepZ = 1.0 / ((box.maxZ - box.minZ) * 2.0 + 1.0);
+        double offsetX = (1.0 - Math.floor(1.0 / stepX) * stepX) / 2.0;
+        double offsetZ = (1.0 - Math.floor(1.0 / stepZ) * stepZ) / 2.0;
+
         int visible = 0;
+        int total = 0;
 
-        for (int x = 0; x <= 2; x++) {
-            double px = Mth.lerp(x / 2.0, box.minX, box.maxX);
-            for (int y = 0; y <= 2; y++) {
-                double py = Mth.lerp(y / 2.0, box.minY, box.maxY);
-                for (int z = 0; z <= 2; z++) {
-                    double pz = Mth.lerp(z / 2.0, box.minZ, box.maxZ);
-                    total++;
-                    Vec3 targetPt = new Vec3(px, py, pz);
+        for (double x = 0.0; x <= 1.0; x += stepX) {
+            for (double y = 0.0; y <= 1.0; y += stepY) {
+                for (double z = 0.0; z <= 1.0; z += stepZ) {
+                    Vec3 point = new Vec3(
+                            Mth.lerp(x, box.minX, box.maxX) + offsetX,
+                            Mth.lerp(y, box.minY, box.maxY),
+                            Mth.lerp(z, box.minZ, box.maxZ) + offsetZ
+                    );
 
-                    if (isPointVisible(center, targetPt, ignoredBlock)) {
+                    if (canSeeRay(point, explosionCenter, target, placedObsidian, ignoredBlock)) {
                         visible++;
+                    }
+                    total++;
+                }
+            }
+        }
+
+        return total == 0 ? 0.0 : (double) visible / total;
+    }
+
+    private boolean canSeeRay(Vec3 from, Vec3 to, LivingEntity entity, BlockPos placedObsidian, BlockPos ignoredBlock) {
+        ClipContext context = new ClipContext(from, to, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, entity);
+        BlockHitResult hit = entity.level().clip(context);
+        if (hit.getType() == HitResult.Type.MISS) return true;
+
+        if (ignoredBlock != null && hit.getBlockPos().equals(ignoredBlock)) {
+            Vec3 dir = to.subtract(from).normalize();
+            Vec3 next = hit.getLocation().add(dir.scale(0.1));
+            if (next.distanceToSqr(from) >= to.distanceToSqr(from)) return true;
+            return canSeeRay(next, to, entity, placedObsidian, null);
+        }
+
+        return false;
+    }
+
+    private int getEnchantmentLevel(LivingEntity entity, ItemStack stack, ResourceKey<Enchantment> key) {
+        if (stack.isEmpty() || entity == null || entity.level() == null) return 0;
+        try {
+            var opt = entity.level().registryAccess().lookupOrThrow(Registries.ENCHANTMENT).get(key);
+            if (opt.isPresent()) {
+                return EnchantmentHelper.getItemEnchantmentLevel(opt.get(), stack);
+            }
+        } catch (Exception ignored) {}
+        return 0;
+    }
+
+    // =========================================================================
+    // Decision & Safety Checks
+    // =========================================================================
+
+    private boolean isGoodDamage(float targetDamage, float selfDamage, Player target) {
+        if (target == null) return false;
+
+        float targetHp = target.getHealth() + target.getAbsorptionAmount();
+        float myHp = (mc.player != null) ? mc.player.getHealth() + mc.player.getAbsorptionAmount() : 20.0f;
+
+        // Faceplace logic
+        float requiredDamage = minTargetDamage.getValue();
+        if (targetHp <= faceplaceHp.getValue()) {
+            requiredDamage = 1.0f;
+        } else if (isTargetInCobweb(target)) {
+            requiredDamage = minWebDamage.getValue();
+        }
+
+        if (targetDamage < requiredDamage) return false;
+
+        if (antiSuicide.getValue()) {
+            if (selfDamage > maxSelfDamage.getValue()) return false;
+
+            // Lethal target bypass
+            if (targetDamage >= targetHp) {
+                return selfDamage < (myHp - 0.5f);
+            }
+
+            if (selfDamage >= targetDamage && selfDamage > 2.0f) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private boolean isTargetInCobweb(Player target) {
+        AABB bb = target.getBoundingBox();
+        int minX = Mth.floor(bb.minX);
+        int maxX = Mth.floor(bb.maxX);
+        int minY = Mth.floor(bb.minY);
+        int maxY = Mth.floor(bb.maxY);
+        int minZ = Mth.floor(bb.minZ);
+        int maxZ = Mth.floor(bb.maxZ);
+
+        for (int x = minX; x <= maxX; x++) {
+            for (int y = minY; y <= maxY; y++) {
+                for (int z = minZ; z <= maxZ; z++) {
+                    if (mc.level.getBlockState(new BlockPos(x, y, z)).is(Blocks.COBWEB)) {
+                        return true;
                     }
                 }
             }
         }
-        return total == 0 ? 0.0 : (double) visible / total;
-    }
-
-    private boolean isPointVisible(Vec3 from, Vec3 to, BlockPos ignored) {
-        Vec3 currentFrom = from;
-        for (int step = 0; step < 3; step++) {
-            BlockHitResult hit = mc.level.clip(new ClipContext(currentFrom, to, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, mc.player));
-            if (hit == null || hit.getType() == HitResult.Type.MISS) {
-                return true;
-            }
-
-            if (ignored != null && hit.getBlockPos().equals(ignored)) {
-                Vec3 dir = to.subtract(from).normalize();
-                currentFrom = hit.getLocation().add(dir.scale(0.1));
-                if (currentFrom.distanceToSqr(from) >= to.distanceToSqr(from)) {
-                    return true;
-                }
-                continue;
-            }
-            return false;
-        }
         return false;
     }
 
-    private double applyArmorAndResistance(Player target, double rawDamage) {
-        if (target == null || rawDamage <= 0.0) return 0.0;
-        float armor = target.getArmorValue();
-        double toughness = target.getAttributeValue(Attributes.ARMOR_TOUGHNESS);
-        double effectiveArmor = Mth.clamp(armor - rawDamage / (2.0 + toughness / 4.0), armor * 0.2, 20.0);
-        double reduced = rawDamage * (1.0 - effectiveArmor / 25.0);
-
-        MobEffectInstance res = target.getEffect(MobEffects.RESISTANCE);
-        if (res != null) reduced *= Math.max(0.0, 1.0 - 0.2 * (res.getAmplifier() + 1));
-
-        int epf = 0;
-        for (EquipmentSlot slot : EquipmentSlot.values()) {
-            if (slot.getType() == EquipmentSlot.Type.HUMANOID_ARMOR && !target.getItemBySlot(slot).isEmpty()) epf += 4;
-        }
-        return Math.max(0.0, reduced * (1.0 - Mth.clamp(epf, 0, 20) * 0.04));
+    private Player findTarget() {
+        return mc.level.players().stream()
+                .filter(p -> p != mc.player && p.isAlive() && !p.isSpectator())
+                .filter(p -> mc.player.distanceTo(p) <= targetRange.getValue())
+                .filter(p -> !ignoreFriends.getValue() || !FriendManager.getInstance().isFriend(p))
+                .min(Comparator.comparingDouble(p -> mc.player.distanceTo(p)))
+                .orElse(null);
     }
 
     private Vec3 predictEntityPosition(LivingEntity entity, double ticks) {
@@ -709,23 +681,135 @@ public final class CrystalAura extends Module {
         );
     }
 
-    private AABB predictBoundingBox(Player target, double ticks) {
-        if (target == null) return new AABB(0, 0, 0, 0, 0, 0);
-        return target.getBoundingBox().move(predictEntityPosition(target, ticks).subtract(target.position()));
+    // =========================================================================
+    // Rotations & Timing
+    // =========================================================================
+
+    private boolean syncRotation(Vec3 vec) {
+        if (vec == null || mc.player == null) return false;
+        Vec3 eye = mc.player.getEyePosition();
+        double dx = vec.x - eye.x;
+        double dy = vec.y - eye.y;
+        double dz = vec.z - eye.z;
+        double distXZ = Math.sqrt(dx * dx + dz * dz);
+        float yaw = (float) Math.toDegrees(Math.atan2(dz, dx)) - 90.0f;
+        float pitch = (float) -Math.toDegrees(Math.atan2(dy, distXZ));
+
+        float targetYaw = Mth.wrapDegrees(yaw);
+        float targetPitch = Mth.clamp(pitch, -90.0f, 90.0f);
+
+        RotationHandler.setRotation(targetYaw, targetPitch);
+
+        if (!legit.getValue()) return true;
+
+        float curYaw = RotationHandler.isActive() ? RotationHandler.getServerYaw() : mc.player.getYRot();
+        float curPitch = RotationHandler.isActive() ? RotationHandler.getServerPitch() : mc.player.getXRot();
+        float diffYaw = Math.abs(Mth.wrapDegrees(targetYaw - curYaw));
+        float diffPitch = Math.abs(targetPitch - curPitch);
+
+        return diffYaw <= 35.0f && diffPitch <= 35.0f;
     }
 
-    private boolean isPosInReach(Vec3 pos) {
-        if (pos == null || mc.player == null) return false;
-        return mc.player.getEyePosition().distanceTo(pos) <= range.getValue();
+    private void resetRotation() {
+        RotationHandler.disengage("Smooth");
     }
 
-    private boolean isBlockInReach(BlockPos pos) {
+    // =========================================================================
+    // Slot Management
+    // =========================================================================
+
+    private int findCrystalSlot() {
+        if (mc.player.getOffhandItem().is(Items.END_CRYSTAL)) return 40;
+        for (int i = 0; i < 9; i++) {
+            if (mc.player.getInventory().getItem(i).is(Items.END_CRYSTAL)) return i;
+        }
+        return -1;
+    }
+
+    private int findObsidianSlot() {
+        if (mc.player.getOffhandItem().is(Blocks.OBSIDIAN.asItem())) return 40;
+        for (int i = 0; i < 9; i++) {
+            if (mc.player.getInventory().getItem(i).is(Blocks.OBSIDIAN.asItem())) return i;
+        }
+        return -1;
+    }
+
+    private int findPickaxeSlot() {
+        for (int i = 0; i < 9; i++) {
+            ItemStack stack = mc.player.getInventory().getItem(i);
+            if (!stack.isEmpty() && (stack.getItem() instanceof DiggerItem || stack.is(ItemTags.PICKAXES))) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private int findAntiWeaknessSlot() {
+        int cur = mc.player.getInventory().getSelectedSlot();
+        MobEffectInstance weakness = mc.player.getEffect(MobEffects.WEAKNESS);
+        if (!antiWeakness.getValue() || weakness == null) return cur;
+
+        MobEffectInstance strength = mc.player.getEffect(MobEffects.STRENGTH);
+        double strBonus = (strength == null ? 0.0 : (strength.getAmplifier() + 1) * 3.0);
+        double reqDamage = (weakness.getAmplifier() + 1) * 4.0 - strBonus;
+
+        if (getItemAttackDamage(mc.player.getMainHandItem()) > reqDamage) return cur;
+
+        int bestSlot = -1;
+        double bestDmg = Double.NEGATIVE_INFINITY;
+        for (int i = 0; i < 9; i++) {
+            ItemStack stack = mc.player.getInventory().getItem(i);
+            double dmg = getItemAttackDamage(stack);
+            if (dmg > reqDamage && dmg > bestDmg) {
+                bestDmg = dmg;
+                bestSlot = i;
+            }
+        }
+        return bestSlot;
+    }
+
+    private double getItemAttackDamage(ItemStack stack) {
+        if (stack.isEmpty()) return 0.0;
+        if (stack.is(Items.NETHERITE_SWORD)) return 8.0;
+        if (stack.is(Items.DIAMOND_SWORD)) return 7.0;
+        if (stack.is(Items.IRON_SWORD)) return 6.0;
+        if (stack.is(Items.STONE_SWORD)) return 5.0;
+        if (stack.is(Items.GOLDEN_SWORD) || stack.is(Items.WOODEN_SWORD)) return 4.0;
+        if (stack.is(Items.NETHERITE_AXE)) return 10.0;
+        if (stack.is(Items.DIAMOND_AXE)) return 9.0;
+        if (stack.is(Items.IRON_AXE)) return 9.0;
+        if (stack.getItem() instanceof SwordItem || stack.getItem() instanceof AxeItem) return 5.0;
+        return 0.0;
+    }
+
+    private void switchToSlot(int slot) {
+        if (slot < 0 || slot >= 9) return;
+        if (mc.player.getInventory().getSelectedSlot() != slot) {
+            mc.player.getInventory().setSelectedSlot(slot);
+        }
+        if (lastSentSlot != slot) {
+            mc.getConnection().send(new ServerboundSetCarriedItemPacket(slot));
+            lastSentSlot = slot;
+        }
+    }
+
+    private void restoreSlot() {
+        if (originalSlot != -1 && mc.player != null && mc.player.getInventory().getSelectedSlot() != originalSlot) {
+            switchToSlot(originalSlot);
+        }
+    }
+
+    // =========================================================================
+    // Geometry & Reach Helpers
+    // =========================================================================
+
+    private boolean isBlockInReach(BlockPos pos, float maxRange) {
         if (pos == null || mc.player == null) return false;
         Vec3 eye = mc.player.getEyePosition();
         double cx = Mth.clamp(eye.x, pos.getX(), pos.getX() + 1.0);
         double cy = Mth.clamp(eye.y, pos.getY(), pos.getY() + 1.0);
         double cz = Mth.clamp(eye.z, pos.getZ(), pos.getZ() + 1.0);
-        return eye.distanceTo(new Vec3(cx, cy, cz)) <= range.getValue();
+        return eye.distanceTo(new Vec3(cx, cy, cz)) <= maxRange;
     }
 
     private boolean canPlaceBlockAt(BlockPos pos) {
@@ -739,123 +823,133 @@ public final class CrystalAura extends Module {
                 && !(e instanceof ItemEntity) && !(e instanceof ExperienceOrb) && !(e instanceof Projectile)).isEmpty();
     }
 
-    private boolean hasBlockingEntityForCrystal(BlockPos pos) {
-        AABB box = new AABB(pos.getX(), pos.getY() + 1.0, pos.getZ(), pos.getX() + 1.0, pos.getY() + 2.0, pos.getZ() + 1.0);
-        return !mc.level.getEntities((Entity) null, box, e -> e.isAlive() && !e.isRemoved()
-                && !(e instanceof ItemEntity) && !(e instanceof ExperienceOrb) && !(e instanceof Projectile)).isEmpty();
-    }
+    private BlockHitResult getVisibleHitResult(BlockPos pos) {
+        Vec3 eye = mc.player.getEyePosition();
+        Direction[] faces = {Direction.UP, Direction.NORTH, Direction.SOUTH, Direction.WEST, Direction.EAST, Direction.DOWN};
+        BlockHitResult best = null;
+        double bestDist = Double.MAX_VALUE;
 
-    private int findCrystalSlot() {
-        if (mc.player.getOffhandItem().is(Items.END_CRYSTAL)) return 40;
-        for (int i = 0; i < 9; i++) if (mc.player.getInventory().getItem(i).is(Items.END_CRYSTAL)) return i;
-        return -1;
-    }
+        for (Direction face : faces) {
+            Vec3 test = new Vec3(
+                    pos.getX() + 0.5 + face.getStepX() * 0.48,
+                    pos.getY() + 0.5 + face.getStepY() * 0.48,
+                    pos.getZ() + 0.5 + face.getStepZ() * 0.48
+            );
 
-    private int findObsidianSlot() {
-        for (int i = 0; i < 9; i++) if (mc.player.getInventory().getItem(i).is(Blocks.OBSIDIAN.asItem())) return i;
-        return -1;
-    }
-
-    private int findAnchorSlot() {
-        if (mc.player.getOffhandItem().is(Blocks.RESPAWN_ANCHOR.asItem())) return 40;
-        for (int i = 0; i < 9; i++) if (mc.player.getInventory().getItem(i).is(Blocks.RESPAWN_ANCHOR.asItem())) return i;
-        return -1;
-    }
-
-    private int findGlowstoneSlot() {
-        if (mc.player.getOffhandItem().is(Items.GLOWSTONE)) return 40;
-        for (int i = 0; i < 9; i++) if (mc.player.getInventory().getItem(i).is(Items.GLOWSTONE)) return i;
-        return -1;
-    }
-
-    private int findNonGlowstoneSlot() {
-        int cur = mc.player.getInventory().getSelectedSlot();
-        ItemStack curItem = mc.player.getInventory().getItem(cur);
-        if (isSafeAnchorExplodeItem(curItem)) return cur;
-
-        for (int i = 0; i < 9; i++) {
-            ItemStack s = mc.player.getInventory().getItem(i);
-            if (s.is(Items.TOTEM_OF_UNDYING) || s.is(Items.DIAMOND_SWORD) || s.is(Items.NETHERITE_SWORD)
-                    || s.is(Items.NETHERITE_PICKAXE) || s.is(Items.DIAMOND_PICKAXE) || s.is(Items.GOLDEN_APPLE)) {
-                return i;
+            BlockHitResult hit = mc.level.clip(new ClipContext(eye, test, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, mc.player));
+            if (hit != null && hit.getType() == HitResult.Type.BLOCK && hit.getBlockPos().equals(pos)) {
+                double dist = eye.distanceToSqr(hit.getLocation());
+                if (dist < bestDist && dist <= (placeRange.getValue() * placeRange.getValue())) {
+                    bestDist = dist;
+                    best = hit;
+                }
             }
         }
+        return best != null ? best : new BlockHitResult(new Vec3(pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5), Direction.UP, pos, false);
+    }
 
-        for (int i = 0; i < 9; i++) {
-            ItemStack s = mc.player.getInventory().getItem(i);
-            if (isSafeAnchorExplodeItem(s)) return i;
+    private BlockHitResult getPlacementHitResult(BlockPos targetPos) {
+        Vec3 eye = mc.player.getEyePosition();
+        Direction[] sides = {Direction.UP, Direction.DOWN, Direction.NORTH, Direction.SOUTH, Direction.WEST, Direction.EAST};
+        BlockHitResult best = null;
+        double bestDist = Double.MAX_VALUE;
+
+        for (Direction side : sides) {
+            BlockPos neighbor = targetPos.relative(side);
+            BlockState state = mc.level.getBlockState(neighbor);
+            if (state.isAir() || state.canBeReplaced() || !state.isSolid()) continue;
+
+            Direction clickFace = side.getOpposite();
+            Vec3 test = new Vec3(
+                    neighbor.getX() + 0.5 + clickFace.getStepX() * 0.48,
+                    neighbor.getY() + 0.5 + clickFace.getStepY() * 0.48,
+                    neighbor.getZ() + 0.5 + clickFace.getStepZ() * 0.48
+            );
+
+            BlockHitResult hit = mc.level.clip(new ClipContext(eye, test, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, mc.player));
+            if (hit != null && hit.getType() == HitResult.Type.BLOCK && hit.getBlockPos().equals(neighbor)) {
+                double dist = eye.distanceToSqr(hit.getLocation());
+                if (dist < bestDist && dist <= (placeRange.getValue() * placeRange.getValue())) {
+                    bestDist = dist;
+                    best = hit;
+                }
+            }
         }
-        return cur;
-    }
-
-    private boolean isSafeAnchorExplodeItem(ItemStack stack) {
-        if (stack == null || stack.isEmpty()) return true;
-        return !stack.is(Items.GLOWSTONE) && !stack.is(Blocks.RESPAWN_ANCHOR.asItem());
-    }
-
-    private Vec3 getCrystalVec(BlockPos pos) {
-        return new Vec3(pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5);
-    }
-
-    private float[] calculateRotations(Vec3 eyes, Vec3 target) {
-        double dx = target.x - eyes.x;
-        double dy = target.y - eyes.y;
-        double dz = target.z - eyes.z;
-        double xz = Math.sqrt(dx * dx + dz * dz);
-        return new float[]{Mth.wrapDegrees((float) Math.toDegrees(Math.atan2(dz, dx)) - 90.0F), Mth.clamp((float) -Math.toDegrees(Math.atan2(dy, xz)), -90.0F, 90.0F)};
-    }
-
-    private Player findTarget() {
-        return mc.level.players().stream()
-                .filter(p -> p != mc.player && p.isAlive() && !p.isRemoved())
-                .filter(p -> mc.player.distanceTo(p) <= targetRange.getValue())
-                .min(Comparator.comparingDouble(p -> mc.player.distanceTo(p)))
-                .orElse(null);
+        return best;
     }
 
     private void resetState() {
-        breakCooldownTicks = 0;
-        placeCooldownTicks = 0;
-        currentAnchorPos = null;
-        anchorStageTicks = 0;
-        lockObsidianPos = null;
-        lockObsidianTicks = 0;
-        renderPos = null;
-        renderTicks = 0;
+        lastActionTime = 0L;
         lastSentSlot = -1;
+        originalSlot = -1;
+        cancelMining();
+        shieldPos = null;
+        shieldTicks = 0;
+        targetCrystal = null;
+        targetActionPos = null;
+        renderActions.clear();
         resetRotation();
     }
 
+    private void cleanRenderActions() {
+        long now = System.currentTimeMillis();
+        renderActions.removeIf(a -> (now - a.time()) > 350L);
+    }
 
+    // =========================================================================
+    // 3D Rendering (Modern Blaze3d Pipeline via Render3D)
+    // =========================================================================
 
     @EventTarget
     public void onRender3D(Render3DEvent event) {
-        if (!render.getValue() || renderPos == null) return;
-        Color fillCol = new Color(255, 50, 0, 50);
-        Color outCol = new Color(255, 50, 0, 240);
+        if (!render.getValue()) return;
 
-        if (renderType.is("Cube")) {
-            Render3D.drawBox(renderPos, fillCol, outCol, true, true);
-        } else {
-            Render3D.drawTile(renderPos, fillCol, outCol, true, true);
+        long now = System.currentTimeMillis();
+
+        // 1. Render action boxes (fading out)
+        for (RenderAction action : renderActions) {
+            float progress = (float) (now - action.time()) / 350.0f;
+            if (progress >= 1.0f) continue;
+
+            float alpha = 1.0f - progress;
+            Color fill = action.isObsidian()
+                    ? new Color(140, 40, 255, (int) (alpha * 60))
+                    : new Color(255, 50, 110, (int) (alpha * 70));
+            Color outline = action.isObsidian()
+                    ? new Color(160, 60, 255, (int) (alpha * 220))
+                    : new Color(255, 60, 120, (int) (alpha * 240));
+
+            if (renderType.is("Куб")) {
+                Render3D.drawBox(action.pos(), fill, outline, true, true, true);
+            } else {
+                Render3D.drawTile(action.pos(), fill, outline, true, true, true);
+            }
+        }
+
+        // 2. Render target crystal if attacking
+        if (targetCrystal != null && targetCrystal.isAlive()) {
+            Color fill = new Color(255, 0, 50, 60);
+            Color outline = new Color(255, 0, 50, 240);
+            Render3D.drawBox(targetCrystal.getBoundingBox(), fill, outline, true, true, true);
+        }
+
+        // 3. Render auto-dig block
+        if (miningPos != null) {
+            float breakProgress = Math.min(1.0f, miningTicks / 100.0f);
+            Color fill = new Color(255, 180, 0, (int) (50 + breakProgress * 80));
+            Color outline = new Color(255, 200, 0, 240);
+            AABB shrinkBox = new AABB(miningPos).deflate((1.0 - breakProgress) * 0.2);
+            Render3D.drawBox(shrinkBox, fill, outline, true, true, true);
         }
     }
 
-
-
-    private enum ActionType {
-        PLACE_CRYSTAL, BREAK, PLACE_OBSIDIAN, PLACE_ANCHOR, CHARGE_ANCHOR, EXPLODE_ANCHOR
+    public boolean isBusy() {
+        return isEnabled() && (targetCrystal != null || miningPos != null || targetActionPos != null);
     }
 
-    private record Action(
-            ActionType type, BlockPos pos, EndCrystal crystal, BlockHitResult hitResult, Vec3 lookVec, float targetDamage, float selfDamage
+    private record PlacementSpot(
+            BlockPos pos, BlockHitResult hit, Vec3 lookVec, float targetDamage, float selfDamage, boolean needsObsidian
     ) {}
 
-    public boolean isBusy() {
-        if (!isEnabled() || mc.player == null || mc.level == null) return false;
-        if (AutoTotem.isSwapping()) return false;
-        if (currentAnchorPos != null) return true;
-        Player target = findTarget();
-        return target != null && (findBestCrystalBreak(target) != null || (anchor.getValue() && canExplodeAnchors() && findExistingChargedAnchor(target) != null));
-    }
+    private record RenderAction(BlockPos pos, boolean isObsidian, long time) {}
 }
