@@ -119,8 +119,18 @@ public class ArmorHud extends HudElement implements error.IMinecraft {
         float screenH = mc.getWindow().getGuiScaledHeight();
 
         if ("Над иконками голода".equalsIgnoreCase(posMode)) {
-            renderX = (screenW - totalW) / 2.0F + 10.0F;
-            renderY = screenH - 78.0F;
+            renderX = screenW / 2.0F + 20.0F;
+            float baseY = screenH - 58.0F;
+
+            if (mc.player != null) {
+                if (mc.player.isCreative()) {
+                    baseY = screenH - 46.0F; // right above the hotbar on the right in creative
+                } else if (mc.player.getAirSupply() < mc.player.getMaxAirSupply()) {
+                    baseY -= 10.0F; // moved up if bubbles are shown above hunger
+                }
+            }
+
+            renderY = baseY;
             this.x = renderX;
             this.y = renderY;
         }
@@ -131,7 +141,8 @@ public class ArmorHud extends HudElement implements error.IMinecraft {
         var extractor = event.getGuiGraphicsExtractor();
         if (extractor == null) return;
 
-        // Draw Liquid Glass HUD background card
+        // Draw Liquid Glass HUD background card with shadow
+        Render2D.drawShadow(renderX, renderY, totalW, totalH, 6.0F, 5.0F, ColorUtil.rgba(0, 0, 0, (int) (60 * animAlpha)));
         Render2D.drawHudCard(renderX, renderY, totalW, totalH, 6.0F, animAlpha);
 
         Render2DUtil.flush();
