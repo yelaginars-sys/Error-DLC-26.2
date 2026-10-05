@@ -141,6 +141,11 @@ public final class HudManager implements IMinecraft {
         float animVal = menuFadeAnim.getValue();
         if (animVal > 0.01F && contextMenuElement != null && contextMenuElement.isEnabled()) {
             float scale = 0.90F + 0.10F * animVal;
+            if (isEditMode && GLFW.glfwGetMouseButton(mc.getWindow().handle(), GLFW.GLFW_MOUSE_BUTTON_LEFT) == GLFW.GLFW_PRESS) {
+                double localMx = (mouseX - contextMenuX) / scale;
+                double localMy = (mouseY - contextMenuY) / scale;
+                contextMenuElement.handleContextMenuClick(0.0F, 0.0F, localMx, localMy, 0);
+            }
             var extractor = event.getGuiGraphicsExtractor();
             if (extractor != null) {
                 Render2DUtil.flush();

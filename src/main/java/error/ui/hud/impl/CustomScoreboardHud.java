@@ -247,12 +247,13 @@ public final class CustomScoreboardHud extends HudElement {
 
     @Override
     public float drawContextMenu(float menuX, float menuY, double mouseX, double mouseY, float alpha) {
-        float width = 145.0F;
+        float width = 150.0F;
         Interface iface = Interface.getInstance();
         float currentScale = iface != null ? iface.scoreboardScale.getValue() : 1.0F;
         boolean hideScores = iface != null && iface.scoreboardRemoveScores.getValue();
         boolean shadow = iface == null || iface.scoreboardShadow.getValue();
 
+        float sliderH = 26.0F;
         String[] options = {
             "Размер: 0.75x" + (Math.abs(currentScale - 0.75F) < 0.01F ? " ✔" : ""),
             "Размер: 1.0x" + (Math.abs(currentScale - 1.0F) < 0.01F ? " ✔" : ""),
@@ -262,7 +263,7 @@ public final class CustomScoreboardHud extends HudElement {
             "Числа: " + (hideScores ? "Скрыты ✔" : "Видны"),
             "Тень текста: " + (shadow ? "Вкл ✔" : "Выкл")
         };
-        float height = options.length * 18.0F + 8.0F;
+        float height = sliderH + options.length * 18.0F + 8.0F;
 
         int shadowCol = ColorUtil.rgba(0, 0, 0, (int) (180 * alpha));
         int glassFill = ColorUtil.rgba(20, 18, 28, (int) (235 * alpha));
@@ -274,7 +275,27 @@ public final class CustomScoreboardHud extends HudElement {
         Render2D.drawRoundedRect(menuX, menuY, width, height, 7.0F, glassFill);
         Render2D.drawRoundedOutline(menuX, menuY, width, height, 7.0F, 1.0F, glassBorder);
 
-        float itemY = menuY + 4.0F;
+        // 1. Draw Slider Bar Header & Track
+        String scaleTitle = String.format(java.util.Locale.ROOT, "Размер: %.2fx", currentScale);
+        Fonts.drawString(Fonts.SF_MEDIUM, scaleTitle, menuX + 10.0F, menuY + 5.0F, 7.5F, ColorUtil.rgba(240, 240, 255, (int) (240 * alpha)));
+
+        float trackX = menuX + 10.0F;
+        float trackY = menuY + 17.0F;
+        float trackW = width - 20.0F;
+        float trackH = 4.5F;
+
+        float pct = Math.max(0.0F, Math.min(1.0F, (currentScale - 0.5F) / 1.5F));
+        float fillW = Math.max(3.0F, trackW * pct);
+
+        Render2D.drawRoundedRect(trackX, trackY, trackW, trackH, 2.0F, ColorUtil.rgba(50, 50, 65, (int) (220 * alpha)));
+        Render2D.drawRoundedRect(trackX, trackY, fillW, trackH, 2.0F, ColorUtil.withAlpha(themeAccent, (int) (255 * alpha)));
+
+        float thumbX = trackX + trackW * pct;
+        float thumbY = trackY + trackH / 2.0F;
+        Render2D.drawRoundedRect(thumbX - 2.5F, thumbY - 4.0F, 5.0F, 8.0F, 2.0F, ColorUtil.rgba(255, 255, 255, (int) (255 * alpha)));
+
+        // 2. Draw Options below slider
+        float itemY = menuY + sliderH + 4.0F;
         for (int i = 0; i < options.length; i++) {
             boolean hovered = mouseX >= menuX && mouseX <= menuX + width && mouseY >= itemY && mouseY <= itemY + 18.0F;
             if (hovered) {
@@ -309,8 +330,28 @@ public final class CustomScoreboardHud extends HudElement {
     @Override
     public boolean handleContextMenuClick(float menuX, float menuY, double mouseX, double mouseY, int button) {
         if (button != 0) return false;
-        float width = 145.0F;
-        float itemY = menuY + 4.0F;
+        float width = 150.0F;
+
+        // Check if interacting with size slider bar
+        float trackX = menuX + 10.0F;
+        float trackY = menuY + 10.0F;
+        float trackW = width - 20.0F;
+        float trackH = 16.0F;
+
+        if (mouseX >= trackX - 5.0F && mouseX <= trackX + trackW + 5.0F && mouseY >= trackY && mouseY <= trackY + trackH) {
+            float pct = Math.max(0.0F, Math.min(1.0F, (float) (mouseX - trackX) / trackW));
+            float newScale = 0.5F + pct * 1.5F;
+            newScale = Math.round(newScale * 20.0F) / 20.0F;
+            newScale = Math.max(0.5F, Math.min(2.0F, newScale));
+            Interface iface = Interface.getInstance();
+            if (iface != null) {
+                iface.scoreboardScale.setValue(newScale);
+            }
+            return false;
+        }
+
+        float sliderH = 26.0F;
+        float itemY = menuY + sliderH + 4.0F;
         for (int i = 0; i < 7; i++) {
             if (mouseX >= menuX && mouseX <= menuX + width && mouseY >= itemY && mouseY <= itemY + 18.0F) {
                 Interface iface = Interface.getInstance();
