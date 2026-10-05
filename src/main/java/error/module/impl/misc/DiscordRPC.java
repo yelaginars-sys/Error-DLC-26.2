@@ -101,8 +101,8 @@ public class DiscordRPC extends Module {
             presence.state = "В главном меню";
         }
 
-        presence.largeImageKey = "https://i.imgur.com/FKAJvwg.jpeg";
-        presence.largeImageText = "Error DLC";
+        presence.largeImageKey = "logo";
+        presence.largeImageText = "Error DLC | 26.2";
 
         presence.button_label_1 = "Telegram";
         presence.button_url_1 = "https://t.me/errordlc";
