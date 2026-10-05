@@ -86,7 +86,8 @@ public final class Localization {
         RU_DICT.put("NoSlow", "Без Замедления");
         RU_DICT.put("NoWeb", "Анти Паутина");
         RU_DICT.put("NoClip", "Проход Сквозь Блоки");
-        RU_DICT.put("ProjectileHelper", "Помощник Снарядов");
+        RU_DICT.put("Velocity", "Велосити");
+        RU_DICT.put("AimBot", "Аим Бот");
         RU_DICT.put("AutoTool", "Авто Инструмент");
         RU_DICT.put("ClickFriend", "Кликер Друзей");
         RU_DICT.put("AutoExplosion", "Авто Взрыв");
@@ -381,10 +382,15 @@ public final class Localization {
         RU_DICT.put("ViewModel.desc", "Изменяет размер, дистанцию и позицию оружия в руках");
         RU_DICT.put("WorldParticles.desc", "Спавнит красивые частицы в окружающем мире");
         RU_DICT.put("Disabler.desc", "Десинхронизация тиков и байпасс античитов Grim и Matrix");
-        RU_DICT.put("NoFallExploit.desc", "Обход урона от падения через элитры и десинк");
-        RU_DICT.put("ElytraBooster.desc", "Ускорение и контроль полета на элитрах");
-        RU_DICT.put("ElytraResolver.desc", "Долет и отлет для элитра-ротки и боевых маневров");
-        RU_DICT.put("ElytraSample.desc", "Предикт траектории цели при полете на элитрах");
+        RU_DICT.put("BowSpammer", "Спамер Луком");
+        RU_DICT.put("NoFriendDamage", "Защита Друзей");
+        RU_DICT.put("AntiBot", "Анти Бот");
+        RU_DICT.put("BowSpammer.desc", "Быстрый цикл отпускания и натяжки лука");
+        RU_DICT.put("NoFriendDamage.desc", "Предотвращает случайные и аура-атаки по друзьям");
+        RU_DICT.put("AntiBot.desc", "Обнаруживает фейк-ботов ReallyWorld, LonyGrief и не дает их атаковать");
+        RU_DICT.put("WebTrap.desc", "Ставит паутину по предсказанной позиции цели");
+        RU_DICT.put("AutoExplosion.desc", "Автоматически взрывает кристаллы и заряжает якоря возрождения");
+        RU_DICT.put("Criticals.desc", "Всегда наносит критические удары с байпассами Grim old и Slow/Web");
     }
 
     public static String get(String text) {

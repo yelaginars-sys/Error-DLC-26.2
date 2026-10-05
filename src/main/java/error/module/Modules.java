@@ -58,7 +58,8 @@ public class Modules {
     public AHHelper ahHelper;
     public NoPush noPush;
     public AutoTool autoTool;
-    public ProjectileHelper projectileHelper;
+    public Velocity velocity;
+    public AimBot aimBot;
     public Particles particles;
     public WebTrap webTrap;
     public AimAssistant aimAssistant;
@@ -101,6 +102,9 @@ public class Modules {
     public error.module.impl.movement.ElytraBooster elytraBooster;
     public error.module.impl.movement.ElytraResolver elytraResolver;
     public error.module.impl.movement.ElytraSample elytraSample;
+    public BowSpammer bowSpammer;
+    public NoFriendDamage noFriendDamage;
+    public AntiBot antiBot;
 
     public void init() {
         this.clickGui = new ClickGui();
@@ -130,7 +134,8 @@ public class Modules {
         this.crystalAura = new CrystalAura();
         this.ahHelper = new AHHelper();
         this.noPush = new NoPush();
-        this.projectileHelper = new ProjectileHelper();
+        this.velocity = new Velocity();
+        this.aimBot = new AimBot();
         this.autoTool = new AutoTool();
         this.autoExplosion = new AutoExplosion();
         this.popEffect = new PopEffect();
@@ -188,6 +193,9 @@ public class Modules {
         this.elytraBooster = new error.module.impl.movement.ElytraBooster();
         this.elytraResolver = new error.module.impl.movement.ElytraResolver();
         this.elytraSample = new error.module.impl.movement.ElytraSample();
+        this.bowSpammer = new BowSpammer();
+        this.noFriendDamage = new NoFriendDamage();
+        this.antiBot = new AntiBot();
 
         register(
                 this.anInterface,
@@ -216,7 +224,8 @@ public class Modules {
                 this.crystalAura,
                 this.ahHelper,
                 this.noPush,
-                this.projectileHelper,
+                this.velocity,
+                this.aimBot,
                 this.autoTool,
                 this.autoExplosion,
                 this.popEffect,
@@ -273,7 +282,10 @@ public class Modules {
                 this.noFallExploit,
                 this.elytraBooster,
                 this.elytraResolver,
-                this.elytraSample
+                this.elytraSample,
+                this.bowSpammer,
+                this.noFriendDamage,
+                this.antiBot
         );
 
         if (this.maceHelper != null) this.maceHelper.setState(true);

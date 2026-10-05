@@ -91,7 +91,9 @@ public class AttackHandler {
                 && isInAttackRange(player, target, aura)
                 && player.getAttackStrengthScale(0.5f) >= 0.92f;
 
-        String sprintMode = aura.getSprintReset().getValue();
+        String sprintMode = aura.rotMode.getValue().endsWith("(En)") && !aura.rotMode.is("Spooky (En)")
+                ? aura.enSprintBypass.getValue()
+                : aura.getSprintReset().getValue();
         if (sprintMode.equalsIgnoreCase("Legit") && !player.isInLava() && !player.isInWater()) {
             boolean shouldResetLegit = readyToHit && !player.onGround() && player.getDeltaMovement().y < 0;
 
@@ -157,8 +159,10 @@ public class AttackHandler {
 
         lastAttackTime = System.currentTimeMillis();
 
-        String sprintMode = aura.getSprintReset().getValue();
-        boolean isPacket = sprintMode.equalsIgnoreCase("Packet");
+        String sprintMode = aura.rotMode.getValue().endsWith("(En)") && !aura.rotMode.is("Spooky (En)")
+                ? aura.enSprintBypass.getValue()
+                : aura.getSprintReset().getValue();
+        boolean isPacket = sprintMode.equalsIgnoreCase("Packet") || sprintMode.equalsIgnoreCase("Funtime");
         boolean wasSprinting = player.isSprinting();
 
         if (isPacket && wasSprinting) {

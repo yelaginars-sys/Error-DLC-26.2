@@ -34,11 +34,8 @@ import net.minecraft.world.entity.boss.enderdragon.EndCrystal;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Projectile;
-import net.minecraft.world.item.AxeItem;
-import net.minecraft.world.item.DiggerItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.SwordItem;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.Enchantments;
@@ -737,7 +734,7 @@ public final class CrystalAura extends Module {
     private int findPickaxeSlot() {
         for (int i = 0; i < 9; i++) {
             ItemStack stack = mc.player.getInventory().getItem(i);
-            if (!stack.isEmpty() && (stack.getItem() instanceof DiggerItem || stack.is(ItemTags.PICKAXES))) {
+            if (!stack.isEmpty() && stack.is(ItemTags.PICKAXES)) {
                 return i;
             }
         }
@@ -778,7 +775,7 @@ public final class CrystalAura extends Module {
         if (stack.is(Items.NETHERITE_AXE)) return 10.0;
         if (stack.is(Items.DIAMOND_AXE)) return 9.0;
         if (stack.is(Items.IRON_AXE)) return 9.0;
-        if (stack.getItem() instanceof SwordItem || stack.getItem() instanceof AxeItem) return 5.0;
+        if (stack.is(ItemTags.SWORDS) || stack.is(ItemTags.AXES)) return 5.0;
         return 0.0;
     }
 

@@ -19,6 +19,16 @@ public final class RotationRegistry {
         register(new GrimRotation());
         register(new SnapRotation());
         register(new SmoothRotation());
+
+        // Energy Rotations
+        register(new EnergySpookyRotation());
+        register(new EnergyReallyWorldRotation());
+        register(new EnergyFuntimeRotation());
+        register(new EnergyAimAssistRotation());
+        register(new EnergyHolyWorldRotation());
+        register(new EnergyMLRotation());
+        register(new EnergyAresRotation());
+        register(new EnergySnapRotation());
     }
 
     public static void register(AuraRotation rotation) {

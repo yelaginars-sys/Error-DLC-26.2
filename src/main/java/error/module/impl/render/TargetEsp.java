@@ -28,7 +28,6 @@ import error.setting.impl.SliderSetting;
 import error.util.client.clients.ColorUtil;
 import error.util.client.clients.Theme;
 import error.util.math.Animation;
-import error.util.render.TargetLightningV2;
 import net.minecraft.client.Camera;
 import net.minecraft.client.renderer.BindGroupLayouts;
 import net.minecraft.client.renderer.texture.AbstractTexture;
@@ -39,41 +38,31 @@ import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import org.joml.Vector4f;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Optional;
 import java.util.OptionalDouble;
-import java.util.concurrent.ThreadLocalRandom;
 
 public class TargetEsp extends Module {
     public static TargetEsp INSTANCE;
 
-    public final ModeSetting mode = mode("Режим", "Кольцо 2", "Кольцо 2", "Души", "МолнииV2", "Зако", "Орбиты", "Ромб", "Картинка 1", "Картинка 2");
+    public final ModeSetting mode = mode("Режим", "Ромб", "Ромб", "Кружок", "Crystal", "Призраки", "Призраки 2");
+    public final CheckBox colorOnHit = checkbox("Краснеть при ударе", true);
 
-    public final SliderSetting size = slider("Размер", 1.15F, 0.6F, 2.5F, 0.05F);
-    public final SliderSetting ringRadius = slider("Радиус кольца", 0.5F, 0.3F, 1.5F, 0.05F).visible(() -> mode.is("Кольцо 2"));
-    public final SliderSetting ringSpeed = slider("Скорость кольца", 1.0F, 0.3F, 3.0F, 0.1F).visible(() -> mode.is("Кольцо 2"));
+    public final SliderSetting size = slider("Размер", 1.0F, 0.5F, 2.0F, 0.05F);
     public final SliderSetting rotSpeed = slider("Скорость вращения", 1.2F, 0.2F, 4.0F, 0.05F);
-    public final SliderSetting radius = slider("Радиус", 0.7F, 0.3F, 2.0F, 0.05F);
     public final SliderSetting opacity = slider("Прозрачность", 1.0F, 0.1F, 1.0F, 0.05F);
-
-    public final CheckBox colorOnHit = checkbox("Окрашивание при ударе", true);
     public final CheckBox onHover = checkbox("При наводке", true);
 
     public final ModeSetting colorMode = mode("Цвет", "Тема", "Тема", "Кастом");
     public final ColorSetting customColor = color("Цвет кастом", ColorUtil.rgba(0, 220, 255, 255)).visible(() -> colorMode.is("Кастом"));
 
-    // Textures ported from Lumen
+    // Textures ported from Energy
+    private static final Identifier TARGET_TEX = Identifier.fromNamespaceAndPath("error", "textures/targetesp/target.png");
+    private static final Identifier GLOW_TEX = Identifier.fromNamespaceAndPath("error", "textures/targetesp/glow.png");
     private static final Identifier BLOOM_TEX = Identifier.fromNamespaceAndPath("error", "textures/targetesp/bloom.png");
-    private static final Identifier ZAKO_TEX = Identifier.fromNamespaceAndPath("error", "textures/targetesp/zako.png");
-    private static final Identifier TEX_2 = Identifier.fromNamespaceAndPath("error", "textures/targetesp/targetesp_2.png");
-    private static final Identifier TEX_3 = Identifier.fromNamespaceAndPath("error", "textures/targetesp/targetesp_3.png");
-    private static final Identifier DIAMOND_TEX = Identifier.fromNamespaceAndPath("error", "textures/targetesp/diamond.png");
 
     // Pipelines
     private static final RenderPipeline TEX_ADDITIVE = RenderPipeline.builder()
-            .withLocation(Identifier.parse("error:pipeline/world/target_esp_lumen_additive"))
+            .withLocation(Identifier.parse("error:pipeline/world/target_esp_energy_additive"))
             .withVertexShader(Identifier.parse("error:core/aura_bloom"))
             .withFragmentShader(Identifier.parse("error:core/aura_bloom"))
             .withBindGroupLayout(BindGroupLayouts.PROJECTION)
@@ -85,21 +74,8 @@ public class TargetEsp extends Module {
             .withCull(false)
             .build();
 
-    private static final RenderPipeline TEX_TRANSLUCENT = RenderPipeline.builder()
-            .withLocation(Identifier.parse("error:pipeline/world/target_esp_lumen_translucent"))
-            .withVertexShader(Identifier.parse("error:core/aura_bloom"))
-            .withFragmentShader(Identifier.parse("error:core/aura_bloom"))
-            .withBindGroupLayout(BindGroupLayouts.PROJECTION)
-            .withBindGroupLayout(BindGroupLayouts.SAMPLER0)
-            .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT))
-            .withDepthStencilState(new DepthStencilState(CompareOp.ALWAYS_PASS, false))
-            .withVertexBinding(0, DefaultVertexFormat.POSITION_TEX_COLOR)
-            .withPrimitiveTopology(PrimitiveTopology.QUADS)
-            .withCull(false)
-            .build();
-
     private static final RenderPipeline COLOR_TRIANGLES = RenderPipeline.builder()
-            .withLocation(Identifier.parse("error:pipeline/world/target_esp_lumen_triangles"))
+            .withLocation(Identifier.parse("error:pipeline/world/target_esp_energy_triangles"))
             .withVertexShader(Identifier.parse("error:core/lines"))
             .withFragmentShader(Identifier.parse("error:core/lines"))
             .withBindGroupLayout(BindGroupLayouts.PROJECTION)
@@ -111,7 +87,7 @@ public class TargetEsp extends Module {
             .build();
 
     private static final RenderPipeline COLOR_LINES = RenderPipeline.builder()
-            .withLocation(Identifier.parse("error:pipeline/world/target_esp_lumen_lines"))
+            .withLocation(Identifier.parse("error:pipeline/world/target_esp_energy_lines"))
             .withVertexShader(Identifier.parse("error:core/lines"))
             .withFragmentShader(Identifier.parse("error:core/lines"))
             .withBindGroupLayout(BindGroupLayouts.PROJECTION)
@@ -122,28 +98,14 @@ public class TargetEsp extends Module {
             .withCull(false)
             .build();
 
-    // Lightning V2 sub-renderer
-    private final TargetLightningV2 lightningV2 = new TargetLightningV2();
-
     // Target animation & tracking
     private final Animation appearAnim = new Animation(0.0F, 0.18F);
     private LivingEntity target;
-
-    // Ring 2 Particles
-    private static class RingParticle {
-        double x, y, z;
-        double vx, vy, vz;
-        float age, maxAge;
-        float size;
-    }
-    private final List<RingParticle> ringParticles = new ArrayList<>();
-
-    // Sine animation state
-    private float imageSine = 0.0F;
-    private float imageDir = 280.0F;
+    private float spinAngle = 0.0F;
+    private long lastTime = System.currentTimeMillis();
 
     public TargetEsp() {
-        super("Target ESP", "Подсветка цели атаки полностью из Lumen", Category.RENDER);
+        super("Target ESP", "Подсветка цели атаки из Energy", Category.RENDER);
         INSTANCE = this;
     }
 
@@ -151,8 +113,6 @@ public class TargetEsp extends Module {
     public void onDisable() {
         super.onDisable();
         appearAnim.setValue(0.0F);
-        ringParticles.clear();
-        lightningV2.clear();
         target = null;
     }
 
@@ -179,6 +139,11 @@ public class TargetEsp extends Module {
     @EventTarget
     public void onRender3D(Render3DEvent event) {
         if (mc == null || mc.player == null || mc.level == null || mc.gameRenderer == null) return;
+
+        long now = System.currentTimeMillis();
+        float dt = Math.min((now - lastTime) / 1000.0F, 0.1F);
+        lastTime = now;
+        spinAngle = (spinAngle + dt * 140.0F * rotSpeed.get()) % 360.0F;
 
         LivingEntity active = getTarget();
         boolean hasTarget = active != null && active.isAlive();
@@ -208,261 +173,38 @@ public class TargetEsp extends Module {
         int baseCol = getEspColor();
         float hurtFactor = 0.0F;
         if (colorOnHit.getValue() && this.target.hurtTime > 0) {
-            hurtFactor = (float) Math.sin(this.target.hurtTime * (Math.PI / 10.0D));
+            hurtFactor = (float) Math.sin(Math.max(0.0F, this.target.hurtTime - tickDelta) * (Math.PI / 10.0D));
         }
-        int redCol = ColorUtil.rgba(255, 50, 50, 255);
+        int redCol = ColorUtil.rgba(244, 101, 101, 255);
         int finalColor = hurtFactor > 0.01F ? ColorUtil.interpolateColor(baseCol, redCol, hurtFactor) : baseCol;
 
         String m = mode.getValue();
-
         switch (m) {
-            case "Кольцо 2" -> renderRing2(viewMatrix, targetPos, this.target, alpha, finalColor, tickDelta);
-            case "Души" -> renderSouls(viewMatrix, targetPos, this.target, alpha, finalColor);
-            case "МолнииV2" -> lightningV2.render(this.target, tickDelta, finalColor, colorOnHit.getValue(), size.get());
-            case "Зако" -> renderBillboard(viewMatrix, targetPos, this.target, ZAKO_TEX, alpha, -1, true);
-            case "Картинка 1" -> renderBillboard(viewMatrix, targetPos, this.target, TEX_2, alpha, finalColor, false);
-            case "Картинка 2" -> renderBillboard(viewMatrix, targetPos, this.target, TEX_3, alpha, finalColor, false);
-            case "Ромб" -> renderRhombus(viewMatrix, targetPos, this.target, alpha, finalColor);
-            case "Орбиты" -> renderOrbits(viewMatrix, targetPos, this.target, alpha, finalColor);
+            case "Ромб" -> renderRhombus(viewMatrix, targetPos, this.target, alpha, finalColor, hurtFactor);
+            case "Кружок" -> renderCircle(viewMatrix, targetPos, this.target, alpha, finalColor);
+            case "Crystal" -> renderCrystal(viewMatrix, targetPos, this.target, alpha, finalColor, hurtFactor);
+            case "Призраки" -> renderGhosts(viewMatrix, targetPos, this.target, alpha, finalColor, hurtFactor);
+            case "Призраки 2" -> renderGhosts2(viewMatrix, targetPos, this.target, alpha, finalColor, hurtFactor, tickDelta);
         }
     }
 
-    // 1. Ring 2 Mode
-    private void renderRing2(Matrix4f viewMatrix, Vec3 targetPos, LivingEntity e, float alpha, int color, float delta) {
-        float h = e.getBbHeight();
-        double period = 2000.0 / Math.max(0.1F, ringSpeed.get());
-        double t = System.currentTimeMillis() % (long) period;
-        boolean goingDown = t > period * 0.5;
-        double progress = t / (period * 0.5);
-        if (goingDown) progress -= 1.0; else progress = 1.0 - progress;
-
-        // Smooth sine wave easing
-        progress = progress < 0.5 ? 2.0 * progress * progress : 1.0 - Math.pow(-2.0 * progress + 2.0, 2.0) / 2.0;
-
-        double curRingY = targetPos.y + h * progress;
-        float r = ringRadius.get();
-
-        var renderTarget = mc.gameRenderer.mainRenderTarget();
-        if (renderTarget == null) return;
-
-        // Spawn ring particles
-        ThreadLocalRandom rnd = ThreadLocalRandom.current();
-        if (ringParticles.size() < 40 && rnd.nextInt(2) == 0) {
-            double angle = rnd.nextDouble() * Math.PI * 2.0;
-            RingParticle p = new RingParticle();
-            p.x = targetPos.x + Math.cos(angle) * r;
-            p.y = curRingY + (rnd.nextDouble() - 0.5) * 0.1;
-            p.z = targetPos.z + Math.sin(angle) * r;
-            p.vx = (rnd.nextDouble() - 0.5) * 0.02;
-            p.vy = (rnd.nextDouble() - 0.5) * 0.04;
-            p.vz = (rnd.nextDouble() - 0.5) * 0.02;
-            p.size = 0.06F + rnd.nextFloat() * 0.08F;
-            p.age = 0.0F;
-            p.maxAge = 20.0F + rnd.nextFloat() * 20.0F;
-            ringParticles.add(p);
-        }
-
-        // Draw Dual Gradient Ring (Triangles)
-        try (ByteBufferBuilder mem = new ByteBufferBuilder(2048 * DefaultVertexFormat.POSITION_COLOR.getVertexSize())) {
-            BufferBuilder b = new BufferBuilder(mem, PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
-            int segs = 60;
-            int colCore = ColorUtil.withAlpha(color, (int) (220 * alpha));
-            int colFade = ColorUtil.withAlpha(color, 0);
-
-            float ribbonH = 0.12F;
-
-            for (int i = 0; i < segs; i++) {
-                double a1 = Math.toRadians((i * 360.0) / segs);
-                double a2 = Math.toRadians(((i + 1) * 360.0) / segs);
-
-                double x1 = targetPos.x + Math.cos(a1) * r;
-                double z1 = targetPos.z + Math.sin(a1) * r;
-                double x2 = targetPos.x + Math.cos(a2) * r;
-                double z2 = targetPos.z + Math.sin(a2) * r;
-
-                // Center line vertices
-                Vector4f mid1 = viewMatrix.transform(new Vector4f((float) x1, (float) curRingY, (float) z1, 1.0F));
-                Vector4f mid2 = viewMatrix.transform(new Vector4f((float) x2, (float) curRingY, (float) z2, 1.0F));
-
-                // Upper vertices
-                Vector4f up1 = viewMatrix.transform(new Vector4f((float) x1, (float) (curRingY + ribbonH), (float) z1, 1.0F));
-                Vector4f up2 = viewMatrix.transform(new Vector4f((float) x2, (float) (curRingY + ribbonH), (float) z2, 1.0F));
-
-                // Lower vertices
-                Vector4f down1 = viewMatrix.transform(new Vector4f((float) x1, (float) (curRingY - ribbonH), (float) z1, 1.0F));
-                Vector4f down2 = viewMatrix.transform(new Vector4f((float) x2, (float) (curRingY - ribbonH), (float) z2, 1.0F));
-
-                if (mid1.z >= -0.05F || mid2.z >= -0.05F) continue;
-
-                // Upper quad (2 tris)
-                b.addVertex(mid1.x, mid1.y, mid1.z).setColor(colCore);
-                b.addVertex(up1.x, up1.y, up1.z).setColor(colFade);
-                b.addVertex(up2.x, up2.y, up2.z).setColor(colFade);
-
-                b.addVertex(mid1.x, mid1.y, mid1.z).setColor(colCore);
-                b.addVertex(up2.x, up2.y, up2.z).setColor(colFade);
-                b.addVertex(mid2.x, mid2.y, mid2.z).setColor(colCore);
-
-                // Lower quad (2 tris)
-                b.addVertex(mid1.x, mid1.y, mid1.z).setColor(colCore);
-                b.addVertex(down2.x, down2.y, down2.z).setColor(colFade);
-                b.addVertex(down1.x, down1.y, down1.z).setColor(colFade);
-
-                b.addVertex(mid1.x, mid1.y, mid1.z).setColor(colCore);
-                b.addVertex(mid2.x, mid2.y, mid2.z).setColor(colCore);
-                b.addVertex(down2.x, down2.y, down2.z).setColor(colFade);
-            }
-
-            try (MeshData mesh = b.buildOrThrow()) {
-                GpuBuffer vb = RenderSystem.getDevice().createBuffer(() -> "Ring2 VB", GpuBuffer.USAGE_VERTEX, mesh.vertexBuffer());
-                try (RenderPass pass = RenderSystem.getDevice().createCommandEncoder().createRenderPass(
-                        () -> "Ring2 Pass", renderTarget.getColorTextureView(), Optional.empty(), renderTarget.getDepthTextureView(), OptionalDouble.empty())) {
-                    pass.setPipeline(COLOR_TRIANGLES);
-                    pass.setUniform("Projection", RenderSystem.getProjectionMatrixBuffer());
-                    pass.setVertexBuffer(0, vb.slice());
-                    pass.draw(mesh.drawState().vertexCount(), 1, 0, 0);
-                } finally {
-                    vb.close();
-                }
-            }
-        }
-
-        // Draw Ring Floating Particles (Bloom Quads)
-        AbstractTexture bloomTex = mc.getTextureManager().getTexture(BLOOM_TEX);
-        if (bloomTex != null && !ringParticles.isEmpty()) {
-            Iterator<RingParticle> it = ringParticles.iterator();
-            try (ByteBufferBuilder pMem = new ByteBufferBuilder(1024 * DefaultVertexFormat.POSITION_TEX_COLOR.getVertexSize())) {
-                BufferBuilder pb = new BufferBuilder(pMem, PrimitiveTopology.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
-                int pCount = 0;
-
-                while (it.hasNext()) {
-                    RingParticle p = it.next();
-                    p.age += 1.0F;
-                    if (p.age >= p.maxAge) {
-                        it.remove();
-                        continue;
-                    }
-                    p.x += p.vx;
-                    p.y += p.vy;
-                    p.z += p.vz;
-                    float life = 1.0F - p.age / p.maxAge;
-                    int pCol = ColorUtil.withAlpha(color, (int) (180 * life * alpha));
-
-                    Vector4f cv = viewMatrix.transform(new Vector4f((float) p.x, (float) p.y, (float) p.z, 1.0F));
-                    if (cv.z >= -0.05F) continue;
-
-                    float hs = p.size * (0.5F + 0.5F * life);
-                    pb.addVertex(cv.x - hs, cv.y - hs, cv.z).setUv(0.0F, 1.0F).setColor(pCol);
-                    pb.addVertex(cv.x + hs, cv.y - hs, cv.z).setUv(1.0F, 1.0F).setColor(pCol);
-                    pb.addVertex(cv.x + hs, cv.y + hs, cv.z).setUv(1.0F, 0.0F).setColor(pCol);
-                    pb.addVertex(cv.x - hs, cv.y + hs, cv.z).setUv(0.0F, 0.0F).setColor(pCol);
-                    pCount++;
-                }
-
-                if (pCount > 0) {
-                    try (MeshData mesh = pb.buildOrThrow()) {
-                        GpuBuffer vb = RenderSystem.getDevice().createBuffer(() -> "Ring2 Particles", GpuBuffer.USAGE_VERTEX, mesh.vertexBuffer());
-                        GpuSampler sampler = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR);
-                        try (RenderPass pass = RenderSystem.getDevice().createCommandEncoder().createRenderPass(
-                                () -> "Ring2 Particles Pass", renderTarget.getColorTextureView(), Optional.empty(), renderTarget.getDepthTextureView(), OptionalDouble.empty())) {
-                            pass.setPipeline(TEX_ADDITIVE);
-                            pass.setUniform("Projection", RenderSystem.getProjectionMatrixBuffer());
-                            pass.bindTexture("Sampler0", bloomTex.getTextureView(), sampler);
-                            pass.setVertexBuffer(0, vb.slice());
-                            GpuBuffer ib = RenderSystem.getSequentialBuffer(PrimitiveTopology.QUADS).getBuffer(pCount * 6);
-                            pass.setIndexBuffer(ib, RenderSystem.getSequentialBuffer(PrimitiveTopology.QUADS).type());
-                            pass.drawIndexed(pCount * 6, 1, 0, 0, 0);
-                        } finally {
-                            vb.close();
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    // 2. Souls Mode
-    private void renderSouls(Matrix4f viewMatrix, Vec3 targetPos, LivingEntity e, float alpha, int color) {
-        AbstractTexture bloomTex = mc.getTextureManager().getTexture(BLOOM_TEX);
-        if (bloomTex == null) return;
+    // 1. Mode: "Ромб" (Spinning Diamond Billboard from Energy)
+    private void renderRhombus(Matrix4f viewMatrix, Vec3 targetPos, LivingEntity e, float alpha, int color, float hurtFactor) {
+        AbstractTexture tex = mc.getTextureManager().getTexture(TARGET_TEX);
+        if (tex == null) tex = mc.getTextureManager().getTexture(BLOOM_TEX);
+        if (tex == null) return;
         var renderTarget = mc.gameRenderer.mainRenderTarget();
         if (renderTarget == null) return;
 
         double cy = targetPos.y + e.getBbHeight() * 0.5;
-        double radius = this.radius.get();
-        long now = System.currentTimeMillis();
-
-        try (ByteBufferBuilder mem = new ByteBufferBuilder(2048 * DefaultVertexFormat.POSITION_TEX_COLOR.getVertexSize())) {
-            BufferBuilder b = new BufferBuilder(mem, PrimitiveTopology.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
-            int quadCount = 0;
-
-            int strands = 3;
-            int nodesPerStrand = 16;
-
-            for (int s = 0; s < strands; s++) {
-                double strandOffset = (s * Math.PI * 2.0) / strands;
-                for (int i = 0; i < nodesPerStrand; i++) {
-                    float tail = 1.0F - (float) i / nodesPerStrand;
-                    double angle = (now * 0.003 * rotSpeed.get()) + strandOffset - (i * 0.08);
-                    double yWave = Math.sin(angle * 1.5) * 0.45;
-
-                    double px = targetPos.x + Math.sin(angle) * radius;
-                    double py = cy + yWave;
-                    double pz = targetPos.z + Math.cos(angle) * radius;
-
-                    Vector4f cv = viewMatrix.transform(new Vector4f((float) px, (float) py, (float) pz, 1.0F));
-                    if (cv.z >= -0.05F) continue;
-
-                    float hs = (0.08F + 0.14F * tail) * size.get();
-                    int c = ColorUtil.withAlpha(color, (int) (220 * tail * alpha));
-
-                    b.addVertex(cv.x - hs, cv.y - hs, cv.z).setUv(0.0F, 1.0F).setColor(c);
-                    b.addVertex(cv.x + hs, cv.y - hs, cv.z).setUv(1.0F, 1.0F).setColor(c);
-                    b.addVertex(cv.x + hs, cv.y + hs, cv.z).setUv(1.0F, 0.0F).setColor(c);
-                    b.addVertex(cv.x - hs, cv.y + hs, cv.z).setUv(0.0F, 0.0F).setColor(c);
-                    quadCount++;
-                }
-            }
-
-            if (quadCount > 0) {
-                try (MeshData mesh = b.buildOrThrow()) {
-                    GpuBuffer vb = RenderSystem.getDevice().createBuffer(() -> "Souls VB", GpuBuffer.USAGE_VERTEX, mesh.vertexBuffer());
-                    GpuSampler sampler = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR);
-                    try (RenderPass pass = RenderSystem.getDevice().createCommandEncoder().createRenderPass(
-                            () -> "Souls Pass", renderTarget.getColorTextureView(), Optional.empty(), renderTarget.getDepthTextureView(), OptionalDouble.empty())) {
-                        pass.setPipeline(TEX_ADDITIVE);
-                        pass.setUniform("Projection", RenderSystem.getProjectionMatrixBuffer());
-                        pass.bindTexture("Sampler0", bloomTex.getTextureView(), sampler);
-                        pass.setVertexBuffer(0, vb.slice());
-                        GpuBuffer ib = RenderSystem.getSequentialBuffer(PrimitiveTopology.QUADS).getBuffer(quadCount * 6);
-                        pass.setIndexBuffer(ib, RenderSystem.getSequentialBuffer(PrimitiveTopology.QUADS).type());
-                        pass.drawIndexed(quadCount * 6, 1, 0, 0, 0);
-                    } finally {
-                        vb.close();
-                    }
-                }
-            }
-        }
-    }
-
-    // 3. Billboards (Zako, Картинка 1, Картинка 2)
-    private void renderBillboard(Matrix4f viewMatrix, Vec3 targetPos, LivingEntity e, Identifier tex, float alpha, int color, boolean isZako) {
-        AbstractTexture texture = mc.getTextureManager().getTexture(tex);
-        if (texture == null) return;
-        var renderTarget = mc.gameRenderer.mainRenderTarget();
-        if (renderTarget == null) return;
-
-        double cy = targetPos.y + e.getBbHeight() * 0.55;
         Vector4f cv = viewMatrix.transform(new Vector4f((float) targetPos.x, (float) cy, (float) targetPos.z, 1.0F));
         if (cv.z >= -0.05F) return;
 
-        long now = System.currentTimeMillis();
-        float rot = (now * 0.1F * rotSpeed.get()) % 360.0F;
-        float rad = (float) Math.toRadians(rot);
+        float rad = (float) Math.toRadians(spinAngle);
         float cos = (float) Math.cos(rad);
         float sin = (float) Math.sin(rad);
 
-        float s = size.get() * (isZako ? 0.65F : 0.85F);
+        float s = (0.95F + 0.15F * hurtFactor) * size.get() * 0.75F;
         float hw = s * 0.5F;
         float hh = s * 0.5F;
 
@@ -475,7 +217,7 @@ public class TargetEsp extends Module {
         float dx3 = (-hw) * cos - (hh) * sin;
         float dy3 = (-hw) * sin + (hh) * cos;
 
-        int finalCol = isZako ? ColorUtil.rgba(255, 255, 255, (int) (255 * alpha)) : ColorUtil.withAlpha(color, (int) (240 * alpha));
+        int finalCol = ColorUtil.withAlpha(color, (int) (240 * alpha));
 
         try (ByteBufferBuilder mem = new ByteBufferBuilder(DefaultVertexFormat.POSITION_TEX_COLOR.getVertexSize() * 4)) {
             BufferBuilder b = new BufferBuilder(mem, PrimitiveTopology.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
@@ -485,13 +227,13 @@ public class TargetEsp extends Module {
             b.addVertex(cv.x + dx3, cv.y + dy3, cv.z).setUv(0.0F, 0.0F).setColor(finalCol);
 
             try (MeshData mesh = b.buildOrThrow()) {
-                GpuBuffer vb = RenderSystem.getDevice().createBuffer(() -> "Billboard VB", GpuBuffer.USAGE_VERTEX, mesh.vertexBuffer());
+                GpuBuffer vb = RenderSystem.getDevice().createBuffer(() -> "Rhombus VB", GpuBuffer.USAGE_VERTEX, mesh.vertexBuffer());
                 GpuSampler sampler = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR);
                 try (RenderPass pass = RenderSystem.getDevice().createCommandEncoder().createRenderPass(
-                        () -> "Billboard Pass", renderTarget.getColorTextureView(), Optional.empty(), renderTarget.getDepthTextureView(), OptionalDouble.empty())) {
-                    pass.setPipeline(isZako ? TEX_TRANSLUCENT : TEX_ADDITIVE);
+                        () -> "Rhombus Pass", renderTarget.getColorTextureView(), Optional.empty(), renderTarget.getDepthTextureView(), OptionalDouble.empty())) {
+                    pass.setPipeline(TEX_ADDITIVE);
                     pass.setUniform("Projection", RenderSystem.getProjectionMatrixBuffer());
-                    pass.bindTexture("Sampler0", texture.getTextureView(), sampler);
+                    pass.bindTexture("Sampler0", tex.getTextureView(), sampler);
                     pass.setVertexBuffer(0, vb.slice());
                     GpuBuffer ib = RenderSystem.getSequentialBuffer(PrimitiveTopology.QUADS).getBuffer(6);
                     pass.setIndexBuffer(ib, RenderSystem.getSequentialBuffer(PrimitiveTopology.QUADS).type());
@@ -503,71 +245,309 @@ public class TargetEsp extends Module {
         }
     }
 
-    // 4. Rhombus Mode
-    private void renderRhombus(Matrix4f viewMatrix, Vec3 targetPos, LivingEntity e, float alpha, int color) {
-        AbstractTexture tex = mc.getTextureManager().getTexture(DIAMOND_TEX);
-        if (tex == null) tex = mc.getTextureManager().getTexture(BLOOM_TEX);
-        if (tex == null) return;
-        renderBillboard(viewMatrix, targetPos, e, DIAMOND_TEX, alpha, color, false);
-    }
-
-    // 5. Orbits Mode
-    private void renderOrbits(Matrix4f viewMatrix, Vec3 targetPos, LivingEntity e, float alpha, int color) {
+    // 2. Mode: "Кружок" (Oscillating Cylinder Ring with Glowing Edges)
+    private void renderCircle(Matrix4f viewMatrix, Vec3 targetPos, LivingEntity e, float alpha, int color) {
         var renderTarget = mc.gameRenderer.mainRenderTarget();
         if (renderTarget == null) return;
 
-        double cy = targetPos.y + e.getBbHeight() * 0.5;
-        float r = radius.get() * 1.1F;
-        long now = System.currentTimeMillis();
-        float rot = (float) (now * 0.002 * rotSpeed.get());
+        float h = e.getBbHeight();
+        double period = 1700.0 / Math.max(0.2F, rotSpeed.get() * 0.8F);
+        double t = System.currentTimeMillis() % (long) period;
+        double progress = t / (period * 0.5);
+        if (progress > 1.0) progress = 2.0 - progress;
+        progress = 0.5 - 0.5 * Math.cos(progress * Math.PI); // ease in-out sine
+
+        double curY = targetPos.y + (h + 0.1) * progress;
+        float r = e.getBbWidth() * 1.15F * size.get();
+
+        int segs = 48;
+        int colCore = ColorUtil.withAlpha(color, (int) (225 * alpha));
+        int colFade = ColorUtil.withAlpha(color, 0);
+        float ribbonH = 0.10F;
 
         try (ByteBufferBuilder mem = new ByteBufferBuilder(2048 * DefaultVertexFormat.POSITION_COLOR.getVertexSize())) {
             BufferBuilder b = new BufferBuilder(mem, PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
-            int segs = 48;
-            int cCore = ColorUtil.withAlpha(color, (int) (220 * alpha));
-            int cFade = ColorUtil.withAlpha(color, 0);
 
-            for (int orbit = 0; orbit < 2; orbit++) {
-                float tilt = orbit == 0 ? 0.45F : -0.45F;
-                float orbitRot = rot + orbit * (float) Math.PI;
+            for (int i = 0; i < segs; i++) {
+                double a1 = Math.toRadians((i * 360.0) / segs);
+                double a2 = Math.toRadians(((i + 1) * 360.0) / segs);
 
-                for (int i = 0; i < segs; i++) {
-                    double a1 = (i * Math.PI * 2.0) / segs;
-                    double a2 = ((i + 1) * Math.PI * 2.0) / segs;
+                double x1 = targetPos.x + Math.cos(a1) * r;
+                double z1 = targetPos.z + Math.sin(a1) * r;
+                double x2 = targetPos.x + Math.cos(a2) * r;
+                double z2 = targetPos.z + Math.sin(a2) * r;
 
-                    double ox1 = Math.cos(a1) * r;
-                    double oz1 = Math.sin(a1) * r;
-                    double oy1 = Math.sin(a1 + orbitRot) * (r * tilt);
+                Vector4f mid1 = viewMatrix.transform(new Vector4f((float) x1, (float) curY, (float) z1, 1.0F));
+                Vector4f mid2 = viewMatrix.transform(new Vector4f((float) x2, (float) curY, (float) z2, 1.0F));
+                Vector4f up1 = viewMatrix.transform(new Vector4f((float) x1, (float) (curY + ribbonH), (float) z1, 1.0F));
+                Vector4f up2 = viewMatrix.transform(new Vector4f((float) x2, (float) (curY + ribbonH), (float) z2, 1.0F));
+                Vector4f down1 = viewMatrix.transform(new Vector4f((float) x1, (float) (curY - ribbonH), (float) z1, 1.0F));
+                Vector4f down2 = viewMatrix.transform(new Vector4f((float) x2, (float) (curY - ribbonH), (float) z2, 1.0F));
 
-                    double ox2 = Math.cos(a2) * r;
-                    double oz2 = Math.sin(a2) * r;
-                    double oy2 = Math.sin(a2 + orbitRot) * (r * tilt);
+                if (mid1.z >= -0.05F || mid2.z >= -0.05F) continue;
 
-                    Vector4f mid1 = viewMatrix.transform(new Vector4f((float) (targetPos.x + ox1), (float) (cy + oy1), (float) (targetPos.z + oz1), 1.0F));
-                    Vector4f mid2 = viewMatrix.transform(new Vector4f((float) (targetPos.x + ox2), (float) (cy + oy2), (float) (targetPos.z + oz2), 1.0F));
+                // Upper ribbon
+                b.addVertex(mid1.x, mid1.y, mid1.z).setColor(colCore);
+                b.addVertex(up1.x, up1.y, up1.z).setColor(colFade);
+                b.addVertex(up2.x, up2.y, up2.z).setColor(colFade);
 
-                    if (mid1.z >= -0.05F || mid2.z >= -0.05F) continue;
+                b.addVertex(mid1.x, mid1.y, mid1.z).setColor(colCore);
+                b.addVertex(up2.x, up2.y, up2.z).setColor(colFade);
+                b.addVertex(mid2.x, mid2.y, mid2.z).setColor(colCore);
 
-                    b.addVertex(mid1.x, mid1.y - 0.04F, mid1.z).setColor(cFade);
-                    b.addVertex(mid1.x, mid1.y, mid1.z).setColor(cCore);
-                    b.addVertex(mid2.x, mid2.y, mid2.z).setColor(cCore);
+                // Lower ribbon
+                b.addVertex(mid1.x, mid1.y, mid1.z).setColor(colCore);
+                b.addVertex(down2.x, down2.y, down2.z).setColor(colFade);
+                b.addVertex(down1.x, down1.y, down1.z).setColor(colFade);
 
-                    b.addVertex(mid1.x, mid1.y - 0.04F, mid1.z).setColor(cFade);
-                    b.addVertex(mid2.x, mid2.y, mid2.z).setColor(cCore);
-                    b.addVertex(mid2.x, mid2.y - 0.04F, mid2.z).setColor(cFade);
-                }
+                b.addVertex(mid1.x, mid1.y, mid1.z).setColor(colCore);
+                b.addVertex(mid2.x, mid2.y, mid2.z).setColor(colCore);
+                b.addVertex(down2.x, down2.y, down2.z).setColor(colFade);
             }
 
             try (MeshData mesh = b.buildOrThrow()) {
-                GpuBuffer vb = RenderSystem.getDevice().createBuffer(() -> "Orbits VB", GpuBuffer.USAGE_VERTEX, mesh.vertexBuffer());
+                GpuBuffer vb = RenderSystem.getDevice().createBuffer(() -> "Circle Ribbon VB", GpuBuffer.USAGE_VERTEX, mesh.vertexBuffer());
                 try (RenderPass pass = RenderSystem.getDevice().createCommandEncoder().createRenderPass(
-                        () -> "Orbits Pass", renderTarget.getColorTextureView(), Optional.empty(), renderTarget.getDepthTextureView(), OptionalDouble.empty())) {
+                        () -> "Circle Ribbon Pass", renderTarget.getColorTextureView(), Optional.empty(), renderTarget.getDepthTextureView(), OptionalDouble.empty())) {
                     pass.setPipeline(COLOR_TRIANGLES);
                     pass.setUniform("Projection", RenderSystem.getProjectionMatrixBuffer());
                     pass.setVertexBuffer(0, vb.slice());
                     pass.draw(mesh.drawState().vertexCount(), 1, 0, 0);
                 } finally {
                     vb.close();
+                }
+            }
+        }
+    }
+
+    // 3. Mode: "Crystal" (Orbiting 3D Shards & Particles)
+    private void renderCrystal(Matrix4f viewMatrix, Vec3 targetPos, LivingEntity e, float alpha, int color, float hurtFactor) {
+        var renderTarget = mc.gameRenderer.mainRenderTarget();
+        if (renderTarget == null) return;
+
+        AbstractTexture glowTex = mc.getTextureManager().getTexture(GLOW_TEX);
+        if (glowTex == null) glowTex = mc.getTextureManager().getTexture(BLOOM_TEX);
+
+        int crystals = 4;
+        float r = e.getBbWidth() * 1.35F * size.get();
+        double baseTime = System.currentTimeMillis() * 0.002 * rotSpeed.get();
+
+        try (ByteBufferBuilder mem = new ByteBufferBuilder(2048 * DefaultVertexFormat.POSITION_COLOR.getVertexSize())) {
+            BufferBuilder b = new BufferBuilder(mem, PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
+            int triCount = 0;
+
+            for (int i = 0; i < crystals; i++) {
+                double angle = baseTime + i * (Math.PI * 2.0 / crystals);
+                double heightOff = e.getBbHeight() * 0.5 + Math.sin(angle * 2.0) * 0.28;
+
+                double cx = targetPos.x + Math.cos(angle) * r;
+                double cy = targetPos.y + heightOff;
+                double cz = targetPos.z + Math.sin(angle) * r;
+
+                float cs = 0.11F * size.get();
+                float ch = 0.24F * size.get();
+
+                float selfRot = (float) (angle * 3.0);
+                float cCos = (float) Math.cos(selfRot) * cs;
+                float cSin = (float) Math.sin(selfRot) * cs;
+
+                Vector4f top = viewMatrix.transform(new Vector4f((float) cx, (float) (cy + ch), (float) cz, 1.0F));
+                Vector4f bot = viewMatrix.transform(new Vector4f((float) cx, (float) (cy - ch), (float) cz, 1.0F));
+
+                Vector4f p1 = viewMatrix.transform(new Vector4f((float) (cx + cCos), (float) cy, (float) (cz + cSin), 1.0F));
+                Vector4f p2 = viewMatrix.transform(new Vector4f((float) (cx - cSin), (float) cy, (float) (cz + cCos), 1.0F));
+                Vector4f p3 = viewMatrix.transform(new Vector4f((float) (cx - cCos), (float) cy, (float) (cz - cSin), 1.0F));
+                Vector4f p4 = viewMatrix.transform(new Vector4f((float) (cx + cSin), (float) cy, (float) (cz - cCos), 1.0F));
+
+                if (top.z >= -0.05F || bot.z >= -0.05F) continue;
+
+                int col1 = ColorUtil.withAlpha(color, (int) (240 * alpha));
+                int col2 = ColorUtil.withAlpha(color, (int) (180 * alpha));
+                int col3 = ColorUtil.withAlpha(color, (int) (210 * alpha));
+                int col4 = ColorUtil.withAlpha(color, (int) (160 * alpha));
+
+                // Upper pyramid (4 tris)
+                b.addVertex(top.x, top.y, top.z).setColor(col1);
+                b.addVertex(p1.x, p1.y, p1.z).setColor(col1);
+                b.addVertex(p2.x, p2.y, p2.z).setColor(col1);
+
+                b.addVertex(top.x, top.y, top.z).setColor(col2);
+                b.addVertex(p2.x, p2.y, p2.z).setColor(col2);
+                b.addVertex(p3.x, p3.y, p3.z).setColor(col2);
+
+                b.addVertex(top.x, top.y, top.z).setColor(col3);
+                b.addVertex(p3.x, p3.y, p3.z).setColor(col3);
+                b.addVertex(p4.x, p4.y, p4.z).setColor(col3);
+
+                b.addVertex(top.x, top.y, top.z).setColor(col4);
+                b.addVertex(p4.x, p4.y, p4.z).setColor(col4);
+                b.addVertex(p1.x, p1.y, p1.z).setColor(col4);
+
+                // Lower pyramid (4 tris)
+                b.addVertex(bot.x, bot.y, bot.z).setColor(col1);
+                b.addVertex(p2.x, p2.y, p2.z).setColor(col1);
+                b.addVertex(p1.x, p1.y, p1.z).setColor(col1);
+
+                b.addVertex(bot.x, bot.y, bot.z).setColor(col2);
+                b.addVertex(p3.x, p3.y, p3.z).setColor(col2);
+                b.addVertex(p2.x, p2.y, p2.z).setColor(col2);
+
+                b.addVertex(bot.x, bot.y, bot.z).setColor(col3);
+                b.addVertex(p4.x, p4.y, p4.z).setColor(col3);
+                b.addVertex(p3.x, p3.y, p3.z).setColor(col3);
+
+                b.addVertex(bot.x, bot.y, bot.z).setColor(col4);
+                b.addVertex(p1.x, p1.y, p1.z).setColor(col4);
+                b.addVertex(p4.x, p4.y, p4.z).setColor(col4);
+
+                triCount += 24;
+            }
+
+            if (triCount > 0) {
+                try (MeshData mesh = b.buildOrThrow()) {
+                    GpuBuffer vb = RenderSystem.getDevice().createBuffer(() -> "Crystal Triangles VB", GpuBuffer.USAGE_VERTEX, mesh.vertexBuffer());
+                    try (RenderPass pass = RenderSystem.getDevice().createCommandEncoder().createRenderPass(
+                            () -> "Crystal Triangles Pass", renderTarget.getColorTextureView(), Optional.empty(), renderTarget.getDepthTextureView(), OptionalDouble.empty())) {
+                        pass.setPipeline(COLOR_TRIANGLES);
+                        pass.setUniform("Projection", RenderSystem.getProjectionMatrixBuffer());
+                        pass.setVertexBuffer(0, vb.slice());
+                        pass.draw(mesh.drawState().vertexCount(), 1, 0, 0);
+                    } finally {
+                        vb.close();
+                    }
+                }
+            }
+        }
+    }
+
+    // 4. Mode: "Призраки" (Ghost trails spiraling in 3D)
+    private void renderGhosts(Matrix4f viewMatrix, Vec3 targetPos, LivingEntity e, float alpha, int color, float hurtFactor) {
+        AbstractTexture tex = mc.getTextureManager().getTexture(GLOW_TEX);
+        if (tex == null) tex = mc.getTextureManager().getTexture(BLOOM_TEX);
+        if (tex == null) return;
+        var renderTarget = mc.gameRenderer.mainRenderTarget();
+        if (renderTarget == null) return;
+
+        double cy = targetPos.y + e.getBbHeight() * 0.5;
+        double radius = e.getBbWidth() * 1.2F * size.get();
+        long now = System.currentTimeMillis();
+
+        try (ByteBufferBuilder mem = new ByteBufferBuilder(2048 * DefaultVertexFormat.POSITION_TEX_COLOR.getVertexSize())) {
+            BufferBuilder b = new BufferBuilder(mem, PrimitiveTopology.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
+            int quadCount = 0;
+
+            int strands = 3;
+            int nodes = 12;
+
+            for (int s = 0; s < strands; s++) {
+                double strandOffset = (s * Math.PI * 2.0) / strands;
+                for (int i = 0; i < nodes; i++) {
+                    float tail = 1.0F - (float) i / nodes;
+                    double angle = (now * 0.003 * rotSpeed.get()) + strandOffset - (i * 0.10);
+                    double yWave = Math.sin(angle * 1.5) * 0.35 + (s * 0.15 - 0.15);
+
+                    double px = targetPos.x + Math.sin(angle) * radius;
+                    double py = cy + yWave;
+                    double pz = targetPos.z + Math.cos(angle) * radius;
+
+                    Vector4f cv = viewMatrix.transform(new Vector4f((float) px, (float) py, (float) pz, 1.0F));
+                    if (cv.z >= -0.05F) continue;
+
+                    float hs = (0.07F + 0.13F * tail) * size.get();
+                    int c = ColorUtil.withAlpha(color, (int) (220 * tail * alpha));
+
+                    b.addVertex(cv.x - hs, cv.y - hs, cv.z).setUv(0.0F, 1.0F).setColor(c);
+                    b.addVertex(cv.x + hs, cv.y - hs, cv.z).setUv(1.0F, 1.0F).setColor(c);
+                    b.addVertex(cv.x + hs, cv.y + hs, cv.z).setUv(1.0F, 0.0F).setColor(c);
+                    b.addVertex(cv.x - hs, cv.y + hs, cv.z).setUv(0.0F, 0.0F).setColor(c);
+                    quadCount++;
+                }
+            }
+
+            if (quadCount > 0) {
+                try (MeshData mesh = b.buildOrThrow()) {
+                    GpuBuffer vb = RenderSystem.getDevice().createBuffer(() -> "Ghosts VB", GpuBuffer.USAGE_VERTEX, mesh.vertexBuffer());
+                    GpuSampler sampler = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR);
+                    try (RenderPass pass = RenderSystem.getDevice().createCommandEncoder().createRenderPass(
+                            () -> "Ghosts Pass", renderTarget.getColorTextureView(), Optional.empty(), renderTarget.getDepthTextureView(), OptionalDouble.empty())) {
+                        pass.setPipeline(TEX_ADDITIVE);
+                        pass.setUniform("Projection", RenderSystem.getProjectionMatrixBuffer());
+                        pass.bindTexture("Sampler0", tex.getTextureView(), sampler);
+                        pass.setVertexBuffer(0, vb.slice());
+                        GpuBuffer ib = RenderSystem.getSequentialBuffer(PrimitiveTopology.QUADS).getBuffer(quadCount * 6);
+                        pass.setIndexBuffer(ib, RenderSystem.getSequentialBuffer(PrimitiveTopology.QUADS).type());
+                        pass.drawIndexed(quadCount * 6, 1, 0, 0, 0);
+                    } finally {
+                        vb.close();
+                    }
+                }
+            }
+        }
+    }
+
+    // 5. Mode: "Призраки 2" (Energy 1:1 4-strand Helical Orbital Glow Mesh)
+    private void renderGhosts2(Matrix4f viewMatrix, Vec3 targetPos, LivingEntity e, float alpha, int color, float hurtFactor, float tickDelta) {
+        AbstractTexture tex = mc.getTextureManager().getTexture(GLOW_TEX);
+        if (tex == null) tex = mc.getTextureManager().getTexture(BLOOM_TEX);
+        if (tex == null) return;
+        var renderTarget = mc.gameRenderer.mainRenderTarget();
+        if (renderTarget == null) return;
+
+        double width = e.getBbWidth() * size.get();
+        float baseH = e.getBbHeight() / 2.0F + 0.2F;
+        double timeSec = (System.currentTimeMillis() / 1000.0) * rotSpeed.get();
+        double rotSpeedFactor = (timeSec * 3.0) % (Math.PI * 2.0);
+        double angleStep = Math.toRadians(60.0) / 14.0;
+
+        try (ByteBufferBuilder mem = new ByteBufferBuilder(2048 * DefaultVertexFormat.POSITION_TEX_COLOR.getVertexSize())) {
+            BufferBuilder b = new BufferBuilder(mem, PrimitiveTopology.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
+            int quadCount = 0;
+
+            for (int strand = 0; strand < 4; strand++) {
+                double strandTime = timeSec + strand * 15.0;
+                double strandAngleOffset = strand * (Math.PI / 2.0);
+
+                for (int node = 0; node <= 14; node++) {
+                    double nodeAngle = node * angleStep;
+                    double totalAngle = nodeAngle + rotSpeedFactor + strandAngleOffset;
+
+                    float px = (float) (targetPos.x + width * Math.cos(totalAngle));
+                    float py = (float) (targetPos.y + baseH + Math.sin(strandTime + nodeAngle + strand) * 0.7);
+                    float pz = (float) (targetPos.z + width * Math.sin(totalAngle));
+
+                    Vector4f cv = viewMatrix.transform(new Vector4f(px, py, pz, 1.0F));
+                    if (cv.z >= -0.05F) continue;
+
+                    float scale = 0.4F * (0.4F + (float) node / 14.0F) * size.get() * 0.65F;
+                    float hs = scale * 0.5F;
+
+                    int nodeAlpha = (int) (240.0F * (1.0F - (float) node / 18.0F) * alpha);
+                    int nodeColor = ColorUtil.withAlpha(color, nodeAlpha);
+
+                    b.addVertex(cv.x - hs, cv.y - hs, cv.z).setUv(0.0F, 1.0F).setColor(nodeColor);
+                    b.addVertex(cv.x + hs, cv.y - hs, cv.z).setUv(1.0F, 1.0F).setColor(nodeColor);
+                    b.addVertex(cv.x + hs, cv.y + hs, cv.z).setUv(1.0F, 0.0F).setColor(nodeColor);
+                    b.addVertex(cv.x - hs, cv.y + hs, cv.z).setUv(0.0F, 0.0F).setColor(nodeColor);
+                    quadCount++;
+                }
+            }
+
+            if (quadCount > 0) {
+                try (MeshData mesh = b.buildOrThrow()) {
+                    GpuBuffer vb = RenderSystem.getDevice().createBuffer(() -> "Ghosts2 VB", GpuBuffer.USAGE_VERTEX, mesh.vertexBuffer());
+                    GpuSampler sampler = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR);
+                    try (RenderPass pass = RenderSystem.getDevice().createCommandEncoder().createRenderPass(
+                            () -> "Ghosts2 Pass", renderTarget.getColorTextureView(), Optional.empty(), renderTarget.getDepthTextureView(), OptionalDouble.empty())) {
+                        pass.setPipeline(TEX_ADDITIVE);
+                        pass.setUniform("Projection", RenderSystem.getProjectionMatrixBuffer());
+                        pass.bindTexture("Sampler0", tex.getTextureView(), sampler);
+                        pass.setVertexBuffer(0, vb.slice());
+                        GpuBuffer ib = RenderSystem.getSequentialBuffer(PrimitiveTopology.QUADS).getBuffer(quadCount * 6);
+                        pass.setIndexBuffer(ib, RenderSystem.getSequentialBuffer(PrimitiveTopology.QUADS).type());
+                        pass.drawIndexed(quadCount * 6, 1, 0, 0, 0);
+                    } finally {
+                        vb.close();
+                    }
                 }
             }
         }

@@ -27,9 +27,27 @@ public class AuraModule extends Module {
     public final SliderSetting aimRange = slider("Дистанция наводки", 3.0f, 0.0f, 6.0f, 0.05f);
     public final SliderSetting fov = slider("FOV", 360.0f, 10.0f, 360.0f, 5.0f);
 
-    public final ModeSetting rotMode = mode("Ротация", "Funtime", "Funtime", "HolyLegit", "HolyWorld", "SpookyTime", "4pookyTime", "Spooky", "ReallyWorld", "HelixWave", "Artygrief", "Sloth", "Legit", "Linear", "Matrix", "Builder", "Lumen", "Grim", "Snap", "Smooth");
+    public final ModeSetting rotMode = mode("Ротация", "Funtime", "Funtime", "HolyLegit", "HolyWorld", "SpookyTime", "4pookyTime", "Spooky", "ReallyWorld", "HelixWave", "Artygrief", "Sloth", "Legit", "Linear", "Matrix", "Builder", "Lumen", "Grim", "Snap", "Smooth", "Spooky (En)", "ReallyWorld (En)", "FunTime (En)", "AimAssist (En)", "HolyWorld (En)", "ML (En)", "Ares/FT (En)", "Snap (En)");
     public final ModeSetting moveFix = mode("Коррекция", "Свободная", "Нет", "Свободная", "Сфокусированная", "Полная");
     public final ModeSetting sprintReset = mode("Сброс спринта", "Legit", "None", "Legit", "Packet");
+
+    // Energy Rotations Settings
+    public final SliderSetting enAimAssistPower = slider("Сила AimAssist", 0.5f, 0.05f, 1.0f, 0.05f)
+            .visible(() -> rotMode.is("AimAssist (En)"));
+    public final SliderSetting enJerkSmoothing = slider("Сглаживание джерка", 3.0f, 1.0f, 16.0f, 1.0f)
+            .visible(() -> rotMode.is("Spooky (En)") || rotMode.is("HolyWorld (En)"));
+    public final SliderSetting enJerkSpeed = slider("Скорость джерка", 0.5f, 0.05f, 3.0f, 0.05f)
+            .visible(() -> rotMode.is("Spooky (En)") || rotMode.is("HolyWorld (En)"));
+    public final SliderSetting enDovodka = slider("Доводка", 0.35f, 0.0f, 1.0f, 0.05f)
+            .visible(() -> rotMode.is("ReallyWorld (En)") || rotMode.is("HolyWorld (En)"));
+    public final CheckBox enRwThroughWalls = checkbox("Бить через стены RW", true)
+            .visible(() -> rotMode.is("ReallyWorld (En)"));
+    public final CheckBox enOnlyHits = checkbox("Только попадания", true)
+            .visible(() -> rotMode.is("ML (En)"));
+    public final ModeSetting enSprintBypass = mode("Обход спринта (En)", "Legit", "Legit", "Funtime", "None")
+            .visible(() -> rotMode.getValue().endsWith("(En)") && !rotMode.is("Spooky (En)"));
+    public final CheckBox enNoAttackContainer = checkbox("Не бить если открыт контейнер", false)
+            .visible(() -> rotMode.is("Ares/FT (En)"));
 
     public final CheckBox smartCrits = checkbox("Умные криты", true);
     public final CheckBox onlyCrits = checkbox("Только криты", true);
@@ -152,6 +170,8 @@ public class AuraModule extends Module {
 
         if (pauseEating.getValue() && isEating()) return;
 
+        if (rotMode.is("Ares/FT (En)") && enNoAttackContainer.getValue() && screen() != null && !(screen() instanceof net.minecraft.client.gui.screens.inventory.InventoryScreen)) return;
+
         if (!AttackHandler.shouldAttack(target, this)) return;
 
         boolean isIntersecting = player().getBoundingBox().intersects(target.getBoundingBox());
@@ -161,7 +181,7 @@ public class AuraModule extends Module {
         boolean isAimed = isIntersecting || RayTraceUtils.isLookingAt(target, attackRange.getValue(), checkYaw, checkPitch);
         if (!isAimed) return;
 
-        boolean canHit = isIntersecting || this.throughWalls.getValue() || isVisible;
+        boolean canHit = isIntersecting || this.throughWalls.getValue() || (rotMode.is("ReallyWorld (En)") && enRwThroughWalls.getValue()) || isVisible;
         if (!canHit) return;
 
         AttackHandler.attack(target, this, rotation);
@@ -181,8 +201,8 @@ public class AuraModule extends Module {
     }
 
     public boolean hasTargetEsp() { return error.module.impl.render.TargetEsp.INSTANCE != null && error.module.impl.render.TargetEsp.INSTANCE.isEnabled(); }
-    public boolean usesCubesTargetEsp() { return hasTargetEsp() && error.module.impl.render.TargetEsp.INSTANCE.mode.is("Кубики"); }
-    public boolean usesMarkerTargetEsp() { return hasTargetEsp() && error.module.impl.render.TargetEsp.INSTANCE.mode.is("Маркер"); }
-    public boolean usesGhostTargetEsp() { return hasTargetEsp() && error.module.impl.render.TargetEsp.INSTANCE.mode.is("Призраки"); }
-    public boolean usesCircleTargetEsp() { return hasTargetEsp() && error.module.impl.render.TargetEsp.INSTANCE.mode.is("Кольцо"); }
+    public boolean usesCubesTargetEsp() { return hasTargetEsp() && error.module.impl.render.TargetEsp.INSTANCE.mode.is("Crystal"); }
+    public boolean usesMarkerTargetEsp() { return hasTargetEsp() && error.module.impl.render.TargetEsp.INSTANCE.mode.is("Ромб"); }
+    public boolean usesGhostTargetEsp() { return hasTargetEsp() && (error.module.impl.render.TargetEsp.INSTANCE.mode.is("Призраки") || error.module.impl.render.TargetEsp.INSTANCE.mode.is("Призраки 2")); }
+    public boolean usesCircleTargetEsp() { return hasTargetEsp() && error.module.impl.render.TargetEsp.INSTANCE.mode.is("Кружок"); }
 }
