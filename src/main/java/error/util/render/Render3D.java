@@ -308,4 +308,44 @@ public final class Render3D {
                 Math.max(byteSize + 1024, 64 * 1024)
         );
     }
+
+    public static void drawTrajectory(java.util.List<Vec3> points, int color, boolean throughWalls) {
+        if (points == null || points.size() < 2) return;
+        Vec3 origin = points.get(0);
+        Matrix4f mvp = buildMVP(origin.x, origin.y, origin.z);
+        if (mvp == null) return;
+
+        dispatch(throughWalls ? PIPELINE_OUTLINE_THROUGH : PIPELINE_OUTLINE_DEPTH, PrimitiveTopology.LINES, (points.size() - 1) * 2, mvp, b -> {
+            for (int i = 0; i < points.size() - 1; i++) {
+                Vec3 p1 = points.get(i);
+                Vec3 p2 = points.get(i + 1);
+                float x1 = (float) (p1.x - origin.x);
+                float y1 = (float) (p1.y - origin.y);
+                float z1 = (float) (p1.z - origin.z);
+                float x2 = (float) (p2.x - origin.x);
+                float y2 = (float) (p2.y - origin.y);
+                float z2 = (float) (p2.z - origin.z);
+                line(b, x1, y1, z1, x2, y2, z2, color);
+            }
+        });
+    }
+
+    public static void drawLandingCircle(Vec3 center, float radius, int color, boolean throughWalls) {
+        if (center == null) return;
+        Matrix4f mvp = buildMVP(center.x, center.y, center.z);
+        if (mvp == null) return;
+
+        int segments = 28;
+        dispatch(throughWalls ? PIPELINE_OUTLINE_THROUGH : PIPELINE_OUTLINE_DEPTH, PrimitiveTopology.LINES, segments * 2, mvp, b -> {
+            for (int i = 0; i < segments; i++) {
+                double a1 = (i * 2 * Math.PI) / segments;
+                double a2 = ((i + 1) * 2 * Math.PI) / segments;
+                float x1 = (float) (Math.cos(a1) * radius);
+                float z1 = (float) (Math.sin(a1) * radius);
+                float x2 = (float) (Math.cos(a2) * radius);
+                float z2 = (float) (Math.sin(a2) * radius);
+                line(b, x1, 0.02F, z1, x2, 0.02F, z2, color);
+            }
+        });
+    }
 }

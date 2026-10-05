@@ -739,6 +739,7 @@ public class LiquidClickGui extends Screen {
             try {
                 float curSetY = settingsY + 3.0F;
                 for (Setting<?> setting : module.getSettings()) {
+                    if (!setting.isVisible()) continue;
                     float sH = getSettingHeight(setting);
                     renderSetting(setting, x + 8.0F, curSetY, w - 16.0F, sH, mouseX, mouseY, alphaVal * expandVal, accentColor);
                     curSetY += sH;
@@ -1920,6 +1921,7 @@ public class LiquidClickGui extends Screen {
     private float calculateSettingsHeight(Module module) {
         float h = 4.0F;
         for (Setting<?> s : module.getSettings()) {
+            if (!s.isVisible()) continue;
             h += getSettingHeight(s);
         }
         return h;
@@ -2715,6 +2717,7 @@ public class LiquidClickGui extends Screen {
                 if (eVal > 0.01F && mouseX >= cardX && mouseX <= cardX + cardW && mouseY >= currentY + 33.0F && mouseY <= currentY + cardH) {
                     float setY = currentY + 33.0F;
                     for (Setting<?> setting : module.getSettings()) {
+                        if (!setting.isVisible()) continue;
                         float sH = getSettingHeight(setting);
                         if (mouseY >= setY && mouseY <= setY + sH) {
                             if (setting instanceof CheckBox cb) {

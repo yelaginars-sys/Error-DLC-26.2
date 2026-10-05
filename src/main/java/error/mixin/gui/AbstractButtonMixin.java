@@ -17,6 +17,7 @@ import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.network.chat.Component;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -24,6 +25,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(AbstractButton.class)
 public abstract class AbstractButtonMixin {
+
+    @Shadow protected abstract void extractContents(GuiGraphicsExtractor extractor, int mouseX, int mouseY, float partialTick);
 
     @Unique private static final Color ERROR$FADE_WHITE = Color.rgba(255, 255, 255, 32);
     @Unique private float error$hoverAnim = 0.0F;
@@ -37,21 +40,20 @@ public abstract class AbstractButtonMixin {
             return;
         }
 
+        boolean isSpriteIcon = self instanceof net.minecraft.client.gui.components.SpriteIconButton;
         String className = self.getClass().getName();
         if (self instanceof net.minecraft.client.gui.components.Checkbox
                 || className.contains("Checkbox")
-                || className.contains("Sprite")
                 || className.contains("Image")
-                || className.contains("Icon")
+                || (!isSpriteIcon && (className.contains("Sprite") || className.contains("Icon")))
                 || className.contains("Lock")
                 || className.contains("Tab")
                 || className.contains("Recipe")
                 || className.contains("Page")
                 || className.contains("Book")
                 || className.contains("Creative")
-                || self.getMessage() == null
-                || self.getMessage().getString().trim().isEmpty()
-                || self.getWidth() < 24
+                || (!isSpriteIcon && (self.getMessage() == null || self.getMessage().getString().trim().isEmpty()))
+                || self.getWidth() < 18
                 || self.getHeight() < 14) {
             return;
         }
@@ -149,33 +151,40 @@ public abstract class AbstractButtonMixin {
                         ColorUtil.withAlpha(themeAccent, (int) (220 * (self.active ? 1.0F : 0.5F))));
             }
 
-            // Button label with custom San Francisco font
-            Component msg = self.getMessage();
-            if (msg != null) {
-                String rawText = msg.getString();
-                if (rawText != null && !rawText.isEmpty()) {
-                    String text = rawText.replaceAll("(?i)\\u00a7[0-9a-fk-or]", "");
-                    float fontSize = Math.clamp(h * 0.40F, 6.0F, 8.5F);
+            if (!isSpriteIcon) {
+                // Button label with custom San Francisco font
+                Component msg = self.getMessage();
+                if (msg != null) {
+                    String rawText = msg.getString();
+                    if (rawText != null && !rawText.isEmpty()) {
+                        String text = rawText.replaceAll("(?i)\\u00a7[0-9a-fk-or]", "");
+                        float fontSize = Math.clamp(h * 0.40F, 6.0F, 8.5F);
 
-                    float textWidth = Fonts.SF_MEDIUM.getWidth(text, fontSize);
-                    float maxTextW = w - 10.0F;
-                    if (textWidth > maxTextW && textWidth > 0.0F) {
-                        fontSize = Math.max(5.0F, fontSize * (maxTextW / textWidth));
+                        float textWidth = Fonts.SF_MEDIUM.getWidth(text, fontSize);
+                        float maxTextW = w - 10.0F;
+                        if (textWidth > maxTextW && textWidth > 0.0F) {
+                            fontSize = Math.max(5.0F, fontSize * (maxTextW / textWidth));
+                        }
+
+                        float fontY = y + (h - fontSize) / 2.0F - 0.5F;
+                        int textColor = self.active
+                                ? ColorUtil.interpolateColor(0xFFE2E8F0, 0xFFFFFFFF, this.error$hoverAnim)
+                                : 0xFF64748B;
+
+                        Fonts.drawCenteredString(Fonts.SF_MEDIUM, text, x + w / 2.0F, fontY, fontSize, textColor);
                     }
-
-                    float fontY = y + (h - fontSize) / 2.0F - 0.5F;
-                    int textColor = self.active
-                            ? ColorUtil.interpolateColor(0xFFE2E8F0, 0xFFFFFFFF, this.error$hoverAnim)
-                            : 0xFF64748B;
-
-                    Fonts.drawCenteredString(Fonts.SF_MEDIUM, text, x + w / 2.0F, fontY, fontSize, textColor);
                 }
             }
 
             Render2DUtil.flush();
-            ci.cancel();
         } finally {
             error.util.RenderExtend.exit2D();
         }
+
+        if (isSpriteIcon) {
+            this.extractContents(extractor, mouseX, mouseY, partialTick);
+        }
+
+        ci.cancel();
     }
 }

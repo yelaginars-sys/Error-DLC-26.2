@@ -14,11 +14,13 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import error.util.RotationHandler;
 import error.module.impl.misc.FreeCam;
 import error.module.impl.render.BetterMinecraft;
 import error.module.impl.render.FreeLook;
 import error.module.impl.render.Removals;
+import error.module.impl.render.Zoom;
 
 /**
  */
@@ -68,8 +70,22 @@ public abstract class CameraMixin {
             FreeLook.INSTANCE.update();
         }
 
+        if (Zoom.INSTANCE != null) {
+            Zoom.INSTANCE.update();
+        }
+
         RotationHandler.applyRenderInterpolation();
         RotationHandler.syncFreeLook(entity.getViewYRot(partialTick), entity.getViewXRot(partialTick));
+    }
+
+    @Inject(method = "calculateFov", at = @At("RETURN"), cancellable = true)
+    private void onCalculateFov(float partialTick, CallbackInfoReturnable<Float> cir) {
+        if (Zoom.INSTANCE != null) {
+            float zoom = Zoom.INSTANCE.getEffectiveZoom();
+            if (zoom > 1.001F) {
+                cir.setReturnValue(cir.getReturnValue() / zoom);
+            }
+        }
     }
 
     @WrapOperation(

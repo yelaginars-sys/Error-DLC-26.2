@@ -40,6 +40,8 @@ public class Modules {
     public Timer timer;
     public BetterMinecraft betterMinecraft;
     public FreeLook freeLook;
+    public Zoom zoom;
+    public SeeInvisibles seeInvisibles;
     public HandShader handShader;
     public HitEffect hitEffect;
     public ViewModel viewModel;
@@ -161,6 +163,8 @@ public class Modules {
         this.noDelay = new NoDelay();
         this.arrows = new Arrows();
         this.freeLook = new FreeLook();
+        this.zoom = new Zoom();
+        this.seeInvisibles = new SeeInvisibles();
         this.serverHelper = new ServerHelper();
         this.clickPearl = new ClickPearl();
         this.timer = new Timer();
@@ -251,6 +255,8 @@ public class Modules {
                 this.noDelay,
                 this.arrows,
                 this.freeLook,
+                this.zoom,
+                this.seeInvisibles,
                 this.serverHelper,
                 this.clickPearl,
                 this.timer,

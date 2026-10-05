@@ -18,14 +18,21 @@ import error.util.display.color.Color;
 import error.util.display.outline.Outline;
 import error.util.render.Render2DUtil;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import error.util.render.font.Fonts;
 import net.minecraft.client.gui.screens.ChatScreen;
+import net.minecraft.resources.Identifier;
+import error.util.render.font.Fonts;
 
 import java.util.*;
 
 public final class KeyBindsHud extends HudElement implements error.IMinecraft {
 
-    private record Entry(String name, String keyName, String categoryIcon, float alpha) {}
+    private static final Identifier ICON_COMBAT = Identifier.fromNamespaceAndPath("error", "textures/clickgui/combat1.png");
+    private static final Identifier ICON_MOVEMENT = Identifier.fromNamespaceAndPath("error", "textures/clickgui/movement1.png");
+    private static final Identifier ICON_RENDER = Identifier.fromNamespaceAndPath("error", "textures/clickgui/visuals1.png");
+    private static final Identifier ICON_PLAYER = Identifier.fromNamespaceAndPath("error", "textures/clickgui/player1.png");
+    private static final Identifier ICON_MISC = Identifier.fromNamespaceAndPath("error", "textures/clickgui/misc1.png");
+
+    private record Entry(String name, String keyName, Identifier categoryIcon, float alpha) {}
 
     private final Map<Module, Animation> anims = new HashMap<>();
     private final Animation widthAnim = new Animation(80.0F, 0.22F);
@@ -49,15 +56,14 @@ public final class KeyBindsHud extends HudElement implements error.IMinecraft {
         return super.shouldRender();
     }
 
-    private static String getCategoryIcon(Category category) {
-        if (category == null) return "•";
+    private static Identifier getCategoryIcon(Category category) {
+        if (category == null) return ICON_MISC;
         return switch (category) {
-            case COMBAT -> Fonts.NURIK_COMBAT;
-            case MOVEMENT -> Fonts.NURIK_MOVEMENT;
-            case RENDER -> Fonts.NURIK_VISUALS;
-            case PLAYER -> Fonts.NURIK_PLAYER;
-            case MISC -> Fonts.NURIK_MISC;
-            default -> "•";
+            case COMBAT -> ICON_COMBAT;
+            case MOVEMENT -> ICON_MOVEMENT;
+            case RENDER -> ICON_RENDER;
+            case PLAYER -> ICON_PLAYER;
+            default -> ICON_MISC;
         };
     }
 
@@ -96,8 +102,8 @@ public final class KeyBindsHud extends HudElement implements error.IMinecraft {
 
         // Preview dummy items in chat if empty
         if (entries.isEmpty() && inChat) {
-            entries.add(new Entry("AttackAura", "R", Fonts.NURIK_COMBAT, 1.0F));
-            entries.add(new Entry("Velocity", "V", Fonts.NURIK_MOVEMENT, 1.0F));
+            entries.add(new Entry("AttackAura", "R", ICON_COMBAT, 1.0F));
+            entries.add(new Entry("Velocity", "V", ICON_MOVEMENT, 1.0F));
         }
 
         if (entries.isEmpty()) {
@@ -107,7 +113,6 @@ public final class KeyBindsHud extends HudElement implements error.IMinecraft {
         }
 
         // Calculate dynamic width
-        // Calculate dynamic width
         float maxRowW = 68.0F;
         float headerTitleW = Fonts.SF_MEDIUM.getWidth("Hotkeys", 7.5F);
         float headerMinW = 18.0F + headerTitleW + 6.0F;
@@ -116,7 +121,7 @@ public final class KeyBindsHud extends HudElement implements error.IMinecraft {
         for (Entry e : entries) {
             float nameW = Fonts.SF_MEDIUM.getWidth(e.name, 7.0F);
             float keyW = Fonts.SF_MEDIUM.getWidth(e.keyName, 6.5F);
-            float rowTotalW = (13.5F + nameW + 6.0F) + 5.0F + (keyW + 9.0F);
+            float rowTotalW = (14.0F + nameW + 6.0F) + 5.0F + (keyW + 9.0F);
             maxRowW = Math.max(maxRowW, rowTotalW);
         }
 
@@ -174,7 +179,7 @@ public final class KeyBindsHud extends HudElement implements error.IMinecraft {
             float nameW = Fonts.SF_MEDIUM.getWidth(e.name, 7.0F);
             float keyW = Fonts.SF_MEDIUM.getWidth(e.keyName, 6.5F);
 
-            float leftPillW = 13.5F + nameW + 6.0F;
+            float leftPillW = 14.0F + nameW + 6.0F;
             float rightPillW = keyW + 9.0F;
             float rightPillX = curX + this.width - rightPillW;
 
@@ -219,15 +224,18 @@ public final class KeyBindsHud extends HudElement implements error.IMinecraft {
                         .render(extractor);
             }
 
-            // Category Icon in left capsule
-            if (e.categoryIcon != null && !e.categoryIcon.equals("•")) {
-                Fonts.drawString(Fonts.ICONS_NURIK, e.categoryIcon, curX + 4.5F, curY + 1.8F, 6.8F, ColorUtil.withAlpha(accent, (int) (230 * e.alpha)));
+            // Category Icon in left capsule (exact icon from ClickGUI tabs)
+            if (e.categoryIcon != null) {
+                float iconSize = 7.5F;
+                float iconX = curX + 3.8F;
+                float iconY = curY + (ROW_H - iconSize) * 0.5F;
+                Render2D.drawTexture(e.categoryIcon, iconX, iconY, iconSize, iconSize, ColorUtil.withAlpha(accent, (int) (240 * e.alpha)));
             } else {
                 Render2D.drawCircle(curX + 6.5F, curY + ROW_H * 0.5F, 1.8F, ColorUtil.withAlpha(accent, (int) (230 * e.alpha)));
             }
 
             // Module Name
-            Fonts.drawString(Fonts.SF_MEDIUM, e.name, curX + 13.5F, curY + 1.8F, 7.0F, textWhite);
+            Fonts.drawString(Fonts.SF_MEDIUM, e.name, curX + 13.8F, curY + 1.8F, 7.0F, textWhite);
 
             // Key name centered in right capsule
             Fonts.drawCenteredString(Fonts.SF_MEDIUM, e.keyName, rightPillX + rightPillW * 0.5F, curY + 1.8F, 6.5F, keyColor);

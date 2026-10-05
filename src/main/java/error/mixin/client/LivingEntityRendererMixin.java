@@ -18,12 +18,27 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import error.util.Angle;
 import error.util.PredictUtils;
 import error.module.impl.combat.AuraModule;
+import error.module.impl.render.SeeInvisibles;
 
 @Mixin(LivingEntityRenderer.class)
 public abstract class LivingEntityRendererMixin<T extends LivingEntity, S extends LivingEntityRenderState, M extends EntityModel<? super S>> extends EntityRenderer<T, S> {
 
     protected LivingEntityRendererMixin(EntityRendererProvider.Context context) {
         super(context);
+    }
+
+    @Inject(method = "extractRenderState(Lnet/minecraft/world/entity/LivingEntity;Lnet/minecraft/client/renderer/entity/state/LivingEntityRenderState;F)V", at = @At("TAIL"))
+    private void seeInvisiblesExtract(LivingEntity entity, LivingEntityRenderState state, float partialTicks, CallbackInfo ci) {
+        SeeInvisibles mod = SeeInvisibles.INSTANCE;
+        if (mod != null && mod.isEnabled() && state.isInvisible) {
+            float a = mod.alpha.getValue();
+            if (a > 0.01F) {
+                state.isInvisibleToPlayer = false;
+                if (a >= 0.99F) {
+                    state.isInvisible = false;
+                }
+            }
+        }
     }
 
     @Unique private final StopWatch elytraRotationTimer = new StopWatch();
@@ -48,6 +63,13 @@ public abstract class LivingEntityRendererMixin<T extends LivingEntity, S extend
                                    net.minecraft.client.renderer.texture.TextureAtlasSprite sprite,
                                    int outlineColor,
                                    net.minecraft.client.renderer.feature.ModelFeatureRenderer.CrumblingOverlay crumbling) {
+        if (SeeInvisibles.INSTANCE != null && SeeInvisibles.INSTANCE.isEnabled() && state instanceof LivingEntityRenderState livingState && livingState.isInvisible) {
+            float val = SeeInvisibles.INSTANCE.alpha.getValue();
+            if (val > 0.01F) {
+                int a = Math.clamp((int) (val * 255.0F), 5, 255);
+                color = net.minecraft.util.ARGB.color(a, net.minecraft.util.ARGB.red(color), net.minecraft.util.ARGB.green(color), net.minecraft.util.ARGB.blue(color));
+            }
+        }
         String custom = state instanceof error.interfaces.CustomModelCarrier carrier ? carrier.error$customModel() : null;
         if (custom != null && !error.module.impl.render.CustomModels.NONE.equalsIgnoreCase(custom) && state instanceof net.minecraft.client.renderer.entity.state.AvatarRenderState avatarState) {
             error.module.impl.render.CustomModels models = error.module.impl.render.CustomModels.INSTANCE;

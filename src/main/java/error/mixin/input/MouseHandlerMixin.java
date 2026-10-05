@@ -40,6 +40,13 @@ public abstract class MouseHandlerMixin {
         if (PanelRefractions.blocksInput()) {
             PanelRefractions.handleScroll(vertical);
             ci.cancel();
+            return;
+        }
+
+        if (error.module.impl.render.Zoom.INSTANCE != null && error.module.impl.render.Zoom.INSTANCE.isActive() && error.module.impl.render.Zoom.INSTANCE.scrollZoom.getValue()) {
+            error.module.impl.render.Zoom.INSTANCE.onScroll(vertical);
+            ci.cancel();
+            return;
         }
     }
 
@@ -58,6 +65,14 @@ public abstract class MouseHandlerMixin {
 
         if (event.isCancelled()) {
             return;
+        }
+
+        if (error.module.impl.render.Zoom.INSTANCE != null && error.module.impl.render.Zoom.INSTANCE.isActive()) {
+            float zoom = error.module.impl.render.Zoom.INSTANCE.getCurrentZoom();
+            if (zoom > 1.0F) {
+                event.setCursorDeltaX(event.getCursorDeltaX() / zoom);
+                event.setCursorDeltaY(event.getCursorDeltaY() / zoom);
+            }
         }
 
         if (RotationHandler.onMouseTurn(event.getCursorDeltaX(), event.getCursorDeltaY())) {

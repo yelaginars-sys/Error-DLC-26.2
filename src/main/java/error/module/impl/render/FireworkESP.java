@@ -21,6 +21,7 @@ import error.util.render.Render2DUtil;
 
 import java.util.*;
 
+import error.util.client.clients.Theme;
 import static error.util.client.clients.Theme.BG_COLOR;
 import static error.util.client.clients.Theme.DIVIDER_COLOR;
 
@@ -141,9 +142,9 @@ public final class FireworkESP extends Module {
         float centerY = pillY + pillHeight / 2.0F;
         float textY = font.centeredTextY(centerY, textSize);
 
-        int bg = ColorUtil.multiplyAlpha(BG_COLOR, alpha);
-        Render2D.drawShadow(pillX, pillY, width, pillHeight, 4.0F * unit, 6.0F * unit, ColorUtil.multiplyAlpha(0x90000000, alpha));
-        Render2D.drawBlur(pillX, pillY, width, pillHeight, RADIUS * unit, 1, bg, alpha);
+        int accent = Theme.getAccentColor();
+        Render2D.drawShadow(pillX, pillY, width, pillHeight, 5.0F * unit, 6.0F * unit, ColorUtil.multiplyAlpha(0x90000000, alpha));
+        Render2D.drawLiquidGlass(pillX, pillY, width, pillHeight, RADIUS * unit, alpha, accent);
 
         float cursor = pillX + PADDING * unit;
 

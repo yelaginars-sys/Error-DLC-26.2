@@ -37,7 +37,9 @@ public class ServerHelper extends Module {
     public final BindSetting bindPlast = bind("Пласт", GLFW.GLFW_KEY_UNKNOWN).visible(() -> spookyMode.is("Funtime"));
     public final BindSetting bindDust = bind("Явная пыль", GLFW.GLFW_KEY_UNKNOWN).visible(() -> spookyMode.is("Funtime"));
     public final BindSetting bindSnow = bind("Снег заморозки", GLFW.GLFW_KEY_UNKNOWN).visible(() -> spookyMode.is("Funtime"));
-    public final BindSetting bindWindCharge = bind("Заряд ветра", GLFW.GLFW_KEY_UNKNOWN).visible(() -> spookyMode.is("Funtime"));
+    public final BindSetting bindWindCharge = bind("Заряд ветра", GLFW.GLFW_KEY_UNKNOWN);
+
+    public static boolean isThrowingWindCharge = false;
 
     // HolyWorld binds
     public final BindSetting bindStun = bind("стан", GLFW.GLFW_KEY_UNKNOWN).visible(() -> spookyMode.is("HolyWorld"));
@@ -100,7 +102,9 @@ public class ServerHelper extends Module {
         boolean isConsumable = false;
         Predicate<ItemStack> pred = null;
 
-        if ((spookyMode.is("Funtime") || spookyMode.is("HolyWorld")) && matches(bindHealing, keyOrBtn, isMouse)) {
+        if (matches(bindWindCharge, keyOrBtn, isMouse)) {
+            targetItem = Items.WIND_CHARGE;
+        } else if ((spookyMode.is("Funtime") || spookyMode.is("HolyWorld")) && matches(bindHealing, keyOrBtn, isMouse)) {
             targetItem = Items.POTION;
             isConsumable = true;
             pred = ServerHelper::isHealingPotion;
@@ -113,7 +117,6 @@ public class ServerHelper extends Module {
             else if (matches(bindPlast, keyOrBtn, isMouse)) targetItem = Items.DRIED_KELP;
             else if (matches(bindDust, keyOrBtn, isMouse)) targetItem = Items.SUGAR;
             else if (matches(bindSnow, keyOrBtn, isMouse)) targetItem = Items.SNOWBALL;
-            else if (matches(bindWindCharge, keyOrBtn, isMouse)) targetItem = Items.WIND_CHARGE;
         } else if (spookyMode.is("HolyWorld")) {
             if (matches(bindStun, keyOrBtn, isMouse)) targetItem = Items.NETHER_STAR;
             else if (matches(bindExpTrap, keyOrBtn, isMouse)) targetItem = Items.PRISMARINE_SHARD;
@@ -206,12 +209,21 @@ public class ServerHelper extends Module {
                     useStage = 2;
                     useTicks = 0;
                 } else {
-                    if (currentItem == Items.WIND_CHARGE && mc.getConnection() != null) {
-                        mc.getConnection().send(new net.minecraft.network.protocol.game.ServerboundMovePlayerPacket.Rot(
-                                mc.player.getYRot(), 90.0F, mc.player.onGround(), false
-                        ));
+                    if (currentItem == Items.WIND_CHARGE) {
+                        if (mc.getConnection() != null) {
+                            mc.getConnection().send(new net.minecraft.network.protocol.game.ServerboundMovePlayerPacket.Rot(
+                                    mc.player.getYRot(), 90.0F, mc.player.onGround(), false
+                            ));
+                        }
+                        isThrowingWindCharge = true;
+                        try {
+                            mc.gameMode.useItem(mc.player, InteractionHand.MAIN_HAND);
+                        } finally {
+                            isThrowingWindCharge = false;
+                        }
+                    } else {
+                        mc.gameMode.useItem(mc.player, InteractionHand.MAIN_HAND);
                     }
-                    mc.gameMode.useItem(mc.player, InteractionHand.MAIN_HAND);
                     mc.player.swing(InteractionHand.MAIN_HAND);
                     useStage = 2;
                     useTicks = 0;

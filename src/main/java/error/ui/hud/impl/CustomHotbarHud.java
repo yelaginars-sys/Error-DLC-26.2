@@ -46,11 +46,12 @@ public final class CustomHotbarHud extends HudElement {
 
         boolean inChat = error.IMinecraft.mc.gui != null && error.IMinecraft.mc.gui.screen() instanceof ChatScreen;
 
-        // Position fixed at bottom center unless dragged in edit mode
-        if (!this.dragging) {
-            this.x = (screenW - BAR_W) * 0.5F;
-            this.y = screenH - BAR_H - 1.0F;
-        }
+        // Permanently locked at bottom center, cannot be dragged
+        this.x = (screenW - BAR_W) * 0.5F;
+        this.y = screenH - BAR_H - 1.0F;
+        this.targetX = this.x;
+        this.targetY = this.y;
+        this.dragging = false;
 
         this.width = BAR_W;
         this.height = BAR_H;
@@ -124,5 +125,20 @@ public final class CustomHotbarHud extends HudElement {
                 }
             }
         }
+    }
+
+    @Override
+    public boolean isHovered(double mouseX, double mouseY) {
+        return false;
+    }
+
+    @Override
+    public java.util.List<Box> getCollisionBoxes() {
+        return java.util.List.of();
+    }
+
+    @Override
+    public void startDragging(double mouseX, double mouseY) {
+        this.dragging = false;
     }
 }

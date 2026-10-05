@@ -19,6 +19,7 @@ import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix3x2fStack;
+import error.util.render.Render3D;
 import error.util.render.Render3DUtil;
 import error.event.EventTarget;
 import error.event.list.Render2DEvent;
@@ -103,7 +104,14 @@ public final class Predictions extends Module {
             simulateWorldEntities(mc, tickDelta);
         }
 
-
+        for (TrajectoryData traj : activeTrajectories) {
+            if (traj.points != null && traj.points.size() > 1) {
+                Render3D.drawTrajectory(traj.points, traj.color, true);
+            }
+            if (traj.landingPos != null && this.drawLanding.getValue()) {
+                Render3D.drawLandingCircle(traj.landingPos, 0.6F, traj.color, true);
+            }
+        }
     }
 
     @EventTarget
@@ -178,7 +186,9 @@ public final class Predictions extends Module {
         float centerY = pillY + pillHeight / 2.0F;
         float textY = font.centeredTextY(centerY, textSize);
 
-        Render2D.drawBlur(pillX, pillY, width, pillHeight, RADIUS * unit, 1, BG_COLOR, 1.0F);
+        Render2D.drawShadow(pillX, pillY, width, pillHeight, RADIUS * unit, 6.0F * unit, ColorUtil.rgba(0, 0, 0, 70));
+        Render2D.drawLiquidGlass(pillX, pillY, width, pillHeight, RADIUS * unit, 1.0F, traj.color);
+        Render2D.drawRoundedOutline(pillX, pillY, width, pillHeight, RADIUS * unit, 0.6F * unit, ColorUtil.rgba(255, 255, 255, 30));
 
         float cursor = pillX + padding;
         boolean hasPrev = false;
@@ -250,6 +260,11 @@ public final class Predictions extends Module {
         double vz = Mth.cos(yawRad) * Mth.cos(pitchRad);
 
         Vec3 motion = new Vec3(vx, vy, vz).normalize().scale(props.velocity);
+        if (player.isPassenger() && player.getVehicle() != null) {
+            motion = motion.add(player.getVehicle().getDeltaMovement());
+        } else {
+            motion = motion.add(player.getDeltaMovement());
+        }
 
         simulatePhysics(startPos, motion, props.gravity, props.drag, player, getDisplayStack(held), getItemLabel(held), getItemColor(held));
     }

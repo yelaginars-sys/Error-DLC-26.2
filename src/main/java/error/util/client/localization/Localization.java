@@ -114,6 +114,8 @@ public final class Localization {
         RU_DICT.put("NoDelay", "Без Задержек");
         RU_DICT.put("Arrows", "Стрелки на Игроков");
         RU_DICT.put("FreeLook", "Свободный Обзор");
+        RU_DICT.put("Zoom", "Зум");
+        RU_DICT.put("SeeInvisibles", "Видимость Невидимок");
         RU_DICT.put("ServerHelper", "Сервер Помощник");
         RU_DICT.put("ClickPearl", "Быстрый Перл");
         RU_DICT.put("Timer", "Таймер");
@@ -369,6 +371,8 @@ public final class Localization {
         RU_DICT.put("ClickGui.desc", "Главное меню настройки и управления модулями клиента");
         RU_DICT.put("FireworkESP.desc", "Подсвечивает фейерверки и их траекторию");
         RU_DICT.put("FreeLook.desc", "Позволяет вращать камеру вокруг игрока без поворота тела");
+        RU_DICT.put("Zoom.desc", "Приближение камеры с настройкой кратности и зумом колесиком");
+        RU_DICT.put("SeeInvisibles.desc", "Отображает невидимых игроков и существ с настраиваемой прозрачностью");
         RU_DICT.put("HandShader.desc", "Применяет кастомные шейдеры и свечение на руки и оружие");
         RU_DICT.put("HitEffect.desc", "Визуальные эффекты частиц и спавн марок при ударе");
         RU_DICT.put("Interface.desc", "Настройки HUD элементов, тем оформления и цветов");

@@ -30,6 +30,8 @@ import java.util.List;
 public final class TargetHud extends HudElement implements error.IMinecraft {
 
     private LivingEntity target;
+    private LivingEntity renderTarget;
+    private long lastTargetTime = 0L;
     private final Animation openAnim = new Animation(0.0F, 0.22F);
     private final Animation healthAnim = new Animation(20.0F, 0.25F);
     private final Animation absAnim = new Animation(0.0F, 0.25F);
@@ -88,18 +90,34 @@ public final class TargetHud extends HudElement implements error.IMinecraft {
 
         boolean isChat = mc.gui != null && mc.gui.screen() instanceof ChatScreen;
         updateTarget(isChat);
-        return target != null || isChat;
+        return target != null || isChat || (renderTarget != null && openAnim.getValue() > 0.01F);
     }
 
     private void updateTarget(boolean isChat) {
-        if (AuraModule.INSTANCE != null && AuraModule.INSTANCE.isEnabled() && AuraModule.INSTANCE.getTarget() != null) {
-            this.target = AuraModule.INSTANCE.getTarget();
-        } else if (mc.crosshairPickEntity instanceof LivingEntity living && living != mc.player && living.isAlive()) {
-            this.target = living;
-        } else if (isChat) {
+        if (isChat) {
             this.target = mc.player;
-        } else {
-            this.target = null;
+            this.renderTarget = mc.player;
+            this.lastTargetTime = System.currentTimeMillis();
+            return;
+        }
+
+        LivingEntity current = null;
+        if (AuraModule.INSTANCE != null && AuraModule.INSTANCE.isEnabled() && AuraModule.INSTANCE.getTarget() != null) {
+            current = AuraModule.INSTANCE.getTarget();
+        } else if (mc.crosshairPickEntity instanceof LivingEntity living && living != mc.player && living.isAlive()) {
+            current = living;
+        }
+
+        long now = System.currentTimeMillis();
+        if (current != null) {
+            this.target = current;
+            this.renderTarget = current;
+            this.lastTargetTime = now;
+        } else if (this.target != null) {
+            // Retain target for 4000ms (4 seconds) after losing crosshair/aura
+            if (now - this.lastTargetTime > 4000L || !this.target.isAlive() || this.target.isRemoved()) {
+                this.target = null;
+            }
         }
     }
 
@@ -162,14 +180,20 @@ public final class TargetHud extends HudElement implements error.IMinecraft {
         openAnim.update();
 
         float a = openAnim.getValue();
-        if (a <= 0.01F || this.target == null) return;
+        if (a <= 0.01F) {
+            if (this.target == null) this.renderTarget = null;
+            return;
+        }
+
+        LivingEntity entity = this.renderTarget;
+        if (entity == null) return;
 
         this.width = CARD_W;
         this.height = CARD_H;
 
-        float hp = this.target.getHealth();
-        float maxHp = Math.max(1.0F, this.target.getMaxHealth());
-        float abs = this.target.getAbsorptionAmount();
+        float hp = entity.getHealth();
+        float maxHp = Math.max(1.0F, entity.getMaxHealth());
+        float abs = entity.getAbsorptionAmount();
 
         healthAnim.setTarget(hp);
         healthAnim.update();
@@ -207,7 +231,7 @@ public final class TargetHud extends HudElement implements error.IMinecraft {
 
         // 2. Avatar on the left
         Identifier skin = STEVE_SKIN;
-        if (this.target instanceof AbstractClientPlayer clientPlayer) {
+        if (entity instanceof AbstractClientPlayer clientPlayer) {
             try {
                 skin = clientPlayer.getSkin().body().texturePath();
             } catch (Throwable ignored) {}
@@ -217,7 +241,7 @@ public final class TargetHud extends HudElement implements error.IMinecraft {
         float avatarY = curY + 5.0F;
 
         // Head particle spawning & simulation
-        int currentHurt = this.target.hurtTime;
+        int currentHurt = entity.hurtTime;
         if (currentHurt > 0 && currentHurt > lastTargetHurtTime) {
             for (int i = 0; i < 5; i++) {
                 if (headParticles.size() >= 40) break;
@@ -257,8 +281,8 @@ public final class TargetHud extends HudElement implements error.IMinecraft {
         Render2D.drawHead(skin, avatarX, avatarY, AVATAR_SIZE, AVATAR_R, a);
 
         // Head red hurt flash on hit
-        if (this.target.hurtTime > 0) {
-            float hurtProg = (float) this.target.hurtTime / 10.0F;
+        if (entity.hurtTime > 0) {
+            float hurtProg = (float) entity.hurtTime / 10.0F;
             Render2D.drawRoundedRect(avatarX, avatarY, AVATAR_SIZE, AVATAR_SIZE, AVATAR_R,
                     ColorUtil.rgba(255, 30, 30, (int) (150 * hurtProg * a)));
         }
@@ -278,7 +302,7 @@ public final class TargetHud extends HudElement implements error.IMinecraft {
         float rightX = curX + CARD_W - 6.0F;
         float hpX = rightX - hpW;
 
-        String name = this.target.getName().getString();
+        String name = entity.getName().getString();
         float nameX = startX;
         float maxNameW = hpX - 4.0F - nameX;
         if (Fonts.SF_MEDIUM.getWidth(name, 7.5F) > maxNameW && maxNameW > 5.0F) {
@@ -293,7 +317,7 @@ public final class TargetHud extends HudElement implements error.IMinecraft {
 
         // 4. Middle Row: Armor with durability bars + Hand items under HP & Nick
         float itemsY = curY + 15.0F;
-        List<ItemStack> equippedItems = getEquippedItems(this.target, isChat);
+        List<ItemStack> equippedItems = getEquippedItems(entity, isChat);
 
         if (extractor != null && !equippedItems.isEmpty()) {
             Render2DUtil.flush();
