@@ -14,7 +14,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import error.util.RotationHandler;
 import error.event.EventManager;
 import error.event.list.EventTravel;
-import error.module.impl.player.AntiPush;
+import error.module.impl.player.NoPush;
 import error.module.impl.render.FreeLook;
 
 /**
@@ -50,7 +50,7 @@ public abstract class EntityMixin {
     }
     @Inject(method = "push(Lnet/minecraft/world/entity/Entity;)V", at = @At("HEAD"), cancellable = true)
     private void onPush(Entity entity, CallbackInfo ci) {
-        if (AntiPush.INSTANCE.isEnabled() && AntiPush.INSTANCE.modes.isEnabled("Entity")) {
+        if (NoPush.INSTANCE != null && NoPush.INSTANCE.isEnabled() && NoPush.INSTANCE.collisions.isEnabled("Игроки")) {
             Entity self = (Entity) (Object) this;
             Minecraft mc = Minecraft.getInstance();
 
@@ -73,7 +73,7 @@ public abstract class EntityMixin {
 
     @Inject(method = "isPushedByFluid", at = @At("HEAD"), cancellable = true)
     private void onIsPushedByFluid(CallbackInfoReturnable<Boolean> cir) {
-        if (AntiPush.INSTANCE.isEnabled() && AntiPush.INSTANCE.modes.isEnabled("Water")) {
+        if (NoPush.INSTANCE != null && NoPush.INSTANCE.isEnabled() && NoPush.INSTANCE.collisions.isEnabled("Вода")) {
             Entity self = (Entity) (Object) this;
             if (self == Minecraft.getInstance().player) {
                 cir.setReturnValue(false);

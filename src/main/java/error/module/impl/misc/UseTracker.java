@@ -1,17 +1,22 @@
 package error.module.impl.misc;
 
-import net.minecraft.client.Minecraft;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.network.protocol.game.ClientboundEntityEventPacket;
 import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrownSplashPotion;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.alchemy.PotionContents;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import error.event.EventTarget;
 import error.event.list.PacketEvent;
 import error.event.list.PlayerTickEvent;
@@ -19,20 +24,14 @@ import error.module.Category;
 import error.module.Module;
 import error.setting.impl.CheckBox;
 import error.setting.impl.HeaderSetting;
-import error.setting.impl.MultiModeSetting;
 import error.setting.impl.SliderSetting;
-import error.util.client.clients.ColorUtil;
-import error.util.client.clients.Theme;
 import error.util.client.localization.Localization;
-import error.util.client.persiki.Notify;
-import error.util.render.font.IconUse;
 
 import java.util.*;
 
 public class UseTracker extends Module {
     public static UseTracker INSTANCE;
 
-    public final MultiModeSetting display = multiMode("Уведомления", List.of("Chat", "Notify"), "Chat", "Notify");
     public final SliderSetting trackRadius = slider("Радиус отслеживания", 35.0f, 10.0f, 100.0f, 5.0f);
 
     private final HeaderSetting useHeader = header("Предметы");
@@ -41,6 +40,7 @@ public class UseTracker extends Module {
     public final CheckBox trackPearl = checkbox("Эндер-жемчуг", true);
     public final CheckBox trackChorus = checkbox("Хорус", true);
     public final CheckBox trackDrinkPotion = checkbox("Питьё зелий", true);
+    public final CheckBox trackSplashPotion = checkbox("Бросок зелий", true);
 
     private final HeaderSetting totemHeader = header("Тотемы");
     public final CheckBox trackTotem = checkbox("Потеря Тотема", true);
@@ -51,16 +51,17 @@ public class UseTracker extends Module {
     public final CheckBox trackTrap = checkbox("Трапка", true);
     public final CheckBox trackDust = checkbox("Явная пыль", true);
     public final CheckBox trackGodAura = checkbox("Божья Аура", true);
-    public final CheckBox trackStun = checkbox("Стан", true);
-    public final CheckBox trackPlast = checkbox("Пласт", true);
     public final CheckBox trackShard = checkbox("Шарды и Обереги", true);
 
     private final Map<String, PlayerItemState> playerStates = new HashMap<>();
     private final Map<String, Long> notificationCooldowns = new HashMap<>();
+    private final Map<Integer, PotionData> trackedPotions = new HashMap<>();
     private static final long NOTIFICATION_COOLDOWN_MS = 1000L;
+    private static final double SPLASH_RADIUS = 4.2;
+    private static final double SPLASH_HEIGHT = 2.5;
 
     public UseTracker() {
-        super("UseTracker", "Отслеживание использования тотемов, зелий, яблок и предметов анархий", Category.MISC);
+        super("UseTracker", "Отслеживание использования тотемов, зелий, яблок и предметов в чат", Category.MISC);
         INSTANCE = this;
     }
 
@@ -68,6 +69,7 @@ public class UseTracker extends Module {
     protected void onDisable() {
         playerStates.clear();
         notificationCooldowns.clear();
+        trackedPotions.clear();
     }
 
     @EventTarget
@@ -78,6 +80,9 @@ public class UseTracker extends Module {
 
         long currentTime = System.currentTimeMillis();
         handleItemUsage(currentTime);
+        if (trackSplashPotion.getValue()) {
+            handlePotionTracking();
+        }
     }
 
     @EventTarget
@@ -96,14 +101,102 @@ public class UseTracker extends Module {
 
                     String dot = enchanted ? "§a●" : "§c●";
                     String chatText = name + " потерял Тотем бессмертия, зачарован: " + dot;
-                    String toastTitle = name;
-                    String toastDesc = "потерял Тотем!";
                     String hoverInfo = buildHoverInfo(poppedPlayer);
 
-                    sendTrackerMessage(toastTitle, toastDesc, chatText, hoverInfo, ColorUtil.rgba(235, 75, 75, 255));
+                    sendChatMessage(chatText, hoverInfo);
                 }
             }
         }
+    }
+
+    private void handlePotionTracking() {
+        Set<Integer> currentPotionIds = new HashSet<>();
+        AABB searchBox = player().getBoundingBox().inflate(trackRadius.getValue());
+
+        List<ThrownSplashPotion> potions = mc.level.getEntitiesOfClass(ThrownSplashPotion.class, searchBox, Entity::isAlive);
+        for (ThrownSplashPotion potion : potions) {
+            PotionInfo info = detectPotionInfo(potion.getItem());
+            if (info == null) continue;
+
+            int id = potion.getId();
+            currentPotionIds.add(id);
+
+            PotionData data = trackedPotions.get(id);
+            if (data == null) {
+                trackedPotions.put(id, new PotionData(info, potion.position(), potion.getItem().copy()));
+            } else {
+                data.lastPos = potion.position();
+                data.info = info;
+            }
+        }
+
+        Set<Integer> removed = new HashSet<>(trackedPotions.keySet());
+        removed.removeAll(currentPotionIds);
+
+        for (int id : removed) {
+            PotionData data = trackedPotions.remove(id);
+            if (data != null) {
+                processPotionSplash(data);
+            }
+        }
+    }
+
+    private void processPotionSplash(PotionData data) {
+        Vec3 pos = data.lastPos;
+        AABB splashBox = new AABB(
+                pos.x - SPLASH_RADIUS, pos.y - SPLASH_HEIGHT, pos.z - SPLASH_RADIUS,
+                pos.x + SPLASH_RADIUS, pos.y + SPLASH_HEIGHT, pos.z + SPLASH_RADIUS
+        );
+
+        List<PlayerHit> hits = new ArrayList<>();
+        for (Player p : mc.level.players()) {
+            if (p == null || !p.isAlive() || !splashBox.contains(p.position())) continue;
+
+            double dx = p.getX() - pos.x;
+            double dz = p.getZ() - pos.z;
+            double dist = Math.sqrt(dx * dx + dz * dz);
+            if (dist > SPLASH_RADIUS) continue;
+
+            int percent = Math.max(1, Math.min(100, (int) Math.round((1.0 - (dist / SPLASH_RADIUS)) * 100.0)));
+            hits.add(new PlayerHit(p, percent, dist));
+        }
+
+        hits.sort(Comparator.comparingDouble(PlayerHit::distance));
+        if (hits.isEmpty()) return;
+
+        String potionTitle = data.info.displayName;
+
+        for (int i = 0; i < Math.min(4, hits.size()); i++) {
+            PlayerHit hit = hits.get(i);
+            boolean isSelf = hit.player == player();
+            String nameText = isSelf ? "Вы" : hit.player.getName().getString();
+            String prefixSymbol = isSelf ? "" : "§c⚡ ";
+            String chatMain = prefixSymbol + "§f" + nameText + "§r§7 получил эффекты от §e[★] " + potionTitle + " §7(" + hit.percent + "%)";
+
+            sendChatMessage(chatMain, buildHoverInfo(hit.player));
+        }
+    }
+
+    private PotionInfo detectPotionInfo(ItemStack stack) {
+        if (stack.isEmpty()) return null;
+
+        String name = stack.getHoverName().getString().toLowerCase(Locale.ROOT);
+        if (name.contains("святая") || name.contains("holy")) return PotionInfo.HOLY_WATER;
+        if (name.contains("гнев") || name.contains("wrath")) return PotionInfo.WRATH;
+        if (name.contains("паладин") || name.contains("paladin")) return PotionInfo.PALADIN;
+        if (name.contains("ассасин") || name.contains("assassin")) return PotionInfo.ASSASSIN;
+
+        PotionContents contents = stack.get(DataComponents.POTION_CONTENTS);
+        if (contents != null && contents.hasEffects()) {
+            for (MobEffectInstance inst : contents.getAllEffects()) {
+                if (inst.getEffect() == MobEffects.REGENERATION && inst.getAmplifier() >= 1) return PotionInfo.HOLY_WATER;
+                if (inst.getEffect() == MobEffects.STRENGTH && inst.getAmplifier() >= 3) return PotionInfo.WRATH;
+                if (inst.getEffect() == MobEffects.RESISTANCE && inst.getAmplifier() >= 0) return PotionInfo.PALADIN;
+                if (inst.getEffect() == MobEffects.SPEED && inst.getAmplifier() >= 1) return PotionInfo.ASSASSIN;
+            }
+        }
+
+        return PotionInfo.HOLY_WATER;
     }
 
     private void handleItemUsage(long currentTime) {
@@ -207,30 +300,23 @@ public class UseTracker extends Module {
         if (lastTime != null && currentTime - lastTime < NOTIFICATION_COOLDOWN_MS) return;
 
         String chatText = playerName + " использовал \"" + itemName + "\"";
-        String toastTitle = itemName;
-        String toastDesc = "использовано!";
         String hoverInfo = buildHoverInfo(target);
 
-        sendTrackerMessage(toastTitle, toastDesc, chatText, hoverInfo, Theme.getAccentColor());
+        sendChatMessage(chatText, hoverInfo);
         notificationCooldowns.put(key, currentTime);
     }
 
-    private void sendTrackerMessage(String toastTitle, String toastDesc, String chatText, String hoverText, int color) {
-        if (display.isEnabled("Chat") || display.isEnabled("Чат")) {
-            MutableComponent prefix = Component.literal("[UseTracker] » ").withStyle(Style.EMPTY.withColor(0xFF8B5CF6).withBold(true));
-            MutableComponent body = Component.literal(chatText).withStyle(Style.EMPTY.withColor(0xFFEEEEEE));
+    private void sendChatMessage(String chatText, String hoverText) {
+        MutableComponent prefix = Component.literal("[UseTracker] » ").withStyle(Style.EMPTY.withColor(0xFF8B5CF6).withBold(true));
+        MutableComponent body = Component.literal(chatText).withStyle(Style.EMPTY.withColor(0xFFEEEEEE));
 
-            if (hoverText != null && !hoverText.isBlank()) {
-                body.withStyle(style -> style.withHoverEvent(new HoverEvent.ShowText(Component.literal(hoverText))));
-            }
-
-            prefix.append(body);
-            if (mc.gui != null && mc.gui.hud != null && mc.gui.hud.getChat() != null) {
-                mc.gui.hud.getChat().addClientSystemMessage(prefix);
-            }
+        if (hoverText != null && !hoverText.isBlank()) {
+            body.withStyle(style -> style.withHoverEvent(new HoverEvent.ShowText(Component.literal(hoverText))));
         }
-        if (display.isEnabled("Notify")) {
-            Notify.add(toastTitle, toastDesc, IconUse.CHECK, Notify.COLOR_SUCCESS);
+
+        prefix.append(body);
+        if (mc.gui != null && mc.gui.hud != null && mc.gui.hud.getChat() != null) {
+            mc.gui.hud.getChat().addClientSystemMessage(prefix);
         }
     }
 
@@ -246,8 +332,7 @@ public class UseTracker extends Module {
 
         ItemStack offhand = player.getOffhandItem();
         String offhandName = offhand.isEmpty() ? "Пусто" : offhand.getHoverName().getString();
-        boolean isTalisman = isTalismanItem(offhand);
-        sb.append("§f").append(isTalisman ? "Талисман: §d" : "Левая рука: §b").append(offhandName).append("\n");
+        sb.append("§fЛевая рука: §b").append(offhandName).append("\n");
 
         sb.append("§fАктивные эффекты:\n");
         var effects = player.getActiveEffects();
@@ -266,32 +351,7 @@ public class UseTracker extends Module {
             }
         }
 
-        sb.append("§fЭкипировка:\n");
-        for (EquipmentSlot slot : List.of(EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET)) {
-            ItemStack armor = player.getItemBySlot(slot);
-            if (!armor.isEmpty()) {
-                String slotName = switch (slot) {
-                    case HEAD -> "Шлем";
-                    case CHEST -> "Нагрудник";
-                    case LEGS -> "Поножи";
-                    case FEET -> "Ботинки";
-                    default -> slot.getName();
-                };
-                sb.append("  §b").append(slotName).append(": §f").append(armor.getHoverName().getString());
-                if (armor.isEnchanted()) {
-                    sb.append(" §7[Зачарован]");
-                }
-                sb.append("\n");
-            }
-        }
-
         return sb.toString().trim();
-    }
-
-    private boolean isTalismanItem(ItemStack stack) {
-        if (stack.isEmpty()) return false;
-        String name = stack.getHoverName().getString().toLowerCase(Locale.ROOT);
-        return name.contains("талисман") || name.contains("talisman") || name.contains("сфера") || name.contains("шард") || name.contains("оберег") || name.contains("грааль");
     }
 
     private boolean hasEnchantedTotem(Player p) {
@@ -302,6 +362,33 @@ public class UseTracker extends Module {
             }
         }
         return false;
+    }
+
+    private static class PotionData {
+        PotionInfo info;
+        Vec3 lastPos;
+        ItemStack stack;
+
+        PotionData(PotionInfo info, Vec3 lastPos, ItemStack stack) {
+            this.info = info;
+            this.lastPos = lastPos;
+            this.stack = stack;
+        }
+    }
+
+    private record PlayerHit(Player player, int percent, double distance) {}
+
+    private enum PotionInfo {
+        HOLY_WATER("Святая вода"),
+        WRATH("Зелье Гнева"),
+        PALADIN("Зелье Паладина"),
+        ASSASSIN("Зелье Ассасина");
+
+        final String displayName;
+
+        PotionInfo(String displayName) {
+            this.displayName = displayName;
+        }
     }
 
     private static class PlayerItemState {

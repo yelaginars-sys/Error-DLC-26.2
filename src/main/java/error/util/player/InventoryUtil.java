@@ -72,6 +72,43 @@ public final class InventoryUtil implements InventoryProvider {
         return true;
     }
 
+    public static int findBestChestplateSlot() {
+        LocalPlayer player = CONTEXT.player();
+        if (player == null) return -1;
+        for (int i = 0; i < 36; i++) {
+            ItemStack stack = player.getInventory().getItem(i);
+            if (!stack.isEmpty() && (stack.is(net.minecraft.world.item.Items.NETHERITE_CHESTPLATE) || stack.is(net.minecraft.world.item.Items.DIAMOND_CHESTPLATE) || stack.is(net.minecraft.world.item.Items.IRON_CHESTPLATE) || stack.is(net.minecraft.world.item.Items.GOLDEN_CHESTPLATE) || stack.is(net.minecraft.world.item.Items.CHAINMAIL_CHESTPLATE) || stack.is(net.minecraft.world.item.Items.LEATHER_CHESTPLATE))) {
+                return i;
+            }
+        }
+        return -1;
+    }
 
+    public static int findBestElytraSlot() {
+        LocalPlayer player = CONTEXT.player();
+        if (player == null) return -1;
+        for (int i = 0; i < 36; i++) {
+            ItemStack stack = player.getInventory().getItem(i);
+            if (!stack.isEmpty() && stack.is(net.minecraft.world.item.Items.ELYTRA)) {
+                return i;
+            }
+        }
+        return -1;
+    }
 
+    public static void swapSlots(int fromSlot, int toSlot) {
+        LocalPlayer player = CONTEXT.player();
+        MultiPlayerGameMode gameMode = CONTEXT.gameMode();
+        if (player != null && gameMode != null) {
+            gameMode.handleContainerInput(player.inventoryMenu.containerId, fromSlot, toSlot, ContainerInput.SWAP, player);
+        }
+    }
+
+    public static void swapSelectedWithOffhand(int selectedSlot) {
+        LocalPlayer player = CONTEXT.player();
+        MultiPlayerGameMode gameMode = CONTEXT.gameMode();
+        if (player != null && gameMode != null) {
+            gameMode.handleContainerInput(player.inventoryMenu.containerId, selectedSlot, 40, ContainerInput.SWAP, player);
+        }
+    }
 }

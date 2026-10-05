@@ -60,23 +60,21 @@ public final class ServerHelperHud extends HudElement {
         ServerHelper sh = ServerHelper.INSTANCE;
         if (sh == null) return list;
 
-        boolean isFt = "FunTime".equalsIgnoreCase(sh.server.getValue());
+        boolean isFt = sh.spookyMode.is("Funtime");
 
         if (isFt) {
-            checkAndAdd(list, Items.ENDER_EYE, sh.ftDisorient);
-            checkAndAdd(list, Items.NETHERITE_SCRAP, sh.ftTrap);
-            checkAndAdd(list, Items.DRIED_KELP, sh.ftPlast);
-            checkAndAdd(list, Items.SUGAR, sh.ftDust);
-            checkAndAdd(list, Items.SNOWBALL, sh.ftSnow);
-            checkAndAdd(list, Items.PHANTOM_MEMBRANE, sh.ftGodAura);
-            checkAndAdd(list, Items.FIRE_CHARGE, sh.ftFireSwirl);
-            checkAndAdd(list, Items.SPLASH_POTION, sh.ftHolyWater);
+            checkAndAdd(list, Items.ENDER_EYE, sh.bindDisorient);
+            checkAndAdd(list, Items.NETHERITE_SCRAP, sh.bindTrap);
+            checkAndAdd(list, Items.DRIED_KELP, sh.bindPlast);
+            checkAndAdd(list, Items.SUGAR, sh.bindDust);
+            checkAndAdd(list, Items.SNOWBALL, sh.bindSnow);
+            checkAndAdd(list, Items.WIND_CHARGE, sh.bindWindCharge);
         } else {
-            checkAndAdd(list, Items.NETHER_STAR, sh.hwStun);
-            checkAndAdd(list, Items.PRISMARINE_SHARD, sh.hwExplosiveTrap);
-            checkAndAdd(list, Items.POPPED_CHORUS_FRUIT, sh.hwNormalTrap);
-            checkAndAdd(list, Items.FIRE_CHARGE, sh.hwBomb);
-            checkAndAdd(list, Items.SNOWBALL, sh.hwSnow);
+            checkAndAdd(list, Items.NETHER_STAR, sh.bindStun);
+            checkAndAdd(list, Items.PRISMARINE_SHARD, sh.bindExpTrap);
+            checkAndAdd(list, Items.POPPED_CHORUS_FRUIT, sh.bindNormTrap);
+            checkAndAdd(list, Items.FIRE_CHARGE, sh.bindBomb);
+            checkAndAdd(list, Items.SNOWBALL, sh.bindHwSnow);
         }
 
         return list;

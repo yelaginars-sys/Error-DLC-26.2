@@ -50,27 +50,18 @@ public class ServerHelperModal implements Modal {
     public ServerHelperModal(ServerHelper module) {
         this.module = module;
 
-        ftItems.add(new BindEntry("Дезориентация", Items.ENDER_EYE, module.ftDisorient));
-        ftItems.add(new BindEntry("Явная пыль", Items.SUGAR, module.ftDust));
-        ftItems.add(new BindEntry("Пласт", Items.DRIED_KELP, module.ftPlast));
-        ftItems.add(new BindEntry("Снежок", Items.SNOWBALL, module.ftSnow));
-        ftItems.add(new BindEntry("Божья Аура", Items.PHANTOM_MEMBRANE, module.ftGodAura));
-        ftItems.add(new BindEntry("Трапка", Items.NETHERITE_SCRAP, module.ftTrap));
-        ftItems.add(new BindEntry("Огненный смерч", Items.FIRE_CHARGE, module.ftFireSwirl));
+        ftItems.add(new BindEntry("Дезориентация", Items.ENDER_EYE, module.bindDisorient));
+        ftItems.add(new BindEntry("Явная пыль", Items.SUGAR, module.bindDust));
+        ftItems.add(new BindEntry("Пласт", Items.DRIED_KELP, module.bindPlast));
+        ftItems.add(new BindEntry("Снежок", Items.SNOWBALL, module.bindSnow));
+        ftItems.add(new BindEntry("Трапка", Items.NETHERITE_SCRAP, module.bindTrap));
+        ftItems.add(new BindEntry("Заряд ветра", Items.WIND_CHARGE, module.bindWindCharge));
 
-        ftPotions.add(new BindEntry("Святая вода", Items.SPLASH_POTION, module.ftHolyWater));
-        ftPotions.add(new BindEntry("Зелье Гнева", Items.SPLASH_POTION, module.ftAnger));
-        ftPotions.add(new BindEntry("Зелье Паладина", Items.SPLASH_POTION, module.ftPaladin));
-        ftPotions.add(new BindEntry("Зелье Ассасина", Items.SPLASH_POTION, module.ftAssassin));
-        ftPotions.add(new BindEntry("Зелье Радиации", Items.SPLASH_POTION, module.ftRadiation));
-        ftPotions.add(new BindEntry("Снотворное", Items.SPLASH_POTION, module.ftSleep));
-        ftPotions.add(new BindEntry("Хлопушка", Items.SPLASH_POTION, module.ftClapper));
-
-        hwItems.add(new BindEntry("Взрывная трапка", Items.PRISMARINE_SHARD, module.hwExplosiveTrap));
-        hwItems.add(new BindEntry("Обычная трапка", Items.POPPED_CHORUS_FRUIT, module.hwNormalTrap));
-        hwItems.add(new BindEntry("Стан", Items.NETHER_STAR, module.hwStun));
-        hwItems.add(new BindEntry("Снежок", Items.SNOWBALL, module.hwSnow));
-        hwItems.add(new BindEntry("Взрывная штучка", Items.FIRE_CHARGE, module.hwBomb));
+        hwItems.add(new BindEntry("Стан", Items.NETHER_STAR, module.bindStun));
+        hwItems.add(new BindEntry("Взрывная трапка", Items.PRISMARINE_SHARD, module.bindExpTrap));
+        hwItems.add(new BindEntry("Обычная трапка", Items.POPPED_CHORUS_FRUIT, module.bindNormTrap));
+        hwItems.add(new BindEntry("Взрывная штучка", Items.FIRE_CHARGE, module.bindBomb));
+        hwItems.add(new BindEntry("Снежок", Items.SNOWBALL, module.bindHwSnow));
     }
 
     @Override

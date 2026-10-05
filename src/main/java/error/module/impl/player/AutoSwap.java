@@ -1,244 +1,208 @@
 package error.module.impl.player;
 
-import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.core.component.DataComponents;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
-import net.minecraft.world.item.component.ItemLore;
-import org.lwjgl.glfw.GLFW;
 import error.event.EventTarget;
 import error.event.list.KeyboardInputEvent;
 import error.event.list.MouseInputEvent;
 import error.event.list.PlayerTickEvent;
-import error.ui.mainmenu.PanelRefractions;
 import error.module.Category;
 import error.module.Module;
 import error.setting.impl.BindSetting;
 import error.setting.impl.ModeSetting;
-import error.util.player.InventorySwaps;
+import error.setting.impl.SliderSetting;
 import error.util.player.InventoryUtil;
-import error.util.player.MoveBlockUtility;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.protocol.game.ServerboundSetCarriedItemPacket;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import org.lwjgl.glfw.GLFW;
 
-import java.util.function.Predicate;
+import java.util.Locale;
 
-/**
- */
-public final class AutoSwap extends Module {
+public class AutoSwap extends Module {
+    public static AutoSwap INSTANCE;
 
-    private static final int OFFHAND_SLOT = 45;
-    private static final int HOTBAR_SIZE = 9;
+    public final ModeSetting itemSetting = mode("Предмет", "Тотем", "Голова", "Тотем", "Гапл", "Щит", "Талисман");
+    public final ModeSetting secondItemSetting = mode("Второй предмет", "Гапл", "Голова", "Тотем", "Гапл", "Щит", "Талисман");
+    public final ModeSetting swapMode = mode("Режим", "Легит", "Легит", "Мгновенно");
+    public final SliderSetting delay = slider("Задержка из инвентаря", 2.0F, 0.0F, 5.0F, 1.0F);
+    public final BindSetting bindSwap = bind("Бинд свапа", GLFW.GLFW_KEY_UNKNOWN);
+    public final BindSetting bindSphere = bind("Бинд сферы", GLFW.GLFW_KEY_UNKNOWN);
+    public final String sphereNameFilter = "Сфера Цербера";
 
-    public final ModeSetting bypassMode = mode("Bypass", "Default", "Default", "Matrix", "Grim");
-    public final BindSetting key = bind("Key", GLFW.GLFW_KEY_UNKNOWN);
-    public final ModeSetting item1 = mode("Item 1", "Totem", "Totem", "Enchanted Totem", "Player Head", "Golden Apple");
-    public final ModeSetting item2 = mode("Item 2", "Golden Apple", "Totem", "Enchanted Totem", "Player Head", "Golden Apple");
-
-    private enum State {
-        IDLE,
-        STOP_SPRINT,
-        SWAP,
-        COOLDOWN
-    }
-
-    private State state = State.IDLE;
-    private String queuedItemType = null;
-    private int cooldownTicks = 0;
+    private Item activeTargetItem = null;
+    private boolean isSphereSwap = false;
+    private boolean isTalismanSwap = false;
+    private int delayTimer = 0;
+    private boolean swapPending = false;
+    private int pendingSlot = -1;
 
     public AutoSwap() {
-        super("AutoSwap", "Свипает ", Category.PLAYER);
+        super("AutoSwap", "Свап предмета в левую руку по бинду (Lumen)", Category.PLAYER);
+        INSTANCE = this;
     }
 
     @Override
-    protected void onDisable() {
+    public void onDisable() {
         reset();
-    }
-
-    private void reset() {
-        state = State.IDLE;
-        queuedItemType = null;
-        cooldownTicks = 0;
-        MoveBlockUtility.unblock(this);
+        super.onDisable();
     }
 
     @EventTarget
     public void onKeyboardInput(KeyboardInputEvent event) {
-        if (event.getAction() != GLFW.GLFW_PRESS || mc.gui.screen() != null || PanelRefractions.isOpen() || state != State.IDLE) return;
+        if (event.getAction() != GLFW.GLFW_PRESS || screen() != null || mc.player == null) return;
 
-        if (key.matches(event.getKey())) {
-            toggleSwap();
+        int key = event.getKey();
+        if (bindSwap != null && !bindSwap.isEmpty() && bindSwap.matches(key)) {
+            triggerNormalSwap();
+        } else if (bindSphere != null && !bindSphere.isEmpty() && bindSphere.matches(key)) {
+            triggerSphereSwap();
         }
     }
 
     @EventTarget
     public void onMouseInput(MouseInputEvent event) {
-        if (event.getAction() != GLFW.GLFW_PRESS || mc.gui.screen() != null || PanelRefractions.isOpen() || state != State.IDLE) return;
+        if (event.getAction() != GLFW.GLFW_PRESS || screen() != null || mc.player == null) return;
 
-        if (key.matchesMouse(event.getButton())) {
-            toggleSwap();
-            event.cancel();
+        int btn = event.getButton();
+        if (bindSwap != null && !bindSwap.isEmpty() && bindSwap.matchesMouse(btn)) {
+            triggerNormalSwap();
+        } else if (bindSphere != null && !bindSphere.isEmpty() && bindSphere.matchesMouse(btn)) {
+            triggerSphereSwap();
         }
     }
 
-    private void toggleSwap() {
-        if (!inGame() || player() == null || mc.gameMode == null) return;
+    private void triggerNormalSwap() {
+        if (mc.player == null) return;
 
-        LocalPlayer player = player();
-        ItemStack offhand = player.getOffhandItem();
+        Item primaryItem = getItemFromMode(itemSetting.getValue());
+        Item secondaryItem = getItemFromMode(secondItemSetting.getValue());
+        boolean primaryTalisman = itemSetting.is("Талисман");
+        boolean secondaryTalisman = secondItemSetting.is("Талисман");
 
-        Predicate<ItemStack> pred1 = getPredicate(item1.getValue());
-        Predicate<ItemStack> pred2 = getPredicate(item2.getValue());
+        ItemStack offhand = mc.player.getOffhandItem();
+        boolean primaryInOffhand = isMatchingOffhand(offhand, primaryItem, primaryTalisman);
 
-        String targetItemType;
+        Item target = primaryInOffhand ? secondaryItem : primaryItem;
+        boolean talisman = primaryInOffhand ? secondaryTalisman : primaryTalisman;
 
-        if (pred1 != null && pred1.test(offhand)) {
-            targetItemType = item2.getValue();
-        } else if (pred2 != null && pred2.test(offhand)) {
-            targetItemType = item1.getValue();
-        } else {
-            if (findAnySlot(player, pred1) != -1) {
-                targetItemType = item1.getValue();
-            } else {
-                targetItemType = item2.getValue();
-            }
-        }
+        startSwap(target, false, talisman);
+    }
 
-        Predicate<ItemStack> targetPred = getPredicate(targetItemType);
-        int targetSlot = findAnySlot(player, targetPred);
+    private void triggerSphereSwap() {
+        if (mc.player == null) return;
+        startSwap(Items.PLAYER_HEAD, true, false);
+    }
 
-        if (targetSlot == -1) {
-            String fallbackType = targetItemType.equals(item1.getValue()) ? item2.getValue() : item1.getValue();
-            Predicate<ItemStack> fallbackPred = getPredicate(fallbackType);
-            if (fallbackPred != null && !fallbackPred.test(offhand)) {
-                targetSlot = findAnySlot(player, fallbackPred);
-                if (targetSlot != -1) {
-                    targetItemType = fallbackType;
-                    targetPred = fallbackPred;
-                }
-            }
-        }
+    private void startSwap(Item item, boolean sphere, boolean talisman) {
+        if (mc.player == null) return;
 
-        if (targetSlot == -1) return;
+        int slot = findTargetSlot(item, sphere, talisman);
+        if (slot == -1) return;
 
-        String mode = bypassMode.getValue();
-        int hotbarSlot = findInHotbar(player, targetPred);
-
-        if (mode.equalsIgnoreCase("Default")) {
-            if (hotbarSlot != -1) {
-                InventorySwaps.performHotbarFSwap(player, hotbarSlot);
-            } else {
-                InventorySwaps.grimSwapsOffHand(player,targetSlot);
-            }
-        } else if (mode.equalsIgnoreCase("Matrix")) {
-            if (hotbarSlot != -1) {
-                InventorySwaps.performHotbarFSwap(player, hotbarSlot);
-            } else {
-                this.queuedItemType = targetItemType;
-                this.state = State.STOP_SPRINT;
-            }
-        } else if (mode.equalsIgnoreCase("Grim")) {
-            this.queuedItemType = targetItemType;
-            this.state = State.STOP_SPRINT;
-        }
+        activeTargetItem = item;
+        isSphereSwap = sphere;
+        isTalismanSwap = talisman;
+        pendingSlot = slot;
+        delayTimer = swapMode.is("Легит") ? (int) (float) delay.getValue() : 0;
+        swapPending = true;
     }
 
     @EventTarget
     public void onTick(PlayerTickEvent event) {
-        if (event.getPhase() != PlayerTickEvent.Phase.PRE) return;
-        if (!inGame() || player() == null || mc.gameMode == null) {
-            reset();
+        if (event.getPhase() != PlayerTickEvent.Phase.PRE || !swapPending || mc.player == null) return;
+
+        if (delayTimer > 0) {
+            delayTimer--;
             return;
         }
 
-        LocalPlayer player = player();
+        performSwap(pendingSlot);
+        reset();
+    }
 
-        switch (state) {
-            case STOP_SPRINT -> {
-                if (player.isSprinting()) {
-                    player.setSprinting(false);
-                }
-                if (mc.getConnection() != null) {
-               //     mc.getConnection().send(new ServerboundPlayerCommandPacket(player, ServerboundPlayerCommandPacket.Action.STOP_SPRINTING));
-                }
+    private void performSwap(int slot) {
+        if (mc.player == null || slot < 0 || slot >= 36) return;
 
-                if (player.onGround()) {
-                    player.setDeltaMovement(0.0, player.getDeltaMovement().y, 0.0);
-                }
-
-                MoveBlockUtility.freeze(this, 4);
-                MoveBlockUtility.blockSprint(this, 5);
-
-                state = State.SWAP;
-            }
-
-            case SWAP -> {
-                if (player.onGround()) {
-                    player.setDeltaMovement(0.0, player.getDeltaMovement().y, 0.0);
-                }
-
-                if (queuedItemType != null) {
-                    Predicate<ItemStack> predicate = getPredicate(queuedItemType);
-                    int targetSlot = findAnySlot(player, predicate);
-
-                    if (targetSlot != -1) {
-                        InventorySwaps.executeContainerSwap(player, targetSlot, OFFHAND_SLOT);
-                    }
-                }
-
-                cooldownTicks = 2;
-                state = State.COOLDOWN;
-            }
-
-            case COOLDOWN -> {
-                MoveBlockUtility.freeze(this, 2);
-                if (player.onGround()) {
-                    player.setDeltaMovement(0.0, player.getDeltaMovement().y, 0.0);
-                }
-
-                if (--cooldownTicks <= 0) {
-                    state = State.IDLE;
-                    queuedItemType = null;
-                    MoveBlockUtility.unblock(this);
-                }
-            }
-
-            case IDLE -> {
-            }
+        if (slot < 9) {
+            InventoryUtil.swapSelectedWithOffhand(slot);
+        } else {
+            InventoryUtil.swapSlots(slot, 40); // 40 is offhand container slot
         }
     }
 
-
-
-
-
-    private Predicate<ItemStack> getPredicate(String type) {
-        if (type == null) return null;
-        return switch (type) {
-            case "Totem" -> stack -> stack.is(Items.TOTEM_OF_UNDYING) ;
-            case "Enchanted Totem" -> stack->stack.is(Items.TOTEM_OF_UNDYING) && stack.isEnchanted();
-            case "Player Head" -> stack -> stack.is(Items.PLAYER_HEAD);
-            case "Golden Apple" -> stack -> stack.is(Items.GOLDEN_APPLE) ;
-            default -> null;
-        };
+    private void reset() {
+        activeTargetItem = null;
+        isSphereSwap = false;
+        isTalismanSwap = false;
+        delayTimer = 0;
+        swapPending = false;
+        pendingSlot = -1;
     }
 
-    private boolean isEnchantedTotem(ItemStack stack) {
-        if (stack == null || !stack.is(Items.TOTEM_OF_UNDYING)) return false;
-        if (stack.isEnchanted() || stack.has(DataComponents.ENCHANTMENTS) || stack.has(DataComponents.CUSTOM_DATA) || stack.has(DataComponents.CUSTOM_NAME)) {
-            return true;
+    private int findTargetSlot(Item item, boolean sphere, boolean talisman) {
+        if (mc.player == null) return -1;
+
+        Inventory inv = mc.player.getInventory();
+        if (sphere) {
+            return findSphereSlot();
         }
-        ItemLore lore = stack.get(DataComponents.LORE);
-        return lore != null && !lore.lines().isEmpty();
-    }
+        if (talisman) {
+            return findTalismanSlot();
+        }
 
-    private int findInHotbar(LocalPlayer player, Predicate<ItemStack> predicate) {
-        for (int i = 0; i < HOTBAR_SIZE; i++) {
-            ItemStack stack = player.getInventory().getItem(i);
-            if (predicate.test(stack)) return i;
+        for (int i = 0; i < 36; i++) {
+            ItemStack stack = inv.getItem(i);
+            if (!stack.isEmpty() && stack.is(item)) {
+                return i;
+            }
         }
         return -1;
     }
 
-    private int findAnySlot(LocalPlayer player, Predicate<ItemStack> predicate) {
-        return InventoryUtil.findPlayerMenuSlot(player, predicate);
+    private int findSphereSlot() {
+        if (mc.player == null) return -1;
+        String nameFilter = sphereNameFilter.toLowerCase(Locale.ROOT);
+        Inventory inv = mc.player.getInventory();
+        for (int i = 0; i < 36; i++) {
+            ItemStack stack = inv.getItem(i);
+            if (!stack.isEmpty() && stack.is(Items.PLAYER_HEAD)) {
+                String stackName = stack.getHoverName().getString().toLowerCase(Locale.ROOT);
+                if (stackName.contains(nameFilter)) return i;
+            }
+        }
+        return -1;
+    }
+
+    private int findTalismanSlot() {
+        if (mc.player == null) return -1;
+        Inventory inv = mc.player.getInventory();
+        for (int i = 0; i < 36; i++) {
+            ItemStack stack = inv.getItem(i);
+            if (!stack.isEmpty() && stack.is(Items.TOTEM_OF_UNDYING) && stack.isEnchanted()) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private boolean isMatchingOffhand(ItemStack offhand, Item item, boolean talisman) {
+        if (offhand.isEmpty()) return false;
+        if (talisman) {
+            return offhand.is(Items.TOTEM_OF_UNDYING) && offhand.isEnchanted();
+        }
+        return offhand.is(item);
+    }
+
+    private Item getItemFromMode(String modeName) {
+        return switch (modeName) {
+            case "Голова" -> Items.PLAYER_HEAD;
+            case "Тотем" -> Items.TOTEM_OF_UNDYING;
+            case "Гапл" -> Items.GOLDEN_APPLE;
+            case "Щит" -> Items.SHIELD;
+            case "Талисман" -> Items.TOTEM_OF_UNDYING;
+            default -> Items.AIR;
+        };
     }
 }

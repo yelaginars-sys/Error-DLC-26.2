@@ -1,291 +1,245 @@
 package error.module.impl.player;
 
-import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.network.protocol.game.ServerboundPlayerCommandPacket;
-import net.minecraft.world.InteractionHand;
-import net.minecraft.world.inventory.ContainerInput;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
-import org.lwjgl.glfw.GLFW;
 import error.event.EventTarget;
 import error.event.list.KeyboardInputEvent;
 import error.event.list.MouseInputEvent;
 import error.event.list.PlayerTickEvent;
-
 import error.module.Category;
 import error.module.Module;
-import error.module.impl.combat.AutoTotem;
 import error.setting.impl.BindSetting;
+import error.setting.impl.CheckBox;
 import error.setting.impl.ModeSetting;
-import error.util.client.persiki.Notify;
-import error.util.player.InventorySwaps;
+import error.setting.impl.SliderSetting;
 import error.util.player.InventoryUtil;
-import error.util.player.MoveBlockUtility;
+import net.minecraft.network.protocol.game.ServerboundSetCarriedItemPacket;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import org.lwjgl.glfw.GLFW;
 
-/**
- */
-public final class ElytraSwap extends Module {
+import java.util.Locale;
 
-    private static final int CHESTPLATE_SLOT = 6;
-    private static final int HOTBAR_SIZE = 9;
+public class ElytraSwap extends Module {
+    public static ElytraSwap INSTANCE;
 
-    public final ModeSetting mode = mode("Mode", "Packet", "Packet", "Normal");
-    public final BindSetting swapKey = bind("Swap Key", GLFW.GLFW_KEY_UNKNOWN);
-    public final BindSetting fireworkKey = bind("Firework Key", GLFW.GLFW_KEY_UNKNOWN);
+    public final BindSetting bindSwap = bind("Бинд свапа", GLFW.GLFW_KEY_UNKNOWN);
+    public final BindSetting bindFirework = bind("Бинд фейерверка", GLFW.GLFW_KEY_UNKNOWN);
+    public final ModeSetting mode = mode("Режим", "Легит", "Легит", "Мгновенно");
+    public final SliderSetting delay = slider("Задержка", 2.0F, 0.0F, 5.0F, 1.0F);
+    public final CheckBox hotbarOnly = checkbox("Только хотбар", false);
+    public final CheckBox autoChestplate = checkbox("Авто нагрудник", true);
 
-    private enum TaskType {
-        NONE,
-        SWAP_ARMOR,
-        FIREWORK_INV
-    }
-
-    private enum State {
-        IDLE,
-        STOP_SPRINT,
-        EXECUTE,
-        COOLDOWN
-    }
-
-    private State state = State.IDLE;
-    private TaskType currentTask = TaskType.NONE;
-    private boolean swapQueued = false;
-    private boolean fireworkQueued = false;
-    private int cooldownTicks = 0;
+    private boolean swapPending = false;
+    private boolean fireworkPending = false;
+    private int delayTimer = 0;
+    private int fireworkStage = 0;
+    private int fireworkTicks = 0;
+    private int originalSlot = -1;
+    private int fireworkSlot = -1;
 
     public ElytraSwap() {
-        super("ElytraSwap", "Быстрый свап элитры и запуск фейерверков", Category.PLAYER);
+        super("ElytraSwap", "Легитный свап элитры и фейерверк как AutoSwap", Category.PLAYER);
+        INSTANCE = this;
     }
 
     @Override
-    protected void onDisable() {
+    public void onDisable() {
         reset();
-    }
-
-    private void reset() {
-        state = State.IDLE;
-        currentTask = TaskType.NONE;
-        swapQueued = false;
-        fireworkQueued = false;
-        cooldownTicks = 0;
-        MoveBlockUtility.unblock(this);
+        super.onDisable();
     }
 
     @EventTarget
     public void onKeyboardInput(KeyboardInputEvent event) {
-        if (AutoTotem.isSwapping()) return;
-        if (event.getAction() != GLFW.GLFW_PRESS) return;
+        if (event.getAction() != GLFW.GLFW_PRESS || screen() != null || mc.player == null) return;
 
-        if (swapKey.matches(event.getKey())) {
-            queueSwap();
-        } else if (fireworkKey.matches(event.getKey())) {
-            queueFirework();
+        int key = event.getKey();
+        if (bindSwap != null && !bindSwap.isEmpty() && bindSwap.matches(key)) {
+            triggerSwap();
+        } else if (bindFirework != null && !bindFirework.isEmpty() && bindFirework.matches(key)) {
+            triggerFirework();
         }
     }
 
     @EventTarget
     public void onMouseInput(MouseInputEvent event) {
-        if (AutoTotem.isSwapping()) return;
-        if (event.getAction() != GLFW.GLFW_PRESS) return;
+        if (event.getAction() != GLFW.GLFW_PRESS || screen() != null || mc.player == null) return;
 
-        if (swapKey.matchesMouse(event.getButton()) && queueSwap()) {
-            event.cancel();
-        } else if (fireworkKey.matchesMouse(event.getButton()) && queueFirework()) {
-            event.cancel();
+        int btn = event.getButton();
+        if (bindSwap != null && !bindSwap.isEmpty() && bindSwap.matchesMouse(btn)) {
+            triggerSwap();
+        } else if (bindFirework != null && !bindFirework.isEmpty() && bindFirework.matchesMouse(btn)) {
+            triggerFirework();
         }
     }
 
-    private boolean queueSwap() {
-        if (AutoTotem.isSwapping()) return false;
-        if (mc.gui.screen() == null && mc.player != null && state == State.IDLE) {
-            swapQueued = true;
-            return true;
-        }
-        return false;
+    private void triggerSwap() {
+        if (mc.player == null) return;
+
+        ItemStack currentChest = mc.player.getItemBySlot(EquipmentSlot.CHEST);
+        boolean currentIsElytra = currentChest.is(Items.ELYTRA);
+
+        int targetSlot = currentIsElytra ? findBestChestplateSlot() : findBestElytraSlot();
+        if (targetSlot == -1) return;
+
+        swapPending = true;
+        delayTimer = mode.is("Легит") ? (int) (float) delay.getValue() : 0;
     }
 
-    private boolean queueFirework() {
-        if (AutoTotem.isSwapping()) return false;
-        if (mc.gui.screen() == null && mc.player != null && state == State.IDLE && mc.player.isFallFlying()) {
-            fireworkQueued = true;
-            return true;
+    private void triggerFirework() {
+        if (mc.player == null || mc.gameMode == null) return;
+
+        if (mc.player.getOffhandItem().is(Items.FIREWORK_ROCKET)) {
+            mc.gameMode.useItem(mc.player, InteractionHand.OFF_HAND);
+            mc.player.swing(InteractionHand.OFF_HAND);
+            return;
         }
-        return false;
+
+        int slot = findFireworkSlot();
+        if (slot == -1) return;
+
+        originalSlot = mc.player.getInventory().getSelectedSlot();
+        fireworkSlot = slot;
+        fireworkPending = true;
+        fireworkStage = 0;
+        fireworkTicks = 0;
     }
 
     @EventTarget
     public void onTick(PlayerTickEvent event) {
-        if (event.getPhase() != PlayerTickEvent.Phase.PRE) return;
-        if (!inGame() || player() == null || mc.gameMode == null) {
-            reset();
-            return;
+        if (event.getPhase() != PlayerTickEvent.Phase.PRE || mc.player == null) return;
+
+        // Auto chestplate when on ground
+        if (autoChestplate.getValue() && mc.player.onGround() && mc.player.getItemBySlot(EquipmentSlot.CHEST).is(Items.ELYTRA)) {
+            int chestSlot = findBestChestplateSlot();
+            if (chestSlot != -1) {
+                InventoryUtil.swapSlots(chestSlot, 6); // 6 is chest armor slot in container
+            }
         }
 
-        if (AutoTotem.isSwapping()) {
-            reset();
-            return;
+        if (swapPending) {
+            if (delayTimer > 0) {
+                delayTimer--;
+                return;
+            }
+            performElytraSwap();
+            swapPending = false;
         }
 
-        LocalPlayer player = player();
+        if (fireworkPending) {
+            handleFireworkSequence();
+        }
+    }
 
-        if (swapQueued) {
-            swapQueued = false;
+    private void performElytraSwap() {
+        if (mc.player == null) return;
 
-            ItemStack chestItem = player.inventoryMenu.getSlot(CHESTPLATE_SLOT).getItem();
-            boolean wearingElytra = chestItem.is(Items.ELYTRA);
-            int targetSlot = findSwapTargetSlot(player);
+        ItemStack currentChest = mc.player.getItemBySlot(EquipmentSlot.CHEST);
+        boolean currentIsElytra = currentChest.is(Items.ELYTRA);
+        int targetSlot = currentIsElytra ? findBestChestplateSlot() : findBestElytraSlot();
+        if (targetSlot != -1) {
+            InventoryUtil.swapSlots(targetSlot, 6);
+        }
+    }
 
-            if (targetSlot == -1) {
-                    Notify.error("ElytraSwap", wearingElytra ? "нету Нагрудника" : "нету Элитры");
-            } else {
-                    Notify.info("ElytraSwap", wearingElytra ? "свапнул на Нагрудник" : "свапнул на Элитру");
-
-                if (mode.is("Packet")) {
-                    InventorySwaps.grimSwapsArmor(player, targetSlot);
+    private void handleFireworkSequence() {
+        fireworkTicks++;
+        switch (fireworkStage) {
+            case 0 -> {
+                if (fireworkSlot < 9) {
+                    selectSlot(fireworkSlot);
                 } else {
-                    currentTask = TaskType.SWAP_ARMOR;
-                    state = State.STOP_SPRINT;
+                    InventoryUtil.swapSlots(fireworkSlot, originalSlot);
+                }
+                fireworkStage = 1;
+                fireworkTicks = 0;
+            }
+            case 1 -> {
+                if (fireworkTicks >= 1) {
+                    mc.gameMode.useItem(mc.player, InteractionHand.MAIN_HAND);
+                    mc.player.swing(InteractionHand.MAIN_HAND);
+                    fireworkStage = 2;
+                    fireworkTicks = 0;
                 }
             }
-        }
-
-        if (fireworkQueued) {
-            fireworkQueued = false;
-
-            if (player.getMainHandItem().is(Items.FIREWORK_ROCKET)) {
-                InventoryUtil.useDirect(player);
-                return;
-            }
-            if (player.getOffhandItem().is(Items.FIREWORK_ROCKET)) {
-                InventoryUtil.useDirect(player, InteractionHand.OFF_HAND);
-                return;
-            }
-
-            int hotbarSlot = findFireworkHotbarSlot(player);
-            if (hotbarSlot != -1) {
-                int previousSlot = player.getInventory().getSelectedSlot();
-                player.getInventory().setSelectedSlot(hotbarSlot);
-                InventoryUtil.useDirect(player);
-                player.getInventory().setSelectedSlot(previousSlot);
-                return;
-            }
-
-            int invSlot = findFireworkContainerSlot(player);
-            if (invSlot != -1) {
-                if (mode.is("Packet")) {
-                    performPacketFirework(player, invSlot);
-                } else {
-                    currentTask = TaskType.FIREWORK_INV;
-                    state = State.STOP_SPRINT;
-                }
-            }
-        }
-
-        switch (state) {
-            case STOP_SPRINT -> {
-                if (player.isSprinting()) {
-                    player.setSprinting(false);
-                }
-
-                if (player.onGround()) {
-                    player.setDeltaMovement(0.0, player.getDeltaMovement().y, 0.0);
-                }
-
-                MoveBlockUtility.freeze(this, 4);
-                MoveBlockUtility.blockSprint(this, 5);
-
-                state = State.EXECUTE;
-            }
-
-            case EXECUTE -> {
-                if (player.onGround()) {
-                    player.setDeltaMovement(0.0, player.getDeltaMovement().y, 0.0);
-                }
-
-                if (currentTask == TaskType.SWAP_ARMOR) {
-                    int targetSlot = findSwapTargetSlot(player);
-                    if (targetSlot != -1) {
-                        InventorySwaps.executeContainerSwap(player, targetSlot, CHESTPLATE_SLOT);
+            case 2 -> {
+                if (fireworkTicks >= 1) {
+                    if (fireworkSlot >= 9) {
+                        InventoryUtil.swapSlots(fireworkSlot, originalSlot);
                     }
-                } else if (currentTask == TaskType.FIREWORK_INV) {
-                    int invSlot = findFireworkContainerSlot(player);
-                    if (invSlot != -1) {
-                        int selectedHotbar = player.getInventory().getSelectedSlot();
-
-                        mc.gameMode.handleContainerInput(player.inventoryMenu.containerId, invSlot, selectedHotbar, ContainerInput.SWAP, player);
-                        InventoryUtil.useDirect(player);
-                        mc.gameMode.handleContainerInput(player.inventoryMenu.containerId, invSlot, selectedHotbar, ContainerInput.SWAP, player);
+                    if (originalSlot >= 0 && originalSlot < 9) {
+                        selectSlot(originalSlot);
                     }
-                }
-
-                cooldownTicks = 2;
-                state = State.COOLDOWN;
-            }
-
-            case COOLDOWN -> {
-                MoveBlockUtility.freeze(this, 2);
-                if (player.onGround()) {
-                    player.setDeltaMovement(0.0, player.getDeltaMovement().y, 0.0);
-                }
-
-                if (--cooldownTicks <= 0) {
-                    state = State.IDLE;
-                    currentTask = TaskType.NONE;
-                    MoveBlockUtility.unblock(this);
+                    fireworkPending = false;
+                    fireworkStage = 0;
+                    fireworkTicks = 0;
                 }
             }
+        }
+    }
 
-            case IDLE -> {
+    private void selectSlot(int slot) {
+        if (mc.player == null || slot < 0 || slot >= 9) return;
+        if (mc.player.getInventory().getSelectedSlot() != slot) {
+            mc.player.getInventory().setSelectedSlot(slot);
+            if (mc.getConnection() != null) {
+                mc.getConnection().send(new ServerboundSetCarriedItemPacket(slot));
             }
         }
     }
 
-    private void performPacketFirework(LocalPlayer player, int invSlot) {
-        boolean wasSprinting = player.isSprinting();
-        if (wasSprinting && mc.getConnection() != null) {
-            mc.getConnection().send(new ServerboundPlayerCommandPacket(player, ServerboundPlayerCommandPacket.Action.STOP_SPRINTING));
-        }
-
-        int selectedHotbar = player.getInventory().getSelectedSlot();
-        mc.gameMode.handleContainerInput(player.inventoryMenu.containerId, invSlot, selectedHotbar, ContainerInput.SWAP, player);
-        InventoryUtil.useDirect(player);
-        mc.gameMode.handleContainerInput(player.inventoryMenu.containerId, invSlot, selectedHotbar, ContainerInput.SWAP, player);
-
-        if (wasSprinting && mc.getConnection() != null) {
-            mc.getConnection().send(new ServerboundPlayerCommandPacket(player, ServerboundPlayerCommandPacket.Action.START_SPRINTING));
-        }
+    private void reset() {
+        swapPending = false;
+        fireworkPending = false;
+        delayTimer = 0;
+        fireworkStage = 0;
+        fireworkTicks = 0;
+        originalSlot = -1;
+        fireworkSlot = -1;
     }
 
-    private int findSwapTargetSlot(LocalPlayer player) {
-        ItemStack chestItem = player.inventoryMenu.getSlot(CHESTPLATE_SLOT).getItem();
-        boolean wearingElytra = chestItem.is(Items.ELYTRA);
-
-        if (wearingElytra) {
-            return InventoryUtil.findPlayerMenuSlot(player, this::isChestplate);
-        } else {
-            return InventoryUtil.findPlayerMenuSlot(player, stack -> stack.is(Items.ELYTRA));
+    private int findBestElytraSlot() {
+        if (mc.player == null) return -1;
+        Inventory inv = mc.player.getInventory();
+        int max = hotbarOnly.getValue() ? 9 : 36;
+        for (int i = 0; i < max; i++) {
+            if (inv.getItem(i).is(Items.ELYTRA)) return i;
         }
+        return -1;
     }
 
-    private boolean isChestplate(ItemStack stack) {
-        if (stack == null || stack.isEmpty()) return false;
-        return stack.is(Items.NETHERITE_CHESTPLATE)
-                || stack.is(Items.DIAMOND_CHESTPLATE)
-                || stack.is(Items.IRON_CHESTPLATE)
-                || stack.is(Items.GOLDEN_CHESTPLATE)
-                || stack.is(Items.CHAINMAIL_CHESTPLATE)
-                || stack.is(Items.LEATHER_CHESTPLATE);
-    }
-
-    private int findFireworkHotbarSlot(LocalPlayer player) {
-        for (int slot = 0; slot < HOTBAR_SIZE; slot++) {
-            if (player.getInventory().getItem(slot).is(Items.FIREWORK_ROCKET)) {
-                return slot;
+    private int findBestChestplateSlot() {
+        if (mc.player == null) return -1;
+        Inventory inv = mc.player.getInventory();
+        int max = hotbarOnly.getValue() ? 9 : 36;
+        for (int i = 0; i < max; i++) {
+            ItemStack stack = inv.getItem(i);
+            if (!stack.isEmpty() && isChestplate(stack)) {
+                return i;
             }
         }
         return -1;
     }
 
-    private int findFireworkContainerSlot(LocalPlayer player) {
-        return InventoryUtil.findInventorySlot(player, stack -> stack.is(Items.FIREWORK_ROCKET));
+    private boolean isChestplate(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) return false;
+        Item item = stack.getItem();
+        if (item == Items.NETHERITE_CHESTPLATE || item == Items.DIAMOND_CHESTPLATE || item == Items.IRON_CHESTPLATE || item == Items.GOLDEN_CHESTPLATE || item == Items.CHAINMAIL_CHESTPLATE || item == Items.LEATHER_CHESTPLATE) {
+            return true;
+        }
+        String name = stack.getItem().toString().toLowerCase(Locale.ROOT);
+        return name.contains("chestplate");
+    }
+
+    private int findFireworkSlot() {
+        if (mc.player == null) return -1;
+        Inventory inv = mc.player.getInventory();
+        int max = hotbarOnly.getValue() ? 9 : 36;
+        for (int i = 0; i < max; i++) {
+            if (inv.getItem(i).is(Items.FIREWORK_ROCKET)) return i;
+        }
+        return -1;
     }
 }

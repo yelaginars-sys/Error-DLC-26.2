@@ -18,7 +18,7 @@ import error.event.list.EventPostMotion;
 import error.event.list.EventPreMotion;
 import error.event.list.EventSprint;
 import error.event.list.PlayerTickEvent;
-import error.module.impl.player.AntiPush;
+import error.module.impl.player.NoPush;
 
 /**
  */
@@ -52,7 +52,7 @@ public abstract class LocalPlayerMixin {
     }
     @Inject(method = "moveTowardsClosestSpace", at = @At("HEAD"), cancellable = true)
     private void onMoveTowardsClosestSpace(double x, double z, CallbackInfo ci) {
-        if (AntiPush.INSTANCE.isEnabled() && AntiPush.INSTANCE.modes.isEnabled("Blocks")) {
+        if (NoPush.INSTANCE != null && NoPush.INSTANCE.isEnabled() && NoPush.INSTANCE.collisions.isEnabled("Блоки")) {
             ci.cancel();
         }
     }

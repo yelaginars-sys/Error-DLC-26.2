@@ -31,7 +31,7 @@ public class FreeLook extends Module {
     }
 
     public void update() {
-        if (mc.player == null || mc.getWindow() == null) {
+        if (mc.player == null || mc.getWindow() == null || screen() != null) {
             if (active) stopFreeLook();
             return;
         }

@@ -1,386 +1,269 @@
 package error.module.impl.misc;
 
-import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.core.Holder;
-import net.minecraft.core.component.DataComponents;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.protocol.game.ServerboundPlayerCommandPacket;
-import net.minecraft.world.effect.MobEffect;
-import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.effect.MobEffects;
-import net.minecraft.world.inventory.ContainerInput;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
-import net.minecraft.world.item.alchemy.PotionContents;
-import net.minecraft.world.item.component.ItemLore;
-import org.lwjgl.glfw.GLFW;
 import error.event.EventTarget;
 import error.event.list.KeyboardInputEvent;
 import error.event.list.MouseInputEvent;
 import error.event.list.PlayerTickEvent;
-import error.ui.mainmenu.PanelRefractions;
-import error.ui.mainmenu.popup.ServerHelperModal;
 import error.module.Category;
 import error.module.Module;
-import error.module.impl.combat.AutoTotem;
 import error.setting.impl.BindSetting;
-import error.setting.impl.ButtonSetting;
 import error.setting.impl.CheckBox;
 import error.setting.impl.ModeSetting;
 import error.util.player.InventoryUtil;
-import error.util.player.MoveBlockUtility;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.protocol.game.ServerboundSetCarriedItemPacket;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.alchemy.PotionContents;
+import org.lwjgl.glfw.GLFW;
 
-import java.util.*;
+import java.util.function.Predicate;
 
-/**
- */
-public final class ServerHelper extends Module {
-
-    private static final int HOTBAR_SIZE = 9;
-
-    public final ModeSetting server = mode("Server", "FunTime", "FunTime", "HolyWorld");
-    public final ModeSetting useMode = mode("Use Mode", "Packet", "Packet", "Normal");
-    public final CheckBox swapBack = checkbox("Swap Back", true);
-
-    public final ButtonSetting openMenuBtn = button("Настроить бинды", () -> {
-        PanelRefractions.openModal(new ServerHelperModal(this));
-    });
-    public final BindSetting ftDisorient = new BindSetting("Дезориентация");
-    public final BindSetting ftDust      = new BindSetting("Явная пыль");
-    public final BindSetting ftPlast     = new BindSetting("Пласт");
-    public final BindSetting ftSnow      = new BindSetting("Снежок (ФТ)");
-    public final BindSetting ftGodAura   = new BindSetting("Божья Аура");
-    public final BindSetting ftTrap      = new BindSetting("Трапка (ФТ)");
-    public final BindSetting ftFireSwirl = new BindSetting("Огненный смерч");
-    public final BindSetting ftHolyWater = new BindSetting("Святая вода");
-    public final BindSetting ftAnger     = new BindSetting("Зелье Гнева");
-    public final BindSetting ftPaladin   = new BindSetting("Зелье Паладина");
-    public final BindSetting ftAssassin  = new BindSetting("Зелье Ассасина");
-    public final BindSetting ftRadiation = new BindSetting("Зелье Радиации");
-    public final BindSetting ftSleep     = new BindSetting("Снотворное");
-    public final BindSetting ftClapper   = new BindSetting("Хлопушка");
-    public final BindSetting hwExplosiveTrap = new BindSetting("Взрывная трапка");
-    public final BindSetting hwNormalTrap    = new BindSetting("Обычная трапка");
-    public final BindSetting hwStun          = new BindSetting("Стан");
-    public final BindSetting hwSnow          = new BindSetting("Снежок (ХВ)");
-    public final BindSetting hwBomb          = new BindSetting("Взрывная штучка");
-
-    private final Map<String, ItemInfo> itemConfigs = new HashMap<>();
-
-    private enum State {
-        IDLE,
-        STOP_SPRINT,
-        SWAP_AND_USE,
-        COOLDOWN
-    }
-
-    private State state = State.IDLE;
-    private ItemInfo pendingInfo = null;
-    private int cooldownTicks = 0;
-
+public class ServerHelper extends Module {
     public static ServerHelper INSTANCE;
 
+    public final ModeSetting spookyMode = mode("Режим", "HolyWorld", "Funtime", "HolyWorld");
+    public final BindSetting bindHealing = bind("Исцеление", GLFW.GLFW_KEY_UNKNOWN);
+    public final BindSetting bindChorus = bind("Хорус", GLFW.GLFW_KEY_UNKNOWN);
+
+    // Funtime binds
+    public final BindSetting bindDisorient = bind("Дезориентация", GLFW.GLFW_KEY_UNKNOWN);
+    public final BindSetting bindTrap = bind("Трапка", GLFW.GLFW_KEY_UNKNOWN);
+    public final BindSetting bindPlast = bind("Пласт", GLFW.GLFW_KEY_UNKNOWN);
+    public final BindSetting bindDust = bind("Явная пыль", GLFW.GLFW_KEY_UNKNOWN);
+    public final BindSetting bindSnow = bind("Снег заморозки", GLFW.GLFW_KEY_UNKNOWN);
+    public final BindSetting bindWindCharge = bind("Заряд ветра", GLFW.GLFW_KEY_UNKNOWN);
+
+    // HolyWorld binds
+    public final BindSetting bindStun = bind("стан", GLFW.GLFW_KEY_UNKNOWN);
+    public final BindSetting bindExpTrap = bind("взрывная трапка", GLFW.GLFW_KEY_UNKNOWN);
+    public final BindSetting bindNormTrap = bind("трапка ", GLFW.GLFW_KEY_UNKNOWN);
+    public final BindSetting bindBomb = bind("взрывная штучка", GLFW.GLFW_KEY_UNKNOWN);
+    public final BindSetting bindHwSnow = bind("ком снега", GLFW.GLFW_KEY_UNKNOWN);
+
+    public final CheckBox snowEffect = checkbox("Эффект снежка", false);
+
+    private boolean activeUse = false;
+    private boolean isConsumableUse = false;
+    private int useStage = 0;
+    private int useTicks = 0;
+    private int targetHotbarSlot = -1;
+    private int originalSlot = -1;
+    private int invSwapSlot = -1;
+    private boolean isInvSwapped = false;
+    private Item currentItem = null;
+    private Predicate<ItemStack> currentPredicate = null;
+
     public ServerHelper() {
-        super("ServerHelper", "Использование предметов по биндам", Category.PLAYER);
+        super("ServerHelper", "Помощник для серверов", Category.MISC);
         INSTANCE = this;
-        setupConfigs();
-    }
-
-    private static class EffectReq {
-        final Holder<MobEffect> effect;
-        final int minAmp;
-
-        EffectReq(Holder<MobEffect> effect, int minAmp) {
-            this.effect = effect;
-            this.minAmp = minAmp;
-        }
-    }
-
-    private static class ItemInfo {
-        final Item item;
-        final String displayName;
-        final List<String> loreKeywords;
-        final String nameFallback;
-        final List<EffectReq> effectReqs;
-
-        ItemInfo(Item item, String displayName, List<String> loreKeywords, String nameFallback, List<EffectReq> effectReqs) {
-            this.item = item;
-            this.displayName = displayName;
-            this.loreKeywords = loreKeywords;
-            this.nameFallback = nameFallback;
-            this.effectReqs = effectReqs;
-        }
-    }
-
-    private void setupConfigs() {
-        itemConfigs.put("ft_disorient", new ItemInfo(Items.ENDER_EYE, "Дезориентация", List.of("чем ближе цель"), "дезориентация", null));
-        itemConfigs.put("ft_dust", new ItemInfo(Items.SUGAR, "Явная пыль", List.of("световая вспышка", "свечение", "слепота"), "явная пыль", null));
-        itemConfigs.put("ft_plast", new ItemInfo(Items.DRIED_KELP, "Пласт", List.of("нерушимая стена"), "пласт", null));
-        itemConfigs.put("ft_snow", new ItemInfo(Items.SNOWBALL, "Снежок", List.of("ледяная сфера"), "снежок заморозка", null));
-        itemConfigs.put("ft_god_aura", new ItemInfo(Items.PHANTOM_MEMBRANE, "Божья Аура", List.of("божественная аура"), "божья аура", null));
-        itemConfigs.put("ft_trap", new ItemInfo(Items.NETHERITE_SCRAP, "Трапка", List.of("нерушимая клетка"), "трапка", null));
-        itemConfigs.put("ft_fire_swirl", new ItemInfo(Items.FIRE_CHARGE, "Огненный смерч", List.of("огненная волна"), "огненный смерч", null));
-        itemConfigs.put("ft_holy_water", new ItemInfo(Items.SPLASH_POTION, "Святая вода", null, "святая вода", List.of(new EffectReq(MobEffects.REGENERATION, 1), new EffectReq(MobEffects.INVISIBILITY, 0))));
-        itemConfigs.put("ft_anger", new ItemInfo(Items.SPLASH_POTION, "Зелье Гнева", null, "зелье гнева", List.of(new EffectReq(MobEffects.STRENGTH, 3), new EffectReq(MobEffects.SLOWNESS, 2))));
-        itemConfigs.put("ft_paladin", new ItemInfo(Items.SPLASH_POTION, "Зелье Паладина", null, "зелье паладина", List.of(new EffectReq(MobEffects.RESISTANCE, 0), new EffectReq(MobEffects.FIRE_RESISTANCE, 0))));
-        itemConfigs.put("ft_assassin", new ItemInfo(Items.SPLASH_POTION, "Зелье Ассасина", null, "зелье ассасина", List.of(new EffectReq(MobEffects.STRENGTH, 2), new EffectReq(MobEffects.SPEED, 1))));
-        itemConfigs.put("ft_radiation", new ItemInfo(Items.SPLASH_POTION, "Зелье Радиации", null, "зелье радиации", List.of(new EffectReq(MobEffects.POISON, 0), new EffectReq(MobEffects.WITHER, 0))));
-        itemConfigs.put("ft_sleep", new ItemInfo(Items.SPLASH_POTION, "Снотворное", null, "снотворное", List.of(new EffectReq(MobEffects.WEAKNESS, 0), new EffectReq(MobEffects.MINING_FATIGUE, 0))));
-        itemConfigs.put("ft_clapper", new ItemInfo(Items.SPLASH_POTION, "Хлопушка", null, "хлопушка", List.of(new EffectReq(MobEffects.SLOWNESS, 8), new EffectReq(MobEffects.BLINDNESS, 8))));
-        itemConfigs.put("hw_exp_trap", new ItemInfo(Items.PRISMARINE_SHARD, "Взрывная трапка", null, "взрывная трапка", null));
-        itemConfigs.put("hw_norm_trap", new ItemInfo(Items.POPPED_CHORUS_FRUIT, "Обычная трапка", null, "трапка", null));
-        itemConfigs.put("hw_stun", new ItemInfo(Items.NETHER_STAR, "Стан", null, "стан", null));
-        itemConfigs.put("hw_snow", new ItemInfo(Items.SNOWBALL, "Снежок", null, "снежок", null));
-        itemConfigs.put("hw_bomb", new ItemInfo(Items.FIRE_CHARGE, "Взрывная штучка", null, "взрывная", null));
     }
 
     @Override
-    protected void onDisable() {
-        reset();
-    }
-
-    private void reset() {
-        state = State.IDLE;
-        pendingInfo = null;
-        cooldownTicks = 0;
-        MoveBlockUtility.unblock(this);
+    public void onDisable() {
+        finishUsage();
+        super.onDisable();
     }
 
     @EventTarget
     public void onKeyboardInput(KeyboardInputEvent event) {
-        if (AutoTotem.isSwapping()) return;
-        if (event.getAction() != GLFW.GLFW_PRESS || mc.gui.screen() != null || PanelRefractions.isOpen() || state != State.IDLE) return;
-        handleInput(event.getKey(), false);
+        if (event.getAction() != GLFW.GLFW_PRESS || screen() != null || mc.player == null) return;
+        checkBinds(event.getKey(), false);
     }
 
     @EventTarget
     public void onMouseInput(MouseInputEvent event) {
-        if (AutoTotem.isSwapping()) return;
-        if (event.getAction() != GLFW.GLFW_PRESS || mc.gui.screen() != null || PanelRefractions.isOpen() || state != State.IDLE) return;
-        if (handleInput(event.getButton(), true)) {
-            event.cancel();
-        }
+        if (event.getAction() != GLFW.GLFW_PRESS || screen() != null || mc.player == null) return;
+        checkBinds(event.getButton(), true);
     }
 
-    private boolean handleInput(int keyOrButton, boolean isMouse) {
-        if (AutoTotem.isSwapping()) return false;
+    private void checkBinds(int keyOrBtn, boolean isMouse) {
+        if (activeUse || mc.player == null) return;
 
-        if (server.is("FunTime")) {
-            if (matches(ftDisorient, keyOrButton, isMouse)) return queueItem("ft_disorient");
-            if (matches(ftDust, keyOrButton, isMouse)) return queueItem("ft_dust");
-            if (matches(ftPlast, keyOrButton, isMouse)) return queueItem("ft_plast");
-            if (matches(ftSnow, keyOrButton, isMouse)) return queueItem("ft_snow");
-            if (matches(ftGodAura, keyOrButton, isMouse)) return queueItem("ft_god_aura");
-            if (matches(ftTrap, keyOrButton, isMouse)) return queueItem("ft_trap");
-            if (matches(ftFireSwirl, keyOrButton, isMouse)) return queueItem("ft_fire_swirl");
+        Item targetItem = null;
+        boolean isConsumable = false;
+        Predicate<ItemStack> pred = null;
 
-            if (matches(ftHolyWater, keyOrButton, isMouse)) return queueItem("ft_holy_water");
-            if (matches(ftAnger, keyOrButton, isMouse)) return queueItem("ft_anger");
-            if (matches(ftPaladin, keyOrButton, isMouse)) return queueItem("ft_paladin");
-            if (matches(ftAssassin, keyOrButton, isMouse)) return queueItem("ft_assassin");
-            if (matches(ftRadiation, keyOrButton, isMouse)) return queueItem("ft_radiation");
-            if (matches(ftSleep, keyOrButton, isMouse)) return queueItem("ft_sleep");
-            if (matches(ftClapper, keyOrButton, isMouse)) return queueItem("ft_clapper");
-        } else if (server.is("HolyWorld")) {
-            if (matches(hwExplosiveTrap, keyOrButton, isMouse)) return queueItem("hw_exp_trap");
-            if (matches(hwNormalTrap, keyOrButton, isMouse)) return queueItem("hw_norm_trap");
-            if (matches(hwStun, keyOrButton, isMouse)) return queueItem("hw_stun");
-            if (matches(hwSnow, keyOrButton, isMouse)) return queueItem("hw_snow");
-            if (matches(hwBomb, keyOrButton, isMouse)) return queueItem("hw_bomb");
+        if (matches(bindHealing, keyOrBtn, isMouse)) {
+            targetItem = Items.POTION;
+            isConsumable = true;
+            pred = ServerHelper::isHealingPotion;
+        } else if (matches(bindChorus, keyOrBtn, isMouse)) {
+            targetItem = Items.CHORUS_FRUIT;
+            isConsumable = true;
+        } else if (spookyMode.is("Funtime")) {
+            if (matches(bindDisorient, keyOrBtn, isMouse)) targetItem = Items.ENDER_EYE;
+            else if (matches(bindTrap, keyOrBtn, isMouse)) targetItem = Items.NETHERITE_SCRAP;
+            else if (matches(bindPlast, keyOrBtn, isMouse)) targetItem = Items.DRIED_KELP;
+            else if (matches(bindDust, keyOrBtn, isMouse)) targetItem = Items.SUGAR;
+            else if (matches(bindSnow, keyOrBtn, isMouse)) targetItem = Items.SNOWBALL;
+            else if (matches(bindWindCharge, keyOrBtn, isMouse)) targetItem = Items.WIND_CHARGE;
+        } else if (spookyMode.is("HolyWorld")) {
+            if (matches(bindStun, keyOrBtn, isMouse)) targetItem = Items.NETHER_STAR;
+            else if (matches(bindExpTrap, keyOrBtn, isMouse)) targetItem = Items.PRISMARINE_SHARD;
+            else if (matches(bindNormTrap, keyOrBtn, isMouse)) targetItem = Items.POPPED_CHORUS_FRUIT;
+            else if (matches(bindBomb, keyOrBtn, isMouse)) targetItem = Items.FIRE_CHARGE;
+            else if (matches(bindHwSnow, keyOrBtn, isMouse)) targetItem = Items.SNOWBALL;
         }
-        return false;
+
+        if (targetItem != null) {
+            triggerItemUse(targetItem, isConsumable, pred);
+        }
     }
 
     private boolean matches(BindSetting setting, int keyOrBtn, boolean isMouse) {
+        if (setting == null || setting.isEmpty()) return false;
         return isMouse ? setting.matchesMouse(keyOrBtn) : setting.matches(keyOrBtn);
     }
 
-    private boolean queueItem(String key) {
-        if (AutoTotem.isSwapping()) return false;
+    private void triggerItemUse(Item item, boolean consumable, Predicate<ItemStack> pred) {
+        if (mc.player == null || mc.gameMode == null) return;
 
-        ItemInfo info = itemConfigs.get(key);
-        if (info == null || !inGame() || player() == null) return false;
-
-        LocalPlayer player = player();
-
-        int hotbarSlot = findInHotbar(player, info);
-        if (hotbarSlot != -1) {
-            useFromHotbar(player, hotbarSlot);
-            return true;
+        ItemStack stack = findStack(item, pred);
+        if (stack == null || mc.player.getCooldowns().isOnCooldown(stack)) {
+            return;
         }
 
-        int invSlot = findInMainInventory(player, info);
-        if (invSlot != -1) {
-            if (useMode.is("Packet")) {
-                performPacketSwapUse(player, invSlot);
-            } else {
-                pendingInfo = info;
-                state = State.STOP_SPRINT;
-            }
-            return true;
+        originalSlot = mc.player.getInventory().getSelectedSlot();
+        invSwapSlot = -1;
+        isInvSwapped = false;
+
+        int hotbarSlot = findInHotbar(item, pred);
+        if (hotbarSlot == -1) {
+            int mainInvSlot = findInInventory(item, pred);
+            if (mainInvSlot == -1) return;
+
+            hotbarSlot = originalSlot;
+            InventoryUtil.swapSlots(mainInvSlot, hotbarSlot);
+            invSwapSlot = mainInvSlot;
+            isInvSwapped = true;
         }
 
-        return false;
+        targetHotbarSlot = hotbarSlot;
+        currentItem = item;
+        currentPredicate = pred;
+        isConsumableUse = consumable;
+        activeUse = true;
+        useStage = 1;
+        useTicks = 0;
+
+        selectSlot(targetHotbarSlot);
     }
 
     @EventTarget
     public void onTick(PlayerTickEvent event) {
-        if (event.getPhase() != PlayerTickEvent.Phase.PRE) return;
-        if (!inGame() || player() == null || mc.gameMode == null) {
-            reset();
-            return;
-        }
+        if (event.getPhase() != PlayerTickEvent.Phase.PRE || !activeUse || mc.player == null || mc.gameMode == null) return;
 
-        if (AutoTotem.isSwapping()) {
-            reset();
-            return;
-        }
-
-        LocalPlayer player = player();
-
-        switch (state) {
-            case STOP_SPRINT -> {
-                if (player.isSprinting()) {
-                    player.setSprinting(false);
-                }
-
-                if (player.onGround()) {
-                    player.setDeltaMovement(0.0, player.getDeltaMovement().y, 0.0);
-                }
-
-                MoveBlockUtility.freeze(this, 4);
-                MoveBlockUtility.blockSprint(this, 5);
-
-                state = State.SWAP_AND_USE;
-            }
-
-            case SWAP_AND_USE -> {
-                if (player.onGround()) {
-                    player.setDeltaMovement(0.0, player.getDeltaMovement().y, 0.0);
-                }
-
-                if (pendingInfo != null) {
-                    int invSlot = findInMainInventory(player, pendingInfo);
-                    if (invSlot != -1) {
-                        int selectedHotbar = player.getInventory().getSelectedSlot();
-
-                        mc.gameMode.handleContainerInput(player.inventoryMenu.containerId, invSlot, selectedHotbar, ContainerInput.SWAP, player);
-                        InventoryUtil.useDirect(player);
-                        if (swapBack.getValue()) {
-                            mc.gameMode.handleContainerInput(player.inventoryMenu.containerId, invSlot, selectedHotbar, ContainerInput.SWAP, player);
-                        }
+        useTicks++;
+        if (useStage == 1) {
+            if (useTicks >= 2) {
+                if (isConsumableUse) {
+                    mc.options.keyUse.setDown(true);
+                    if (!mc.player.isUsingItem()) {
+                        mc.gameMode.useItem(mc.player, InteractionHand.MAIN_HAND);
                     }
-                }
-
-                cooldownTicks = 2;
-                state = State.COOLDOWN;
-            }
-
-            case COOLDOWN -> {
-                MoveBlockUtility.freeze(this, 2);
-                if (player.onGround()) {
-                    player.setDeltaMovement(0.0, player.getDeltaMovement().y, 0.0);
-                }
-
-                if (--cooldownTicks <= 0) {
-                    state = State.IDLE;
-                    pendingInfo = null;
-                    MoveBlockUtility.unblock(this);
+                    useStage = 2;
+                    useTicks = 0;
+                } else {
+                    mc.gameMode.useItem(mc.player, InteractionHand.MAIN_HAND);
+                    mc.player.swing(InteractionHand.MAIN_HAND);
+                    useStage = 2;
+                    useTicks = 0;
                 }
             }
-
-            case IDLE -> {
+        } else if (useStage == 2) {
+            if (!isConsumableUse || !mc.player.isUsingItem() || useTicks > 40) {
+                finishUsage();
             }
         }
     }
 
-    private void useFromHotbar(LocalPlayer player, int hotbarSlot) {
-        int previousSlot = player.getInventory().getSelectedSlot();
-        player.getInventory().setSelectedSlot(hotbarSlot);
-        InventoryUtil.useDirect(player);
-        if (swapBack.getValue()) {
-            player.getInventory().setSelectedSlot(previousSlot);
+    private void finishUsage() {
+        if (mc.options != null) {
+            mc.options.keyUse.setDown(false);
+        }
+
+        if (isInvSwapped && invSwapSlot != -1 && targetHotbarSlot != -1 && mc.player != null) {
+            InventoryUtil.swapSlots(invSwapSlot, targetHotbarSlot);
+        }
+
+        if (originalSlot >= 0 && originalSlot < 9 && mc.player != null) {
+            selectSlot(originalSlot);
+        }
+
+        activeUse = false;
+        isConsumableUse = false;
+        useStage = 0;
+        useTicks = 0;
+        targetHotbarSlot = -1;
+        originalSlot = -1;
+        invSwapSlot = -1;
+        isInvSwapped = false;
+        currentItem = null;
+        currentPredicate = null;
+    }
+
+    private void selectSlot(int slot) {
+        if (mc.player == null || slot < 0 || slot >= 9) return;
+        if (mc.player.getInventory().getSelectedSlot() != slot) {
+            mc.player.getInventory().setSelectedSlot(slot);
+            if (mc.getConnection() != null) {
+                mc.getConnection().send(new ServerboundSetCarriedItemPacket(slot));
+            }
         }
     }
 
-    private void performPacketSwapUse(LocalPlayer player, int invSlot) {
-        boolean wasSprinting = player.isSprinting();
-        if (wasSprinting && mc.getConnection() != null) {
-            mc.getConnection().send(new ServerboundPlayerCommandPacket(player, ServerboundPlayerCommandPacket.Action.STOP_SPRINTING));
-        }
-
-        int selectedHotbar = player.getInventory().getSelectedSlot();
-        mc.gameMode.handleContainerInput(player.inventoryMenu.containerId, invSlot, selectedHotbar, ContainerInput.SWAP, player);
-        InventoryUtil.useDirect(player);
-        if (swapBack.getValue()) {
-            mc.gameMode.handleContainerInput(player.inventoryMenu.containerId, invSlot, selectedHotbar, ContainerInput.SWAP, player);
-        }
-
-        if (wasSprinting && mc.getConnection() != null) {
-            mc.getConnection().send(new ServerboundPlayerCommandPacket(player, ServerboundPlayerCommandPacket.Action.START_SPRINTING));
-        }
-    }
-
-    private int findInHotbar(LocalPlayer player, ItemInfo info) {
-        for (int i = 0; i < HOTBAR_SIZE; i++) {
-            ItemStack stack = player.getInventory().getItem(i);
-            if (matchesInfo(stack, info)) return i;
+    private int findInHotbar(Item item, Predicate<ItemStack> pred) {
+        if (mc.player == null) return -1;
+        Inventory inv = mc.player.getInventory();
+        for (int i = 0; i < 9; i++) {
+            ItemStack stack = inv.getItem(i);
+            if (!stack.isEmpty() && (pred != null ? pred.test(stack) : stack.is(item))) {
+                return i;
+            }
         }
         return -1;
     }
 
-    private int findInMainInventory(LocalPlayer player, ItemInfo info) {
-        return InventoryUtil.findInventorySlot(player, stack -> matchesInfo(stack, info));
+    private int findInInventory(Item item, Predicate<ItemStack> pred) {
+        if (mc.player == null) return -1;
+        Inventory inv = mc.player.getInventory();
+        for (int i = 9; i < 36; i++) {
+            ItemStack stack = inv.getItem(i);
+            if (!stack.isEmpty() && (pred != null ? pred.test(stack) : stack.is(item))) {
+                return i;
+            }
+        }
+        return -1;
     }
 
-    private boolean matchesInfo(ItemStack stack, ItemInfo info) {
-        if (stack == null || stack.isEmpty() || !stack.is(info.item)) return false;
-
-        if (info.effectReqs != null && !info.effectReqs.isEmpty()) {
-            return matchesPotion(stack, info.effectReqs);
+    private ItemStack findStack(Item item, Predicate<ItemStack> pred) {
+        if (mc.player == null) return null;
+        Inventory inv = mc.player.getInventory();
+        for (int i = 0; i < 36; i++) {
+            ItemStack stack = inv.getItem(i);
+            if (!stack.isEmpty() && (pred != null ? pred.test(stack) : stack.is(item))) {
+                return stack;
+            }
         }
+        return null;
+    }
 
-        if (info.loreKeywords != null && !info.loreKeywords.isEmpty()) {
-            ItemLore lore = stack.get(DataComponents.LORE);
-            if (lore != null) {
-                for (Component line : lore.lines()) {
-                    String clean = cleanText(line.getString());
-                    for (String kw : info.loreKeywords) {
-                        if (clean.contains(kw.toLowerCase())) return true;
-                    }
+    private static boolean isHealingPotion(ItemStack stack) {
+        if (!stack.isEmpty() && stack.is(Items.POTION)) {
+            PotionContents contents = stack.get(DataComponents.POTION_CONTENTS);
+            if (contents == null) return false;
+            for (MobEffectInstance effect : contents.getAllEffects()) {
+                if (effect.getEffect() == MobEffects.REGENERATION) {
+                    return true;
                 }
             }
         }
-
-        if (info.nameFallback != null) {
-            String name = cleanText(stack.getHoverName().getString());
-            return name.contains(info.nameFallback.toLowerCase());
-        }
-
-        return true;
-    }
-
-    private boolean matchesPotion(ItemStack stack, List<EffectReq> reqs) {
-        PotionContents contents = stack.get(DataComponents.POTION_CONTENTS);
-        if (contents == null) return false;
-
-        Map<Holder<MobEffect>, Integer> activeEffects = new HashMap<>();
-        for (MobEffectInstance instance : contents.customEffects()) {
-            activeEffects.put(instance.getEffect(), instance.getAmplifier());
-        }
-
-        if (activeEffects.isEmpty()) return false;
-
-        for (EffectReq req : reqs) {
-            Integer amp = activeEffects.get(req.effect);
-            if (amp == null || amp < req.minAmp) return false;
-        }
-        return true;
-    }
-
-    private String cleanText(String text) {
-        if (text == null) return "";
-        return text.toLowerCase().replaceAll("§[0-9a-fk-or]", "");
+        return false;
     }
 }

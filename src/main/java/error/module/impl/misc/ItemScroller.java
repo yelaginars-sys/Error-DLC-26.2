@@ -1,37 +1,51 @@
 package error.module.impl.misc;
 
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
-import net.minecraft.client.input.KeyEvent;
-import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.Item;
 import org.lwjgl.glfw.GLFW;
 import error.module.Category;
 import error.module.Module;
+import error.setting.impl.SliderSetting;
 
 import java.util.HashSet;
 import java.util.Set;
 
-/**
- */
 public class ItemScroller extends Module {
     public static ItemScroller INSTANCE;
+
+    public final SliderSetting delay = slider("Задержка", 50.0F, 0.0F, 200.0F, 1.0F);
+
     private final Set<Integer> draggedSlots = new HashSet<>();
+    private long lastMoveTime = 0L;
 
     public ItemScroller() {
-        super("ItemScroller", "Слоты крутить быстро", Category.MISC);
+        super("ItemScroller", "Убирает задержку перемещения предметов", Category.MISC);
         INSTANCE = this;
+    }
+
+    public boolean canQuickMove() {
+        long now = System.currentTimeMillis();
+        if (now - lastMoveTime < (long) (float) delay.getValue()) {
+            return false;
+        }
+        lastMoveTime = now;
+        return true;
+    }
+
+    public void resetTimer() {
+        lastMoveTime = 0L;
     }
 
     @Override
     public void onDisable() {
-        super.onDisable();
+        resetTimer();
         draggedSlots.clear();
+        super.onDisable();
     }
 
-
-    public boolean onMouseDragged(AbstractContainerScreen<?> screen, Slot slot, MouseButtonEvent event) {
+    public boolean onMouseDragged(AbstractContainerScreen<?> screen, Slot slot, net.minecraft.client.input.MouseButtonEvent event) {
         if (!isEnabled() || mc.player == null || mc.gameMode == null) return false;
 
         long window = mc.getWindow().handle();
@@ -46,8 +60,9 @@ public class ItemScroller extends Module {
         if (slot == null || !slot.hasItem()) return false;
         if (draggedSlots.contains(slot.index)) return false;
 
-        draggedSlots.add(slot.index);
+        if (!canQuickMove()) return false;
 
+        draggedSlots.add(slot.index);
         mc.gameMode.handleContainerInput(screen.getMenu().containerId, slot.index, 0, ContainerInput.QUICK_MOVE, mc.player);
         return true;
     }
@@ -62,8 +77,7 @@ public class ItemScroller extends Module {
         draggedSlots.clear();
     }
 
-
-    public boolean onKeyPressed(AbstractContainerScreen<?> screen, Slot hoveredSlot, KeyEvent event) {
+    public boolean onKeyPressed(AbstractContainerScreen<?> screen, Slot hoveredSlot, net.minecraft.client.input.KeyEvent event) {
         if (!isEnabled() || mc.player == null || mc.gameMode == null) return false;
 
         long window = mc.getWindow().handle();

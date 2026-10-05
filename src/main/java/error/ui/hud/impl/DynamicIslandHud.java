@@ -983,7 +983,9 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
                 if (host.matches("\\d+\\.\\d+\\.\\d+\\.\\d+") || host.equalsIgnoreCase("127.0.0.1") || host.equalsIgnoreCase("localhost") || host.toLowerCase().contains("connecting")) {
                     return "Connecting...";
                 }
-                return host;
+                String lettersOnly = host.replaceAll("[0-9]", "").replaceAll("^\\.+|\\.+$", "");
+                if (lettersOnly.isBlank()) return "Server";
+                return lettersOnly;
             }
         } catch (Exception ignored) {}
         return "Connecting...";

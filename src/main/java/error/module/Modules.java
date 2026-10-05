@@ -52,14 +52,13 @@ public class Modules {
     public BlockHighlight blockHighlight;
     public JumpCircles jumpCircles;
     public Predictions predictions;
-    public ClickFriend clickFriend;
     public FireworkESP fireworkESP;
     public FreeCam freeCam;
     public ItemScroller itemScroller;
     public UnHook unHook;
     public FullBright fullBright;
     public AHHelper ahHelper;
-    public AntiPush antiPush;
+    public NoPush noPush;
     public AutoTool autoTool;
     public ProjectileHelper projectileHelper;
     public Particles particles;
@@ -68,7 +67,6 @@ public class Modules {
     public TriggerBot triggerBot;
     public Criticals criticals;
     public AutoAccept autoAccept;
-    public PotionTracker potionTracker;
     public UseTracker useTracker;
     public AutoEvent autoEvent;
     public AutoSell autoSell;
@@ -108,7 +106,6 @@ public class Modules {
         this.sprint = new Sprint();
         this.elytraSwap = new ElytraSwap();
         this.fullBright = new FullBright();
-        this.potionTracker = new PotionTracker();
         this.useTracker = new UseTracker();
         this.autoEvent = new AutoEvent();
         this.autoSell = new AutoSell();
@@ -120,10 +117,9 @@ public class Modules {
         this.criticals = new Criticals();
         this.crystalAura = new CrystalAura();
         this.ahHelper = new AHHelper();
-        this.antiPush = new AntiPush();
+        this.noPush = new NoPush();
         this.projectileHelper = new ProjectileHelper();
         this.autoTool = new AutoTool();
-        this.clickFriend = new ClickFriend();
         this.autoExplosion = new AutoExplosion();
         this.popEffect = new PopEffect();
         this.fireworkESP = new FireworkESP();
@@ -168,7 +164,6 @@ public class Modules {
         this.interpolateF5 = new InterpolateF5();
 
         register(
-                this.clickGui,
                 this.anInterface,
                 this.notification,
                 this.customModels,
@@ -184,7 +179,6 @@ public class Modules {
                 this.sprint,
                 this.elytraSwap,
                 this.fullBright,
-                this.potionTracker,
                 this.useTracker,
                 this.autoEvent,
                 this.autoSell,
@@ -196,10 +190,9 @@ public class Modules {
                 this.criticals,
                 this.crystalAura,
                 this.ahHelper,
-                this.antiPush,
+                this.noPush,
                 this.projectileHelper,
                 this.autoTool,
-                this.clickFriend,
                 this.autoExplosion,
                 this.popEffect,
                 this.fireworkESP,

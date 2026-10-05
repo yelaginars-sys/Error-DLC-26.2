@@ -82,6 +82,7 @@ public final class Localization {
         RU_DICT.put("CrystalAura", "Кристал Аура");
         RU_DICT.put("AHHelper", "Аукцион Помощник");
         RU_DICT.put("AntiPush", "Анти Толкание");
+        RU_DICT.put("NoPush", "Анти Толкание");
         RU_DICT.put("ProjectileHelper", "Помощник Снарядов");
         RU_DICT.put("AutoTool", "Авто Инструмент");
         RU_DICT.put("ClickFriend", "Кликер Друзей");
