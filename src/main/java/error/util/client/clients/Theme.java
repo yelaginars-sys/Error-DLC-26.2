@@ -67,4 +67,17 @@ public final class Theme {
     public static int getAccentWithAlpha(int alpha) {
         return ColorUtil.withAlpha(getAccentColor(), alpha);
     }
+
+    public static int getGradientColor(int indexOffset) {
+        int c1 = getAccentColor();
+        int c2 = getSecondaryColor();
+        if (c1 == c2) {
+            c2 = ColorUtil.interpolateColor(c1, 0xFF101018, 0.45F);
+        }
+        long time = System.currentTimeMillis();
+        int wave = (int) ((time / 5L + indexOffset) % 360L);
+        if (wave < 0) wave += 360;
+        float factor = (wave > 180 ? 360 - wave : wave) / 180.0F;
+        return ColorUtil.interpolateColor(c1, c2, factor);
+    }
 }

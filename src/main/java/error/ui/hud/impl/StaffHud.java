@@ -7,8 +7,14 @@ import error.ui.hud.HudElement;
 import error.util.client.clients.ColorUtil;
 import error.util.client.clients.Theme;
 import error.util.math.Animation;
+import error.util.display.blur.Blur;
+import error.util.display.blur.BlurType;
+import error.util.display.color.Color;
+import error.util.display.outline.Outline;
 import error.util.render.Render2D;
+import error.util.render.Render2DUtil;
 import error.util.render.font.Fonts;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.resources.Identifier;
@@ -176,13 +182,27 @@ public final class StaffHud extends HudElement implements error.IMinecraft {
         float curX = this.x;
         float curY = this.y;
 
-        // 1. Header Capsule
-        int headerBg = ColorUtil.rgba(14, 16, 22, 175);
-        int outlineCol = ColorUtil.rgba(255, 255, 255, 20);
+        GuiGraphicsExtractor extractor = event.getGuiGraphicsExtractor();
 
-        Render2D.drawShadow(curX, curY, this.width, HEADER_H, PILL_R, 6.0F, ColorUtil.rgba(0, 0, 0, 80));
-        Render2D.drawRoundedRect(curX, curY, this.width, HEADER_H, PILL_R, headerBg);
-        Render2D.drawRoundedOutline(curX, curY, this.width, HEADER_H, PILL_R, 0.75F, outlineCol);
+        // 1. Header Capsule in Liquid Glass
+        Render2D.drawShadow(curX, curY, this.width, HEADER_H, PILL_R, 6.0F, ColorUtil.rgba(0, 0, 0, 75));
+        if (extractor != null) {
+            Render2DUtil.flush();
+            Blur.of(curX, curY, this.width, HEADER_H)
+                    .radius(Math.round(PILL_R))
+                    .type(BlurType.KAWASE)
+                    .strength(4)
+                    .tint(Color.rgba(14, 16, 22, 115))
+                    .alpha(1.0F)
+                    .render(extractor);
+
+            Outline.of(curX, curY, this.width, HEADER_H)
+                    .radius(Math.round(PILL_R))
+                    .thickness(0.85F)
+                    .verticalGradient(Color.WHITE, Color.rgba(255, 255, 255, 32))
+                    .alpha(1.0F)
+                    .render(extractor);
+        }
 
         // Energy Glyph "r"
         Fonts.drawString(Fonts.ENERGY, "r", curX + 6.0F, curY + 2.5F, 10.0F, accent);
@@ -194,8 +214,6 @@ public final class StaffHud extends HudElement implements error.IMinecraft {
         for (Entry e : entries) {
             if (e.alpha <= 0.01F) continue;
 
-            int rowBg = ColorUtil.rgba(14, 16, 22, (int) (165 * e.alpha));
-            int rowOutline = ColorUtil.rgba(255, 255, 255, (int) (18 * e.alpha));
             int textWhite = ColorUtil.rgba(255, 255, 255, (int) (245 * e.alpha));
             int statusCol = ColorUtil.withAlpha(e.status.color, (int) (245 * e.alpha));
 
@@ -204,13 +222,48 @@ public final class StaffHud extends HudElement implements error.IMinecraft {
 
             float leftPillW = 16.0F + nameW + 8.0F;
             float rightPillW = statusW + 12.0F;
-
             float rightPillX = curX + this.width - rightPillW;
 
-            // Left Capsule
-            Render2D.drawShadow(curX, curY, leftPillW, ROW_H, PILL_R, 5.0F, ColorUtil.rgba(0, 0, 0, (int) (60 * e.alpha)));
-            Render2D.drawRoundedRect(curX, curY, leftPillW, ROW_H, PILL_R, rowBg);
-            Render2D.drawRoundedOutline(curX, curY, leftPillW, ROW_H, PILL_R, 0.65F, rowOutline);
+            // Shadows
+            Render2D.drawShadow(curX, curY, leftPillW, ROW_H, PILL_R, 4.0F, ColorUtil.rgba(0, 0, 0, (int) (50 * e.alpha)));
+            Render2D.drawShadow(rightPillX, curY, rightPillW, ROW_H, PILL_R, 4.0F, ColorUtil.rgba(0, 0, 0, (int) (50 * e.alpha)));
+
+            // Liquid Glass Kawase Blur & Specular Outlines
+            if (extractor != null) {
+                Render2DUtil.flush();
+
+                // Left Capsule Blur & Outline
+                Blur.of(curX, curY, leftPillW, ROW_H)
+                        .radius(Math.round(PILL_R))
+                        .type(BlurType.KAWASE)
+                        .strength(3)
+                        .tint(Color.rgba(14, 16, 22, (int) (110 * e.alpha)))
+                        .alpha(e.alpha)
+                        .render(extractor);
+
+                Outline.of(curX, curY, leftPillW, ROW_H)
+                        .radius(Math.round(PILL_R))
+                        .thickness(0.7F)
+                        .verticalGradient(Color.rgba(255, 255, 255, (int) (28 * e.alpha)), Color.rgba(255, 255, 255, (int) (6 * e.alpha)))
+                        .alpha(e.alpha)
+                        .render(extractor);
+
+                // Right Capsule Blur & Outline
+                Blur.of(rightPillX, curY, rightPillW, ROW_H)
+                        .radius(Math.round(PILL_R))
+                        .type(BlurType.KAWASE)
+                        .strength(3)
+                        .tint(Color.rgba(14, 16, 22, (int) (110 * e.alpha)))
+                        .alpha(e.alpha)
+                        .render(extractor);
+
+                Outline.of(rightPillX, curY, rightPillW, ROW_H)
+                        .radius(Math.round(PILL_R))
+                        .thickness(0.7F)
+                        .verticalGradient(Color.rgba(255, 255, 255, (int) (28 * e.alpha)), Color.rgba(255, 255, 255, (int) (6 * e.alpha)))
+                        .alpha(e.alpha)
+                        .render(extractor);
+            }
 
             // Avatar
             float avatarY = curY + (ROW_H - AVATAR_SIZE) * 0.5F;
@@ -219,12 +272,7 @@ public final class StaffHud extends HudElement implements error.IMinecraft {
             // Name
             Fonts.drawString(Fonts.SF_MEDIUM, e.name, curX + 16.5F, curY + 2.0F, 8.5F, textWhite);
 
-            // Right Capsule
-            Render2D.drawShadow(rightPillX, curY, rightPillW, ROW_H, PILL_R, 5.0F, ColorUtil.rgba(0, 0, 0, (int) (60 * e.alpha)));
-            Render2D.drawRoundedRect(rightPillX, curY, rightPillW, ROW_H, PILL_R, rowBg);
-            Render2D.drawRoundedOutline(rightPillX, curY, rightPillW, ROW_H, PILL_R, 0.65F, rowOutline);
-
-            // Status tag
+            // Status tag centered in right capsule
             Fonts.drawCenteredString(Fonts.SF_MEDIUM, e.status.label, rightPillX + rightPillW * 0.5F, curY + 2.2F, 8.0F, statusCol);
 
             curY += (ROW_H + GAP_Y) * e.alpha;

@@ -60,21 +60,28 @@ public final class ServerHelperHud extends HudElement {
         ServerHelper sh = ServerHelper.INSTANCE;
         if (sh == null) return list;
 
-        boolean isFt = sh.spookyMode.is("Funtime");
-
-        if (isFt) {
+        if (sh.spookyMode.is("Funtime")) {
             checkAndAdd(list, Items.ENDER_EYE, sh.bindDisorient);
             checkAndAdd(list, Items.NETHERITE_SCRAP, sh.bindTrap);
             checkAndAdd(list, Items.DRIED_KELP, sh.bindPlast);
             checkAndAdd(list, Items.SUGAR, sh.bindDust);
             checkAndAdd(list, Items.SNOWBALL, sh.bindSnow);
             checkAndAdd(list, Items.WIND_CHARGE, sh.bindWindCharge);
-        } else {
+        } else if (sh.spookyMode.is("HolyWorld")) {
             checkAndAdd(list, Items.NETHER_STAR, sh.bindStun);
             checkAndAdd(list, Items.PRISMARINE_SHARD, sh.bindExpTrap);
             checkAndAdd(list, Items.POPPED_CHORUS_FRUIT, sh.bindNormTrap);
             checkAndAdd(list, Items.FIRE_CHARGE, sh.bindBomb);
             checkAndAdd(list, Items.SNOWBALL, sh.bindHwSnow);
+        } else if (sh.spookyMode.is("ReallyWorld")) {
+            checkAndAdd(list, Items.HEART_OF_THE_SEA, sh.bindRwTrap);
+            checkAndAdd(list, Items.ENDER_EYE, sh.bindRwEnderTrap);
+            checkAndAdd(list, Items.PHANTOM_MEMBRANE, sh.bindRwAntiFly);
+        } else if (sh.spookyMode.is("LonyGrief")) {
+            checkAndAdd(list, Items.MAGMA_CREAM, sh.bindLgLeave);
+            checkAndAdd(list, Items.CLAY_BALL, sh.bindLgPlatformLeave);
+            checkAndAdd(list, Items.CRYING_OBSIDIAN, sh.bindLgTrap);
+            checkAndAdd(list, Items.FEATHER, sh.bindLgFeather);
         }
 
         return list;
@@ -104,13 +111,36 @@ public final class ServerHelperHud extends HudElement {
             }
 
             // ChatScreen Preview
-            entries = List.of(
-                    new HelperEntry(Items.ENDER_EYE, "MOUSE5", new ItemStack(Items.ENDER_EYE)),
-                    new HelperEntry(Items.NETHERITE_SCRAP, "MOUSE4", new ItemStack(Items.NETHERITE_SCRAP)),
-                    new HelperEntry(Items.DRIED_KELP, "X", new ItemStack(Items.DRIED_KELP)),
-                    new HelperEntry(Items.SUGAR, "Z", new ItemStack(Items.SUGAR)),
-                    new HelperEntry(Items.SNOWBALL, "СКМ", new ItemStack(Items.SNOWBALL))
-            );
+            ServerHelper sh = ServerHelper.INSTANCE;
+            if (sh != null && sh.spookyMode.is("ReallyWorld")) {
+                entries = List.of(
+                        new HelperEntry(Items.HEART_OF_THE_SEA, "M5", new ItemStack(Items.HEART_OF_THE_SEA)),
+                        new HelperEntry(Items.ENDER_EYE, "M4", new ItemStack(Items.ENDER_EYE)),
+                        new HelperEntry(Items.PHANTOM_MEMBRANE, "X", new ItemStack(Items.PHANTOM_MEMBRANE))
+                );
+            } else if (sh != null && sh.spookyMode.is("LonyGrief")) {
+                entries = List.of(
+                        new HelperEntry(Items.MAGMA_CREAM, "M5", new ItemStack(Items.MAGMA_CREAM)),
+                        new HelperEntry(Items.CLAY_BALL, "M4", new ItemStack(Items.CLAY_BALL)),
+                        new HelperEntry(Items.CRYING_OBSIDIAN, "X", new ItemStack(Items.CRYING_OBSIDIAN)),
+                        new HelperEntry(Items.FEATHER, "Z", new ItemStack(Items.FEATHER))
+                );
+            } else if (sh != null && sh.spookyMode.is("HolyWorld")) {
+                entries = List.of(
+                        new HelperEntry(Items.NETHER_STAR, "M5", new ItemStack(Items.NETHER_STAR)),
+                        new HelperEntry(Items.PRISMARINE_SHARD, "M4", new ItemStack(Items.PRISMARINE_SHARD)),
+                        new HelperEntry(Items.POPPED_CHORUS_FRUIT, "X", new ItemStack(Items.POPPED_CHORUS_FRUIT)),
+                        new HelperEntry(Items.FIRE_CHARGE, "Z", new ItemStack(Items.FIRE_CHARGE))
+                );
+            } else {
+                entries = List.of(
+                        new HelperEntry(Items.ENDER_EYE, "MOUSE5", new ItemStack(Items.ENDER_EYE)),
+                        new HelperEntry(Items.NETHERITE_SCRAP, "MOUSE4", new ItemStack(Items.NETHERITE_SCRAP)),
+                        new HelperEntry(Items.DRIED_KELP, "X", new ItemStack(Items.DRIED_KELP)),
+                        new HelperEntry(Items.SUGAR, "Z", new ItemStack(Items.SUGAR)),
+                        new HelperEntry(Items.SNOWBALL, "СКМ", new ItemStack(Items.SNOWBALL))
+                );
+            }
         }
 
         // Measure width

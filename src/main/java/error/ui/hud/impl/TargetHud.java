@@ -7,8 +7,14 @@ import error.ui.hud.HudElement;
 import error.util.client.clients.ColorUtil;
 import error.util.client.clients.Theme;
 import error.util.math.Animation;
+import error.util.display.blur.Blur;
+import error.util.display.blur.BlurType;
+import error.util.display.color.Color;
+import error.util.display.outline.Outline;
 import error.util.render.Render2D;
+import error.util.render.Render2DUtil;
 import error.util.render.font.Fonts;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.resources.Identifier;
@@ -91,13 +97,26 @@ public final class TargetHud extends HudElement implements error.IMinecraft {
         float curY = this.y;
         int accent = Theme.getAccentColor();
 
-        // 1. Main Background Card (matching Energy HUD & ClickGUI)
-        int cardBg = ColorUtil.rgba(14, 16, 22, (int) (180 * a));
-        int cardOutline = ColorUtil.rgba(255, 255, 255, (int) (22 * a));
+        // 1. Main Background Card in Liquid Glass (matching Energy HUD & ClickGUI)
+        Render2D.drawShadow(curX, curY, CARD_W, CARD_H, CARD_R, 7.0F, ColorUtil.rgba(0, 0, 0, (int) (75 * a)));
+        GuiGraphicsExtractor extractor = event.getGuiGraphicsExtractor();
+        if (extractor != null) {
+            Render2DUtil.flush();
+            Blur.of(curX, curY, CARD_W, CARD_H)
+                    .radius(Math.round(CARD_R))
+                    .type(BlurType.KAWASE)
+                    .strength(4)
+                    .tint(Color.rgba(14, 16, 22, (int) (115 * a)))
+                    .alpha(a)
+                    .render(extractor);
 
-        Render2D.drawShadow(curX, curY, CARD_W, CARD_H, CARD_R, 7.0F, ColorUtil.rgba(0, 0, 0, (int) (85 * a)));
-        Render2D.drawRoundedRect(curX, curY, CARD_W, CARD_H, CARD_R, cardBg);
-        Render2D.drawRoundedOutline(curX, curY, CARD_W, CARD_H, CARD_R, 0.75F, cardOutline);
+            Outline.of(curX, curY, CARD_W, CARD_H)
+                    .radius(Math.round(CARD_R))
+                    .thickness(0.85F)
+                    .verticalGradient(Color.WHITE, Color.rgba(255, 255, 255, 32))
+                    .alpha(a)
+                    .render(extractor);
+        }
 
         // 2. Avatar
         Identifier skin = STEVE_SKIN;

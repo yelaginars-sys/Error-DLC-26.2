@@ -27,7 +27,7 @@ import java.util.function.Predicate;
 public class ServerHelper extends Module {
     public static ServerHelper INSTANCE;
 
-    public final ModeSetting spookyMode = mode("Режим", "HolyWorld", "Funtime", "HolyWorld");
+    public final ModeSetting spookyMode = mode("Режим", "HolyWorld", "Funtime", "HolyWorld", "ReallyWorld", "LonyGrief");
     public final BindSetting bindHealing = bind("Исцеление", GLFW.GLFW_KEY_UNKNOWN);
     public final BindSetting bindChorus = bind("Хорус", GLFW.GLFW_KEY_UNKNOWN);
 
@@ -45,6 +45,17 @@ public class ServerHelper extends Module {
     public final BindSetting bindNormTrap = bind("трапка ", GLFW.GLFW_KEY_UNKNOWN);
     public final BindSetting bindBomb = bind("взрывная штучка", GLFW.GLFW_KEY_UNKNOWN);
     public final BindSetting bindHwSnow = bind("ком снега", GLFW.GLFW_KEY_UNKNOWN);
+
+    // ReallyWorld binds
+    public final BindSetting bindRwTrap = bind("Ловушка (RW)", GLFW.GLFW_KEY_UNKNOWN);
+    public final BindSetting bindRwEnderTrap = bind("Эндер-ловушка (RW)", GLFW.GLFW_KEY_UNKNOWN);
+    public final BindSetting bindRwAntiFly = bind("Анти-полет (RW)", GLFW.GLFW_KEY_UNKNOWN);
+
+    // LonyGrief binds
+    public final BindSetting bindLgLeave = bind("Обычная ливалка (LG)", GLFW.GLFW_KEY_UNKNOWN);
+    public final BindSetting bindLgPlatformLeave = bind("Ливалка с платформой (LG)", GLFW.GLFW_KEY_UNKNOWN);
+    public final BindSetting bindLgTrap = bind("Уникальная трапка (LG)", GLFW.GLFW_KEY_UNKNOWN);
+    public final BindSetting bindLgFeather = bind("Уникальное перо (LG)", GLFW.GLFW_KEY_UNKNOWN);
 
     public final CheckBox snowEffect = checkbox("Эффект снежка", false);
 
@@ -109,6 +120,31 @@ public class ServerHelper extends Module {
             else if (matches(bindNormTrap, keyOrBtn, isMouse)) targetItem = Items.POPPED_CHORUS_FRUIT;
             else if (matches(bindBomb, keyOrBtn, isMouse)) targetItem = Items.FIRE_CHARGE;
             else if (matches(bindHwSnow, keyOrBtn, isMouse)) targetItem = Items.SNOWBALL;
+        } else if (spookyMode.is("ReallyWorld")) {
+            if (matches(bindRwTrap, keyOrBtn, isMouse)) {
+                targetItem = Items.HEART_OF_THE_SEA;
+                pred = s -> s.is(Items.HEART_OF_THE_SEA) || s.getHoverName().getString().toLowerCase().contains("ловушк");
+            } else if (matches(bindRwEnderTrap, keyOrBtn, isMouse)) {
+                targetItem = Items.ENDER_EYE;
+                pred = s -> s.is(Items.ENDER_EYE) || s.getHoverName().getString().toLowerCase().contains("эндер");
+            } else if (matches(bindRwAntiFly, keyOrBtn, isMouse)) {
+                targetItem = Items.PHANTOM_MEMBRANE;
+                pred = s -> s.is(Items.PHANTOM_MEMBRANE) || s.getHoverName().getString().toLowerCase().contains("полет") || s.getHoverName().getString().toLowerCase().contains("полёт");
+            }
+        } else if (spookyMode.is("LonyGrief")) {
+            if (matches(bindLgLeave, keyOrBtn, isMouse)) {
+                targetItem = Items.MAGMA_CREAM;
+                pred = s -> s.is(Items.MAGMA_CREAM) || s.getHoverName().getString().toLowerCase().contains("ливалк");
+            } else if (matches(bindLgPlatformLeave, keyOrBtn, isMouse)) {
+                targetItem = Items.CLAY_BALL;
+                pred = s -> s.is(Items.CLAY_BALL) || s.getHoverName().getString().toLowerCase().contains("платформ");
+            } else if (matches(bindLgTrap, keyOrBtn, isMouse)) {
+                targetItem = Items.CRYING_OBSIDIAN;
+                pred = s -> s.is(Items.CRYING_OBSIDIAN) || s.getHoverName().getString().toLowerCase().contains("трапк");
+            } else if (matches(bindLgFeather, keyOrBtn, isMouse)) {
+                targetItem = Items.FEATHER;
+                pred = s -> s.is(Items.FEATHER) || s.getHoverName().getString().toLowerCase().contains("пер");
+            }
         }
 
         if (targetItem != null) {

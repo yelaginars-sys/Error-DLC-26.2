@@ -7,6 +7,10 @@ import error.util.client.clients.ColorUtil;
 import error.util.client.clients.Theme;
 import error.util.math.Animation;
 import error.util.render.Render2D;
+import error.util.display.blur.Blur;
+import error.util.display.blur.BlurType;
+import error.util.display.color.Color;
+import error.util.display.outline.Outline;
 import error.util.render.Render2DUtil;
 import error.util.render.font.Fonts;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -157,13 +161,26 @@ public final class PotionsHud extends HudElement implements error.IMinecraft {
         float curX = this.x;
         float curY = this.y;
 
-        // 1. Header Capsule
-        int headerBg = ColorUtil.rgba(14, 16, 22, 175);
-        int outlineCol = ColorUtil.rgba(255, 255, 255, 20);
+        // 1. Header Capsule in Liquid Glass
+        Render2D.drawShadow(curX, curY, this.width, HEADER_H, PILL_R, 6.0F, ColorUtil.rgba(0, 0, 0, 75));
+        GuiGraphicsExtractor extractor = event.getGuiGraphicsExtractor();
+        if (extractor != null) {
+            Render2DUtil.flush();
+            Blur.of(curX, curY, this.width, HEADER_H)
+                    .radius(Math.round(PILL_R))
+                    .type(BlurType.KAWASE)
+                    .strength(4)
+                    .tint(Color.rgba(14, 16, 22, 115))
+                    .alpha(1.0F)
+                    .render(extractor);
 
-        Render2D.drawShadow(curX, curY, this.width, HEADER_H, PILL_R, 6.0F, ColorUtil.rgba(0, 0, 0, 80));
-        Render2D.drawRoundedRect(curX, curY, this.width, HEADER_H, PILL_R, headerBg);
-        Render2D.drawRoundedOutline(curX, curY, this.width, HEADER_H, PILL_R, 0.75F, outlineCol);
+            Outline.of(curX, curY, this.width, HEADER_H)
+                    .radius(Math.round(PILL_R))
+                    .thickness(0.85F)
+                    .verticalGradient(Color.WHITE, Color.rgba(255, 255, 255, 32))
+                    .alpha(1.0F)
+                    .render(extractor);
+        }
 
         // Energy Glyph "q"
         Fonts.drawString(Fonts.ENERGY, "q", curX + 6.0F, curY + 2.5F, 10.0F, accent);
@@ -171,14 +188,10 @@ public final class PotionsHud extends HudElement implements error.IMinecraft {
 
         curY += HEADER_H + GAP_Y;
 
-        GuiGraphicsExtractor extractor = event.getGuiGraphicsExtractor();
-
         // 2. Entries: Left capsule (Icon + Name + Level) and Right capsule (Duration)
         for (EffectEntry e : entries) {
             if (e.alpha <= 0.01F) continue;
 
-            int rowBg = ColorUtil.rgba(14, 16, 22, (int) (165 * e.alpha));
-            int rowOutline = ColorUtil.rgba(255, 255, 255, (int) (18 * e.alpha));
             int textWhite = ColorUtil.rgba(255, 255, 255, (int) (245 * e.alpha));
             int durColor = getDurationColor(e.durationTicks, e.alpha);
 
@@ -188,13 +201,48 @@ public final class PotionsHud extends HudElement implements error.IMinecraft {
 
             float leftPillW = 16.0F + nameW + lvlW + 8.0F;
             float rightPillW = durTextW + 12.0F;
-
             float rightPillX = curX + this.width - rightPillW;
 
-            // Left Capsule
-            Render2D.drawShadow(curX, curY, leftPillW, ROW_H, PILL_R, 5.0F, ColorUtil.rgba(0, 0, 0, (int) (60 * e.alpha)));
-            Render2D.drawRoundedRect(curX, curY, leftPillW, ROW_H, PILL_R, rowBg);
-            Render2D.drawRoundedOutline(curX, curY, leftPillW, ROW_H, PILL_R, 0.65F, rowOutline);
+            // Shadows
+            Render2D.drawShadow(curX, curY, leftPillW, ROW_H, PILL_R, 4.0F, ColorUtil.rgba(0, 0, 0, (int) (50 * e.alpha)));
+            Render2D.drawShadow(rightPillX, curY, rightPillW, ROW_H, PILL_R, 4.0F, ColorUtil.rgba(0, 0, 0, (int) (50 * e.alpha)));
+
+            // Liquid Glass Kawase Blur & Specular Outlines
+            if (extractor != null) {
+                Render2DUtil.flush();
+
+                // Left Capsule Blur & Outline
+                Blur.of(curX, curY, leftPillW, ROW_H)
+                        .radius(Math.round(PILL_R))
+                        .type(BlurType.KAWASE)
+                        .strength(3)
+                        .tint(Color.rgba(14, 16, 22, (int) (110 * e.alpha)))
+                        .alpha(e.alpha)
+                        .render(extractor);
+
+                Outline.of(curX, curY, leftPillW, ROW_H)
+                        .radius(Math.round(PILL_R))
+                        .thickness(0.7F)
+                        .verticalGradient(Color.rgba(255, 255, 255, (int) (28 * e.alpha)), Color.rgba(255, 255, 255, (int) (6 * e.alpha)))
+                        .alpha(e.alpha)
+                        .render(extractor);
+
+                // Right Capsule Blur & Outline
+                Blur.of(rightPillX, curY, rightPillW, ROW_H)
+                        .radius(Math.round(PILL_R))
+                        .type(BlurType.KAWASE)
+                        .strength(3)
+                        .tint(Color.rgba(14, 16, 22, (int) (110 * e.alpha)))
+                        .alpha(e.alpha)
+                        .render(extractor);
+
+                Outline.of(rightPillX, curY, rightPillW, ROW_H)
+                        .radius(Math.round(PILL_R))
+                        .thickness(0.7F)
+                        .verticalGradient(Color.rgba(255, 255, 255, (int) (28 * e.alpha)), Color.rgba(255, 255, 255, (int) (6 * e.alpha)))
+                        .alpha(e.alpha)
+                        .render(extractor);
+            }
 
             // Effect Icon
             Identifier sprite = Hud.getMobEffectSprite(e.holder);
@@ -217,11 +265,6 @@ public final class PotionsHud extends HudElement implements error.IMinecraft {
             if (!e.lvl.isEmpty()) {
                 Fonts.drawString(Fonts.SF_MEDIUM, e.lvl, curX + 16.0F + nameW, curY + 2.2F, 8.0F, ColorUtil.withAlpha(accent, (int) (240 * e.alpha)));
             }
-
-            // Right Capsule
-            Render2D.drawShadow(rightPillX, curY, rightPillW, ROW_H, PILL_R, 5.0F, ColorUtil.rgba(0, 0, 0, (int) (60 * e.alpha)));
-            Render2D.drawRoundedRect(rightPillX, curY, rightPillW, ROW_H, PILL_R, rowBg);
-            Render2D.drawRoundedOutline(rightPillX, curY, rightPillW, ROW_H, PILL_R, 0.65F, rowOutline);
 
             // Duration text centered in right capsule
             Fonts.drawCenteredString(Fonts.SF_MEDIUM, e.durationStr, rightPillX + rightPillW * 0.5F, curY + 2.2F, 8.0F, durColor);

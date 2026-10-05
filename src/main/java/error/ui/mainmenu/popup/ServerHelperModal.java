@@ -26,7 +26,7 @@ public class ServerHelperModal implements Modal {
 
     private final ServerHelper module;
     private int currentTab = 0;
-    private final String[] tabs = {"Ft Предметы", "Ft Зелья", "HolyWorld"};
+    private final String[] tabs = {"Funtime", "HolyWorld", "ReallyWorld", "LonyGrief"};
 
     private BindSetting listeningBind = null;
     private boolean finished = false;
@@ -44,8 +44,9 @@ public class ServerHelperModal implements Modal {
     }
 
     private final List<BindEntry> ftItems = new ArrayList<>();
-    private final List<BindEntry> ftPotions = new ArrayList<>();
     private final List<BindEntry> hwItems = new ArrayList<>();
+    private final List<BindEntry> rwItems = new ArrayList<>();
+    private final List<BindEntry> lgItems = new ArrayList<>();
 
     public ServerHelperModal(ServerHelper module) {
         this.module = module;
@@ -62,6 +63,15 @@ public class ServerHelperModal implements Modal {
         hwItems.add(new BindEntry("Обычная трапка", Items.POPPED_CHORUS_FRUIT, module.bindNormTrap));
         hwItems.add(new BindEntry("Взрывная штучка", Items.FIRE_CHARGE, module.bindBomb));
         hwItems.add(new BindEntry("Снежок", Items.SNOWBALL, module.bindHwSnow));
+
+        rwItems.add(new BindEntry("Ловушка", Items.HEART_OF_THE_SEA, module.bindRwTrap));
+        rwItems.add(new BindEntry("Эндер-ловушка", Items.ENDER_EYE, module.bindRwEnderTrap));
+        rwItems.add(new BindEntry("Анти-полет", Items.PHANTOM_MEMBRANE, module.bindRwAntiFly));
+
+        lgItems.add(new BindEntry("Обычная ливалка", Items.MAGMA_CREAM, module.bindLgLeave));
+        lgItems.add(new BindEntry("Ливалка с платформой", Items.CLAY_BALL, module.bindLgPlatformLeave));
+        lgItems.add(new BindEntry("Уникальная трапка", Items.CRYING_OBSIDIAN, module.bindLgTrap));
+        lgItems.add(new BindEntry("Уникальное перо", Items.FEATHER, module.bindLgFeather));
     }
 
     @Override
@@ -76,7 +86,7 @@ public class ServerHelperModal implements Modal {
 
         Render2D.drawBlur(windowX, windowY, windowW, windowH, 8.0F, ColorUtil.multiplyAlpha(0xFF101216, alpha), alpha);
 
-        Fonts.drawString(Fonts.SF_MEDIUM, "Залупня ебанная", windowX + 14.0F, windowY + 12.0F, 10.0F,
+        Fonts.drawString(Fonts.SF_MEDIUM, "Сервер Хелпер", windowX + 14.0F, windowY + 12.0F, 10.0F,
                 ColorUtil.multiplyAlpha(Theme.TEXT_MAIN, alpha));
 
         float closeBtnSize = 14.0F;
@@ -104,8 +114,9 @@ public class ServerHelperModal implements Modal {
         }
 
         List<BindEntry> currentList = switch (currentTab) {
-            case 1 -> ftPotions;
-            case 2 -> hwItems;
+            case 1 -> hwItems;
+            case 2 -> rwItems;
+            case 3 -> lgItems;
             default -> ftItems;
         };
 
@@ -216,8 +227,9 @@ public class ServerHelperModal implements Modal {
         }
 
         List<BindEntry> currentList = switch (currentTab) {
-            case 1 -> ftPotions;
-            case 2 -> hwItems;
+            case 1 -> hwItems;
+            case 2 -> rwItems;
+            case 3 -> lgItems;
             default -> ftItems;
         };
 
