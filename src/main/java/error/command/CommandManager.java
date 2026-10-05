@@ -29,6 +29,7 @@ public class CommandManager {
         register(new BuilderCommand());
         register(new FriendCommand());
         register(new StaffCommand());
+        register(new TeleportCommand());
     }
 
     public void register(Command command) {

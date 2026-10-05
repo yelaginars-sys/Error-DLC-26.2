@@ -125,7 +125,10 @@ public final class Localization {
         RU_DICT.put("Particles", "Частицы Ударов");
         RU_DICT.put("ClientSounds", "Звуки Клиента");
         RU_DICT.put("UnHook", "Анхук");
-
+        RU_DICT.put("Copy equipment", "Копировать экипировку");
+        RU_DICT.put("Copy skin", "Копировать скин");
+        RU_DICT.put("Infinite health", "Бесконечное ХП");
+        RU_DICT.put("Spawn in front", "Спавнить спереди");
         RU_DICT.put("Shows arrows pointing towards nearby players", "Показывает стрелочки в направлении ближайших игроков");
         RU_DICT.put("Distance from Crosshair", "Дистанция от прицела");
         RU_DICT.put("Scale", "Масштаб");
@@ -333,6 +336,10 @@ public final class Localization {
         RU_DICT.put("ServerHelper.desc", "Автоматизирует серверные команды, авто-реконнект и логин");
         RU_DICT.put("UnHook.desc", "Скрывает клиент и восстанавливает оригинальный интерфейс игры");
         RU_DICT.put("WebTrap.desc", "Автоматически ставит паутину под ноги выбранной цели");
+        RU_DICT.put("ObsidianFarm.desc", "Автоматическая добыча обсидиана буром 3x3, авто-починка и продажа");
+        RU_DICT.put("DeathCoords.desc", "Сохраняет и выводит в чат координаты вашей смерти");
+        RU_DICT.put("KeyFinderTeleport.desc", "Автоматически ищет ключ карты и спавнеры под землёй");
+        RU_DICT.put("PearlTarget.desc", "Бросает эндер-жемчуг за таргетом из киллауры при попытке убежать");
 
         RU_DICT.put("AirStuck.desc", "Замораживает положение игрока в воздухе");
         RU_DICT.put("NoFall.desc", "Отменяет урон от падения с любой высоты");

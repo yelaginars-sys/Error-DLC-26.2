@@ -15,6 +15,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.numbers.NumberFormat;
 import net.minecraft.network.chat.numbers.StyledFormat;
 import net.minecraft.world.scores.*;
+import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -245,84 +246,64 @@ public final class CustomScoreboardHud extends HudElement {
         }
     }
 
+    private boolean sliderDragging = false;
+
     @Override
     public float drawContextMenu(float menuX, float menuY, double mouseX, double mouseY, float alpha) {
-        float width = 150.0F;
+        float width = 140.0F;
+        float height = 38.0F;
         Interface iface = Interface.getInstance();
         float currentScale = iface != null ? iface.scoreboardScale.getValue() : 1.0F;
-        boolean hideScores = iface != null && iface.scoreboardRemoveScores.getValue();
-        boolean shadow = iface == null || iface.scoreboardShadow.getValue();
-
-        float sliderH = 26.0F;
-        String[] options = {
-            "Размер: 0.75x" + (Math.abs(currentScale - 0.75F) < 0.01F ? " ✔" : ""),
-            "Размер: 1.0x" + (Math.abs(currentScale - 1.0F) < 0.01F ? " ✔" : ""),
-            "Размер: 1.25x" + (Math.abs(currentScale - 1.25F) < 0.01F ? " ✔" : ""),
-            "Размер: 1.5x" + (Math.abs(currentScale - 1.5F) < 0.01F ? " ✔" : ""),
-            "Размер: 2.0x" + (Math.abs(currentScale - 2.0F) < 0.01F ? " ✔" : ""),
-            "Числа: " + (hideScores ? "Скрыты ✔" : "Видны"),
-            "Тень текста: " + (shadow ? "Вкл ✔" : "Выкл")
-        };
-        float height = sliderH + options.length * 18.0F + 8.0F;
-
-        int shadowCol = ColorUtil.rgba(0, 0, 0, (int) (180 * alpha));
-        int glassFill = ColorUtil.rgba(20, 18, 28, (int) (235 * alpha));
-        int glassBorder = ColorUtil.rgba(255, 255, 255, (int) (45 * alpha));
         int themeAccent = Theme.getAccentColor();
 
-        Render2D.drawShadow(menuX, menuY, width, height, 7.0F, 10.0F, shadowCol);
-        Render2D.drawBlur(menuX, menuY, width, height, 7.0F, 16.0F, glassFill, alpha);
-        Render2D.drawRoundedRect(menuX, menuY, width, height, 7.0F, glassFill);
-        Render2D.drawRoundedOutline(menuX, menuY, width, height, 7.0F, 1.0F, glassBorder);
+        // Check if user is actively dragging the slider
+        if (sliderDragging) {
+            long window = Minecraft.getInstance().getWindow().handle();
+            if (GLFW.glfwGetMouseButton(window, GLFW.GLFW_MOUSE_BUTTON_LEFT) == GLFW.GLFW_PRESS) {
+                float trackX = menuX + 10.0F;
+                float trackW = width - 20.0F;
+                float pct = Math.max(0.0F, Math.min(1.0F, (float) (mouseX - trackX) / trackW));
+                float newScale = 0.5F + pct * 1.5F;
+                newScale = Math.round(newScale * 20.0F) / 20.0F;
+                newScale = Math.max(0.5F, Math.min(2.0F, newScale));
+                if (iface != null) {
+                    iface.scoreboardScale.setValue(newScale);
+                }
+            } else {
+                sliderDragging = false;
+            }
+        }
 
-        // 1. Draw Slider Bar Header & Track
-        String scaleTitle = String.format(java.util.Locale.ROOT, "Размер: %.2fx", currentScale);
-        Fonts.drawString(Fonts.SF_MEDIUM, scaleTitle, menuX + 10.0F, menuY + 5.0F, 7.5F, ColorUtil.rgba(240, 240, 255, (int) (240 * alpha)));
+        // Liquid glass card
+        Render2D.drawShadow(menuX, menuY, width, height, 7.0F, 12.0F, ColorUtil.rgba(0, 0, 0, (int) (140 * alpha)));
+        Render2D.drawHudCard(menuX, menuY, width, height, 7.0F, alpha);
 
+        // Header: "Масштаб: 1.00x"
+        String scaleTitle = String.format(java.util.Locale.ROOT, "Масштаб: %.2fx", currentScale);
+        Fonts.drawString(Fonts.SF_MEDIUM, scaleTitle, menuX + 10.0F, menuY + 6.0F, 7.5F, ColorUtil.rgba(240, 240, 255, (int) (240 * alpha)));
+
+        // Slider Track
         float trackX = menuX + 10.0F;
-        float trackY = menuY + 17.0F;
+        float trackY = menuY + 22.0F;
         float trackW = width - 20.0F;
-        float trackH = 4.5F;
+        float trackH = 5.0F;
 
         float pct = Math.max(0.0F, Math.min(1.0F, (currentScale - 0.5F) / 1.5F));
-        float fillW = Math.max(3.0F, trackW * pct);
+        float fillW = Math.max(4.0F, trackW * pct);
 
-        Render2D.drawRoundedRect(trackX, trackY, trackW, trackH, 2.0F, ColorUtil.rgba(50, 50, 65, (int) (220 * alpha)));
-        Render2D.drawRoundedRect(trackX, trackY, fillW, trackH, 2.0F, ColorUtil.withAlpha(themeAccent, (int) (255 * alpha)));
+        // Background groove
+        Render2D.drawRoundedRect(trackX, trackY, trackW, trackH, 2.5F, ColorUtil.rgba(25, 25, 38, (int) (220 * alpha)));
+        Render2D.drawRoundedOutline(trackX, trackY, trackW, trackH, 2.5F, 0.5F, ColorUtil.rgba(255, 255, 255, (int) (25 * alpha)));
 
+        // Filled bar
+        Render2D.drawRoundedRect(trackX, trackY, fillW, trackH, 2.5F, ColorUtil.withAlpha(themeAccent, (int) (240 * alpha)));
+
+        // Thumb
         float thumbX = trackX + trackW * pct;
         float thumbY = trackY + trackH / 2.0F;
-        Render2D.drawRoundedRect(thumbX - 2.5F, thumbY - 4.0F, 5.0F, 8.0F, 2.0F, ColorUtil.rgba(255, 255, 255, (int) (255 * alpha)));
-
-        // 2. Draw Options below slider
-        float itemY = menuY + sliderH + 4.0F;
-        for (int i = 0; i < options.length; i++) {
-            boolean hovered = mouseX >= menuX && mouseX <= menuX + width && mouseY >= itemY && mouseY <= itemY + 18.0F;
-            if (hovered) {
-                Render2D.drawRoundedRect(menuX + 4.0F, itemY, width - 8.0F, 17.0F, 4.0F, ColorUtil.rgba(255, 255, 255, (int) (20 * alpha)));
-            }
-
-            boolean active = false;
-            if (i < 5) {
-                float optionScale = switch (i) {
-                    case 0 -> 0.75F;
-                    case 1 -> 1.0F;
-                    case 2 -> 1.25F;
-                    case 3 -> 1.5F;
-                    case 4 -> 2.0F;
-                    default -> 1.0F;
-                };
-                active = Math.abs(currentScale - optionScale) < 0.01F;
-            } else if (i == 5) {
-                active = hideScores;
-            } else if (i == 6) {
-                active = shadow;
-            }
-
-            int textColor = active ? themeAccent : ColorUtil.rgba(220, 220, 235, (int) (220 * alpha));
-            Fonts.drawString(Fonts.SF_MEDIUM, options[i], menuX + 10.0F, itemY + 4.0F, 7.5F, textColor);
-            itemY += 18.0F;
-        }
+        Render2D.drawShadow(thumbX - 3.5F, thumbY - 5.0F, 7.0F, 10.0F, 3.5F, 4.0F, ColorUtil.rgba(0, 0, 0, (int) (120 * alpha)));
+        Render2D.drawRoundedRect(thumbX - 3.5F, thumbY - 5.0F, 7.0F, 10.0F, 3.5F, ColorUtil.rgba(255, 255, 255, (int) (255 * alpha)));
+        Render2D.drawCircle(thumbX, thumbY, 1.5F, ColorUtil.withAlpha(themeAccent, (int) (255 * alpha)));
 
         return height;
     }
@@ -330,15 +311,12 @@ public final class CustomScoreboardHud extends HudElement {
     @Override
     public boolean handleContextMenuClick(float menuX, float menuY, double mouseX, double mouseY, int button) {
         if (button != 0) return false;
-        float width = 150.0F;
+        float width = 140.0F;
+        float height = 38.0F;
 
-        // Check if interacting with size slider bar
-        float trackX = menuX + 10.0F;
-        float trackY = menuY + 10.0F;
-        float trackW = width - 20.0F;
-        float trackH = 16.0F;
-
-        if (mouseX >= trackX - 5.0F && mouseX <= trackX + trackW + 5.0F && mouseY >= trackY && mouseY <= trackY + trackH) {
+        if (mouseX >= menuX && mouseX <= menuX + width && mouseY >= menuY && mouseY <= menuY + height) {
+            float trackX = menuX + 10.0F;
+            float trackW = width - 20.0F;
             float pct = Math.max(0.0F, Math.min(1.0F, (float) (mouseX - trackX) / trackW));
             float newScale = 0.5F + pct * 1.5F;
             newScale = Math.round(newScale * 20.0F) / 20.0F;
@@ -347,49 +325,39 @@ public final class CustomScoreboardHud extends HudElement {
             if (iface != null) {
                 iface.scoreboardScale.setValue(newScale);
             }
-            return false;
-        }
-
-        float sliderH = 26.0F;
-        float itemY = menuY + sliderH + 4.0F;
-        for (int i = 0; i < 7; i++) {
-            if (mouseX >= menuX && mouseX <= menuX + width && mouseY >= itemY && mouseY <= itemY + 18.0F) {
-                Interface iface = Interface.getInstance();
-                if (iface != null) {
-                    if (i < 5) {
-                        float newScale = switch (i) {
-                            case 0 -> 0.75F;
-                            case 1 -> 1.0F;
-                            case 2 -> 1.25F;
-                            case 3 -> 1.5F;
-                            case 4 -> 2.0F;
-                            default -> 1.0F;
-                        };
-                        iface.scoreboardScale.setValue(newScale);
-                    } else if (i == 5) {
-                        iface.scoreboardRemoveScores.setValue(!iface.scoreboardRemoveScores.getValue());
-                    } else if (i == 6) {
-                        iface.scoreboardShadow.setValue(!iface.scoreboardShadow.getValue());
-                    }
-                }
-                return true;
-            }
-            itemY += 18.0F;
+            this.sliderDragging = true;
+            return true;
         }
         return false;
     }
 
     @Override
+    public float getWidth() {
+        Interface iface = Interface.getInstance();
+        float scale = iface != null ? iface.scoreboardScale.getValue() : 1.0F;
+        return this.width * scale;
+    }
+
+    @Override
+    public float getHeight() {
+        Interface iface = Interface.getInstance();
+        float scale = iface != null ? iface.scoreboardScale.getValue() : 1.0F;
+        return this.height * scale;
+    }
+
+    @Override
     public boolean isHovered(double mouseX, double mouseY) {
-        float scale = Interface.getInstance() != null ? Interface.getInstance().scoreboardScale.getValue() : 1.0F;
-        return mouseX >= this.x && mouseX <= this.x + this.width * scale &&
-                mouseY >= this.y && mouseY <= this.y + this.height * scale;
+        float w = getWidth();
+        float h = getHeight();
+        return mouseX >= this.x && mouseX <= this.x + w &&
+                mouseY >= this.y && mouseY <= this.y + h;
     }
 
     @Override
     public List<Box> getCollisionBoxes() {
-        float scale = Interface.getInstance() != null ? Interface.getInstance().scoreboardScale.getValue() : 1.0F;
-        if (width <= 0 || height <= 0) return List.of();
-        return List.of(new Box(x, y, width * scale, height * scale, this));
+        float w = getWidth();
+        float h = getHeight();
+        if (w <= 0 || h <= 0) return List.of();
+        return List.of(new Box(x, y, w, h, this));
     }
 }

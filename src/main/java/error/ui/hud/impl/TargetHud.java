@@ -19,7 +19,13 @@ import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public final class TargetHud extends HudElement implements error.IMinecraft {
 
@@ -28,11 +34,11 @@ public final class TargetHud extends HudElement implements error.IMinecraft {
     private final Animation healthAnim = new Animation(20.0F, 0.25F);
     private final Animation absAnim = new Animation(0.0F, 0.25F);
 
-    private static final float CARD_W = 125.0F;
-    private static final float CARD_H = 43.0F;
-    private static final float CARD_R = 8.0F;
-    private static final float AVATAR_SIZE = 24.0F;
-    private static final float AVATAR_R = 5.0F;
+    private static final float CARD_W = 118.0F;
+    private static final float CARD_H = 37.0F;
+    private static final float CARD_R = 7.0F;
+    private static final float AVATAR_SIZE = 22.0F;
+    private static final float AVATAR_R = 4.5F;
 
     private static final Identifier STEVE_SKIN = Identifier.fromNamespaceAndPath("minecraft", "textures/entity/player/wide/steve.png");
 
@@ -63,6 +69,55 @@ public final class TargetHud extends HudElement implements error.IMinecraft {
         } else {
             this.target = null;
         }
+    }
+
+    private List<ItemStack> getEquippedItems(LivingEntity entity, boolean isChat) {
+        List<ItemStack> items = new ArrayList<>();
+        if (entity == null) return items;
+
+        EquipmentSlot[] armorSlots = {
+                EquipmentSlot.HEAD,
+                EquipmentSlot.CHEST,
+                EquipmentSlot.LEGS,
+                EquipmentSlot.FEET
+        };
+
+        for (EquipmentSlot slot : armorSlots) {
+            ItemStack stack = entity.getItemBySlot(slot);
+            if (!stack.isEmpty()) {
+                items.add(stack);
+            }
+        }
+
+        ItemStack mainHand = entity.getMainHandItem();
+        if (!mainHand.isEmpty()) {
+            items.add(mainHand);
+        }
+
+        ItemStack offHand = entity.getOffhandItem();
+        if (!offHand.isEmpty()) {
+            items.add(offHand);
+        }
+
+        if (items.isEmpty() && isChat) {
+            ItemStack helm = new ItemStack(Items.NETHERITE_HELMET);
+            ItemStack chest = new ItemStack(Items.NETHERITE_CHESTPLATE);
+            chest.setDamageValue((int) (chest.getMaxDamage() * 0.25F));
+            ItemStack legs = new ItemStack(Items.NETHERITE_LEGGINGS);
+            legs.setDamageValue((int) (legs.getMaxDamage() * 0.50F));
+            ItemStack boots = new ItemStack(Items.NETHERITE_BOOTS);
+            ItemStack sword = new ItemStack(Items.NETHERITE_SWORD);
+            ItemStack totem = new ItemStack(Items.TOTEM_OF_UNDYING);
+
+            items.add(helm);
+            items.add(chest);
+            items.add(legs);
+            items.add(boots);
+            items.add(sword);
+            items.add(totem);
+        }
+
+        return items;
     }
 
     @Override
@@ -97,8 +152,8 @@ public final class TargetHud extends HudElement implements error.IMinecraft {
         float curY = this.y;
         int accent = Theme.getAccentColor();
 
-        // 1. Main Background Card in Liquid Glass (matching Energy HUD & ClickGUI)
-        Render2D.drawShadow(curX, curY, CARD_W, CARD_H, CARD_R, 7.0F, ColorUtil.rgba(0, 0, 0, (int) (75 * a)));
+        // 1. Main Background Card in Liquid Glass
+        Render2D.drawShadow(curX, curY, CARD_W, CARD_H, CARD_R, 6.0F, ColorUtil.rgba(0, 0, 0, (int) (70 * a)));
         GuiGraphicsExtractor extractor = event.getGuiGraphicsExtractor();
         if (extractor != null) {
             Render2DUtil.flush();
@@ -106,19 +161,19 @@ public final class TargetHud extends HudElement implements error.IMinecraft {
                     .radius(Math.round(CARD_R))
                     .type(BlurType.KAWASE)
                     .strength(4)
-                    .tint(Color.rgba(14, 16, 22, (int) (115 * a)))
+                    .tint(Color.rgba(14, 16, 22, (int) (120 * a)))
                     .alpha(a)
                     .render(extractor);
 
             Outline.of(curX, curY, CARD_W, CARD_H)
                     .radius(Math.round(CARD_R))
-                    .thickness(0.85F)
-                    .verticalGradient(Color.WHITE, Color.rgba(255, 255, 255, 32))
+                    .thickness(0.8F)
+                    .verticalGradient(Color.WHITE, Color.rgba(255, 255, 255, 30))
                     .alpha(a)
                     .render(extractor);
         }
 
-        // 2. Avatar
+        // 2. Avatar on the left
         Identifier skin = STEVE_SKIN;
         if (this.target instanceof AbstractClientPlayer clientPlayer) {
             try {
@@ -126,36 +181,82 @@ public final class TargetHud extends HudElement implements error.IMinecraft {
             } catch (Throwable ignored) {}
         }
 
-        float avatarX = curX + 6.0F;
-        float avatarY = curY + 6.0F;
-        Render2D.drawRoundedRect(avatarX - 0.5F, avatarY - 0.5F, AVATAR_SIZE + 1.0F, AVATAR_SIZE + 1.0F, AVATAR_R, ColorUtil.rgba(255, 255, 255, (int) (25 * a)));
+        float avatarX = curX + 5.0F;
+        float avatarY = curY + 5.0F;
+        Render2D.drawRoundedRect(avatarX - 0.5F, avatarY - 0.5F, AVATAR_SIZE + 1.0F, AVATAR_SIZE + 1.0F, AVATAR_R, ColorUtil.rgba(255, 255, 255, (int) (20 * a)));
         Render2D.drawHead(skin, avatarX, avatarY, AVATAR_SIZE, AVATAR_R, a);
         Render2D.drawRoundedOutline(avatarX - 0.5F, avatarY - 0.5F, AVATAR_SIZE + 1.0F, AVATAR_SIZE + 1.0F, AVATAR_R, 0.5F, ColorUtil.rgba(255, 255, 255, (int) (40 * a)));
 
-        // 3. Name & HP Info
+        // 3. Top Row: HP in top-left + Nickname next to it
+        float startX = curX + 31.0F;
+        float topY = curY + 4.5F;
+
+        String hpText = String.format("%.1f HP", Math.max(0.0F, smoothHp));
+        if (smoothAbs > 0.05F) {
+            hpText += String.format(" (+%.1f)", smoothAbs);
+        }
+
+        float hpW = Fonts.SF_MEDIUM.getWidth(hpText, 7.5F);
+        Fonts.drawString(Fonts.SF_MEDIUM, hpText, startX, topY, 7.5F, ColorUtil.withAlpha(accent, (int) (255 * a)));
+
         String name = this.target.getName().getString();
-        float maxNameW = CARD_W - 42.0F;
-        if (Fonts.SF_MEDIUM.getWidth(name, 9.0F) > maxNameW) {
-            while (name.length() > 3 && Fonts.SF_MEDIUM.getWidth(name + "...", 9.0F) > maxNameW) {
+        float nameX = startX + hpW + 4.0F;
+        float maxNameW = (curX + CARD_W - 5.0F) - nameX;
+        if (Fonts.SF_MEDIUM.getWidth(name, 7.5F) > maxNameW) {
+            while (name.length() > 2 && Fonts.SF_MEDIUM.getWidth(name + "..", 7.5F) > maxNameW) {
                 name = name.substring(0, name.length() - 1);
             }
-            name += "...";
+            name += "..";
+        }
+        Fonts.drawString(Fonts.SF_MEDIUM, name, nameX, topY, 7.5F, ColorUtil.rgba(255, 255, 255, (int) (240 * a)));
+
+        // 4. Middle Row: Armor with durability bars + Hand items under HP & Nick
+        float itemsY = curY + 15.0F;
+        List<ItemStack> equippedItems = getEquippedItems(this.target, isChat);
+
+        if (extractor != null && !equippedItems.isEmpty()) {
+            Render2DUtil.flush();
+            float itemScale = 0.62F;
+            float itemW = 10.0F;
+            float itemGap = 3.0F;
+
+            int maxDisplay = Math.min(6, (int) ((CARD_W - 36.0F) / (itemW + itemGap)));
+            int displayCount = Math.min(maxDisplay, equippedItems.size());
+
+            for (int i = 0; i < displayCount; i++) {
+                ItemStack stack = equippedItems.get(i);
+                float ix = startX + i * (itemW + itemGap);
+
+                try {
+                    var pose = extractor.pose();
+                    pose.pushMatrix();
+                    pose.translate(ix, itemsY);
+                    pose.scale(itemScale, itemScale);
+                    extractor.item(stack, 0, 0);
+                    pose.popMatrix();
+                } catch (Throwable ignored) {}
+
+                // Durability bar underneath item
+                if (stack.isDamaged() && stack.getMaxDamage() > 0) {
+                    float durRatio = 1.0F - ((float) stack.getDamageValue() / (float) stack.getMaxDamage());
+                    durRatio = Mth.clamp(durRatio, 0.0F, 1.0F);
+                    float fillW = Math.max(1.0F, itemW * durRatio);
+                    int durColor = durRatio > 0.6F ? ColorUtil.rgba(40, 230, 90, (int) (240 * a)) :
+                            (durRatio > 0.3F ? ColorUtil.rgba(240, 190, 20, (int) (240 * a)) :
+                                    ColorUtil.rgba(240, 45, 45, (int) (240 * a)));
+
+                    Render2D.drawRoundedRect(ix, itemsY + 10.5F, itemW, 1.5F, 0.5F, ColorUtil.rgba(0, 0, 0, (int) (140 * a)));
+                    Render2D.drawRoundedRect(ix, itemsY + 10.5F, fillW, 1.5F, 0.5F, durColor);
+                }
+            }
         }
 
-        Fonts.drawString(Fonts.SF_MEDIUM, name, curX + 35.0F, curY + 6.5F, 9.0F, ColorUtil.rgba(255, 255, 255, (int) (250 * a)));
-
-        String hpText = String.format("HP: %.1f", Math.max(0.0F, smoothHp));
-        if (smoothAbs > 0.05F) {
-            hpText += String.format(" (%.1f)", smoothAbs);
-        }
-        Fonts.drawString(Fonts.SF_MEDIUM, hpText, curX + 35.0F, curY + 17.5F, 8.0F, ColorUtil.rgba(200, 215, 230, (int) (230 * a)));
-
-        // 4. Health Bar & Absorption Bar
-        float barX = curX + 6.0F;
-        float barY = curY + 34.0F;
-        float barW = CARD_W - 12.0F;
-        float barH = 4.0F;
-        float barR = 2.0F;
+        // 5. Health Bar & Absorption Bar along bottom
+        float barX = curX + 5.0F;
+        float barY = curY + 30.0F;
+        float barW = CARD_W - 10.0F;
+        float barH = 3.0F;
+        float barR = 1.5F;
 
         // Track
         Render2D.drawRoundedRect(barX, barY, barW, barH, barR, ColorUtil.rgba(255, 255, 255, (int) (18 * a)));

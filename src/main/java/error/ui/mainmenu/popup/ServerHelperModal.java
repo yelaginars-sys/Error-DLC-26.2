@@ -72,6 +72,11 @@ public class ServerHelperModal implements Modal {
         lgItems.add(new BindEntry("Ливалка с платформой", Items.CLAY_BALL, module.bindLgPlatformLeave));
         lgItems.add(new BindEntry("Уникальная трапка", Items.CRYING_OBSIDIAN, module.bindLgTrap));
         lgItems.add(new BindEntry("Уникальное перо", Items.FEATHER, module.bindLgFeather));
+
+        if (module.spookyMode.is("Funtime")) currentTab = 0;
+        else if (module.spookyMode.is("HolyWorld")) currentTab = 1;
+        else if (module.spookyMode.is("ReallyWorld")) currentTab = 2;
+        else if (module.spookyMode.is("LonyGrief")) currentTab = 3;
     }
 
     @Override
@@ -221,6 +226,7 @@ public class ServerHelperModal implements Modal {
             if (mouseX >= tabX && mouseX <= tabX + tabW && mouseY >= tabY && mouseY <= tabY + tabH) {
                 currentTab = i;
                 listeningBind = null;
+                module.spookyMode.setValue(tabs[i]);
                 return true;
             }
             tabX += tabW + 5.0F;

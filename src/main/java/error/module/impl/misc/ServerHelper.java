@@ -32,32 +32,32 @@ public class ServerHelper extends Module {
     public final BindSetting bindChorus = bind("Хорус", GLFW.GLFW_KEY_UNKNOWN);
 
     // Funtime binds
-    public final BindSetting bindDisorient = bind("Дезориентация", GLFW.GLFW_KEY_UNKNOWN);
-    public final BindSetting bindTrap = bind("Трапка", GLFW.GLFW_KEY_UNKNOWN);
-    public final BindSetting bindPlast = bind("Пласт", GLFW.GLFW_KEY_UNKNOWN);
-    public final BindSetting bindDust = bind("Явная пыль", GLFW.GLFW_KEY_UNKNOWN);
-    public final BindSetting bindSnow = bind("Снег заморозки", GLFW.GLFW_KEY_UNKNOWN);
-    public final BindSetting bindWindCharge = bind("Заряд ветра", GLFW.GLFW_KEY_UNKNOWN);
+    public final BindSetting bindDisorient = bind("Дезориентация", GLFW.GLFW_KEY_UNKNOWN).visible(() -> spookyMode.is("Funtime"));
+    public final BindSetting bindTrap = bind("Трапка", GLFW.GLFW_KEY_UNKNOWN).visible(() -> spookyMode.is("Funtime"));
+    public final BindSetting bindPlast = bind("Пласт", GLFW.GLFW_KEY_UNKNOWN).visible(() -> spookyMode.is("Funtime"));
+    public final BindSetting bindDust = bind("Явная пыль", GLFW.GLFW_KEY_UNKNOWN).visible(() -> spookyMode.is("Funtime"));
+    public final BindSetting bindSnow = bind("Снег заморозки", GLFW.GLFW_KEY_UNKNOWN).visible(() -> spookyMode.is("Funtime"));
+    public final BindSetting bindWindCharge = bind("Заряд ветра", GLFW.GLFW_KEY_UNKNOWN).visible(() -> spookyMode.is("Funtime"));
 
     // HolyWorld binds
-    public final BindSetting bindStun = bind("стан", GLFW.GLFW_KEY_UNKNOWN);
-    public final BindSetting bindExpTrap = bind("взрывная трапка", GLFW.GLFW_KEY_UNKNOWN);
-    public final BindSetting bindNormTrap = bind("трапка ", GLFW.GLFW_KEY_UNKNOWN);
-    public final BindSetting bindBomb = bind("взрывная штучка", GLFW.GLFW_KEY_UNKNOWN);
-    public final BindSetting bindHwSnow = bind("ком снега", GLFW.GLFW_KEY_UNKNOWN);
+    public final BindSetting bindStun = bind("стан", GLFW.GLFW_KEY_UNKNOWN).visible(() -> spookyMode.is("HolyWorld"));
+    public final BindSetting bindExpTrap = bind("взрывная трапка", GLFW.GLFW_KEY_UNKNOWN).visible(() -> spookyMode.is("HolyWorld"));
+    public final BindSetting bindNormTrap = bind("трапка ", GLFW.GLFW_KEY_UNKNOWN).visible(() -> spookyMode.is("HolyWorld"));
+    public final BindSetting bindBomb = bind("взрывная штучка", GLFW.GLFW_KEY_UNKNOWN).visible(() -> spookyMode.is("HolyWorld"));
+    public final BindSetting bindHwSnow = bind("ком снега", GLFW.GLFW_KEY_UNKNOWN).visible(() -> spookyMode.is("HolyWorld"));
 
     // ReallyWorld binds
-    public final BindSetting bindRwTrap = bind("Ловушка (RW)", GLFW.GLFW_KEY_UNKNOWN);
-    public final BindSetting bindRwEnderTrap = bind("Эндер-ловушка (RW)", GLFW.GLFW_KEY_UNKNOWN);
-    public final BindSetting bindRwAntiFly = bind("Анти-полет (RW)", GLFW.GLFW_KEY_UNKNOWN);
+    public final BindSetting bindRwTrap = bind("Ловушка (RW)", GLFW.GLFW_KEY_UNKNOWN).visible(() -> spookyMode.is("ReallyWorld"));
+    public final BindSetting bindRwEnderTrap = bind("Эндер-ловушка (RW)", GLFW.GLFW_KEY_UNKNOWN).visible(() -> spookyMode.is("ReallyWorld"));
+    public final BindSetting bindRwAntiFly = bind("Анти-полет (RW)", GLFW.GLFW_KEY_UNKNOWN).visible(() -> spookyMode.is("ReallyWorld"));
 
     // LonyGrief binds
-    public final BindSetting bindLgLeave = bind("Обычная ливалка (LG)", GLFW.GLFW_KEY_UNKNOWN);
-    public final BindSetting bindLgPlatformLeave = bind("Ливалка с платформой (LG)", GLFW.GLFW_KEY_UNKNOWN);
-    public final BindSetting bindLgTrap = bind("Уникальная трапка (LG)", GLFW.GLFW_KEY_UNKNOWN);
-    public final BindSetting bindLgFeather = bind("Уникальное перо (LG)", GLFW.GLFW_KEY_UNKNOWN);
+    public final BindSetting bindLgLeave = bind("Обычная ливалка (LG)", GLFW.GLFW_KEY_UNKNOWN).visible(() -> spookyMode.is("LonyGrief"));
+    public final BindSetting bindLgPlatformLeave = bind("Ливалка с платформой (LG)", GLFW.GLFW_KEY_UNKNOWN).visible(() -> spookyMode.is("LonyGrief"));
+    public final BindSetting bindLgTrap = bind("Уникальная трапка (LG)", GLFW.GLFW_KEY_UNKNOWN).visible(() -> spookyMode.is("LonyGrief"));
+    public final BindSetting bindLgFeather = bind("Уникальное перо (LG)", GLFW.GLFW_KEY_UNKNOWN).visible(() -> spookyMode.is("LonyGrief"));
 
-    public final CheckBox snowEffect = checkbox("Эффект снежка", false);
+    public final CheckBox snowEffect = checkbox("Эффект снежка", false).visible(() -> spookyMode.is("Funtime") || spookyMode.is("HolyWorld"));
 
     private boolean activeUse = false;
     private boolean isConsumableUse = false;

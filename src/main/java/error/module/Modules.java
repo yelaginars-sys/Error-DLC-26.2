@@ -85,6 +85,10 @@ public class Modules {
     public DiscordRPC discordRPC;
     public TargetEsp targetEsp;
     public InterpolateF5 interpolateF5;
+    public ObsidianFarm obsidianFarm;
+    public DeathCoords deathCoords;
+    public KeyFinderTeleport keyFinderTeleport;
+    public PearlTarget pearlTarget;
 
     public void init() {
         this.clickGui = new ClickGui();
@@ -156,6 +160,10 @@ public class Modules {
         this.discordRPC = DiscordRPC.getInstance();
         this.targetEsp = new TargetEsp();
         this.interpolateF5 = new InterpolateF5();
+        this.obsidianFarm = new ObsidianFarm();
+        this.deathCoords = new DeathCoords();
+        this.keyFinderTeleport = new KeyFinderTeleport();
+        this.pearlTarget = new PearlTarget();
 
         register(
                 this.anInterface,
@@ -225,7 +233,11 @@ public class Modules {
                 this.renderDemoModule,
                 this.discordRPC,
                 this.targetEsp,
-                this.interpolateF5
+                this.interpolateF5,
+                this.obsidianFarm,
+                this.deathCoords,
+                this.keyFinderTeleport,
+                this.pearlTarget
         );
 
         if (this.maceHelper != null) this.maceHelper.setState(true);

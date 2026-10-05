@@ -119,15 +119,8 @@ public final class ExpThrow extends Module {
 
         if (hand != null) {
             float targetPitch = pitch.getValue();
-            float currentPitch = mc.player.getXRot();
-            float maxTurn = turnSpeed.getValue();
-            float deltaPitch = Mth.clamp(targetPitch - currentPitch, -maxTurn, maxTurn);
-            float newPitch = currentPitch + deltaPitch;
 
-            // Turn player pitch towards target
-            mc.player.setXRot(newPitch);
-
-            // Send look packet with target pitch directly
+            // Send look packet with target pitch directly without moving player camera
             if (mc.getConnection() != null) {
                 mc.getConnection().send(new ServerboundMovePlayerPacket.Rot(
                         mc.player.getYRot(), targetPitch, mc.player.onGround(), false
@@ -136,6 +129,14 @@ public final class ExpThrow extends Module {
 
             mc.gameMode.useItem(mc.player, hand);
             mc.player.swing(hand);
+
+            // Restore server rotation back to player's current view angle
+            if (mc.getConnection() != null) {
+                mc.getConnection().send(new ServerboundMovePlayerPacket.Rot(
+                        mc.player.getYRot(), mc.player.getXRot(), mc.player.onGround(), false
+                ));
+            }
+
             throwDelay = 1;
         }
     }

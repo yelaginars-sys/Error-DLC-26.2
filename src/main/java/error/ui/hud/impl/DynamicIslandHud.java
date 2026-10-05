@@ -19,6 +19,7 @@ import error.util.display.blur.Blur;
 import error.util.display.blur.BlurType;
 import error.util.display.color.Color;
 import error.util.display.outline.Outline;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.LerpingBossEvent;
 import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.client.player.AbstractClientPlayer;
@@ -756,40 +757,84 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
     }
 
     private void drawMusicControls(float x, float y, float alpha) {
-        float btnSize = 12.0F;
-        float gap = 3.0F;
+        Minecraft mc = Minecraft.getInstance();
+        double mouseX = mc.mouseHandler.xpos() / mc.getWindow().getGuiScale();
+        double mouseY = mc.mouseHandler.ypos() / mc.getWindow().getGuiScale();
+
+        float prevSize = 13.0F;
+        float playSize = 15.0F;
+        float nextSize = 13.0F;
+        float gap = 3.5F;
 
         this.prevButtonX = x;
-        this.playButtonX = x + btnSize + gap;
-        this.nextButtonX = x + (btnSize + gap) * 2.0F;
-        this.musicButtonY = y;
-        this.musicButtonSize = btnSize;
+        this.playButtonX = x + prevSize + gap;
+        this.nextButtonX = this.playButtonX + playSize + gap;
+        this.musicButtonY = y - 1.5F;
+        this.musicButtonSize = playSize;
 
-        int iconCol = ColorUtil.rgba(240, 240, 255, (int) (230 * alpha));
+        float prevY = y;
+        float playY = y - 1.5F;
+        float nextY = y;
 
-        // Previous Button
-        drawButtonBg(prevButtonX, y, btnSize, alpha);
-        Render2D.drawRoundedRect(prevButtonX + 3.0F, y + 3.0F, 1.5F, 6.0F, 0.5F, iconCol);
-        Render2D.drawRoundedRect(prevButtonX + 6.0F, y + 3.0F, 1.5F, 6.0F, 0.5F, iconCol);
+        // 1. Previous Button
+        boolean prevHover = mouseX >= prevButtonX && mouseX <= prevButtonX + prevSize && mouseY >= prevY && mouseY <= prevY + prevSize;
+        drawLiquidGlassButton(prevButtonX, prevY, prevSize, alpha, prevHover);
+        int prevIconCol = prevHover ? Theme.getAccentColor() : ColorUtil.rgba(240, 240, 255, (int) (230 * alpha));
+        float px = prevButtonX + 3.2F;
+        float py = prevY + 3.5F;
+        Render2D.drawRoundedRect(px, py, 1.2F, 6.0F, 0.6F, prevIconCol);
+        Render2D.drawRoundedRect(px + 2.0F, py + 2.0F, 1.1F, 2.0F, 0.55F, prevIconCol);
+        Render2D.drawRoundedRect(px + 3.1F, py + 1.0F, 1.1F, 4.0F, 0.55F, prevIconCol);
+        Render2D.drawRoundedRect(px + 4.2F, py, 1.2F, 6.0F, 0.6F, prevIconCol);
 
-        // Play/Pause Button
-        drawButtonBg(playButtonX, y, btnSize, alpha);
+        // 2. Play / Pause Button in Center
+        boolean playHover = mouseX >= playButtonX && mouseX <= playButtonX + playSize && mouseY >= playY && mouseY <= playY + playSize;
+        drawLiquidGlassButton(playButtonX, playY, playSize, alpha, playHover);
+        int playIconCol = playHover ? Theme.getAccentColor() : ColorUtil.rgba(255, 255, 255, (int) (245 * alpha));
+
         if (trackPlaying) {
-            Render2D.drawRoundedRect(playButtonX + 3.5F, y + 3.0F, 1.8F, 6.0F, 0.5F, iconCol);
-            Render2D.drawRoundedRect(playButtonX + 6.7F, y + 3.0F, 1.8F, 6.0F, 0.5F, iconCol);
+            // Pause bars
+            float barW = 1.7F;
+            float barH = 6.2F;
+            float barY = playY + (playSize - barH) / 2.0F;
+            float cx = playButtonX + playSize / 2.0F;
+            Render2D.drawRoundedRect(cx - barW - 1.0F, barY, barW, barH, 0.85F, playIconCol);
+            Render2D.drawRoundedRect(cx + 1.0F, barY, barW, barH, 0.85F, playIconCol);
         } else {
-            Render2D.drawRoundedRect(playButtonX + 4.0F, y + 3.0F, 4.0F, 6.0F, 1.0F, iconCol);
+            // Play triangle
+            float tx = playButtonX + 5.2F;
+            float ty = playY + (playSize - 6.2F) / 2.0F;
+            Render2D.drawRoundedRect(tx, ty, 1.4F, 6.2F, 0.7F, playIconCol);
+            Render2D.drawRoundedRect(tx + 1.4F, ty + 1.0F, 1.3F, 4.2F, 0.65F, playIconCol);
+            Render2D.drawRoundedRect(tx + 2.7F, ty + 2.1F, 1.3F, 2.0F, 0.65F, playIconCol);
+            Render2D.drawRoundedRect(tx + 4.0F, ty + 2.6F, 0.9F, 1.0F, 0.45F, playIconCol);
         }
 
-        // Next Button
-        drawButtonBg(nextButtonX, y, btnSize, alpha);
-        Render2D.drawRoundedRect(nextButtonX + 4.5F, y + 3.0F, 1.5F, 6.0F, 0.5F, iconCol);
-        Render2D.drawRoundedRect(nextButtonX + 7.5F, y + 3.0F, 1.5F, 6.0F, 0.5F, iconCol);
+        // 3. Next Button
+        boolean nextHover = mouseX >= nextButtonX && mouseX <= nextButtonX + nextSize && mouseY >= nextY && mouseY <= nextY + nextSize;
+        drawLiquidGlassButton(nextButtonX, nextY, nextSize, alpha, nextHover);
+        int nextIconCol = nextHover ? Theme.getAccentColor() : ColorUtil.rgba(240, 240, 255, (int) (230 * alpha));
+        float nx = nextButtonX + 3.8F;
+        float ny = nextY + 3.5F;
+        Render2D.drawRoundedRect(nx, ny, 1.2F, 6.0F, 0.6F, nextIconCol);
+        Render2D.drawRoundedRect(nx + 1.2F, ny + 1.0F, 1.1F, 4.0F, 0.55F, nextIconCol);
+        Render2D.drawRoundedRect(nx + 2.3F, ny + 2.0F, 1.1F, 2.0F, 0.55F, nextIconCol);
+        Render2D.drawRoundedRect(nx + 4.2F, ny, 1.2F, 6.0F, 0.6F, nextIconCol);
     }
 
-    private void drawButtonBg(float bx, float by, float size, float alpha) {
-        Render2D.drawRoundedRect(bx, by, size, size, 3.0F, ColorUtil.rgba(60, 52, 76, (int) (160 * alpha)));
-        Render2D.drawRoundedOutline(bx, by, size, size, 3.0F, 1.0F, ColorUtil.rgba(255, 255, 255, (int) (40 * alpha)));
+    private void drawLiquidGlassButton(float bx, float by, float size, float alpha, boolean hovered) {
+        float r = size / 2.0F;
+        int shadowCol = ColorUtil.rgba(0, 0, 0, (int) (70 * alpha));
+        int glassFill = hovered
+                ? ColorUtil.rgba(255, 255, 255, (int) (38 * alpha))
+                : ColorUtil.rgba(255, 255, 255, (int) (14 * alpha));
+        int glassBorder = hovered
+                ? ColorUtil.withAlpha(Theme.getAccentColor(), (int) (210 * alpha))
+                : ColorUtil.rgba(255, 255, 255, (int) (38 * alpha));
+
+        Render2D.drawShadow(bx, by, size, size, r, 3.5F, shadowCol);
+        Render2D.drawRoundedRect(bx, by, size, size, r, glassFill);
+        Render2D.drawRoundedOutline(bx, by, size, size, r, 0.75F, glassBorder);
     }
 
     private void drawNormal(float x, float y, float width, float height, int themeAccent, float alpha, long now) {

@@ -21,10 +21,17 @@ import error.event.list.AttackEvent;
 @Mixin(MultiPlayerGameMode.class)
 public abstract class MultiPlayerGameModeMixin {
 
-    @Inject(method = "attack", at = @At("HEAD"))
+    @Inject(method = "attack", at = @At("HEAD"), cancellable = true)
     private void onAttack(Player player, Entity target, CallbackInfo ci) {
         if (target != null) {
             Client.getInstance().getEventManager().call(new AttackEvent(target));
+            if (target instanceof error.module.impl.misc.FakePlayerEntity fakePlayer) {
+                float damage = (float) player.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE);
+                fakePlayer.takeLocalHit(player.damageSources().playerAttack(player), damage);
+                player.swing(InteractionHand.MAIN_HAND);
+                player.resetAttackStrengthTicker();
+                ci.cancel();
+            }
         }
     }
     @Inject(method = "useItemOn", at = @At("HEAD"), cancellable = true)
