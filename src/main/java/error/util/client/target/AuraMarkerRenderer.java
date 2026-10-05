@@ -77,10 +77,17 @@ public final class AuraMarkerRenderer {
             return;
         }
 
+        float userOpacity = error.module.impl.render.TargetEsp.INSTANCE != null ? error.module.impl.render.TargetEsp.INSTANCE.opacity.get() : 1.0F;
+        boolean colorOnHit = error.module.impl.render.TargetEsp.INSTANCE == null || error.module.impl.render.TargetEsp.INSTANCE.colorOnHit.getValue();
+        int finalCol = colorOnHit ? Annstable.blend(baseColor, target, alpha * userOpacity) : error.util.client.clients.ColorUtil.withAlpha(baseColor, (int) (error.util.client.clients.ColorUtil.alpha(baseColor) * alpha * userOpacity));
         MarkerGeometry geometry = markerGeometry(mc, target, tickDelta);
         if (geometry != null) {
-            renderMarker(mc, geometry, Annstable.blend(baseColor, target, alpha));
+            renderMarker(mc, geometry, finalCol);
         }
+    }
+
+    public boolean hasActive() {
+        return this.alpha > 0.01F;
     }
 
     public void reset() {
@@ -110,14 +117,16 @@ public final class AuraMarkerRenderer {
         }
 
         Vec3 position = Render3DUtil.interpolatedPosition(target, tickDelta);
+        float userSize = error.module.impl.render.TargetEsp.INSTANCE != null ? error.module.impl.render.TargetEsp.INSTANCE.size.get() : 1.0F;
         float widthScale = (target.getBbWidth() < 1.0F) ? 0.95F : (target.getBbWidth() > 2.0F ? 1.45F : 1.0F);
-        float halfSize = 0.5F * widthScale * alpha * Annstable.scale(target, 0.12F);
+        float halfSize = 0.5F * widthScale * alpha * Annstable.scale(target, 0.12F) * userSize;
 
         if (halfSize <= 0.001F) {
             return null;
         }
 
-        float rotationZ = (float) ((System.currentTimeMillis() % 360000L) / 1000.0D * 120.0D % 360.0D);
+        float userSpeed = error.module.impl.render.TargetEsp.INSTANCE != null ? error.module.impl.render.TargetEsp.INSTANCE.rotSpeed.get() : 1.0F;
+        float rotationZ = (float) ((System.currentTimeMillis() % 360000L) / 1000.0D * (120.0D * userSpeed) % 360.0D);
 
         Matrix4f pose = Render3DUtil.buildBillboardPose(
                 camera,

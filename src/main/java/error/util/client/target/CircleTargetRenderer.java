@@ -102,7 +102,12 @@ public final class CircleTargetRenderer {
             return;
         }
 
-        this.clock += dt * 2.5F;
+        float userSpeed = error.module.impl.render.TargetEsp.INSTANCE != null ? error.module.impl.render.TargetEsp.INSTANCE.rotSpeed.get() : 1.0F;
+        float userSize = error.module.impl.render.TargetEsp.INSTANCE != null ? error.module.impl.render.TargetEsp.INSTANCE.size.get() : 1.0F;
+        float userOpacity = error.module.impl.render.TargetEsp.INSTANCE != null ? error.module.impl.render.TargetEsp.INSTANCE.opacity.get() : 1.0F;
+        boolean colorOnHit = error.module.impl.render.TargetEsp.INSTANCE == null || error.module.impl.render.TargetEsp.INSTANCE.colorOnHit.getValue();
+
+        this.clock += dt * 2.5F * userSpeed;
 
         var renderTarget = mc.gameRenderer.mainRenderTarget();
         if (renderTarget == null || renderTarget.getColorTextureView() == null || renderTarget.getDepthTextureView() == null) {
@@ -114,7 +119,8 @@ public final class CircleTargetRenderer {
         Vec3 cameraPos = camera.position();
         Matrix4f viewPose = Render3DUtil.cameraViewPose(camera);
 
-        int color = ColorUtil.multiplyAlpha(baseColor, alpha);
+        int effectiveBase = (colorOnHit && lastTarget != null) ? error.util.client.Annstable.blend(baseColor, lastTarget, 1.0F) : baseColor;
+        int color = ColorUtil.multiplyAlpha(effectiveBase, alpha * userOpacity);
 
         float targetHeight = lastTarget != null ? lastTarget.getBbHeight() : 1.8F;
         float targetWidth = lastTarget != null ? lastTarget.getBbWidth() : 0.6F;
@@ -126,7 +132,7 @@ public final class CircleTargetRenderer {
         float velocity = (float) Math.cos(this.clock);
         double trailY = currentY - (velocity * TRAIL_HEIGHT * alpha);
 
-        float radius = targetWidth * 0.58F + 0.22F;
+        float radius = (targetWidth * 0.58F + 0.22F) * userSize;
         float innerRadius = Math.max(0.01F, radius - RING_THICKNESS);
         float outerRadius = radius + RING_THICKNESS;
 

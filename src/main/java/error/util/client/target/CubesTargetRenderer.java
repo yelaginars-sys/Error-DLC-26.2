@@ -119,11 +119,17 @@ public final class CubesTargetRenderer {
         Vec3 cameraPos = camera.position();
         Matrix4f viewPose = Render3DUtil.cameraViewPose(camera);
 
-        int color = ColorUtil.multiplyAlpha(baseColor, alpha);
+        float userSpeed = error.module.impl.render.TargetEsp.INSTANCE != null ? error.module.impl.render.TargetEsp.INSTANCE.rotSpeed.get() : 1.0F;
+        float userSize = error.module.impl.render.TargetEsp.INSTANCE != null ? error.module.impl.render.TargetEsp.INSTANCE.size.get() : 1.0F;
+        float userOpacity = error.module.impl.render.TargetEsp.INSTANCE != null ? error.module.impl.render.TargetEsp.INSTANCE.opacity.get() : 1.0F;
+        boolean colorOnHit = error.module.impl.render.TargetEsp.INSTANCE == null || error.module.impl.render.TargetEsp.INSTANCE.colorOnHit.getValue();
 
-        float spawnScale = easeOutBack(Math.min(1.0F, alpha * 1.15F));
+        int effectiveBase = (colorOnHit && lastTarget != null) ? error.util.client.Annstable.blend(baseColor, lastTarget, 1.0F) : baseColor;
+        int color = ColorUtil.multiplyAlpha(effectiveBase, alpha * userOpacity);
+
+        float spawnScale = easeOutBack(Math.min(1.0F, alpha * 1.15F)) * userSize;
         float targetHeight = lastTarget != null ? lastTarget.getBbHeight() : 1.8F;
-        float targetWidth = lastTarget != null ? lastTarget.getBbWidth() : 0.6F;
+        float targetWidth = (lastTarget != null ? lastTarget.getBbWidth() : 0.6F) * userSize;
 
         this.glowSprites.clear();
 
@@ -141,7 +147,7 @@ public final class CubesTargetRenderer {
         }
 
         for (SwarmCube cube : this.cubes) {
-            cube.update(dt);
+            cube.update(dt * userSpeed);
 
             float baseRadius = (targetWidth * 0.55F + cube.radiusOffset);
             float currentRadius = baseRadius * spawnScale;

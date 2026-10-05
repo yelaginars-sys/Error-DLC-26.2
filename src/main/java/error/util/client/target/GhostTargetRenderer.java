@@ -72,7 +72,12 @@ public final class GhostTargetRenderer {
             return;
         }
 
-        this.clock += delta * 2.6F;
+        float userSpeed = error.module.impl.render.TargetEsp.INSTANCE != null ? error.module.impl.render.TargetEsp.INSTANCE.rotSpeed.get() : 1.0F;
+        float userSize = error.module.impl.render.TargetEsp.INSTANCE != null ? error.module.impl.render.TargetEsp.INSTANCE.size.get() : 1.0F;
+        float userOpacity = error.module.impl.render.TargetEsp.INSTANCE != null ? error.module.impl.render.TargetEsp.INSTANCE.opacity.get() : 1.0F;
+        boolean colorOnHit = error.module.impl.render.TargetEsp.INSTANCE == null || error.module.impl.render.TargetEsp.INSTANCE.colorOnHit.getValue();
+
+        this.clock += delta * 2.6F * userSpeed;
 
         Vec3 currentTargetPos = Render3DUtil.interpolatedPosition(this.lastTarget, tickDelta);
         if (this.lastTargetPos == null) {
@@ -83,8 +88,8 @@ public final class GhostTargetRenderer {
 
         float targetHeight = this.lastTarget.getBbHeight();
         float targetWidth = this.lastTarget.getBbWidth();
-        float baseRadius = (targetWidth * 0.7F + 0.5F) * appearValue;
-        int animatedColor = Annstable.blend(color, this.lastTarget, 1.0F);
+        float baseRadius = (targetWidth * 0.7F + 0.5F) * appearValue * userSize;
+        int animatedColor = colorOnHit ? Annstable.blend(color, this.lastTarget, 1.0F) : color;
 
         this.sprites.clear();
 

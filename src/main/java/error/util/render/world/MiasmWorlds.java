@@ -89,9 +89,14 @@ public final class MiasmWorlds {
         ));
 
         register(AffectedWorlds.lazy(
-                () -> {AuraModule aura = Client.INSTANCE.moduleManager.getAuraModule();boolean auraActive = (aura != null && aura.isState() && aura.hasTargetEsp());boolean hasVisuals = TargetMarkers.INSTANCE.hasActive();return (auraActive || hasVisuals) ? (aura != null ? aura : Client.INSTANCE.moduleManager.getModule(AuraModule.class)) : null;},
+                () -> {
+                    error.module.impl.render.TargetEsp esp = error.module.impl.render.TargetEsp.INSTANCE;
+                    boolean espActive = esp != null && esp.isEnabled();
+                    boolean hasVisuals = TargetMarkers.INSTANCE.hasActive();
+                    return (espActive || hasVisuals) ? (esp != null ? esp : Client.INSTANCE.moduleManager.getModule(error.module.impl.render.TargetEsp.class)) : null;
+                },
                 () -> TargetMarkers.INSTANCE,
-                (module, markers, context) -> markers.render(module, context.tickDelta()),
+                (esp, markers, context) -> markers.render(esp, context.tickDelta()),
                 TargetMarkers::release
         ));
 
