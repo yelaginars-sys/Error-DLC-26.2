@@ -1,7 +1,6 @@
 package error.module.impl.combat;
 
 import lombok.Getter;
-import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemUseAnimation;
@@ -12,59 +11,47 @@ import error.util.UBoxPoints.TargetPoint;
 import error.event.EventTarget;
 import error.event.list.PlayerInputEvent;
 import error.event.list.PlayerTickEvent;
-import error.builder.BuilderPoints;
 import error.module.Category;
 import error.module.Module;
 import error.setting.impl.*;
 import error.util.client.clients.Targets;
 import error.util.player.MoveUtility;
 
-/**
- */
+import java.util.List;
+
 @Getter
 public class AuraModule extends Module {
     public static AuraModule INSTANCE;
 
-    private final HeaderSetting mainHeader = header("Main");
-    private final SliderSetting attackRange = slider("Attack Range", 3.0f, 1.0f, 6.0f, 0.1f);
-    private final SliderSetting aimRange = slider("Aim Range", 4.5f, 1.0f, 8.0f, 0.1f);
-    private final SliderSetting fov = slider("FOV", 360.0f, 1.0f, 360.0f, 1.0f);
+    public final ModeSetting rotMode = mode("Ротация", "Funtime", "Funtime", "HolyLegit", "HolyWorld", "SpookyTime", "4pookyTime", "Spooky", "ReallyWorld", "HelixWave", "Artygrief", "Sloth", "Legit", "Linear", "Matrix", "Builder", "Lumen", "Grim", "Snap", "Smooth");
+    public final MultiModeSetting targets = multiMode("Таргеты", List.of("Игроки", "Голые", "Невидимки", "Мобы"), "Игроки", "Голые", "Невидимки", "Мирные", "Мобы", "Друзья", "Жители");
+    public final SliderSetting attackRange = slider("Дистанция атаки", 3.0f, 0.0f, 6.0f, 0.05f);
+    public final SliderSetting aimRange = slider("Дистанция наводки", 3.0f, 0.0f, 6.0f, 0.05f);
+    public final SliderSetting distancelytra = slider("Дистанция на элитрах", 50.0f, 10.0f, 100.0f, 1.0f);
+    public final CheckBox elytraPredict = checkbox("Предикт элитры", true);
+    public final ModeSetting predictType = mode("Тип предикта", "Default", "Default", "Limit").visible(elytraPredict::getValue);
+    public final CheckBox randomFallDistance = checkbox("Случайный падающий крит", false);
+    public final ModeSetting sprintReset = mode("Сброс спринта", "Legit", "None", "Legit", "Packet");
 
-    private final HeaderSetting rotHeader = header("Rotations");
-    private final ModeSetting rotMode = mode("Rotation", "SpookyTime", "SpookyTime", "4pookyTime", "Linear", "Matrix", "Funtime", "Builder", "Lumen", "Grim", "Snap", "Smooth");
-    private final ModeSetting moveFix = mode("Movement Correction", "Silent", "Silent", "Current");
-    private final ModeSetting disengageMode = mode("Disengage", "Smooth", "Smooth", "Instant");
-    private final ModeSetting sprintReset = mode("Sprint Reset", "Legit", "None", "Legit", "Packet");
+    public PredictUtils.Type getPredictType() {
+        return predictType != null && predictType.getValue().equalsIgnoreCase("Limit") ? PredictUtils.Type.LIMIT : PredictUtils.Type.DEFAULT;
+    }
+    
+    public final CheckBox smartCrits = checkbox("Умные криты", true);
+    public final CheckBox onlyCrits = checkbox("Только криты", true);
+    public final CheckBox throughWalls = checkbox("Бить через стены", false);
+    public final CheckBox bypassRwWalls = checkbox("Обход рв стен", false);
+    public final CheckBox lookDownBypass = checkbox("Смотреть вниз", false).visible(bypassRwWalls::getValue);
+    public final CheckBox unshield = checkbox("Отжимать щит", false);
+    public final CheckBox shieldBreaker = checkbox("Ломать щит", true);
+    public final CheckBox pauseEating = checkbox("Не бить когда ешь", true);
+    public final CheckBox autoCerberus = checkbox("Авто цербер", false);
+    public final SliderSetting swapDelay = slider("Задержка свапа", 4.0f, 2.0f, 10.0f, 1.0f).visible(autoCerberus::getValue);
+    public final CheckBox clientLook = checkbox("Наводка от первого лица", false);
 
-    private final HeaderSetting targetHeader = header("Targets");
-    private final MultiModeSetting targets = multiMode("Targets", "Players", "Mobs", "Animals", "Naked", "Friends", "Villagers", "Invisibles");
-    private final ModeSetting targetSort = mode("Target Sort", "Distance", "Distance", "Health", "Armor", "FOV");
-
-    private final HeaderSetting combatHeader = header("Combat Settings");
-    private final CheckBox autoWeapon = checkbox("Auto Weapon", true);
-    private final CheckBox shieldBreaker = checkbox("Shield Breaker", true);
-    private final CheckBox unshield = checkbox("Unshield", true);
-    private final CheckBox onlyCrits = checkbox("Only Crits", true);
-    private final CheckBox smartCrits = checkbox("Smart Crits", true).visible(onlyCrits::getValue);
-    private final CheckBox maceCrit = checkbox("Mace Crit Boost", true);
-    private final CheckBox randomFallDistance = checkbox("Random Fall Distance", false).visible(onlyCrits::getValue);
-
-    private final HeaderSetting wallHeader = header("Walls & Raytrace");
-    private final CheckBox raytrace = checkbox("Raytrace", true);
-    private final ModeSetting blockHitMode = mode("Block Raycast", "Normal", "Normal", "Partial Blocks", "Through Walls");
-    private final CheckBox aimThroughWalls = checkbox("Aim Through Walls", false);
-    private final CheckBox throughWalls = checkbox("Through Walls", false);
-
-    private final HeaderSetting elis = header("Elytra");
-    private final CheckBox elytraPredict = checkbox("Elytra Predict", true);
-    private final ModeSetting predictType = mode("Predict Type", "Default", "Default", "Limit").visible(elytraPredict::getValue);
-    private final SliderSetting distancelytra = slider("Elytra Distance", 15.0f, 1.0f, 40.0f, 1.0f).visible(elytraPredict::getValue);
-
-    private final HeaderSetting miscHeader = header("Misc Settings");
-    private final CheckBox autoJump = checkbox("Auto Jump", false);
-    private final CheckBox autoEat = checkbox("Auto Eat", false);
-    private final SliderSetting eatHealth = slider("Eat Health", 14.0f, 1.0f, 20.0f, 1.0f).visible(autoEat::getValue);
-    private final CheckBox pauseEating = checkbox("Pause while Eating", true);
+    public final ModeSetting moveFix = mode("Коррекция", "Свободная", "Нет", "Свободная", "Сфокусированная", "Полная");
+    public final ModeSetting targetSort = mode("Приоритет", "Дистанция", "Дистанция", "Здоровье", "Угол", "Никакой");
+    public final SliderSetting fov = slider("FOV", 360.0f, 10.0f, 360.0f, 5.0f);
 
     private LivingEntity target = null;
     private Vec3 predictedElytraPos = null;
@@ -82,13 +69,9 @@ public class AuraModule extends Module {
     public void onDisable() {
         target = null;
         predictedElytraPos = null;
-        RotationHandler.disengage(disengageMode.getValue());
+        RotationHandler.disengage("Smooth");
         AttackHandler.reset();
         Targets.reset();
-    }
-
-    public PredictUtils.Type getPredictType() {
-        return predictType.getValue().equalsIgnoreCase("Limit") ? PredictUtils.Type.LIMIT : PredictUtils.Type.DEFAULT;
     }
 
     public float getElytraRangeBonus() {
@@ -102,14 +85,6 @@ public class AuraModule extends Module {
         if (player() == null || !player().isUsingItem()) return false;
         ItemUseAnimation anim = player().getUseItem().getUseAnimation();
         return anim == ItemUseAnimation.EAT || anim == ItemUseAnimation.DRINK;
-    }
-
-    private boolean shouldWaitForPostPacketCrit() {
-        if (Criticals.INSTANCE == null || !Criticals.INSTANCE.isEnabled()) return false;
-        if (!player().hasEffect(MobEffects.SLOW_FALLING)) return false;
-        if (AttackHandler.isInCobweb(player())) return false;
-
-        return !player().onGround();
     }
 
     private void handleWeaponSwitch() {
@@ -128,7 +103,7 @@ public class AuraModule extends Module {
                 break;
             }
 
-            if (autoWeapon.getValue() && AttackHandler.isWeapon(stack)) {
+            if (AttackHandler.isWeapon(stack)) {
                 double dmg = 1.0;
                 if (stack.is(net.minecraft.tags.ItemTags.SWORDS)) dmg = 7.0;
                 else if (stack.is(net.minecraft.tags.ItemTags.AXES)) dmg = 9.0;
@@ -156,7 +131,7 @@ public class AuraModule extends Module {
 
             if (target == null) {
                 predictedElytraPos = null;
-                RotationHandler.disengage(disengageMode.getValue());
+                RotationHandler.disengage("Smooth");
                 AttackHandler.reset();
                 return;
             }
@@ -167,34 +142,17 @@ public class AuraModule extends Module {
 
             handleWeaponSwitch();
 
-            Vec3 aimPos;
-            boolean isVisible;
-
-            if (player().isFallFlying() && target.isFallFlying() && elytraPredict.getValue()) {
-                predictedElytraPos = PredictUtils.realPredict(target, getPredictType());
-                aimPos = predictedElytraPos;
-                isVisible = RayTraceUtils.canSeePoint(player().getEyePosition(), aimPos);
-            } else {
-                predictedElytraPos = null;
-                TargetPoint targetPoint;
-                if (rotMode.getValue().equalsIgnoreCase("Builder")) {
-                    targetPoint = BuilderPoints.getBestPoint(player(), target);
-                } else {
-                    targetPoint = UBoxPoints.getBestPoint(target);
-                }
-
-                if (targetPoint == null) {
-                    RotationHandler.disengage(disengageMode.getValue());
-                    return;
-                }
-                aimPos = targetPoint.point();
-                isVisible = targetPoint.isVisible();
+            TargetPoint targetPoint = UBoxPoints.getBestPoint(target);
+            if (targetPoint == null) {
+                RotationHandler.disengage("Smooth");
+                return;
             }
 
-            boolean canAimThroughWalls = this.aimThroughWalls.getValue() || this.throughWalls.getValue();
+            Vec3 aimPos = targetPoint.point();
+            boolean isVisible = targetPoint.isVisible();
 
-            if (!canAimThroughWalls && !isVisible) {
-                RotationHandler.disengage(disengageMode.getValue());
+            if (!throughWalls.getValue() && !isVisible) {
+                RotationHandler.disengage("Smooth");
                 return;
             }
 
@@ -202,20 +160,7 @@ public class AuraModule extends Module {
             boolean canAttackNow = AttackHandler.shouldAttack(target, this) && !(pauseEating.getValue() && isEating());
 
             rotation.tick(player(), target, aimPos, canAttackNow);
-
-            if (!shouldWaitForPostPacketCrit()) {
-                processAttack(isVisible, rotation);
-            }
-        }
-
-        if (event.getPhase() == PlayerTickEvent.Phase.POST) {
-            if (shouldWaitForPostPacketCrit() && player().fallDistance > 0 && player().fallDistance < 1) {
-                if (target != null) {
-                    boolean isVisible = RayTraceUtils.canSeePoint(player().getEyePosition(), target.position());
-                    AuraRotation rotation = RotationRegistry.get(rotMode.getValue());
-                    processAttack(isVisible, rotation);
-                }
-            }
+            processAttack(isVisible, rotation);
         }
     }
 
@@ -230,7 +175,7 @@ public class AuraModule extends Module {
 
         float checkYaw = RotationHandler.isActive() ? RotationHandler.getServerYaw() : player().getYRot();
         float checkPitch = RotationHandler.isActive() ? RotationHandler.getServerPitch() : player().getXRot();
-        boolean isAimed = isIntersecting || !raytrace.getValue() || RayTraceUtils.isLookingAt(target, attackRange.getValue(), checkYaw, checkPitch);
+        boolean isAimed = isIntersecting || RayTraceUtils.isLookingAt(target, attackRange.getValue(), checkYaw, checkPitch);
         if (!isAimed) return;
 
         boolean canHit = isIntersecting || this.throughWalls.getValue() || isVisible;
@@ -246,11 +191,12 @@ public class AuraModule extends Module {
         AttackHandler.handleInput(event, this);
 
         if (target != null && RotationHandler.isActive()) {
-            if (moveFix.getValue().equalsIgnoreCase("Silent")) {
+            if (!moveFix.getValue().equalsIgnoreCase("Нет")) {
                 MoveUtility.fixMovement(event, RotationHandler.getFreeYaw());
             }
         }
     }
+
     public boolean hasTargetEsp() { return error.module.impl.render.TargetEsp.INSTANCE != null && error.module.impl.render.TargetEsp.INSTANCE.isEnabled(); }
     public boolean usesCubesTargetEsp() { return hasTargetEsp() && error.module.impl.render.TargetEsp.INSTANCE.mode.is("Кубики"); }
     public boolean usesMarkerTargetEsp() { return hasTargetEsp() && error.module.impl.render.TargetEsp.INSTANCE.mode.is("Маркер"); }
