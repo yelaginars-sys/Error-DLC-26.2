@@ -87,8 +87,8 @@ public class GpsHud extends HudElement {
         int shadowCol = ColorUtil.rgba(0, 0, 0, (int) (140 * alpha));
         int accentGlow = ColorUtil.withAlpha(primaryAccent, (int) (55 * alpha));
 
-        float w = 92.0F;
-        float h = 19.0F;
+        float w = 98.0F;
+        float h = 21.0F;
         this.width = w;
         this.height = h;
 
@@ -121,7 +121,7 @@ public class GpsHud extends HudElement {
             pose.popMatrix();
 
             String displayTitle = distStr + ((targetName != null && !targetName.isEmpty()) ? " • " + targetName : "");
-            Fonts.drawString(Fonts.SF_MEDIUM, displayTitle, x + 16.0F, y + 2.5F, 6.5F, ColorUtil.rgba(255, 255, 255, (int) (245 * alpha)));
+            Fonts.drawString(Fonts.SF_MEDIUM, displayTitle, x + 16.0F, y + 2.0F, 8.0F, ColorUtil.rgba(255, 255, 255, (int) (245 * alpha)));
 
             String coordsStr;
             if (!Double.isNaN(targetY)) {
@@ -129,15 +129,15 @@ public class GpsHud extends HudElement {
             } else {
                 coordsStr = (int) targetX + ", " + (int) targetZ;
             }
-            Fonts.drawString(Fonts.SF_MEDIUM, coordsStr, x + 16.0F, y + 9.5F, 5.5F, ColorUtil.rgba(180, 180, 195, (int) (200 * alpha)));
+            Fonts.drawString(Fonts.SF_MEDIUM, coordsStr, x + 16.0F, y + 10.5F, 7.0F, ColorUtil.rgba(190, 190, 205, (int) (220 * alpha)));
         } else {
             Render2D.drawTexture(POINTER_TEX, arrowCenterX - arrowSize / 2.0F, arrowCenterY - arrowSize / 2.0F, arrowSize, arrowSize, 0.0F, ColorUtil.multiplyAlpha(primaryAccent, alpha));
 
             String displayTitle = "150m • GPS";
-            Fonts.drawString(Fonts.SF_MEDIUM, displayTitle, x + 16.0F, y + 2.5F, 6.5F, ColorUtil.rgba(255, 255, 255, (int) (245 * alpha)));
+            Fonts.drawString(Fonts.SF_MEDIUM, displayTitle, x + 16.0F, y + 2.0F, 8.0F, ColorUtil.rgba(255, 255, 255, (int) (245 * alpha)));
 
             String coordsStr = "100, 64, 200";
-            Fonts.drawString(Fonts.SF_MEDIUM, coordsStr, x + 16.0F, y + 9.5F, 5.5F, ColorUtil.rgba(180, 180, 195, (int) (180 * alpha)));
+            Fonts.drawString(Fonts.SF_MEDIUM, coordsStr, x + 16.0F, y + 10.5F, 7.0F, ColorUtil.rgba(190, 190, 205, (int) (220 * alpha)));
         }
     }
 }

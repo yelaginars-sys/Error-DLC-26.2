@@ -361,23 +361,23 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
             activeItems++;
         }
         if (showFps) {
-            float fpsW = Fonts.ICONS.getWidth(IconUse.FPS.glyph, 7.0F) + Fonts.SF_MEDIUM.getWidth(" " + mc.getFps() + "fps", 7.0F);
+            float fpsW = Fonts.getIconWidth(IconUse.FPS, 7.0F) + Fonts.SF_MEDIUM.getWidth(" " + mc.getFps() + "fps", 7.0F);
             totalW += fpsW;
             activeItems++;
         }
         if (showPing) {
-            float pingW = Fonts.ICONS.getWidth(IconUse.PING.glyph, 7.0F) + Fonts.SF_MEDIUM.getWidth(" " + getPingText() + "ms", 7.0F);
+            float pingW = Fonts.getIconWidth(IconUse.PING, 7.0F) + Fonts.SF_MEDIUM.getWidth(" " + getPingText() + "ms", 7.0F);
             totalW += pingW;
             activeItems++;
         }
         if (showTps) {
-            float tpsW = Fonts.ICONS.getWidth(IconUse.TPS.glyph, 7.0F) + Fonts.SF_MEDIUM.getWidth(" 20tps", 7.0F);
+            float tpsW = Fonts.getIconWidth(IconUse.TPS, 7.0F) + Fonts.SF_MEDIUM.getWidth(" 20tps", 7.0F);
             totalW += tpsW;
             activeItems++;
         }
         if (showServer) {
             String server = getServerAddress();
-            float srvW = Fonts.ICONS.getWidth(IconUse.GLOBE.glyph, 7.0F) + Fonts.SF_MEDIUM.getWidth(" " + server, 7.0F);
+            float srvW = Fonts.getIconWidth(IconUse.GLOBE, 7.0F) + Fonts.SF_MEDIUM.getWidth(" " + server, 7.0F);
             totalW += srvW;
             activeItems++;
         }
@@ -608,7 +608,7 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
         if (showFps) {
             if (drawnAny) curX = drawDot(curX, dotY, themeAccent, alpha);
             Fonts.drawIcon(IconUse.FPS, curX, textY - 0.5F, 7.0F, themeAccent);
-            curX += Fonts.ICONS.getWidth(IconUse.FPS.glyph, 7.0F);
+            curX += Fonts.getIconWidth(IconUse.FPS, 7.0F);
             String fps = " " + mc.getFps() + "fps";
             Fonts.drawString(Fonts.SF_MEDIUM, fps, curX, textY, 7.0F, ColorUtil.rgba(215, 215, 230, (int) (210 * alpha)));
             curX += Fonts.SF_MEDIUM.getWidth(fps, 7.0F);
@@ -619,7 +619,7 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
         if (showPing) {
             if (drawnAny) curX = drawDot(curX, dotY, themeAccent, alpha);
             Fonts.drawIcon(IconUse.PING, curX, textY - 0.5F, 7.0F, themeAccent);
-            curX += Fonts.ICONS.getWidth(IconUse.PING.glyph, 7.0F);
+            curX += Fonts.getIconWidth(IconUse.PING, 7.0F);
             String ping = " " + getPingText() + "ms";
             Fonts.drawString(Fonts.SF_MEDIUM, ping, curX, textY, 7.0F, ColorUtil.rgba(215, 215, 230, (int) (210 * alpha)));
             curX += Fonts.SF_MEDIUM.getWidth(ping, 7.0F);
@@ -630,7 +630,7 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
         if (showTps) {
             if (drawnAny) curX = drawDot(curX, dotY, themeAccent, alpha);
             Fonts.drawIcon(IconUse.TPS, curX, textY - 0.5F, 7.0F, themeAccent);
-            curX += Fonts.ICONS.getWidth(IconUse.TPS.glyph, 7.0F);
+            curX += Fonts.getIconWidth(IconUse.TPS, 7.0F);
             String tps = " 20tps";
             Fonts.drawString(Fonts.SF_MEDIUM, tps, curX, textY, 7.0F, ColorUtil.rgba(215, 215, 230, (int) (210 * alpha)));
             curX += Fonts.SF_MEDIUM.getWidth(tps, 7.0F);
@@ -641,7 +641,7 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
         if (showServer) {
             if (drawnAny) curX = drawDot(curX, dotY, themeAccent, alpha);
             Fonts.drawIcon(IconUse.GLOBE, curX, textY - 0.5F, 7.0F, themeAccent);
-            curX += Fonts.ICONS.getWidth(IconUse.GLOBE.glyph, 7.0F);
+            curX += Fonts.getIconWidth(IconUse.GLOBE, 7.0F);
             String srv = " " + getServerAddress();
             Fonts.drawString(Fonts.SF_MEDIUM, srv, curX, textY, 7.0F, ColorUtil.rgba(215, 215, 230, (int) (210 * alpha)));
             curX += Fonts.SF_MEDIUM.getWidth(srv, 7.0F);

@@ -142,7 +142,8 @@ public final class StaffHud extends HudElement implements error.IMinecraft {
 
             // Right Pill: [ ROLE ]
             Render2D.drawLiquidGlass(this.x + leftPillW + GAP_X, currY, rightPillW, ROW_H, 3.5F, a, accent);
-            Fonts.drawString(Fonts.SF_MEDIUM, entry.role, this.x + leftPillW + GAP_X + 5.0F, currY + 2.8F, 8.5F, roleCol);
+            float roleX = this.x + leftPillW + GAP_X + (rightPillW - roleTextW) * 0.5F;
+            Fonts.drawString(Fonts.SF_MEDIUM, entry.role, roleX, currY + 2.5F, 8.5F, roleCol);
 
             currY += (ROW_H + GAP_Y) * a;
         }
