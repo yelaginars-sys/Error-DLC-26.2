@@ -26,28 +26,7 @@ public abstract class CapeLayerMixin {
 
     @Inject(method = "submit(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;ILnet/minecraft/client/renderer/entity/state/AvatarRenderState;FF)V", at = @At("TAIL"))
     private void tintCapeModel(PoseStack poseStack, SubmitNodeCollector collector, int packedLight, AvatarRenderState state, float yRot, float xRot, CallbackInfo ci) {
-        if (state.isInvisible || !state.showCape || state.skin == null || state.skin.cape() == null) {
-            return;
-        }
-
-        Identifier capeId = state.skin.cape().texturePath();
-        if (capeId == null) return;
-
-        int accent = Theme.getAccentColor();
-        int capeColor = ColorUtil.rgba(ColorUtil.red(accent), ColorUtil.green(accent), ColorUtil.blue(accent), 255);
-
-        poseStack.pushPose();
-        collector.submitModel(
-                this.model,
-                state,
-                poseStack,
-                RenderTypes.entitySolid(capeId),
-                packedLight,
-                OverlayTexture.NO_OVERLAY,
-                capeColor,
-                null
-        );
-        poseStack.popPose();
+        // Extra glow/outline pass disabled as requested
     }
 }
 

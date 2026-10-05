@@ -28,6 +28,7 @@ public class CommandManager {
         register(new GpsCommand());
         register(new BuilderCommand());
         register(new FriendCommand());
+        register(new StaffCommand());
     }
 
     public void register(Command command) {

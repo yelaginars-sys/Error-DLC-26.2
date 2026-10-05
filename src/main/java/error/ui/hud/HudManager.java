@@ -9,6 +9,7 @@ import error.event.list.Render2DEvent;
 import error.ui.hud.impl.*;
 
 import error.util.client.clients.ColorUtil;
+import error.util.display.batch.DisplayBatcher;
 import error.util.math.Animation;
 import error.util.render.Render2D;
 import error.util.render.Render2DUtil;
@@ -43,6 +44,15 @@ public final class HudManager implements IMinecraft {
     private HudManager() {
         register(new DynamicIslandHud());
         register(new GpsHud());
+        register(new ArmorHud());
+        register(new TargetHud());
+        register(new KeyBindsHud());
+        register(new PotionsHud());
+        register(new ServerHelperHud());
+        register(new CustomHotbarHud());
+        register(new CustomScoreboardHud());
+        register(new CooldownHud());
+        register(new StaffHud());
     }
 
     public static HudManager getInstance() {
@@ -114,24 +124,11 @@ public final class HudManager implements IMinecraft {
             float animVal = element.getFadeAnim().getValue();
             if (animVal <= 0.001F) continue;
 
-            var extractor = event.getGuiGraphicsExtractor();
-            if (extractor != null && animVal < 0.999F) {
-                Render2DUtil.flush();
-                float cx = element.getX() + element.getWidth() / 2.0F;
-                float cy = element.getY() + element.getHeight() / 2.0F;
-                float scale = 0.90F + 0.10F * animVal;
+            Render2DUtil.flush();
+            element.draw(event);
+            DisplayBatcher.flush();
 
-                extractor.pose().pushMatrix();
-                extractor.pose().translate(cx, cy);
-                extractor.pose().scale(scale, scale);
-                extractor.pose().translate(-cx, -cy);
-                element.draw(event);
-                extractor.pose().popMatrix();
-            } else {
-                element.draw(event);
-            }
-
-            if (isEditMode && element == draggedElement) {
+            if (isEditMode && element == draggedElement && !(element instanceof ArmorHud)) {
                 Render2D.drawRoundedOutline(element.getX() - 1.0F, element.getY() - 1.0F,
                         element.getWidth() + 2.0F, element.getHeight() + 2.0F, 3.5F, 1.0F,
                         ColorUtil.rgba(255, 255, 255, 160));

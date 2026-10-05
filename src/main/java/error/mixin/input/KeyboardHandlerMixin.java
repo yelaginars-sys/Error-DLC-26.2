@@ -27,12 +27,6 @@ public abstract class KeyboardHandlerMixin {
 
     @Inject(method = "keyPress", at = @At("HEAD"), cancellable = true)
     private void onKeyPress(long window, int action, KeyEvent keyEvent, CallbackInfo ci) {
-        if (action == 1 && keyEvent.key() == org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT_SHIFT) {
-            if (Client.getInstance() != null && Client.getInstance().getModuleManager() != null && Client.getInstance().getModuleManager().getClickGui() != null) {
-                Client.getInstance().getModuleManager().getClickGui().toggle();
-            }
-        }
-
         if (Client.getInstance() != null && Client.getInstance().getModuleManager() != null) {
             Client.getInstance().getModuleManager().onKey(keyEvent.key(), action);
         }

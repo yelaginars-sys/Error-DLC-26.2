@@ -42,6 +42,13 @@ public class GpsHud extends HudElement {
         targetY = y;
         targetZ = z;
         active = true;
+        if (error.ui.hud.HudManager.getInstance() != null) {
+            for (error.ui.hud.HudElement el : error.ui.hud.HudManager.getInstance().getElements()) {
+                if (el instanceof GpsHud) {
+                    el.setEnabled(true);
+                }
+            }
+        }
     }
 
     public static void clearGps() {
@@ -85,30 +92,7 @@ public class GpsHud extends HudElement {
         this.width = w;
         this.height = h;
 
-        Blur.of(x, y, w, h)
-                .radius(6)
-                .type(BlurType.KAWASE)
-                .strength(4)
-                .tint(Color.rgba(0, 0, 0, Math.round(75 * alpha)))
-                .alpha(alpha)
-                .render(extractor);
-
-        Outline.of(x, y, w, h)
-                .radius(6)
-                .thickness(1.0F)
-                .verticalGradient(Color.WHITE, Color.rgba(255, 255, 255, 32))
-                .alpha(alpha)
-                .render(extractor);
-
-        DisplayBatcher.flush();
-
-        int lightDarken = ColorUtil.rgba(12, 16, 28, (int) (45 * alpha));
-        int frostedTint = ColorUtil.rgba(255, 255, 255, (int) (16 * alpha));
-        int glassBorder = ColorUtil.withAlpha(primaryAccent, (int) (65 * alpha));
-
-        Render2D.drawRoundedRect(x, y, w, h, 6.0F, lightDarken);
-        Render2D.drawRoundedRect(x, y, w, h, 6.0F, frostedTint);
-        Render2D.drawRoundedOutline(x, y, w, h, 6.0F, 0.7F, glassBorder);
+        Render2D.drawLiquidGlass(x, y, w, h, 6.0F, alpha, primaryAccent);
 
         float arrowSize = 9.0F;
         float arrowCenterX = x + 8.0F;

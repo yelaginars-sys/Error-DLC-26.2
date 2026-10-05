@@ -56,10 +56,12 @@ public class AuraModule extends Module {
     private final CheckBox backtrack = checkbox("Backtrack Position History", false);
     private final CheckBox pauseEating = checkbox("Pause while Eating", true);
 
-    private final ModeSetting targetEsp = mode("Target ESP", "Marker", "None", "Marker", "Ghosts", "Circle", "Cube");
-
     private LivingEntity target = null;
     private Vec3 predictedElytraPos = null;
+
+    public LivingEntity getTarget() {
+        return this.target;
+    }
 
     public AuraModule() {
         super("Aura", "ффф", Category.COMBAT);
@@ -199,9 +201,9 @@ public class AuraModule extends Module {
             }
         }
     }
-    public boolean usesCubesTargetEsp() { return targetEsp.getValue().equalsIgnoreCase("Cube"); }
-    public boolean hasTargetEsp() { return !targetEsp.getValue().equalsIgnoreCase("None"); }
-    public boolean usesMarkerTargetEsp() { return targetEsp.getValue().equalsIgnoreCase("Marker"); }
-    public boolean usesGhostTargetEsp() { return targetEsp.getValue().equalsIgnoreCase("Ghosts"); }
-    public boolean usesCircleTargetEsp() { return targetEsp.getValue().equalsIgnoreCase("Circle"); }
+    public boolean hasTargetEsp() { return error.module.impl.render.TargetEsp.INSTANCE != null && error.module.impl.render.TargetEsp.INSTANCE.isEnabled(); }
+    public boolean usesCubesTargetEsp() { return hasTargetEsp() && error.module.impl.render.TargetEsp.INSTANCE.mode.is("Кубики"); }
+    public boolean usesMarkerTargetEsp() { return hasTargetEsp() && error.module.impl.render.TargetEsp.INSTANCE.mode.is("Маркер"); }
+    public boolean usesGhostTargetEsp() { return hasTargetEsp() && error.module.impl.render.TargetEsp.INSTANCE.mode.is("Призраки"); }
+    public boolean usesCircleTargetEsp() { return hasTargetEsp() && error.module.impl.render.TargetEsp.INSTANCE.mode.is("Кольцо"); }
 }

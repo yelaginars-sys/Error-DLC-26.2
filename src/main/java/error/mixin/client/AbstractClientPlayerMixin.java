@@ -26,10 +26,15 @@ public abstract class AbstractClientPlayerMixin {
     private void onGetSkin(CallbackInfoReturnable<PlayerSkin> cir) {
         AbstractClientPlayer player = (AbstractClientPlayer) (Object) this;
         if (player.isLocalPlayer()) {
-            PlayerSkin skin = cir.getReturnValue();
-            if (skin != null) {
-                PlayerSkin customSkin = new PlayerSkin(skin.body(), ERROR_CAPE_TEXTURE, skin.elytra() != null ? skin.elytra() : ERROR_CAPE_TEXTURE, skin.model(), skin.secure());
-                cir.setReturnValue(customSkin);
+            error.cosmetic.CosmeticItem capeItem = error.cosmetic.CosmeticsManager.getInstance().getEquipped(error.cosmetic.CosmeticType.CAPE);
+            if (capeItem != null && capeItem.isEnabled()) {
+                PlayerSkin skin = cir.getReturnValue();
+                if (skin != null) {
+                    Identifier capeTex = Identifier.fromNamespaceAndPath("error", "textures/cosmetics/cape.png");
+                    ClientAsset.ResourceTexture resourceTex = new ClientAsset.ResourceTexture(capeTex, capeTex);
+                    PlayerSkin customSkin = new PlayerSkin(skin.body(), resourceTex, skin.elytra() != null ? skin.elytra() : resourceTex, skin.model(), skin.secure());
+                    cir.setReturnValue(customSkin);
+                }
             }
         }
     }

@@ -12,6 +12,11 @@ import error.util.render.menu.RectRenderState;
 import error.util.render.menu.TextureRenderState;
 import error.util.client.clients.ColorUtil;
 import error.util.client.clients.Theme;
+import error.util.display.batch.DisplayBatcher;
+import error.util.display.blur.Blur;
+import error.util.display.blur.BlurType;
+import error.util.display.color.Color;
+import error.util.display.outline.Outline;
 
 /**
  */
@@ -161,19 +166,12 @@ public class Render2D {
         drawHead(skin, x, y, size, radius, tint);
     }
 
+    private static final Identifier BUNDLED_AVATAR = Identifier.fromNamespaceAndPath("error", "textures/custom_avatar.png");
     private static Identifier customAvatarIdentifier = null;
 
     public static Identifier getCustomAvatarTexture() {
         if (customAvatarIdentifier != null) return customAvatarIdentifier;
-        try {
-            java.io.File file = new java.io.File("D:\\Без названия (2).jpg");
-            if (file.exists()) {
-                com.mojang.blaze3d.platform.NativeImage img = com.mojang.blaze3d.platform.NativeImage.read(new java.io.FileInputStream(file));
-                customAvatarIdentifier = Identifier.fromNamespaceAndPath("error", "custom_avatar");
-                net.minecraft.client.renderer.texture.DynamicTexture tex = new net.minecraft.client.renderer.texture.DynamicTexture(() -> customAvatarIdentifier.toString(), img);
-                Minecraft.getInstance().getTextureManager().register(customAvatarIdentifier, tex);
-            }
-        } catch (Throwable ignored) {}
+        customAvatarIdentifier = BUNDLED_AVATAR;
         return customAvatarIdentifier;
     }
 
@@ -281,34 +279,55 @@ public class Render2D {
     public static void drawLiquidGlass(float x, float y, float width, float height, float radius, float alpha, int accentColor) {
         if (alpha <= 0.001F || width <= 0.0F || height <= 0.0F) return;
 
-        // 1. Soft Drop Shadow
-        int shadowCol = ColorUtil.rgba(0, 0, 0, (int) (130 * alpha));
-        drawShadow(x, y, width, height, radius, 12.0F, shadowCol);
+        // 1. Exact frosted Kawase Blur & Specular Outline from LiquidClickGui
+        GuiGraphicsExtractor extractor = RenderExtend.currentGuiGraphicsExtractor();
+        if (extractor != null) {
+            Render2DUtil.flush();
+            float shellRadius = Math.min(radius, Math.min(width, height) * 0.5F);
+            try {
+                Blur.of(x, y, width, height)
+                        .radius(shellRadius)
+                        .type(BlurType.KAWASE)
+                        .strength(4)
+                        .tint(Color.rgba(0, 0, 0, Math.round(75 * alpha)))
+                        .alpha(alpha)
+                        .render(extractor);
 
-        // 2. Real Backdrop Blur
-        int blurTint = ColorUtil.rgba(14, 16, 24, (int) (140 * alpha));
-        drawBlur(x, y, width, height, radius, 24.0F, blurTint, alpha);
+                Outline.of(x, y, width, height)
+                        .radius(shellRadius)
+                        .thickness(1.0F)
+                        .verticalGradient(Color.WHITE, Color.rgba(255, 255, 255, 32))
+                        .alpha(alpha)
+                        .render(extractor);
 
-        // 3. Clean Translucent Acrylic Dark Body
-        int cTL = ColorUtil.rgba(18, 20, 28, (int) (200 * alpha));
-        int cTR = ColorUtil.rgba(14, 16, 24, (int) (195 * alpha));
-        int cBL = ColorUtil.rgba(10, 12, 18, (int) (210 * alpha));
-        int cBR = ColorUtil.rgba(8, 10, 15, (int) (215 * alpha));
-        drawGradientRound(x, y, width, height, radius, cTL, cTR, cBL, cBR);
+                DisplayBatcher.flush();
+            } catch (Throwable ignored) {}
+        }
 
-        // 4. Subtle Specular Top Reflection
-        float shineH = Math.max(3.0F, height * 0.30F);
-        pushScissor(x, y, width, height);
-        int shineTop = ColorUtil.rgba(255, 255, 255, (int) (12 * alpha));
-        int shineBottom = ColorUtil.rgba(255, 255, 255, 0);
-        drawGradientRound(x, y, width, shineH, radius, shineTop, shineTop, shineBottom, shineBottom);
-        popScissor();
+        // 2. Pure Frosted Glass Fill & Accent Border matching ClickGUI
+        int glassFill = ColorUtil.rgba(255, 255, 255, (int) (14 * alpha));
+        int glassOutline = ColorUtil.rgba(255, 255, 255, (int) (22 * alpha));
 
-        // 5. Sleek Dark Glass Outline + Soft Accent Glow Edge
-        int glassOutline = ColorUtil.rgba(36, 42, 58, (int) (170 * alpha));
-        drawRoundedOutline(x, y, width, height, radius, 1.0F, glassOutline);
+        drawRoundedRect(x, y, width, height, radius, glassFill);
+        drawRoundedOutline(x, y, width, height, radius, 0.65F, glassOutline);
+    }
 
-        int innerAccent = ColorUtil.withAlpha(accentColor, (int) (40 * alpha));
-        drawRoundedOutline(x + 0.5F, y + 0.5F, width - 1.0F, height - 1.0F, Math.max(0.0F, radius - 0.5F), 0.8F, innerAccent);
+    public static void drawHudPill(float x, float y, float width, float height, float alpha) {
+        drawHudPill(x, y, width, height, alpha, Theme.getAccentColor());
+    }
+
+    public static void drawHudPill(float x, float y, float width, float height, float alpha, int accentColor) {
+        if (alpha <= 0.001F || width <= 0.0F || height <= 0.0F) return;
+        float radius = height / 2.0F;
+        drawLiquidGlass(x, y, width, height, radius, alpha, accentColor);
+    }
+
+    public static void drawHudCard(float x, float y, float width, float height, float radius, float alpha) {
+        drawHudCard(x, y, width, height, radius, alpha, Theme.getAccentColor());
+    }
+
+    public static void drawHudCard(float x, float y, float width, float height, float radius, float alpha, int accentColor) {
+        if (alpha <= 0.001F || width <= 0.0F || height <= 0.0F) return;
+        drawLiquidGlass(x, y, width, height, radius, alpha, accentColor);
     }
 }

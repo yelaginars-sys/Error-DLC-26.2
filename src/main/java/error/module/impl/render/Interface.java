@@ -18,6 +18,17 @@ public final class Interface extends Module {
 
     public final CheckBox dynamicIsland    = checkbox("Dynamic Island", true);
     public final CheckBox gps              = checkbox("GPS Навигация", true);
+    public final CheckBox armorHud         = checkbox("Armor HUD", true);
+    public final ModeSetting armorPosition = mode("Позиция брони", "Над иконками голода", "Над иконками голода", "Свободная");
+    public final CheckBox targetHud        = checkbox("Target HUD", true);
+    public final CheckBox targetHudParticles = checkbox("Частицы TargetHud", true);
+    public final CheckBox cooldowns        = checkbox("Cooldowns", true);
+    public final CheckBox staffList        = checkbox("Staff List", true);
+    public final CheckBox binds            = checkbox("Binds", true);
+    public final CheckBox potions          = checkbox("Potions", true);
+    public final CheckBox serverHelper     = checkbox("Server Helper", true);
+    public final CheckBox customHotbar     = checkbox("Custom Hotbar", true);
+    public final CheckBox customScoreboard = checkbox("Custom Scoreboard", true);
     public final ModeSetting colorMode     = mode("Цвет HUD", "Тема", "Тема", "Свой");
     public final ColorSetting customColor  = color("Свой цвет", ColorUtil.rgba(0, 180, 255, 255));
 
@@ -70,6 +81,69 @@ public final class Interface extends Module {
                 }
             } else if (el instanceof error.ui.hud.impl.GpsHud) {
                 boolean on = active && this.gps.getValue();
+                el.setEnabled(on);
+                if (!on) {
+                    el.getFadeAnim().setTarget(0.0F);
+                    el.getFadeAnim().setValue(0.0F);
+                }
+            } else if (el instanceof error.ui.hud.impl.ArmorHud) {
+                boolean on = active && this.armorHud.getValue();
+                el.setEnabled(on);
+                if (!on) {
+                    el.getFadeAnim().setTarget(0.0F);
+                    el.getFadeAnim().setValue(0.0F);
+                }
+            } else if (el instanceof error.ui.hud.impl.TargetHud) {
+                boolean on = active && this.targetHud.getValue();
+                el.setEnabled(on);
+                if (!on) {
+                    el.getFadeAnim().setTarget(0.0F);
+                    el.getFadeAnim().setValue(0.0F);
+                }
+            } else if (el instanceof error.ui.hud.impl.KeyBindsHud) {
+                boolean on = active && this.binds.getValue();
+                el.setEnabled(on);
+                if (!on) {
+                    el.getFadeAnim().setTarget(0.0F);
+                    el.getFadeAnim().setValue(0.0F);
+                }
+            } else if (el instanceof error.ui.hud.impl.PotionsHud) {
+                boolean on = active && this.potions.getValue();
+                el.setEnabled(on);
+                if (!on) {
+                    el.getFadeAnim().setTarget(0.0F);
+                    el.getFadeAnim().setValue(0.0F);
+                }
+            } else if (el instanceof error.ui.hud.impl.ServerHelperHud) {
+                boolean on = active && this.serverHelper.getValue();
+                el.setEnabled(on);
+                if (!on) {
+                    el.getFadeAnim().setTarget(0.0F);
+                    el.getFadeAnim().setValue(0.0F);
+                }
+            } else if (el instanceof error.ui.hud.impl.CustomHotbarHud) {
+                boolean on = active && this.customHotbar.getValue();
+                el.setEnabled(on);
+                if (!on) {
+                    el.getFadeAnim().setTarget(0.0F);
+                    el.getFadeAnim().setValue(0.0F);
+                }
+            } else if (el instanceof error.ui.hud.impl.CustomScoreboardHud) {
+                boolean on = active && this.customScoreboard.getValue();
+                el.setEnabled(on);
+                if (!on) {
+                    el.getFadeAnim().setTarget(0.0F);
+                    el.getFadeAnim().setValue(0.0F);
+                }
+            } else if (el instanceof error.ui.hud.impl.CooldownHud) {
+                boolean on = active && this.cooldowns.getValue();
+                el.setEnabled(on);
+                if (!on) {
+                    el.getFadeAnim().setTarget(0.0F);
+                    el.getFadeAnim().setValue(0.0F);
+                }
+            } else if (el instanceof error.ui.hud.impl.StaffHud) {
+                boolean on = active && this.staffList.getValue();
                 el.setEnabled(on);
                 if (!on) {
                     el.getFadeAnim().setTarget(0.0F);

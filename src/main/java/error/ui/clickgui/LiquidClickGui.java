@@ -55,6 +55,18 @@ public class LiquidClickGui extends Screen {
     private static final Color FADE_WHITE = Color.rgba(255, 255, 255, 32);
     private static final Identifier LOGO_NONFONE = Identifier.fromNamespaceAndPath("error", "textures/logo_nonfone.png");
 
+    // Persistent GUI State across openings
+    private static Category savedCategory = Category.COMBAT;
+    private static String savedSearchQuery = "";
+    private static float savedScrollTarget = 0.0F;
+    private static float savedConfigsScrollTarget = 0.0F;
+    private static float savedFriendsScrollTarget = 0.0F;
+    public static volatile boolean isOpen = false;
+    private static float savedCosmeticsScrollTarget = 0.0F;
+    private static float savedEventsScrollTarget = 0.0F;
+    private static String savedCosmeticFilter = "Модели";
+    private static error.event.ServerEventManager.ServerType savedServerType = null;
+
     public Category activeCategory = Category.COMBAT;
     public String searchQuery = "";
     public boolean searchFocused = false;
@@ -86,12 +98,17 @@ public class LiquidClickGui extends Screen {
     private float friendsScrollTarget = 0.0F;
 
     // Cosmetics Tab States
-    public String cosmeticFilter = "Все";
+    public String cosmeticFilter = "Модели";
     private final Animation cosmeticsScrollAnim = new Animation(0.0F, 0.22F);
     private float cosmeticsScrollTarget = 0.0F;
     private float cosmeticsPlayerYaw = 0.0F;
     private boolean draggingCosmeticsPlayer = false;
     private double lastCosmeticsMouseX = 0;
+
+    // Events Tab States
+    public error.event.ServerEventManager.ServerType activeServerTab = error.event.ServerEventManager.ServerType.FUN_TIME;
+    private final Animation eventsScrollAnim = new Animation(0.0F, 0.22F);
+    private float eventsScrollTarget = 0.0F;
 
     // Module Middle-Click Bind Modal States
     public Module moduleModalModule = null;
@@ -118,6 +135,9 @@ public class LiquidClickGui extends Screen {
     public Module expandedModule = null;
     public Setting<?> activeBindingSetting = null;
     private SliderSetting draggingSlider = null;
+    private float draggingSliderX = 0.0F;
+    private float draggingSliderW = 1.0F;
+    private final Map<SliderSetting, Animation> sliderAnims = new HashMap<>();
 
     private final List<Snowflake2D> snowflakes = new ArrayList<>();
     private final Random random = new Random();
@@ -127,6 +147,32 @@ public class LiquidClickGui extends Screen {
         this.openAnim.setValue(1.0F);
         this.openAnim.setTarget(1.0F);
         this.openTime = System.currentTimeMillis();
+
+        // Restore persistent GUI states
+        this.activeCategory = (savedCategory != null && savedCategory != Category.THEMES) ? savedCategory : Category.COMBAT;
+        this.searchQuery = savedSearchQuery != null ? savedSearchQuery : "";
+        this.scrollTarget = savedScrollTarget;
+        this.scrollAnim.setValue(savedScrollTarget);
+        this.scrollAnim.setTarget(savedScrollTarget);
+        this.configsScrollTarget = savedConfigsScrollTarget;
+        this.configsScrollAnim.setValue(savedConfigsScrollTarget);
+        this.configsScrollAnim.setTarget(savedConfigsScrollTarget);
+        this.friendsScrollTarget = savedFriendsScrollTarget;
+        this.friendsScrollAnim.setValue(savedFriendsScrollTarget);
+        this.friendsScrollAnim.setTarget(savedFriendsScrollTarget);
+        this.cosmeticsScrollTarget = savedCosmeticsScrollTarget;
+        this.cosmeticsScrollAnim.setValue(savedCosmeticsScrollTarget);
+        this.cosmeticsScrollAnim.setTarget(savedCosmeticsScrollTarget);
+        this.eventsScrollTarget = savedEventsScrollTarget;
+        this.eventsScrollAnim.setValue(savedEventsScrollTarget);
+        this.eventsScrollAnim.setTarget(savedEventsScrollTarget);
+        this.cosmeticFilter = (savedCosmeticFilter != null && !savedCosmeticFilter.equals("Все")) ? savedCosmeticFilter : "Модели";
+        if (savedServerType != null) {
+            this.activeServerTab = savedServerType;
+        } else {
+            this.activeServerTab = error.event.ServerEventManager.getInstance().detectCurrentServer();
+        }
+
         initSnowflakes();
     }
 
@@ -146,6 +192,7 @@ public class LiquidClickGui extends Screen {
     @Override
     protected void init() {
         super.init();
+        isOpen = true;
         error.util.client.ClientSoundPlayer.playGuiOpen();
         this.openAnim.setValue(1.0F);
         this.openAnim.setTarget(1.0F);
@@ -163,8 +210,29 @@ public class LiquidClickGui extends Screen {
 
     @Override
     public void onClose() {
+        isOpen = false;
+        savePersistentState();
         error.util.client.ClientSoundPlayer.playGuiClose();
         super.onClose();
+    }
+
+    @Override
+    public void removed() {
+        isOpen = false;
+        savePersistentState();
+        super.removed();
+    }
+
+    private void savePersistentState() {
+        savedCategory = this.activeCategory;
+        savedSearchQuery = this.searchQuery;
+        savedScrollTarget = this.scrollTarget;
+        savedConfigsScrollTarget = this.configsScrollTarget;
+        savedFriendsScrollTarget = this.friendsScrollTarget;
+        savedCosmeticsScrollTarget = this.cosmeticsScrollTarget;
+        savedEventsScrollTarget = this.eventsScrollTarget;
+        savedCosmeticFilter = this.cosmeticFilter;
+        savedServerType = this.activeServerTab;
     }
 
     @Override
@@ -172,26 +240,43 @@ public class LiquidClickGui extends Screen {
         return false;
     }
 
-    private static Identifier safeId(String path) {
-        try {
-            return Identifier.fromNamespaceAndPath("error", path);
-        } catch (Throwable t) {
-            return null;
-        }
+    private static final Identifier ICON_COMBAT = Identifier.fromNamespaceAndPath("error", "textures/clickgui/combat1.png");
+    private static final Identifier ICON_MOVEMENT = Identifier.fromNamespaceAndPath("error", "textures/clickgui/movement1.png");
+    private static final Identifier ICON_RENDER = Identifier.fromNamespaceAndPath("error", "textures/clickgui/visuals1.png");
+    private static final Identifier ICON_COSMETICS = Identifier.fromNamespaceAndPath("error", "textures/clickgui/cosmetics.png");
+    private static final Identifier ICON_PLAYER = Identifier.fromNamespaceAndPath("error", "textures/clickgui/player1.png");
+    private static final Identifier ICON_MISC = Identifier.fromNamespaceAndPath("error", "textures/clickgui/misc1.png");
+    private static final Identifier ICON_EVENTS = Identifier.fromNamespaceAndPath("error", "textures/system/bell2.png");
+    private static final Identifier ICON_CONFIGS = Identifier.fromNamespaceAndPath("error", "textures/clickgui/folder2.png");
+    private static final Identifier ICON_FRIENDS = Identifier.fromNamespaceAndPath("error", "textures/clickgui/friends.png");
+    private static final Identifier ICON_BIND = Identifier.fromNamespaceAndPath("error", "nursultan/sprites/bind.png");
+    private static final Identifier ICON_SEARCH = Identifier.fromNamespaceAndPath("error", "textures/clickgui/search.png");
+
+    private static String getCategoryNurikIcon(Category cat) {
+        return switch (cat) {
+            case COMBAT -> Fonts.NURIK_COMBAT;
+            case MOVEMENT -> Fonts.NURIK_MOVEMENT;
+            case RENDER -> Fonts.NURIK_VISUALS;
+            case PLAYER -> Fonts.NURIK_PLAYER;
+            case MISC -> Fonts.NURIK_MISC;
+            case CONFIGS -> Fonts.NURIK_PRESETS;
+            case FRIENDS -> Fonts.NURIK_ACCOUNTS;
+            default -> null;
+        };
     }
 
-    private static IconUse getCategoryIconUse(Category cat) {
+    private static Identifier getCategoryIcon(Category cat) {
         return switch (cat) {
-            case COMBAT -> IconUse.FIGHT;
-            case MOVEMENT -> IconUse.MOVEMENT;
-            case RENDER -> IconUse.RENDER;
-            case COSMETICS -> IconUse.POTION;
-            case PLAYER -> IconUse.PLAYER;
-            case MISC -> IconUse.MISC;
-            case EVENTS -> IconUse.SPUTNIK;
-            case CONFIGS -> IconUse.GEAR;
-            case FRIENDS -> IconUse.GROUP;
-            default -> IconUse.LOGO;
+            case COMBAT -> ICON_COMBAT;
+            case MOVEMENT -> ICON_MOVEMENT;
+            case RENDER -> ICON_RENDER;
+            case COSMETICS -> ICON_COSMETICS;
+            case PLAYER -> ICON_PLAYER;
+            case MISC -> ICON_MISC;
+            case EVENTS -> ICON_EVENTS;
+            case CONFIGS -> ICON_CONFIGS;
+            case FRIENDS -> ICON_FRIENDS;
+            default -> ICON_MISC;
         };
     }
 
@@ -204,6 +289,7 @@ public class LiquidClickGui extends Screen {
         configsScrollAnim.update();
         friendsScrollAnim.update();
         cosmeticsScrollAnim.update();
+        eventsScrollAnim.update();
 
         int screenW = this.width > 0 ? this.width : (this.minecraft != null ? this.minecraft.getWindow().getGuiScaledWidth() : 854);
         int screenH = this.height > 0 ? this.height : (this.minecraft != null ? this.minecraft.getWindow().getGuiScaledHeight() : 480);
@@ -258,7 +344,7 @@ public class LiquidClickGui extends Screen {
         // 3. Settings Modal Liquid Glass Window
         if (this.settingsModalOpen) {
             float modalW = 340.0F;
-            float modalH = (this.activeEditingColorSetting != null) ? 175.0F : 208.0F;
+            float modalH = (this.activeEditingColorSetting != null) ? 175.0F : 226.0F;
             float modalX = (screenW - modalW) / 2.0F;
             float modalY = (screenH - modalH) / 2.0F;
 
@@ -266,7 +352,7 @@ public class LiquidClickGui extends Screen {
                     .radius(12)
                     .type(BlurType.KAWASE)
                     .strength(4)
-                    .tint(Color.rgba(0, 0, 0, Math.round(110 * animVal)))
+                    .tint(Color.rgba(0, 0, 0, Math.round(75 * animVal)))
                     .alpha(animVal)
                     .render(extractor);
 
@@ -289,7 +375,7 @@ public class LiquidClickGui extends Screen {
                     .radius(10)
                     .type(BlurType.KAWASE)
                     .strength(4)
-                    .tint(Color.rgba(0, 0, 0, Math.round(110 * animVal)))
+                    .tint(Color.rgba(0, 0, 0, Math.round(75 * animVal)))
                     .alpha(animVal)
                     .render(extractor);
 
@@ -392,13 +478,11 @@ public class LiquidClickGui extends Screen {
     }
 
     private void renderSidebar(float x, float y, int mouseX, int mouseY, float alphaVal, int accentColor) {
-        // Logo from "D:\Error logo nonfone.png" placed in top-left sidebar header
-        // Tinted with theme accent color (+ зависимость цвета от темы)
+        // Authentic high-res Error DLC logo
         float logoX = x + 9.0F;
         float logoY = y + 8.5F;
-        float logoSize = 21.0F;
-        int logoTint = ColorUtil.withAlpha(accentColor, (int) (240 * alphaVal));
-        Render2D.drawTexture(LOGO_NONFONE, logoX, logoY, logoSize, logoSize, logoTint);
+        float logoSize = 18.0F;
+        Render2D.drawTexture(LOGO_NONFONE, logoX, logoY + 1.0F, logoSize, logoSize, ColorUtil.withAlpha(0xFFFFFFFF, (int) (255 * alphaVal)));
 
         // Branding next to the logo
         Fonts.drawString(Fonts.SF_MEDIUM, "Error DLC", logoX + logoSize + 6.0F, y + 9.5F, 8.5F, 0xFFFFFFFF);
@@ -423,16 +507,19 @@ public class LiquidClickGui extends Screen {
             if (active) {
                 // Sleek frosted pill with accent indicator
                 Render2D.drawRoundedRect(catX, catY, catW, catH, 5.0F, ColorUtil.rgba(255, 255, 255, (int) (22 * alphaVal)));
-                Render2D.drawRoundedOutline(catX, catY, catW, catH, 5.0F, 0.7F, ColorUtil.rgba(255, 255, 255, (int) (40 * alphaVal)));
+                Render2D.drawRoundedOutline(catX, catY, catW, catH, 5.0F, 0.7F, ColorUtil.withAlpha(accentColor, (int) (130 * alphaVal)));
                 Render2D.drawRoundedRect(catX + 2.0F, catY + 3.5F, 2.5F, catH - 7.0F, 1.0F, accentColor);
-            } else if (hVal > 0.01F) {
-                Render2D.drawRoundedRect(catX, catY, catW, catH, 5.0F, ColorUtil.rgba(255, 255, 255, (int) (hVal * 16 * alphaVal)));
+            } else {
+                Render2D.drawRoundedRect(catX, catY, catW, catH, 5.0F, ColorUtil.rgba(255, 255, 255, (int) ((4 + hVal * 16) * alphaVal)));
+                Render2D.drawRoundedOutline(catX, catY, catW, catH, 5.0F, 0.6F, ColorUtil.rgba(255, 255, 255, (int) ((14 + hVal * 18) * alphaVal)));
             }
 
-            // Vector Category Icon from IconUse
-            IconUse catIcon = getCategoryIconUse(cat);
+            // Category Icon (Guaranteed rendering for all 9 categories)
             int iconCol = active ? 0xFFFFFFFF : (isHovered ? 0xFFFFFFFF : ColorUtil.rgba(200, 220, 240, (int) (200 * alphaVal)));
-            Fonts.drawString(Fonts.ICONS, catIcon.glyph, catX + 8.5F, catY + 5.5F, 5.5F, iconCol);
+            Identifier catIcon = getCategoryIcon(cat);
+            if (catIcon != null) {
+                Render2D.drawTexture(catIcon, catX + 7.5F, catY + 4.5F, 12.0F, 12.0F, iconCol);
+            }
 
             int nameCol = active ? 0xFFFFFFFF : 0xFFC0D0E0;
             Fonts.drawString(Fonts.SF_MEDIUM, cat.getDisplayName(), catX + 24.0F, catY + 6.5F, 6.2F, nameCol);
@@ -517,10 +604,9 @@ public class LiquidClickGui extends Screen {
         Render2D.drawRoundedRect(searchX, gearY, searchW, searchH, 4.5F, boxBg);
         Render2D.drawRoundedOutline(searchX, gearY, searchW, searchH, 4.5F, 0.65F, boxBorder);
 
-        // Magnifying glass icon
+        // Magnifying glass icon (Vector MSDF)
         int scCol = searchFocused ? accentColor : 0xFF98A8C0;
-        Render2D.drawCircleOutline(searchX + 9.5F, gearY + 8.5F, 3.0F, 0.85F, scCol);
-        Render2D.drawRoundedRect(searchX + 11.5F, gearY + 10.5F, 3.2F, 1.1F, 0.55F, scCol);
+        Fonts.drawString(Fonts.NURIK_MENU, Fonts.NURIK_SEARCH, searchX + 6.0F, gearY + 5.0F, 7.5F, scCol);
 
         String displayText = searchQuery.isEmpty() ? (searchFocused ? "" : "Поиск...") : searchQuery;
         int textCol = searchQuery.isEmpty() && !searchFocused ? 0xFF8898B0 : 0xFFFFFFFF;
@@ -624,6 +710,20 @@ public class LiquidClickGui extends Screen {
         float knobX = module.isEnabled() ? switchX + switchW - 6.5F : switchX + 6.5F;
         Render2D.drawCircle(knobX, switchY + switchH / 2.0F, 4.5F, 0xFFFFFFFF);
 
+        // Keyboard Bind Icon (Left of switch, visible when hovered)
+        if (isHovered) {
+            float bindBtnW = 14.0F;
+            float bindBtnH = 13.0F;
+            float bindBtnX = switchX - bindBtnW - 5.0F;
+            float bindBtnY = switchY;
+            boolean isBindHovered = mouseX >= bindBtnX && mouseX <= bindBtnX + bindBtnW && mouseY >= bindBtnY && mouseY <= bindBtnY + bindBtnH;
+
+            Render2D.drawRoundedRect(bindBtnX, bindBtnY, bindBtnW, bindBtnH, 3.5F, ColorUtil.rgba(255, 255, 255, (int) ((isBindHovered ? 30 : 16) * alphaVal)));
+            Render2D.drawRoundedOutline(bindBtnX, bindBtnY, bindBtnW, bindBtnH, 3.5F, 0.5F, ColorUtil.rgba(255, 255, 255, (int) ((isBindHovered ? 60 : 25) * alphaVal)));
+            int bindIconCol = isBindHovered ? 0xFFFFFFFF : ColorUtil.rgba(220, 230, 245, (int) (220 * alphaVal));
+            Render2D.drawTexture(ICON_BIND, bindBtnX + 2.5F, bindBtnY + 2.5F, 9.0F, 8.0F, bindIconCol);
+        }
+
         // Expanded Settings Section
         if (expandVal > 0.01F) {
             float settingsY = y + 33.0F;
@@ -668,17 +768,27 @@ public class LiquidClickGui extends Screen {
 
             float trackY = y + 11.5F;
             float trackH = 3.5F;
-            Render2D.drawRoundedRect(x + 4.0F, trackY, w - 8.0F, trackH, 1.75F, ColorUtil.rgba(255, 255, 255, (int) (18 * alphaVal)));
+            float trackW = w - 8.0F;
+            Render2D.drawRoundedRect(x + 4.0F, trackY, trackW, trackH, 1.75F, ColorUtil.rgba(255, 255, 255, (int) (18 * alphaVal)));
 
-            float pct = (slider.getValue() - slider.getMin()) / (slider.getMax() - slider.getMin());
-            pct = Math.clamp(pct, 0.0F, 1.0F);
-            float fillW = (w - 8.0F) * pct;
+            float rawPct = (slider.getValue() - slider.getMin()) / (slider.getMax() - slider.getMin());
+            final float targetPct = Math.clamp(rawPct, 0.0F, 1.0F);
 
+            Animation sAnim = sliderAnims.computeIfAbsent(slider, s -> new Animation(targetPct, 0.22F));
+            sAnim.setTarget(targetPct);
+            sAnim.update();
+            float visualPct = Math.clamp(sAnim.getValue(), 0.0F, 1.0F);
+
+            float fillW = trackW * visualPct;
             if (fillW > 0.5F) {
                 Render2D.drawRoundedRect(x + 4.0F, trackY, fillW, trackH, 1.75F, ColorUtil.withAlpha(accentColor, (int) (220 * alphaVal)));
             }
 
-            Render2D.drawCircle(x + 4.0F + fillW, trackY + trackH / 2.0F, 3.5F, 0xFFFFFFFF);
+            float knobX = x + 4.0F + fillW;
+            float knobY = trackY + trackH / 2.0F;
+            Render2D.drawShadow(knobX - 4.5F, knobY - 4.5F, 9.0F, 9.0F, 4.5F, 2.5F, ColorUtil.withAlpha(accentColor, (int) (150 * alphaVal)));
+            Render2D.drawCircle(knobX, knobY, 3.8F, 0xFFFFFFFF);
+            Render2D.drawCircle(knobX, knobY, 1.8F, ColorUtil.withAlpha(accentColor, (int) (255 * alphaVal)));
         } else if (setting instanceof ModeSetting mode) {
             Fonts.drawString(Fonts.SF_MEDIUM, mode.getName(), x + 4.0F, y + 4.5F, 5.2F, 0xFFD0E0F0);
 
@@ -693,7 +803,7 @@ public class LiquidClickGui extends Screen {
             Render2D.drawRoundedRect(btnX, btnY, btnW, 11.5F, 3.0F, bg);
             Render2D.drawRoundedOutline(btnX, btnY, btnW, 11.5F, 3.0F, 0.6F, isOpen ? accentColor : ColorUtil.rgba(255, 255, 255, (int) (30 * alphaVal)));
             Fonts.drawString(Fonts.SF_MEDIUM, val, btnX + 4.0F, btnY + 2.5F, 4.8F, 0xFFFFFFFF);
-            Fonts.drawString(Fonts.ICONS, IconUse.DOWN.glyph, btnX + btnW - 8.0F, btnY + 2.8F, 4.2F, isOpen ? 0xFFFFFFFF : 0xFF90A4B8);
+            Fonts.drawString(Fonts.SF_MEDIUM, isOpen ? "▲" : "▼", btnX + btnW - 8.0F, btnY + 2.8F, 4.2F, isOpen ? 0xFFFFFFFF : 0xFF90A4B8);
         } else if (setting instanceof BindSetting bind) {
             Fonts.drawString(Fonts.SF_MEDIUM, bind.getName(), x + 4.0F, y + 4.5F, 5.2F, 0xFFD0E0F0);
 
@@ -772,12 +882,12 @@ public class LiquidClickGui extends Screen {
         int screenW = this.width > 0 ? this.width : (this.minecraft != null ? this.minecraft.getWindow().getGuiScaledWidth() : 854);
         int screenH = this.height > 0 ? this.height : (this.minecraft != null ? this.minecraft.getWindow().getGuiScaledHeight() : 480);
         float modalW = 340.0F;
-        float modalH = (activeEditingColorSetting != null) ? 175.0F : 208.0F;
+        float modalH = (activeEditingColorSetting != null) ? 175.0F : 226.0F;
         float modalX = (screenW - modalW) / 2.0F;
         float modalY = (screenH - modalH) / 2.0F;
 
         float fieldX = modalX + 14.0F;
-        float fieldY = (activeEditingColorSetting != null) ? (modalY + 32.0F) : (modalY + 68.0F);
+        float fieldY = (activeEditingColorSetting != null) ? (modalY + 32.0F) : (modalY + 86.0F);
         float fieldW = 145.0F;
         float fieldH = 100.0F;
 
@@ -800,13 +910,13 @@ public class LiquidClickGui extends Screen {
 
     private void renderSettingsModal(int screenW, int screenH, int mouseX, int mouseY, float alphaVal, int accentColor) {
         float modalW = 340.0F;
-        float modalH = (activeEditingColorSetting != null) ? 175.0F : 208.0F;
+        float modalH = (activeEditingColorSetting != null) ? 175.0F : 226.0F;
         float modalX = (screenW - modalW) / 2.0F;
         float modalY = (screenH - modalH) / 2.0F;
 
-        // Deep acrylic liquid glass body - dark enough to cleanly separate from underlying GUI cards
-        int modalDarken = ColorUtil.rgba(10, 13, 22, (int) (210 * alphaVal));
-        int modalFrosted = ColorUtil.rgba(255, 255, 255, (int) (12 * alphaVal));
+        // Translucent liquid glass body
+        int modalDarken = ColorUtil.rgba(10, 13, 22, (int) (160 * alphaVal));
+        int modalFrosted = ColorUtil.rgba(255, 255, 255, (int) (10 * alphaVal));
         Render2D.drawShadow(modalX, modalY, modalW, modalH, 12.0F, 28.0F, ColorUtil.rgba(0, 0, 0, (int) (160 * alphaVal)));
         Render2D.drawRoundedRect(modalX, modalY, modalW, modalH, 12.0F, modalDarken);
         Render2D.drawRoundedRect(modalX, modalY, modalW, modalH, 12.0F, modalFrosted);
@@ -830,7 +940,7 @@ public class LiquidClickGui extends Screen {
             Fonts.drawString(Fonts.SF_MEDIUM, "Палитра RGB / HEX", iconX + 140.0F, headY + 2.5F, 5.0F, 0xFFA0B4C8);
         } else {
             Fonts.drawString(Fonts.SF_MEDIUM, "Настройки Клиента", iconX + 15.0F, headY + 1.5F, 7.5F, 0xFFFFFFFF);
-            Fonts.drawString(Fonts.SF_MEDIUM, "Бинды и Палитра", iconX + 104.0F, headY + 2.5F, 5.0F, 0xFFA0B4C8);
+            Fonts.drawString(Fonts.SF_MEDIUM, "Стили и Палитра", iconX + 104.0F, headY + 2.5F, 5.0F, 0xFFA0B4C8);
         }
 
         // Close Button
@@ -839,7 +949,7 @@ public class LiquidClickGui extends Screen {
         float closeSize = 14.0F;
         boolean closeHover = mouseX >= closeX && mouseX <= closeX + closeSize && mouseY >= closeY && mouseY <= closeY + closeSize;
         Render2D.drawRoundedRect(closeX, closeY, closeSize, closeSize, 3.5F, closeHover ? ColorUtil.rgba(240, 70, 70, (int) (200 * alphaVal)) : ColorUtil.rgba(255, 255, 255, (int) (14 * alphaVal)));
-        Fonts.drawCenteredString(Fonts.SF_MEDIUM, "✕", closeX + closeSize / 2.0F, closeY + 2.5F, 6.0F, 0xFFFFFFFF);
+        Fonts.drawCenteredString(Fonts.SF_MEDIUM, "x", closeX + closeSize / 2.0F, closeY + 1.8F, 5.8F, 0xFFFFFFFF);
 
         // Divider
         Render2D.drawRoundedRect(modalX + 10.0F, modalY + 24.0F, modalW - 20.0F, 1.0F, 0.5F, ColorUtil.rgba(255, 255, 255, (int) (16 * alphaVal)));
@@ -860,7 +970,10 @@ public class LiquidClickGui extends Screen {
             } else if (ClickGui.INSTANCE != null && !ClickGui.INSTANCE.getBind().isEmpty()) {
                 keyText = KeyUtil.getKeyName(ClickGui.INSTANCE.getBind().get(0));
             } else {
-                keyText = "NONE";
+                if (ClickGui.INSTANCE != null) {
+                    ClickGui.INSTANCE.getBind().setSingle(GLFW.GLFW_KEY_RIGHT_SHIFT);
+                }
+                keyText = "RSHIFT";
             }
             boolean bindHover = mouseX >= bindBtnX && mouseX <= bindBtnX + bindBtnW && mouseY >= row1Y && mouseY <= row1Y + bindBtnH;
             int bindBg = bindingClickGuiKey ? ColorUtil.withAlpha(accentColor, (int) (200 * alphaVal)) : ColorUtil.rgba(255, 255, 255, (int) ((bindHover ? 26 : 16) * alphaVal));
@@ -885,10 +998,34 @@ public class LiquidClickGui extends Screen {
             int cBg = isChroma ? ColorUtil.withAlpha(accentColor, (int) (190 * alphaVal)) : ColorUtil.rgba(255, 255, 255, (int) ((cHover ? 24 : 14) * alphaVal));
             Render2D.drawRoundedRect(chromaBtnX, row1Y, segW, segH, 3.5F, cBg);
             Render2D.drawRoundedOutline(chromaBtnX, row1Y, segW, segH, 3.5F, 0.65F, isChroma ? accentColor : ColorUtil.rgba(255, 255, 255, (int) (24 * alphaVal)));
-            Fonts.drawCenteredString(Fonts.SF_MEDIUM, "🌈 Chroma", chromaBtnX + segW / 2.0F, row1Y + 2.5F, 5.0F, 0xFFFFFFFF);
+            Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Chroma", chromaBtnX + segW / 2.0F, row1Y + 2.5F, 5.0F, 0xFFFFFFFF);
+
+            // Row 1.5: UI Style (Жидкое стекло vs Новый Год)
+            float styleRowY = modalY + 47.0F;
+            Fonts.drawString(Fonts.SF_MEDIUM, "Стиль UI:", modalX + 14.0F, styleRowY + 2.5F, 5.8F, 0xFFD0E0F0);
+
+            boolean isGlass = Theme.isLiquidGlass();
+            boolean isNY = Theme.isNewYear();
+            float glassBtnW = 76.0F;
+            float newYearBtnW = 66.0F;
+            float glassBtnX = modalX + modalW - 14.0F - (glassBtnW + newYearBtnW + 4.0F);
+            float newYearBtnX = glassBtnX + glassBtnW + 4.0F;
+            float styleBtnH = 14.0F;
+
+            boolean gHover = mouseX >= glassBtnX && mouseX <= glassBtnX + glassBtnW && mouseY >= styleRowY && mouseY <= styleRowY + styleBtnH;
+            int gBg = isGlass ? ColorUtil.withAlpha(accentColor, (int) (190 * alphaVal)) : ColorUtil.rgba(255, 255, 255, (int) ((gHover ? 24 : 14) * alphaVal));
+            Render2D.drawRoundedRect(glassBtnX, styleRowY, glassBtnW, styleBtnH, 3.5F, gBg);
+            Render2D.drawRoundedOutline(glassBtnX, styleRowY, glassBtnW, styleBtnH, 3.5F, 0.65F, isGlass ? accentColor : ColorUtil.rgba(255, 255, 255, (int) (24 * alphaVal)));
+            Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Жидкое стекло", glassBtnX + glassBtnW / 2.0F, styleRowY + 2.5F, 4.8F, 0xFFFFFFFF);
+
+            boolean nyHover = mouseX >= newYearBtnX && mouseX <= newYearBtnX + newYearBtnW && mouseY >= styleRowY && mouseY <= styleRowY + styleBtnH;
+            int nyBg = isNY ? ColorUtil.withAlpha(accentColor, (int) (190 * alphaVal)) : ColorUtil.rgba(255, 255, 255, (int) ((nyHover ? 24 : 14) * alphaVal));
+            Render2D.drawRoundedRect(newYearBtnX, styleRowY, newYearBtnW, styleBtnH, 3.5F, nyBg);
+            Render2D.drawRoundedOutline(newYearBtnX, styleRowY, newYearBtnW, styleBtnH, 3.5F, 0.65F, isNY ? accentColor : ColorUtil.rgba(255, 255, 255, (int) (24 * alphaVal)));
+            Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Новый Год", newYearBtnX + newYearBtnW / 2.0F, styleRowY + 2.5F, 4.8F, 0xFFFFFFFF);
 
             // Row 2: Target Color Selector Tabs (Primary vs Secondary)
-            float row2Y = modalY + 47.0F;
+            float row2Y = modalY + 65.0F;
             float tabW = (modalW - 32.0F) / 2.0F;
             float tabH = 16.0F;
             float tab1X = modalX + 14.0F;
@@ -910,7 +1047,7 @@ public class LiquidClickGui extends Screen {
             Render2D.drawCircle(tab2X + 8.0F, row2Y + tabH / 2.0F, 3.5F, Theme.getSecondaryColor());
             Fonts.drawString(Fonts.SF_MEDIUM, "Дополнительный цвет", tab2X + 15.0F, row2Y + 3.0F, 5.4F, tab2Active ? 0xFFFFFFFF : 0xFFB0C0D4);
 
-            fieldY = modalY + 68.0F;
+            fieldY = modalY + 86.0F;
         } else {
             fieldY = modalY + 32.0F;
         }
@@ -997,9 +1134,9 @@ public class LiquidClickGui extends Screen {
         float modalX = (screenW - modalW) / 2.0F;
         float modalY = (screenH - modalH) / 2.0F;
 
-        // Deep acrylic liquid glass body - dark enough to cleanly separate from underlying GUI cards
-        int modalDarken = ColorUtil.rgba(10, 13, 22, (int) (210 * alphaVal));
-        int modalFrosted = ColorUtil.rgba(255, 255, 255, (int) (12 * alphaVal));
+        // Translucent liquid glass body
+        int modalDarken = ColorUtil.rgba(10, 13, 22, (int) (160 * alphaVal));
+        int modalFrosted = ColorUtil.rgba(255, 255, 255, (int) (10 * alphaVal));
         Render2D.drawShadow(modalX, modalY, modalW, modalH, 10.0F, 24.0F, ColorUtil.rgba(0, 0, 0, (int) (160 * alphaVal)));
         Render2D.drawRoundedRect(modalX, modalY, modalW, modalH, 10.0F, modalDarken);
         Render2D.drawRoundedRect(modalX, modalY, modalW, modalH, 10.0F, modalFrosted);
@@ -1020,13 +1157,6 @@ public class LiquidClickGui extends Screen {
 
         Fonts.drawString(Fonts.SF_MEDIUM, moduleModalModule.getName(), dotX + 9.0F, headY + 1.5F, 6.2F, 0xFFFFFFFF);
 
-        // Close Button ✕
-        float closeX = modalX + modalW - 20.0F;
-        float closeY = modalY + 6.0F;
-        float closeSize = 13.0F;
-        boolean closeHover = mouseX >= closeX && mouseX <= closeX + closeSize && mouseY >= closeY && mouseY <= closeY + closeSize;
-        Render2D.drawRoundedRect(closeX, closeY, closeSize, closeSize, 3.0F, closeHover ? ColorUtil.rgba(240, 70, 70, (int) (190 * alphaVal)) : ColorUtil.rgba(255, 255, 255, (int) (12 * alphaVal)));
-        Fonts.drawCenteredString(Fonts.SF_MEDIUM, "✕", closeX + closeSize / 2.0F, closeY + 2.0F, 5.5F, 0xFFFFFFFF);
 
         // Divider
         Render2D.drawRoundedRect(modalX + 10.0F, modalY + 22.0F, modalW - 20.0F, 1.0F, 0.5F, ColorUtil.rgba(255, 255, 255, (int) (14 * alphaVal)));
@@ -1137,7 +1267,7 @@ public class LiquidClickGui extends Screen {
             Fonts.drawString(Fonts.SF_MEDIUM, opt, dx + 6.0F, rowY + 3.5F, 5.0F, textColor);
 
             if (isSelected) {
-                Fonts.drawString(Fonts.ICONS, IconUse.CHECK.glyph, dx + dw - 12.0F, rowY + 3.5F, 5.2F, accentColor);
+                Fonts.drawString(Fonts.SF_MEDIUM, "✓", dx + dw - 12.0F, rowY + 2.5F, 5.2F, accentColor);
             }
 
             rowY += 16.0F;
@@ -1252,7 +1382,7 @@ public class LiquidClickGui extends Screen {
                     float delBtnX = itemX + itemW - delBtnW - 6.0F;
                     boolean delHover = mouseX >= delBtnX && mouseX <= delBtnX + delBtnW && mouseY >= btnY && mouseY <= btnY + btnH;
                     Render2D.drawRoundedRect(delBtnX, btnY, delBtnW, btnH, 3.0F, delHover ? ColorUtil.rgba(240, 70, 70, (int) (200 * alphaVal)) : ColorUtil.rgba(255, 255, 255, (int) (16 * alphaVal)));
-                    Fonts.drawCenteredString(Fonts.SF_MEDIUM, "✕", delBtnX + delBtnW / 2.0F, btnY + 3.0F, 5.2F, 0xFFFFFFFF);
+                    Fonts.drawCenteredString(Fonts.SF_MEDIUM, "x", delBtnX + delBtnW / 2.0F, btnY + 2.5F, 5.2F, 0xFFFFFFFF);
 
                     // Share Key [Поделиться]
                     float shareBtnW = 44.0F;
@@ -1368,7 +1498,7 @@ public class LiquidClickGui extends Screen {
                     float delBtnY = itemY + 5.5F;
                     boolean delHover = mouseX >= delBtnX && mouseX <= delBtnX + delBtnW && mouseY >= delBtnY && mouseY <= delBtnY + delBtnH;
                     Render2D.drawRoundedRect(delBtnX, delBtnY, delBtnW, delBtnH, 3.0F, delHover ? ColorUtil.rgba(240, 70, 70, (int) (200 * alphaVal)) : ColorUtil.rgba(255, 255, 255, (int) (16 * alphaVal)));
-                    Fonts.drawCenteredString(Fonts.SF_MEDIUM, "✕ Удалить", delBtnX + delBtnW / 2.0F, delBtnY + 3.5F, 4.8F, 0xFFFFFFFF);
+                    Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Удалить", delBtnX + delBtnW / 2.0F, delBtnY + 3.5F, 4.8F, 0xFFFFFFFF);
                 }
 
                 itemY += itemH + 4.0F;
@@ -1382,6 +1512,72 @@ public class LiquidClickGui extends Screen {
         }
     }
 
+    private static final Map<String, Identifier> COSMETIC_PREVIEWS = new HashMap<>();
+
+    public static Identifier getCosmeticPreview(CosmeticItem item) {
+        if (item == null) return null;
+        return COSMETIC_PREVIEWS.computeIfAbsent(item.getId(), id -> {
+            String path = switch (id) {
+                // Models
+                case "model_amogus" -> "models/skycore/amogus.png";
+                case "model_freddy" -> "models/skycore/freddy.png";
+                case "model_red_demon" -> "models/skycore/reddemon.png";
+                case "model_white_demon" -> "models/skycore/whitedemon.png";
+                case "model_rabbit", "model_chicken", "model_verity" -> "textures/clickgui/cosmetics.png";
+
+                // Wings
+                case "wings_draco" -> "textures/cosmetics/cosmetic_16.png";
+                case "wings_angel" -> "textures/cosmetics/cosmetic_22.png";
+                case "wings_archangel" -> "textures/cosmetics/cosmetic_14.png";
+                case "wings_blackhole" -> "textures/cosmetics/cosmetic_23.png";
+                case "wings_butterfly" -> "textures/cosmetics/cosmetic_18.png";
+                case "wings_frost" -> "textures/cosmetics/cosmetic_17.png";
+                case "wings_steampunk" -> "textures/cosmetics/cosmetic_24.png";
+                case "wings_techno" -> "textures/cosmetics/cosmetic_20.png";
+                case "wings_ghoul" -> "textures/cosmetics/cosmetic_25.png";
+
+                // Hats
+                case "hat_angel_halo" -> "textures/cosmetics/cosmetic_51.png";
+                case "hat_bear" -> "textures/cosmetics/cosmetic_57.png";
+                case "hat_frog" -> "textures/cosmetics/cosmetic_61.png";
+                case "hat_pilot" -> "textures/cosmetics/cosmetic_58.png";
+                case "hat_capybara" -> "textures/cosmetics/cosmetic_59.png";
+
+                // Masks
+                case "mask_angry" -> "textures/cosmetics/cosmetic_54.png";
+                case "mask_clown" -> "textures/cosmetics/cosmetic_52.png";
+                case "mask_shades" -> "textures/cosmetics/cosmetic_50.png";
+                case "mask_wink" -> "textures/cosmetics/cosmetic_53.png";
+
+                // Backpacks
+                case "backpack_adidas" -> "textures/cosmetics/cosmetic_35.png";
+                case "backpack_gucci" -> "textures/cosmetics/cosmetic_36.png";
+                case "backpack_louis_vuitton" -> "textures/cosmetics/cosmetic_37.png";
+                case "backpack_nike" -> "textures/cosmetics/cosmetic_33.png";
+                case "backpack_supreme" -> "textures/cosmetics/cosmetic_29.png";
+
+                // Pets
+                case "pet_dragon" -> "textures/cosmetics/cosmetic_48.png";
+                case "pet_capybara" -> "textures/cosmetics/cosmetic_47.png";
+                case "pet_axolotl" -> "textures/cosmetics/cosmetic_49.png";
+                case "pet_panda" -> "textures/cosmetics/cosmetic_44.png";
+                case "pet_patrick" -> "textures/cosmetics/cosmetic_42.png";
+                case "pet_spongebob" -> "textures/cosmetics/cosmetic_43.png";
+                case "pet_creeper" -> "textures/cosmetics/cosmetic_38.png";
+
+                // Cars & Pitbike
+                case "car_pitbike" -> "textures/cosmetics/cosmetic_pitbike.png";
+                case "car_uaz" -> "textures/cosmetics/cosmetic_uaz.png";
+                case "car_bmw_m5", "car_g63", "car_porsche_911", "car_lambo", "car_cybertruck", "car_bugatti" -> "textures/cosmetics/cosmetic_uaz.png";
+
+                // Capes
+                case "error_cape" -> "textures/cosmetics/cape.png";
+                default -> null;
+            };
+            return path != null ? Identifier.fromNamespaceAndPath("error", path) : null;
+        });
+    }
+
     private void renderCosmeticsTab(GuiGraphicsExtractor extractor, float x, float y, float w, float h, int mouseX, int mouseY, float alphaVal, int accentColor) {
         // Layout: Left side -> Cosmetics List with Filter Pills; Right side -> 3D Character Preview
         float previewW = 138.0F;
@@ -1391,38 +1587,39 @@ public class LiquidClickGui extends Screen {
         Render2D.drawRoundedRect(x, y, listW, h, 7.0F, ColorUtil.rgba(20, 24, 34, (int) (90 * alphaVal)));
         Render2D.drawRoundedOutline(x, y, listW, h, 7.0F, 0.7F, ColorUtil.rgba(255, 255, 255, (int) (20 * alphaVal)));
 
-        // Category Filter Pills
-        String[] filters = new String[]{"Все", "Модели", "Крылья", "Шапки", "Маски", "Питомцы"};
-        float pillX = x + 8.0F;
-        float pillY = y + 7.0F;
-        float pillH = 15.0F;
+        // Category Filter Pills (2 compact rows of 4 pills so they NEVER overlap the 3D character)
+        String[] filters = new String[]{"Модели", "Крылья", "Шапки", "Маски", "Рюкзаки", "Питомцы", "Машины", "Плащи"};
+        float rowGap = 3.0F;
+        float pillGap = 3.0F;
+        int cols = 4;
+        float fPillW = (listW - 16.0F - (cols - 1) * pillGap) / cols;
+        float fPillH = 13.5F;
 
-        for (String fName : filters) {
+        for (int i = 0; i < filters.length; i++) {
+            String fName = filters[i];
+            int row = i / cols;
+            int col = i % cols;
+            float pX = x + 8.0F + col * (fPillW + pillGap);
+            float pY = y + 7.0F + row * (fPillH + rowGap);
+
             boolean isSel = fName.equals(this.cosmeticFilter);
-            float fTextW = Fonts.SF_MEDIUM.getWidth(fName, 5.0F);
-            float fPillW = fTextW + 10.0F;
-
-            boolean pHover = mouseX >= pillX && mouseX <= pillX + fPillW && mouseY >= pillY && mouseY <= pillY + pillH;
+            boolean pHover = mouseX >= pX && mouseX <= pX + fPillW && mouseY >= pY && mouseY <= pY + fPillH;
             int pBg = isSel ? ColorUtil.withAlpha(accentColor, (int) (190 * alphaVal)) : (pHover ? ColorUtil.rgba(255, 255, 255, (int) (22 * alphaVal)) : ColorUtil.rgba(255, 255, 255, (int) (12 * alphaVal)));
             int pOutline = isSel ? accentColor : ColorUtil.rgba(255, 255, 255, (int) (24 * alphaVal));
 
-            Render2D.drawRoundedRect(pillX, pillY, fPillW, pillH, 3.5F, pBg);
-            Render2D.drawRoundedOutline(pillX, pillY, fPillW, pillH, 3.5F, 0.6F, pOutline);
-            Fonts.drawCenteredString(Fonts.SF_MEDIUM, fName, pillX + fPillW / 2.0F, pillY + 3.0F, 4.8F, isSel ? 0xFFFFFFFF : 0xFFB0C0D0);
-
-            pillX += fPillW + 4.0F;
+            Render2D.drawRoundedRect(pX, pY, fPillW, fPillH, 3.5F, pBg);
+            Render2D.drawRoundedOutline(pX, pY, fPillW, fPillH, 3.5F, 0.6F, pOutline);
+            Fonts.drawCenteredString(Fonts.SF_MEDIUM, fName, pX + fPillW / 2.0F, pY + 2.5F, 4.6F, isSel ? 0xFFFFFFFF : 0xFFB0C0D0);
         }
 
         // Cosmetics Items List
-        float listY = y + 27.0F;
-        float listH = h - 33.0F;
+        float listY = y + 40.0F;
+        float listH = h - 46.0F;
 
         List<CosmeticItem> allItems = CosmeticsManager.getInstance().getCosmetics();
         List<CosmeticItem> filtered = new ArrayList<>();
         for (CosmeticItem it : allItems) {
-            if ("Все".equals(cosmeticFilter)) {
-                filtered.add(it);
-            } else if ("Модели".equals(cosmeticFilter) && it.getType() == CosmeticType.MODEL) {
+            if ("Модели".equals(cosmeticFilter) && it.getType() == CosmeticType.MODEL) {
                 filtered.add(it);
             } else if ("Крылья".equals(cosmeticFilter) && it.getType() == CosmeticType.WINGS) {
                 filtered.add(it);
@@ -1430,7 +1627,13 @@ public class LiquidClickGui extends Screen {
                 filtered.add(it);
             } else if ("Маски".equals(cosmeticFilter) && it.getType() == CosmeticType.MASK) {
                 filtered.add(it);
+            } else if ("Рюкзаки".equals(cosmeticFilter) && it.getType() == CosmeticType.BACKPACK) {
+                filtered.add(it);
             } else if ("Питомцы".equals(cosmeticFilter) && it.getType() == CosmeticType.PET) {
+                filtered.add(it);
+            } else if ("Машины".equals(cosmeticFilter) && it.getType() == CosmeticType.CAR) {
+                filtered.add(it);
+            } else if ("Плащи".equals(cosmeticFilter) && it.getType() == CosmeticType.CAPE) {
                 filtered.add(it);
             }
         }
@@ -1441,7 +1644,7 @@ public class LiquidClickGui extends Screen {
             float itemY = startItemY;
 
             for (CosmeticItem item : filtered) {
-                float itemH = 26.0F;
+                float itemH = 28.0F;
                 float itemCardW = listW - 16.0F;
                 float itemX = x + 8.0F;
 
@@ -1453,18 +1656,32 @@ public class LiquidClickGui extends Screen {
                     Render2D.drawRoundedRect(itemX, itemY, itemCardW, itemH, 4.5F, cardBg);
                     Render2D.drawRoundedOutline(itemX, itemY, itemCardW, itemH, 4.5F, 0.65F, cardBorder);
 
-                    // Indicator color circle
-                    Render2D.drawCircle(itemX + 10.0F, itemY + itemH / 2.0F, 3.2F, item.getColor());
+                    // 1. Preview photo / icon box to the left of the title
+                    float iconBoxSize = 20.0F;
+                    float iconBoxX = itemX + 5.0F;
+                    float iconBoxY = itemY + (itemH - iconBoxSize) / 2.0F;
 
-                    // Name & Type
-                    Fonts.drawString(Fonts.SF_MEDIUM, item.getName(), itemX + 18.0F, itemY + 4.5F, 5.8F, item.isEnabled() ? 0xFFFFFFFF : 0xFFC0D0E0);
-                    Fonts.drawString(Fonts.SF_MEDIUM, item.getType().getDisplayName(), itemX + 18.0F, itemY + 14.5F, 4.2F, 0xFF8090A4);
+                    Render2D.drawRoundedRect(iconBoxX, iconBoxY, iconBoxSize, iconBoxSize, 4.0F, ColorUtil.rgba(12, 16, 24, (int) (160 * alphaVal)));
+                    Render2D.drawRoundedOutline(iconBoxX, iconBoxY, iconBoxSize, iconBoxSize, 4.0F, 0.6F, ColorUtil.rgba(255, 255, 255, (int) (25 * alphaVal)));
 
-                    // Toggle Button [ Надеть / Снять ]
-                    float btnW = item.isEnabled() ? 46.0F : 42.0F;
+                    Identifier previewTex = getCosmeticPreview(item);
+                    if (previewTex != null) {
+                        Render2D.drawTexture(previewTex, iconBoxX + 1.5F, iconBoxY + 1.5F, iconBoxSize - 3.0F, iconBoxSize - 3.0F, 0xFFFFFFFF);
+                    } else {
+                        int indicatorColor = item.isEnabled() ? accentColor : item.getColor();
+                        Render2D.drawCircle(iconBoxX + iconBoxSize / 2.0F, iconBoxY + iconBoxSize / 2.0F, 4.0F, indicatorColor);
+                    }
+
+                    // 2. Name & Type
+                    float textStartX = iconBoxX + iconBoxSize + 7.0F;
+                    Fonts.drawString(Fonts.SF_MEDIUM, item.getName(), textStartX, itemY + 5.0F, 5.6F, item.isEnabled() ? 0xFFFFFFFF : 0xFFC0D0E0);
+                    Fonts.drawString(Fonts.SF_MEDIUM, item.getType().getDisplayName(), textStartX, itemY + 15.5F, 4.2F, 0xFF8090A4);
+
+                    // 3. Toggle Button [ Надеть / Снять ]
+                    float btnW = item.isEnabled() ? 44.0F : 40.0F;
                     float btnH = 14.5F;
                     float btnX = itemX + itemCardW - btnW - 6.0F;
-                    float btnY = itemY + 5.5F;
+                    float btnY = itemY + (itemH - btnH) / 2.0F;
                     boolean bHover = mouseX >= btnX && mouseX <= btnX + btnW && mouseY >= btnY && mouseY <= btnY + btnH;
 
                     int bBg = item.isEnabled() ? ColorUtil.withAlpha(accentColor, (int) ((bHover ? 230 : 190) * alphaVal)) : ColorUtil.rgba(255, 255, 255, (int) ((bHover ? 24 : 14) * alphaVal));
@@ -1503,9 +1720,9 @@ public class LiquidClickGui extends Screen {
         // Extract 3D Player Entity standing still (rotated freely via drag, whole body aligned without separate head spinning)
         if (this.minecraft != null && this.minecraft.player != null) {
             int pX1 = (int) (charX + 8.0F);
-            int pY1 = (int) (y + 30.0F);
+            int pY1 = (int) (y + 44.0F);
             int pX2 = (int) (charX + previewW - 8.0F);
-            int pY2 = (int) (y + h - 24.0F);
+            int pY2 = (int) (y + h - 16.0F);
 
             try {
                 net.minecraft.client.renderer.entity.EntityRenderDispatcher dispatcher = this.minecraft.getEntityRenderDispatcher();
@@ -1525,8 +1742,8 @@ public class LiquidClickGui extends Screen {
                 }
                 org.joml.Quaternionf q1 = new org.joml.Quaternionf().rotateZ((float) Math.PI);
                 org.joml.Quaternionf q2 = new org.joml.Quaternionf();
-                org.joml.Vector3f translation = new org.joml.Vector3f(0.0F, renderState.boundingBoxHeight / 2.0F + 0.0625F, 0.0F);
-                extractor.entity(renderState, 52.0F, translation, q1, q2, pX1, pY1, pX2, pY2);
+                org.joml.Vector3f translation = new org.joml.Vector3f(0.0F, renderState.boundingBoxHeight / 2.0F - 0.05F, 0.0F);
+                extractor.entity(renderState, 48.0F, translation, q1, q2, pX1, pY1, pX2, pY2);
             } catch (Exception ignored) {}
         }
 
@@ -1535,11 +1752,120 @@ public class LiquidClickGui extends Screen {
     }
 
     private void renderEventsTab(float x, float y, float w, float h, int mouseX, int mouseY, float alphaVal, int accentColor) {
-        Render2D.drawRoundedRect(x, y, w, h, 7.0F, ColorUtil.rgba(20, 24, 34, (int) (90 * alphaVal)));
-        Render2D.drawRoundedOutline(x, y, w, h, 7.0F, 0.7F, ColorUtil.rgba(255, 255, 255, (int) (20 * alphaVal)));
+        // Container background
+        Render2D.drawRoundedRect(x, y, w, h, 7.0F, ColorUtil.rgba(14, 17, 26, (int) (120 * alphaVal)));
+        Render2D.drawRoundedOutline(x, y, w, h, 7.0F, 0.7F, ColorUtil.rgba(255, 255, 255, (int) (22 * alphaVal)));
 
-        Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Новогодний Ивент Error DLC 2026", x + w / 2.0F, y + h / 2.0F - 10.0F, 9.5F, accentColor);
-        Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Эксклюзивные праздничные эффекты и косметика будут доступны в обновлении!", x + w / 2.0F, y + h / 2.0F + 8.0F, 5.8F, 0xFFA0B0C4);
+        // Top Bar: Server selector pills & status
+        float topBarY = y + 7.0F;
+        float sBtnX = x + 8.0F;
+        float sBtnH = 17.0F;
+
+        error.event.ServerEventManager.ServerType[] types = error.event.ServerEventManager.ServerType.values();
+        for (error.event.ServerEventManager.ServerType type : types) {
+            boolean isSel = (type == this.activeServerTab);
+            float textW = Fonts.SF_MEDIUM.getWidth(type.getDisplayName(), 5.6F);
+            float sBtnW = textW + 16.0F;
+            boolean isHovered = mouseX >= sBtnX && mouseX <= sBtnX + sBtnW && mouseY >= topBarY && mouseY <= topBarY + sBtnH;
+
+            int bgCol = isSel ? ColorUtil.withAlpha(accentColor, (int) (180 * alphaVal)) :
+                    (isHovered ? ColorUtil.rgba(255, 255, 255, (int) (24 * alphaVal)) : ColorUtil.rgba(255, 255, 255, (int) (12 * alphaVal)));
+            int outCol = isSel ? ColorUtil.withAlpha(accentColor, (int) (220 * alphaVal)) :
+                    (isHovered ? ColorUtil.rgba(255, 255, 255, (int) (40 * alphaVal)) : ColorUtil.rgba(255, 255, 255, (int) (20 * alphaVal)));
+
+            Render2D.drawRoundedRect(sBtnX, topBarY, sBtnW, sBtnH, 4.0F, bgCol);
+            Render2D.drawRoundedOutline(sBtnX, topBarY, sBtnW, sBtnH, 4.0F, 0.65F, outCol);
+
+            int textCol = isSel ? 0xFFFFFFFF : (isHovered ? 0xFFFFFFFF : 0xFFA0B4C8);
+            Fonts.drawCenteredString(Fonts.SF_MEDIUM, type.getDisplayName(), sBtnX + sBtnW / 2.0F, topBarY + 4.0F, 5.6F, textCol);
+
+            sBtnX += sBtnW + 5.0F;
+        }
+
+        // Refresh / Status Button on the right
+        float refW = 58.0F;
+        float refX = x + w - refW - 8.0F;
+        boolean refHovered = mouseX >= refX && mouseX <= refX + refW && mouseY >= topBarY && mouseY <= topBarY + sBtnH;
+        int refBg = refHovered ? ColorUtil.withAlpha(accentColor, (int) (160 * alphaVal)) : ColorUtil.rgba(255, 255, 255, (int) (14 * alphaVal));
+        Render2D.drawRoundedRect(refX, topBarY, refW, sBtnH, 4.0F, refBg);
+        Render2D.drawRoundedOutline(refX, topBarY, refW, sBtnH, 4.0F, 0.65F, ColorUtil.rgba(255, 255, 255, (int) (24 * alphaVal)));
+        Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Обновить ↻", refX + refW / 2.0F, topBarY + 4.0F, 5.2F, refHovered ? 0xFFFFFFFF : 0xFFCBD5E1);
+
+        // Divider
+        float divY = y + 29.0F;
+        Render2D.drawRect(x + 8.0F, divY, w - 16.0F, 0.6F, ColorUtil.rgba(255, 255, 255, (int) (15 * alphaVal)));
+
+        // Event List
+        List<error.event.ServerEventManager.ServerEventItem> list = error.event.ServerEventManager.getInstance().getEvents(this.activeServerTab);
+        float cardAreaY = divY + 4.0F;
+        float cardAreaH = h - (cardAreaY - y) - 6.0F;
+        float cardW = w - 16.0F;
+        float cardH = 34.0F;
+
+        float totalH = list.size() * (cardH + 5.0F);
+        float maxScroll = Math.max(0.0F, totalH - cardAreaH);
+        this.eventsScrollTarget = Math.clamp(this.eventsScrollTarget, 0.0F, maxScroll);
+        this.eventsScrollAnim.setTarget(this.eventsScrollTarget);
+
+        Render2D.pushScissor(x + 4.0F, cardAreaY, w - 8.0F, cardAreaH);
+
+        if (list.isEmpty()) {
+            Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Нет активных ивентов на " + activeServerTab.getDisplayName(), x + w / 2.0F, cardAreaY + cardAreaH / 2.0F - 6.0F, 7.5F, 0xFFFFFFFF);
+            Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Ожидание данных от сервера...", x + w / 2.0F, cardAreaY + cardAreaH / 2.0F + 8.0F, 5.2F, 0xFFA0B4C8);
+        } else {
+            float curY = cardAreaY + 2.0F - eventsScrollAnim.getValue();
+            for (error.event.ServerEventManager.ServerEventItem item : list) {
+                if (curY + cardH >= cardAreaY && curY <= cardAreaY + cardAreaH) {
+                    float curX = x + 8.0F;
+                    boolean cardHover = mouseX >= curX && mouseX <= curX + cardW && mouseY >= curY && mouseY <= curY + cardH;
+
+                    // Liquid Glass Card Body
+                    int cardDarken = ColorUtil.rgba(18, 22, 34, (int) (140 * alphaVal));
+                    int cardFrosted = ColorUtil.rgba(255, 255, 255, (int) ((cardHover ? 16 : 8) * alphaVal));
+                    Render2D.drawRoundedRect(curX, curY, cardW, cardH, 5.0F, cardDarken);
+                    Render2D.drawRoundedRect(curX, curY, cardW, cardH, 5.0F, cardFrosted);
+
+                    int outlineCol = cardHover ? ColorUtil.withAlpha(accentColor, (int) (160 * alphaVal)) : ColorUtil.rgba(255, 255, 255, (int) (22 * alphaVal));
+                    Render2D.drawRoundedOutline(curX, curY, cardW, cardH, 5.0F, 0.7F, outlineCol);
+
+                    // Anarchy Badge
+                    float badgeX = curX + 7.0F;
+                    float badgeY = curY + 6.0F;
+                    float badgeW = 42.0F;
+                    float badgeH = 22.0F;
+                    Render2D.drawRoundedRect(badgeX, badgeY, badgeW, badgeH, 3.5F, ColorUtil.withAlpha(accentColor, (int) (40 * alphaVal)));
+                    Render2D.drawRoundedOutline(badgeX, badgeY, badgeW, badgeH, 3.5F, 0.65F, ColorUtil.withAlpha(accentColor, (int) (110 * alphaVal)));
+                    Fonts.drawCenteredString(Fonts.SF_MEDIUM, "АН-" + item.anarchy, badgeX + badgeW / 2.0F, badgeY + 4.5F, 5.6F, accentColor);
+                    Fonts.drawCenteredString(Fonts.SF_MEDIUM, activeServerTab.getDisplayName(), badgeX + badgeW / 2.0F, badgeY + 12.0F, 3.8F, 0xFFCBD5E1);
+
+                    // Event Title & Phase / Countdown
+                    float infoX = badgeX + badgeW + 9.0F;
+                    Fonts.drawString(Fonts.SF_MEDIUM, item.name, infoX, curY + 6.5F, 6.8F, 0xFFFFFFFF);
+
+                    // Status Dot + Phase text
+                    int dotCol = item.isStarted() ? 0xFF22C55E : 0xFFF59E0B;
+                    Render2D.drawCircle(infoX + 2.0F, curY + 20.0F, 2.0F, dotCol);
+
+                    String timerStr = item.phase + "  •  " + item.getFormattedTime() + (item.untilLabel.isEmpty() ? "" : " " + item.untilLabel);
+                    Fonts.drawString(Fonts.SF_MEDIUM, timerStr, infoX + 7.0F, curY + 16.5F, 4.8F, 0xFFA0B4C8);
+
+                    // "Войти и GPS" Button
+                    float btnW = 68.0F;
+                    float btnH = 18.0F;
+                    float btnX = curX + cardW - btnW - 8.0F;
+                    float btnY = curY + (cardH - btnH) / 2.0F;
+                    boolean btnHover = mouseX >= btnX && mouseX <= btnX + btnW && mouseY >= btnY && mouseY <= btnY + btnH;
+
+                    int btnBg = btnHover ? ColorUtil.withAlpha(accentColor, (int) (190 * alphaVal)) : ColorUtil.rgba(255, 255, 255, (int) (18 * alphaVal));
+                    Render2D.drawRoundedRect(btnX, btnY, btnW, btnH, 4.0F, btnBg);
+                    Render2D.drawRoundedOutline(btnX, btnY, btnW, btnH, 4.0F, 0.65F, btnHover ? 0xFFFFFFFF : ColorUtil.withAlpha(accentColor, (int) (100 * alphaVal)));
+                    Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Войти и GPS", btnX + btnW / 2.0F, btnY + 4.2F, 5.2F, 0xFFFFFFFF);
+                }
+                curY += cardH + 5.0F;
+            }
+        }
+
+        Render2D.popScissor();
     }
 
     private float calculateSettingsHeight(Module module) {
@@ -1571,20 +1897,12 @@ public class LiquidClickGui extends Screen {
     }
 
     private void updateSliderDrag(int mouseX) {
-        if (this.draggingSlider == null) return;
-
-        int screenW = this.width;
-        float x = (screenW - WINDOW_W) / 2.0F;
-
-        float gridX = x + SIDEBAR_W + 12.0F;
-        float gridW = WINDOW_W - SIDEBAR_W - 24.0F;
-        float cardW = (gridW - 10.0F) / 2.0F;
-        float sliderW = cardW - 18.0F;
+        if (this.draggingSlider == null || this.draggingSliderW <= 0.0F) return;
 
         float min = draggingSlider.getMin();
         float max = draggingSlider.getMax();
 
-        float pct = Math.clamp((mouseX - gridX - 9.0F) / sliderW, 0.0F, 1.0F);
+        float pct = Math.clamp((mouseX - this.draggingSliderX) / this.draggingSliderW, 0.0F, 1.0F);
         float newVal = min + pct * (max - min);
         draggingSlider.setValue(newVal);
     }
@@ -1644,15 +1962,6 @@ public class LiquidClickGui extends Screen {
             float mModalX = (screenW - mModalW) / 2.0F;
             float mModalY = (screenH - mModalH) / 2.0F;
 
-            // Close button [✕]
-            float closeX = mModalX + mModalW - 20.0F;
-            float closeY = mModalY + 6.0F;
-            float closeSize = 13.0F;
-            if (mouseX >= closeX && mouseX <= closeX + closeSize && mouseY >= closeY && mouseY <= closeY + closeSize) {
-                this.moduleModalOpen = false;
-                this.moduleModalBinding = false;
-                return true;
-            }
 
             // Row 1: Бинд button
             float r1Y = mModalY + 28.0F;
@@ -1717,7 +2026,7 @@ public class LiquidClickGui extends Screen {
             // Handle Settings Modal Clicks if Open
             if (this.settingsModalOpen) {
                 float modalW = 340.0F;
-                float modalH = (this.activeEditingColorSetting != null) ? 175.0F : 208.0F;
+                float modalH = (this.activeEditingColorSetting != null) ? 175.0F : 226.0F;
                 float modalX = (screenW - modalW) / 2.0F;
                 float modalY = (screenH - modalH) / 2.0F;
 
@@ -1753,6 +2062,7 @@ public class LiquidClickGui extends Screen {
 
                     if (mouseX >= staticBtnX && mouseX <= staticBtnX + segW && mouseY >= row1Y && mouseY <= row1Y + segH) {
                         Theme.setAccentMode("Static");
+                        error.util.client.ClientSoundPlayer.playGuiClick();
                         if (Client.INSTANCE != null && Client.INSTANCE.configManager != null) {
                             Client.INSTANCE.configManager.autoSave();
                         }
@@ -1760,6 +2070,33 @@ public class LiquidClickGui extends Screen {
                     }
                     if (mouseX >= chromaBtnX && mouseX <= chromaBtnX + segW && mouseY >= row1Y && mouseY <= row1Y + segH) {
                         Theme.setAccentMode("Chroma");
+                        error.util.client.ClientSoundPlayer.playGuiClick();
+                        if (Client.INSTANCE != null && Client.INSTANCE.configManager != null) {
+                            Client.INSTANCE.configManager.autoSave();
+                        }
+                        return true;
+                    }
+
+                    // UI Style Buttons: "Жидкое стекло" vs "Новый Год"
+                    float styleRowY = modalY + 47.0F;
+                    float glassBtnW = 76.0F;
+                    float newYearBtnW = 66.0F;
+                    float glassBtnX = modalX + modalW - 14.0F - (glassBtnW + newYearBtnW + 4.0F);
+                    float newYearBtnX = glassBtnX + glassBtnW + 4.0F;
+                    float styleBtnH = 14.0F;
+
+                    if (mouseX >= glassBtnX && mouseX <= glassBtnX + glassBtnW && mouseY >= styleRowY && mouseY <= styleRowY + styleBtnH) {
+                        Theme.setUiStyle("Жидкое стекло");
+                        error.util.client.ClientSoundPlayer.playGuiClick();
+                        if (Client.INSTANCE != null && Client.INSTANCE.configManager != null) {
+                            Client.INSTANCE.configManager.autoSave();
+                        }
+                        return true;
+                    }
+
+                    if (mouseX >= newYearBtnX && mouseX <= newYearBtnX + newYearBtnW && mouseY >= styleRowY && mouseY <= styleRowY + styleBtnH) {
+                        Theme.setUiStyle("Новый Год");
+                        error.util.client.ClientSoundPlayer.playGuiClick();
                         if (Client.INSTANCE != null && Client.INSTANCE.configManager != null) {
                             Client.INSTANCE.configManager.autoSave();
                         }
@@ -1767,7 +2104,7 @@ public class LiquidClickGui extends Screen {
                     }
 
                     // Target Color Tabs (Primary vs Secondary)
-                    float row2Y = modalY + 47.0F;
+                    float row2Y = modalY + 65.0F;
                     float tabW = (modalW - 32.0F) / 2.0F;
                     float tabH = 16.0F;
                     float tab1X = modalX + 14.0F;
@@ -1775,14 +2112,16 @@ public class LiquidClickGui extends Screen {
 
                     if (mouseX >= tab1X && mouseX <= tab1X + tabW && mouseY >= row2Y && mouseY <= row2Y + tabH) {
                         setEditingSecondary(false);
+                        error.util.client.ClientSoundPlayer.playGuiClick();
                         return true;
                     }
                     if (mouseX >= tab2X && mouseX <= tab2X + tabW && mouseY >= row2Y && mouseY <= row2Y + tabH) {
                         setEditingSecondary(true);
+                        error.util.client.ClientSoundPlayer.playGuiClick();
                         return true;
                     }
 
-                    fieldY = modalY + 68.0F;
+                    fieldY = modalY + 86.0F;
                 } else {
                     fieldY = modalY + 32.0F;
                 }
@@ -1888,6 +2227,8 @@ public class LiquidClickGui extends Screen {
                     this.activeCategory = cat;
                     this.searchQuery = "";
                     this.searchFocused = false;
+                    savedCategory = cat;
+                    savedSearchQuery = "";
                     return true;
                 }
                 catY += catH + 2.0F;
@@ -2082,35 +2423,37 @@ public class LiquidClickGui extends Screen {
                 float previewW = 138.0F;
                 float listW = contentW - previewW - 8.0F;
 
-                // Category Filter Pills Clicks
-                String[] filters = new String[]{"Все", "Модели", "Крылья", "Шапки", "Маски", "Питомцы"};
-                float pillX = contentX + 8.0F;
-                float pillY = contentY + 7.0F;
-                float pillH = 15.0F;
+                // Category Filter Pills Clicks (2 compact rows of 4 pills)
+                String[] filters = new String[]{"Модели", "Крылья", "Шапки", "Маски", "Рюкзаки", "Питомцы", "Машины", "Плащи"};
+                float rowGap = 3.0F;
+                float pillGap = 3.0F;
+                int cols = 4;
+                float fPillW = (listW - 16.0F - (cols - 1) * pillGap) / cols;
+                float fPillH = 13.5F;
 
-                for (String fName : filters) {
-                    float fTextW = Fonts.SF_MEDIUM.getWidth(fName, 5.0F);
-                    float fPillW = fTextW + 10.0F;
+                for (int i = 0; i < filters.length; i++) {
+                    String fName = filters[i];
+                    int row = i / cols;
+                    int col = i % cols;
+                    float pX = contentX + 8.0F + col * (fPillW + pillGap);
+                    float pY = contentY + 7.0F + row * (fPillH + rowGap);
 
-                    if (mouseX >= pillX && mouseX <= pillX + fPillW && mouseY >= pillY && mouseY <= pillY + pillH) {
+                    if (mouseX >= pX && mouseX <= pX + fPillW && mouseY >= pY && mouseY <= pY + fPillH) {
                         this.cosmeticFilter = fName;
+                        error.util.client.ClientSoundPlayer.playGuiClick();
                         return true;
                     }
-
-                    pillX += fPillW + 4.0F;
                 }
 
                 // Items List Toggle Clicks
-                float listY = contentY + 27.0F;
-                float listH = contentH - 33.0F;
+                float listY = contentY + 40.0F;
+                float listH = contentH - 46.0F;
 
                 if (mouseX >= contentX && mouseX <= contentX + listW && mouseY >= listY && mouseY <= listY + listH) {
                     List<CosmeticItem> allItems = CosmeticsManager.getInstance().getCosmetics();
                     List<CosmeticItem> filtered = new ArrayList<>();
                     for (CosmeticItem it : allItems) {
-                        if ("Все".equals(cosmeticFilter)) {
-                            filtered.add(it);
-                        } else if ("Модели".equals(cosmeticFilter) && it.getType() == CosmeticType.MODEL) {
+                        if ("Модели".equals(cosmeticFilter) && it.getType() == CosmeticType.MODEL) {
                             filtered.add(it);
                         } else if ("Крылья".equals(cosmeticFilter) && it.getType() == CosmeticType.WINGS) {
                             filtered.add(it);
@@ -2118,7 +2461,13 @@ public class LiquidClickGui extends Screen {
                             filtered.add(it);
                         } else if ("Маски".equals(cosmeticFilter) && it.getType() == CosmeticType.MASK) {
                             filtered.add(it);
+                        } else if ("Рюкзаки".equals(cosmeticFilter) && it.getType() == CosmeticType.BACKPACK) {
+                            filtered.add(it);
                         } else if ("Питомцы".equals(cosmeticFilter) && it.getType() == CosmeticType.PET) {
+                            filtered.add(it);
+                        } else if ("Машины".equals(cosmeticFilter) && it.getType() == CosmeticType.CAR) {
+                            filtered.add(it);
+                        } else if ("Плащи".equals(cosmeticFilter) && it.getType() == CosmeticType.CAPE) {
                             filtered.add(it);
                         }
                     }
@@ -2126,20 +2475,15 @@ public class LiquidClickGui extends Screen {
                     float itemY = listY - cosmeticsScrollAnim.getValue();
 
                     for (CosmeticItem item : filtered) {
-                        float itemH = 26.0F;
+                        float itemH = 28.0F;
                         float itemCardW = listW - 16.0F;
                         float itemX = contentX + 8.0F;
 
                         if (itemY + itemH >= listY && itemY <= listY + listH) {
-                            float btnW = item.isEnabled() ? 46.0F : 42.0F;
-                            float btnH = 14.5F;
-                            float btnX = itemX + itemCardW - btnW - 6.0F;
-                            float btnY = itemY + 5.5F;
-
-                            // Clicking toggle button or card row toggles cosmetic
-                            if (mouseX >= btnX && mouseX <= btnX + btnW && mouseY >= btnY && mouseY <= btnY + btnH) {
-                                item.setEnabled(!item.isEnabled());
+                            // Clicking card or button toggles cosmetic
+                            if (mouseX >= itemX && mouseX <= itemX + itemCardW && mouseY >= itemY && mouseY <= itemY + itemH) {
                                 CosmeticsManager.getInstance().onToggleCosmetic(item);
+                                error.util.client.ClientSoundPlayer.playGuiClick();
                                 return true;
                             }
                         }
@@ -2156,6 +2500,59 @@ public class LiquidClickGui extends Screen {
                     return true;
                 }
 
+                return true;
+            }
+
+            // Handle Interactions for EVENTS Tab
+            if (activeCategory == Category.EVENTS) {
+                float topBarY = contentY + 7.0F;
+                float sBtnX = contentX + 8.0F;
+                float sBtnH = 17.0F;
+
+                error.event.ServerEventManager.ServerType[] types = error.event.ServerEventManager.ServerType.values();
+                for (error.event.ServerEventManager.ServerType type : types) {
+                    float textW = Fonts.SF_MEDIUM.getWidth(type.getDisplayName(), 5.6F);
+                    float sBtnW = textW + 16.0F;
+                    if (mouseX >= sBtnX && mouseX <= sBtnX + sBtnW && mouseY >= topBarY && mouseY <= topBarY + sBtnH) {
+                        this.activeServerTab = type;
+                        this.eventsScrollTarget = 0.0F;
+                        this.eventsScrollAnim.setValue(0.0F);
+                        this.eventsScrollAnim.setTarget(0.0F);
+                        savedServerType = type;
+                        error.util.client.ClientSoundPlayer.playGuiClick();
+                        return true;
+                    }
+                    sBtnX += sBtnW + 5.0F;
+                }
+
+                // Refresh Button
+                float refW = 58.0F;
+                float refX = contentX + contentW - refW - 8.0F;
+                if (mouseX >= refX && mouseX <= refX + refW && mouseY >= topBarY && mouseY <= topBarY + sBtnH) {
+                    error.event.ServerEventManager.getInstance().pollEvents();
+                    error.util.client.ClientSoundPlayer.playGuiClick();
+                    return true;
+                }
+
+                // Event Cards Clicks
+                float cardAreaY = contentY + 33.0F;
+                float cardAreaH = contentH - (cardAreaY - contentY) - 6.0F;
+                float cardW = contentW - 16.0F;
+                float cardH = 34.0F;
+
+                if (mouseX >= contentX + 8.0F && mouseX <= contentX + 8.0F + cardW && mouseY >= cardAreaY && mouseY <= cardAreaY + cardAreaH) {
+                    List<error.event.ServerEventManager.ServerEventItem> list = error.event.ServerEventManager.getInstance().getEvents(this.activeServerTab);
+                    float curY = cardAreaY + 2.0F - eventsScrollAnim.getValue();
+
+                    for (error.event.ServerEventManager.ServerEventItem item : list) {
+                        if (mouseX >= contentX + 8.0F && mouseX <= contentX + 8.0F + cardW && mouseY >= curY && mouseY <= curY + cardH) {
+                            error.event.ServerEventManager.getInstance().joinEventAndGps(item);
+                            error.util.client.ClientSoundPlayer.playGuiClick();
+                            return true;
+                        }
+                        curY += cardH + 5.0F;
+                    }
+                }
                 return true;
             }
 
@@ -2181,6 +2578,22 @@ public class LiquidClickGui extends Screen {
                 float eVal = expandAnim.getValue();
                 float cardH = 34.0F + (eVal * calculateSettingsHeight(module));
 
+                // Click bind button to open keybind modal
+                float switchW = 24.0F;
+                float switchX = cardX + cardW - switchW - 9.0F;
+                float switchY = currentY + 10.5F;
+                float bindBtnW = 14.0F;
+                float bindBtnH = 13.0F;
+                float bindBtnX = switchX - bindBtnW - 5.0F;
+                float bindBtnY = switchY;
+                if (mouseX >= bindBtnX && mouseX <= bindBtnX + bindBtnW && mouseY >= bindBtnY && mouseY <= bindBtnY + bindBtnH) {
+                    this.moduleModalModule = module;
+                    this.moduleModalOpen = true;
+                    this.moduleModalBinding = false;
+                    error.util.client.ClientSoundPlayer.playGuiClick();
+                    return true;
+                }
+
                 // Click module card header to toggle
                 if (mouseX >= cardX && mouseX <= cardX + cardW && mouseY >= currentY && mouseY <= currentY + 34.0F) {
                     module.toggle();
@@ -2197,6 +2610,8 @@ public class LiquidClickGui extends Screen {
                                 cb.setValue(!cb.getValue());
                             } else if (setting instanceof SliderSetting sl) {
                                 this.draggingSlider = sl;
+                                this.draggingSliderX = cardX + 12.0F;
+                                this.draggingSliderW = cardW - 24.0F;
                                 updateSliderDrag((int) mouseX);
                             } else if (setting instanceof BindSetting b) {
                                 this.activeBindingSetting = b;
@@ -2323,13 +2738,10 @@ public class LiquidClickGui extends Screen {
     private void handleShareConfig(String cfgName) {
         try {
             if (Client.INSTANCE != null && Client.INSTANCE.configManager != null) {
-                File file = Client.INSTANCE.configManager.getConfigFile(cfgName);
-                if (file.exists()) {
-                    String json = Files.readString(file.toPath(), StandardCharsets.UTF_8);
-                    String key = "ERR$" + Base64.getUrlEncoder().encodeToString(json.getBytes(StandardCharsets.UTF_8));
-                    GLFW.glfwSetClipboardString(Minecraft.getInstance().getWindow().handle(), key);
-                    ChatUtil.success("Ключ конфига '" + cfgName + "' скопирован в буфер обмена!");
-                }
+                String key = Client.INSTANCE.configManager.getOrCreateShareKey(cfgName);
+                GLFW.glfwSetClipboardString(Minecraft.getInstance().getWindow().handle(), key);
+                ChatUtil.success("Ключ конфига '" + cfgName + "' (" + key + ") скопирован в буфер обмена!");
+                error.util.client.ClientSoundPlayer.playGuiClick();
             }
         } catch (Exception e) {
             ChatUtil.error("Не удалось скопировать ключ: " + e.getMessage());
@@ -2343,23 +2755,29 @@ public class LiquidClickGui extends Screen {
         }
 
         String raw = shareKeyInput.trim();
-        try {
-            if (raw.startsWith("ERR$")) {
-                raw = raw.substring(4);
-            }
-            byte[] bytes = Base64.getUrlDecoder().decode(raw);
-            String json = new String(bytes, StandardCharsets.UTF_8);
+        if (raw.startsWith("ERR$")) {
+            try {
+                String base64 = raw.substring(4);
+                byte[] bytes = Base64.getUrlDecoder().decode(base64);
+                String json = new String(bytes, StandardCharsets.UTF_8);
+                String importName = "shared_" + (System.currentTimeMillis() % 10000);
+                if (Client.INSTANCE != null && Client.INSTANCE.configManager != null) {
+                    File file = Client.INSTANCE.configManager.getConfigFile(importName);
+                    Files.writeString(file.toPath(), json, StandardCharsets.UTF_8);
+                    Client.INSTANCE.configManager.loadConfig(importName, true);
+                    shareKeyInput = "";
+                    ChatUtil.success("Конфиг успешно импортирован как '" + importName + "'!");
+                    error.util.client.ClientSoundPlayer.playGuiClick();
+                    return;
+                }
+            } catch (Exception ignored) {}
+        }
 
-            String importName = "shared_" + (System.currentTimeMillis() % 10000);
-            if (Client.INSTANCE != null && Client.INSTANCE.configManager != null) {
-                File file = Client.INSTANCE.configManager.getConfigFile(importName);
-                Files.writeString(file.toPath(), json, StandardCharsets.UTF_8);
-                Client.INSTANCE.configManager.loadConfig(importName, true);
+        if (Client.INSTANCE != null && Client.INSTANCE.configManager != null) {
+            if (Client.INSTANCE.configManager.loadShareCode(raw, true)) {
                 shareKeyInput = "";
-                ChatUtil.success("Конфиг успешно импортирован как '" + importName + "'!");
+                error.util.client.ClientSoundPlayer.playGuiClick();
             }
-        } catch (Exception e) {
-            ChatUtil.error("Неверный формат ключа конфигурации!");
         }
     }
 
@@ -2376,6 +2794,9 @@ public class LiquidClickGui extends Screen {
         } else if (activeCategory == Category.COSMETICS) {
             this.cosmeticsScrollTarget -= (float) (scrollY * 24.0D);
             return true;
+        } else if (activeCategory == Category.EVENTS) {
+            this.eventsScrollTarget -= (float) (scrollY * 24.0D);
+            return true;
         } else {
             this.scrollTarget -= (float) (scrollY * 24.0D);
             return true;
@@ -2388,7 +2809,7 @@ public class LiquidClickGui extends Screen {
         if (this.bindingClickGuiKey) {
             if (ClickGui.INSTANCE != null) {
                 if (event.key() == GLFW.GLFW_KEY_ESCAPE) {
-                    ClickGui.INSTANCE.getBind().clear();
+                    ClickGui.INSTANCE.getBind().setSingle(GLFW.GLFW_KEY_RIGHT_SHIFT);
                 } else {
                     ClickGui.INSTANCE.getBind().setSingle(event.key());
                 }

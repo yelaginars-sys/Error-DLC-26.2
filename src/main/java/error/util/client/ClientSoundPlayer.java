@@ -1,162 +1,257 @@
 package error.util.client;
 
 import error.module.impl.misc.ClientSounds;
+import net.minecraft.client.Minecraft;
+import net.minecraft.resources.Identifier;
+
+import javax.sound.sampled.*;
 import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.InputStream;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import javax.sound.sampled.AudioFormat;
-import javax.sound.sampled.AudioInputStream;
-import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.Clip;
-import javax.sound.sampled.FloatControl;
-import javax.sound.sampled.LineUnavailableException;
-import javax.sound.sampled.UnsupportedAudioFileException;
-import javax.sound.sampled.LineEvent.Type;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public final class ClientSoundPlayer {
-   private static final ExecutorService executor = Executors.newSingleThreadExecutor(r -> {
-      Thread thread = new Thread(r, "error-ClientSounds");
-      thread.setDaemon(true);
-      return thread;
-   });
 
-   public static void playSound(String fileName, double volume, float pitch) {
-      executor.execute(() -> handleFileName(fileName, volume, pitch));
-   }
+    private static final CopyOnWriteArrayList<Clip> ACTIVE_CLIPS = new CopyOnWriteArrayList<>();
 
-   public static void playModuleToggle(boolean enabled) {
-      playGuiSound(enabled);
-   }
+    public static void playSound(String fileName, double volume, float pitch) {
+        if (fileName == null || fileName.isEmpty()) return;
 
-   public static void playGuiOpen() {
-      playGuiSound(true);
-   }
+        CompletableFuture.runAsync(() -> {
+            try {
+                cleanUpClips();
 
-   public static void playGuiClose() {
-      playGuiSound(false);
-   }
+                InputStream inputStream = openSoundStream(fileName);
+                if (inputStream == null) return;
 
-   public static void playGuiClick() {
-      playGuiSound(true);
-   }
+                playStream(inputStream, (float) volume, pitch);
+            } catch (Throwable ignored) {}
+        });
+    }
 
-   public static void playModePreview(String mode) {
-      ClientSounds sounds = ClientSounds.INSTANCE;
-      if (sounds != null && sounds.isEnabled() && mode != null && !"Нет".equalsIgnoreCase(mode)) {
-         String soundFile = mapModeToSound(mode, true);
-         playSound(soundFile, sounds.volume.get() / sounds.volume.getMax(), 1.0F);
-      }
-   }
+    public static void playFile(File file, float volume, float pitch) {
+        if (file == null || !file.exists()) return;
 
-   private static void playGuiSound(boolean open) {
-      ClientSounds sounds = ClientSounds.INSTANCE;
-      if (sounds != null && sounds.isEnabled()) {
-         String mode = sounds.stateSounds.getValue();
-         if (mode != null && !"Нет".equalsIgnoreCase(mode)) {
-            String soundFile = mapModeToSound(mode, open);
-            playSound(soundFile, sounds.volume.get() / sounds.volume.getMax(), 1.0F);
-         }
-      }
-   }
+        CompletableFuture.runAsync(() -> {
+            try {
+                cleanUpClips();
+                try (InputStream inputStream = new FileInputStream(file)) {
+                    playStream(inputStream, volume, pitch);
+                }
+            } catch (Throwable ignored) {}
+        });
+    }
 
-   private static String mapModeToSound(String mode, boolean open) {
-      switch (mode) {
-         case "Первый":
-            return open ? "1.wav" : "MODULE_OFF.wav";
-         case "Второй":
-            return open ? "2.wav" : "MODULE_OFF2.wav";
-         case "Третий":
-            return open ? "MODULE_ON.wav" : "MODULE_OFF.wav";
-         case "Четвертый":
-            return open ? "MODULE_ON2.wav" : "MODULE_OFF2.wav";
-         case "Пятый":
-            return open ? "MODULE_ON3.wav" : "MODULE_OFF3.wav";
-         case "Шестой":
-            return open ? "Function_ON.wav" : "Function_OFF.wav";
-         case "Celestial":
-            return open ? "celestial_on.wav" : "celestial_off.wav";
-         case "Bubble":
-            return open ? "enableBubbles.wav" : "disableBubbles.wav";
-         case "Heavy":
-            return open ? "heavyenable.wav" : "heavydisable.wav";
-         case "Droplet":
-            return open ? "dropletenable.wav" : "dropletdisable.wav";
-         case "Pop":
-            return open ? "popenable.wav" : "popdisable.wav";
-         case "Slide":
-            return open ? "slideenable.wav" : "slidedisable.wav";
-         case "Win":
-            return open ? "winenable.wav" : "windisable.wav";
-         default:
-            return open ? "guiopen.wav" : "guiclose.wav";
-      }
-   }
+    private static void playStream(InputStream inputStream, float volume, float pitch) {
+        try (AudioInputStream rawStream = AudioSystem.getAudioInputStream(new BufferedInputStream(inputStream))) {
+            Clip clip = AudioSystem.getClip();
 
-   private static void handleFileName(String fileName, double volume, float pitch) {
-      if (fileName == null || fileName.isEmpty()) return;
-      String resourcePath = "/assets/error/sounds/" + fileName;
-
-      InputStream is = ClientSoundPlayer.class.getResourceAsStream(resourcePath);
-      if (is == null) {
-         is = ClientSoundPlayer.class.getClassLoader().getResourceAsStream("assets/error/sounds/" + fileName);
-      }
-      if (is == null) return;
-
-      try (InputStream input = is;
-           BufferedInputStream bis = new BufferedInputStream(input);
-           AudioInputStream originalStream = AudioSystem.getAudioInputStream(bis)) {
-
-         AudioFormat baseFormat = originalStream.getFormat();
-         AudioFormat decodedFormat = new AudioFormat(
-               AudioFormat.Encoding.PCM_SIGNED,
-               baseFormat.getSampleRate(),
-               16,
-               baseFormat.getChannels(),
-               baseFormat.getChannels() * 2,
-               baseFormat.getSampleRate(),
-               false
-         );
-
-         AudioInputStream pcmStream = AudioSystem.isConversionSupported(decodedFormat, baseFormat)
-                 ? AudioSystem.getAudioInputStream(decodedFormat, originalStream)
-                 : originalStream;
-
-         AudioInputStream finalStream = (Math.abs(pitch - 1.0F) > 0.01F) ? getOriginalStream(pcmStream, pitch) : pcmStream;
-
-         Clip clip = AudioSystem.getClip();
-         clip.addLineListener(event -> {
-            if (event.getType() == Type.STOP) {
-               clip.close();
+            if (Math.abs(pitch - 1.0F) < 0.01F) {
+                clip.open(rawStream);
+            } else {
+                openPitched(clip, rawStream, pitch);
             }
-         });
-         clip.open(finalStream);
-         handleClip(clip, volume);
-         clip.start();
-      } catch (Exception ignored) {
-      }
-   }
 
-   private static AudioInputStream getOriginalStream(AudioInputStream originalStream, float pitch) throws IOException {
-      AudioFormat format = originalStream.getFormat();
-      byte[] bytes = originalStream.readAllBytes();
-      float newSampleRate = format.getSampleRate() * Math.max(0.5F, Math.min(2.0F, pitch));
-      AudioFormat newFormat = new AudioFormat(newSampleRate, format.getSampleSizeInBits(), format.getChannels(), true, format.isBigEndian());
-      return new AudioInputStream(new ByteArrayInputStream(bytes), newFormat, bytes.length / newFormat.getFrameSize());
-   }
+            if (clip.isControlSupported(FloatControl.Type.MASTER_GAIN)) {
+                FloatControl volumeControl = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
+                float volumeVal = Math.max(0.0001F, Math.min(1.0F, volume));
+                float dB = (float) (Math.log10(volumeVal) * 20.0);
+                dB = Math.max(volumeControl.getMinimum(), Math.min(volumeControl.getMaximum(), dB));
+                volumeControl.setValue(dB);
+            }
 
-   private static void handleClip(Clip clip, double volume) {
-      if (clip.isControlSupported(FloatControl.Type.MASTER_GAIN)) {
-         double vol = Math.max(0.0, Math.min(1.0, volume));
-         FloatControl gainControl = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
-         float dB = (float) (Math.log10(vol <= 0.0 ? 1.0E-4 : vol) * 20.0);
-         gainControl.setValue(dB);
-      }
-   }
+            clip.addLineListener(event -> {
+                if (event.getType() == LineEvent.Type.STOP) {
+                    clip.close();
+                    ACTIVE_CLIPS.remove(clip);
+                }
+            });
 
-   private ClientSoundPlayer() {
-      throw new UnsupportedOperationException("Utility class");
-   }
+            ACTIVE_CLIPS.add(clip);
+            clip.start();
+        } catch (Throwable ignored) {}
+    }
+
+    private static void openPitched(Clip clip, AudioInputStream stream, float pitch) throws Exception {
+        float p = Math.max(0.5F, Math.min(2.0F, pitch));
+
+        AudioInputStream pcm = stream;
+        AudioFormat src = stream.getFormat();
+
+        if (src.getEncoding() != AudioFormat.Encoding.PCM_SIGNED) {
+            pcm = AudioSystem.getAudioInputStream(AudioFormat.Encoding.PCM_SIGNED, stream);
+            src = pcm.getFormat();
+        }
+
+        byte[] data = pcm.readAllBytes();
+        if (pcm != stream) pcm.close();
+
+        int frameSize = src.getFrameSize();
+        if (frameSize <= 0) {
+            clip.open(src, data, 0, data.length);
+            return;
+        }
+
+        int inFrames = data.length / frameSize;
+        int outFrames = (int) (inFrames / p);
+        if (outFrames <= 0) {
+            clip.open(src, data, 0, data.length);
+            return;
+        }
+
+        byte[] out = new byte[outFrames * frameSize];
+        for (int i = 0; i < outFrames; i++) {
+            int srcFrame = Math.min(inFrames - 1, (int) (i * p));
+            System.arraycopy(data, srcFrame * frameSize, out, i * frameSize, frameSize);
+        }
+
+        clip.open(src, out, 0, out.length);
+    }
+
+    private static void cleanUpClips() {
+        ACTIVE_CLIPS.removeIf(clip -> !clip.isOpen());
+    }
+
+    public static void playModuleToggle(boolean enabled) {
+        ClientSounds sounds = ClientSounds.INSTANCE;
+        if (sounds != null && sounds.isEnabled()) {
+            String mode = sounds.stateSounds.getValue();
+            if (mode != null && !"Нет".equalsIgnoreCase(mode)) {
+                String soundFile = mapModeToSound(mode, enabled);
+                playSound(soundFile, getVolume(), 1.0F);
+            }
+        }
+    }
+
+    public static void playGuiOpen() {
+        playGuiSound(true);
+    }
+
+    public static void playGuiClose() {
+        playGuiSound(false);
+    }
+
+    public static void playGuiClick() {
+        ClientSounds sounds = ClientSounds.INSTANCE;
+        if (sounds != null && sounds.isEnabled()) {
+            String mode = sounds.stateSounds.getValue();
+            if (mode != null && !"Нет".equalsIgnoreCase(mode)) {
+                String soundFile = mapModeToSound(mode, true);
+                playSound(soundFile, getVolume(), 1.0F);
+                return;
+            }
+        }
+        playSound("guiopen.wav", 0.4, 1.0F);
+    }
+
+    public static void playModePreview(String mode) {
+        if (mode != null && !"Нет".equalsIgnoreCase(mode)) {
+            String soundFile = mapModeToSound(mode, true);
+            playSound(soundFile, getVolume(), 1.0F);
+        }
+    }
+
+    private static void playGuiSound(boolean open) {
+        ClientSounds sounds = ClientSounds.INSTANCE;
+        if (sounds != null && sounds.isEnabled()) {
+            String mode = sounds.stateSounds.getValue();
+            if (mode != null && !"Нет".equalsIgnoreCase(mode)) {
+                String soundFile = mapModeToSound(mode, open);
+                playSound(soundFile, getVolume(), 1.0F);
+                return;
+            }
+        }
+        playSound(open ? "guiopen.wav" : "guiclose.wav", 0.5, 1.0F);
+    }
+
+    private static double getVolume() {
+        ClientSounds sounds = ClientSounds.INSTANCE;
+        if (sounds != null && sounds.volume != null) {
+            float v = sounds.volume.get();
+            float max = sounds.volume.getMax();
+            if (max > 0.0F) {
+                return Math.max(0.01, Math.min(1.0, (double) v / (double) max));
+            }
+        }
+        return 0.5;
+    }
+
+    private static String mapModeToSound(String mode, boolean open) {
+        switch (mode) {
+            case "Первый":
+                return open ? "1.wav" : "2.wav";
+            case "Второй":
+                return open ? "enable2.wav" : "disable2.wav";
+            case "Третий":
+                return open ? "MODULE_ON.wav" : "MODULE_OFF.wav";
+            case "Четвертый":
+                return open ? "MODULE_ON2.wav" : "MODULE_OFF2.wav";
+            case "Пятый":
+                return open ? "MODULE_ON3.wav" : "MODULE_OFF3.wav";
+            case "Шестой":
+                return open ? "Function_ON.wav" : "Function_OFF.wav";
+            case "Celestial":
+                return open ? "celestial_on.wav" : "celestial_off.wav";
+            case "Bubble":
+                return open ? "enableBubbles.wav" : "disableBubbles.wav";
+            case "Heavy":
+                return open ? "heavyenable.wav" : "heavydisable.wav";
+            case "Droplet":
+                return open ? "dropletenable.wav" : "dropletdisable.wav";
+            case "Pop":
+                return open ? "popenable.wav" : "popdisable.wav";
+            case "Slide":
+                return open ? "slideenable.wav" : "slidedisable.wav";
+            case "Win":
+                return open ? "winenable.wav" : "windisable.wav";
+            default:
+                return open ? "guiopen.wav" : "guiclose.wav";
+        }
+    }
+
+    private static InputStream openSoundStream(String fileName) {
+        String[] prefixes = {
+            "/assets/error/sounds/",
+            "/assets/client/sound/",
+            "/assets/client/sounds/",
+            "assets/error/sounds/",
+            "assets/client/sound/",
+            "assets/client/sounds/"
+        };
+
+        for (String prefix : prefixes) {
+            String path = prefix + fileName;
+            InputStream is = ClientSoundPlayer.class.getResourceAsStream(path);
+            if (is != null) return is;
+
+            ClassLoader cl = Thread.currentThread().getContextClassLoader();
+            if (cl != null) {
+                is = cl.getResourceAsStream(path.startsWith("/") ? path.substring(1) : path);
+                if (is != null) return is;
+            }
+        }
+
+        try {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc != null && mc.getResourceManager() != null) {
+                try {
+                    return mc.getResourceManager().open(Identifier.fromNamespaceAndPath("error", "sounds/" + fileName));
+                } catch (Throwable ignored) {}
+                try {
+                    return mc.getResourceManager().open(Identifier.fromNamespaceAndPath("client", "sound/" + fileName));
+                } catch (Throwable ignored) {}
+                try {
+                    return mc.getResourceManager().open(Identifier.fromNamespaceAndPath("client", "sounds/" + fileName));
+                } catch (Throwable ignored) {}
+            }
+        } catch (Throwable ignored) {}
+
+        return null;
+    }
+
+    private ClientSoundPlayer() {
+        throw new UnsupportedOperationException("Utility class");
+    }
 }

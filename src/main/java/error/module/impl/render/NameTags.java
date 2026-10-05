@@ -137,6 +137,7 @@ public final class NameTags extends Module {
     public final CheckBox health = checkbox("Отображает хп", true);
     public final CheckBox items = checkbox("Предметы брони", true);
     public final ModeSetting itemsPos = mode("Позиция брони", "Под ногами", "Под ногами", "Сверху").visible(items::getValue);
+    public final ModeSetting mode = mode("Режим", "Error", "Error", "Lumen");
 
     public NameTags() {
         super("NameTags", "Включаешь такой предметы и комп тако скыбыдышь", Category.RENDER);
@@ -342,12 +343,8 @@ public final class NameTags extends Module {
         float centerY = pillY + pillHeight / 2.0F;
         float textY = font.centeredTextY(centerY, textSize);
 
-        int baseBg = logged.isFriend
-                ? ColorUtil.rgba(20, 55, 28, (int) (Theme.getPanelAlpha() * 255))
-                : ColorUtil.rgba(28, 16, 18, (int) (Theme.getPanelAlpha() * 255));
-        int backgroundColor = ColorUtil.multiplyAlpha(baseBg, alpha);
-
-        Render2D.drawBlur(pillX, pillY, width, pillHeight, RADIUS * unit, 1, backgroundColor, alpha);
+        int tagAccent = logged.isFriend ? ColorUtil.rgba(85, 255, 85, 255) : ColorUtil.rgba(255, 75, 75, 255);
+        Render2D.drawLiquidGlass(pillX, pillY, width, pillHeight, RADIUS * unit, alpha, tagAccent);
 
         float cursor = pillX + PADDING * unit;
 
@@ -462,6 +459,10 @@ public final class NameTags extends Module {
     }
 
     private void drawTag(Render2DEvent event, LivingEntity entity, float tickDelta, float baseUnit) {
+        if ("Lumen".equalsIgnoreCase(this.mode.getValue())) {
+            drawLumenTag(event, entity, tickDelta, baseUnit);
+            return;
+        }
         Minecraft mc = event.getClient();
 
         float targetFactor = 0.0F;
@@ -534,14 +535,9 @@ public final class NameTags extends Module {
         float centerY = pillY + pillHeight / 2.0F;
         float textY = font.centeredTextY(centerY, textSize);
 
-        int baseBg = isFriend
-                ? ColorUtil.rgba(20, 55, 28, (int) (Theme.getPanelAlpha() * 255))
-                : BG_COLOR;
-
-        int targetBgColor = ColorUtil.rgba(60, 18, 22, (int) (Theme.getPanelAlpha() * 255));
-        int backgroundColor = interpolateColor(baseBg, targetBgColor, targetFactor);
-
-        Render2D.drawBlur(pillX, pillY, width, pillHeight, RADIUS * unit, 1, backgroundColor, 1.0F);
+        int tagAccent = isFriend ? ColorUtil.rgba(85, 255, 85, 255) :
+                (targetFactor > 0.05F ? ColorUtil.rgba(255, 75, 75, 255) : Theme.getAccentColor());
+        Render2D.drawLiquidGlass(pillX, pillY, width, pillHeight, RADIUS * unit, 1.0F, tagAccent);
 
         float cursor = pillX + PADDING * unit;
 
@@ -587,6 +583,113 @@ public final class NameTags extends Module {
         }
     }
 
+    private void drawLumenTag(Render2DEvent event, LivingEntity entity, float tickDelta, float baseUnit) {
+        Minecraft mc = event.getClient();
+
+        float targetFactor = 0.0F;
+        if (this.highlightTarget.getValue() && entity.getId() == this.targetId) {
+            long currentTime = System.currentTimeMillis();
+            long elapsedSinceLast = currentTime - this.lastAttackTime;
+            if (elapsedSinceLast <= 5000L) {
+                long elapsedSinceFirst = currentTime - this.firstAttackTime;
+                if (elapsedSinceFirst < 200L) {
+                    targetFactor = elapsedSinceFirst / 200.0F;
+                } else if (elapsedSinceLast > 4000L) {
+                    targetFactor = 1.0F - ((elapsedSinceLast - 4000.0F) / 1000.0F);
+                } else {
+                    targetFactor = 1.0F;
+                }
+                targetFactor = Math.max(0.0F, Math.min(1.0F, targetFactor));
+            }
+        }
+
+        float unit = baseUnit * (1.0F + 0.15F * targetFactor);
+
+        Vec3 headPosition = Render3DUtil.interpolatedPosition(entity, tickDelta)
+                .add(0.0D, entity.getBbHeight() + HEAD_OFFSET, 0.0D);
+
+        Render3DUtil.ScreenPoint anchor = Render3DUtil.projectToScreen(mc, headPosition);
+        if (anchor == null) return;
+
+        MsdfFont font = Fonts.SF_MEDIUM;
+        float textSize = 9.5F * unit;
+        boolean hasHead = entity instanceof AbstractClientPlayer;
+        float headSize = hasHead ? 8.5F * unit : 0.0F;
+
+        boolean isFriend = entity instanceof Player player && FriendManager.getInstance().isFriend(player);
+
+        String name = (entity instanceof AbstractClientPlayer player)
+                ? player.getGameProfile().name()
+                : entity.getDisplayName().getString();
+
+        Donate donat = (entity instanceof AbstractClientPlayer player)
+                ? donates(player)
+                : null;
+
+        int currentHp = (int) Math.ceil(entity.getHealth() + entity.getAbsorptionAmount());
+        String hpText = this.health.getValue() ? currentHp + " hp" : "";
+        List<ItemStack> equipment = this.items.getValue() ? equipment(entity) : List.of();
+
+        float friendTagWidth = isFriend ? font.getWidth("[F] ", textSize) : 0.0F;
+        float nameWidth = font.getWidth(name, textSize);
+        float donatWidth = (donat != null) ? font.getWidth(donat.name() + " ", textSize) : 0.0F;
+        float hpWidth = !hpText.isEmpty() ? font.getWidth(" " + hpText, textSize) : 0.0F;
+
+        float pad = 5.0F * unit;
+        float gap = 3.5F * unit;
+
+        float pillWidth = pad * 2.0F;
+        if (hasHead) pillWidth += headSize + gap;
+        if (donat != null) pillWidth += donatWidth;
+        if (isFriend) pillWidth += friendTagWidth;
+        pillWidth += nameWidth;
+        pillWidth += hpWidth;
+
+        float pillHeight = 15.0F * unit;
+        float pillX = anchor.x() - pillWidth / 2.0F;
+        float pillY = anchor.y() - pillHeight - 2.0F * unit;
+        float centerY = pillY + pillHeight / 2.0F;
+        float textY = font.centeredTextY(centerY, textSize);
+
+        // Liquid glass capsule
+        int tagAccent = isFriend ? ColorUtil.rgba(85, 255, 85, 255) :
+                (targetFactor > 0.05F ? ColorUtil.rgba(255, 75, 75, 255) : Theme.getAccentColor());
+        Render2D.drawHudPill(pillX, pillY, pillWidth, pillHeight, 1.0F, tagAccent);
+
+        float cursor = pillX + pad;
+
+        if (hasHead) {
+            drawHead((AbstractClientPlayer) entity, cursor, centerY - headSize / 2.0F, headSize);
+            cursor += headSize + gap;
+        }
+
+        if (donat != null) {
+            Fonts.drawString(font, donat.name() + " ", cursor, textY, textSize, donat.color());
+            cursor += donatWidth;
+        }
+
+        if (isFriend) {
+            Fonts.drawString(font, "[F] ", cursor, textY, textSize, ColorUtil.rgba(85, 255, 85, 255));
+            cursor += friendTagWidth;
+        }
+
+        Fonts.drawString(font, name, cursor, textY, textSize, 0xFFFFFFFF);
+        cursor += nameWidth;
+
+        if (!hpText.isEmpty()) {
+            float maxHp = entity.getMaxHealth() > 0 ? entity.getMaxHealth() : 20.0F;
+            float hpPercent = Math.max(0.0F, Math.min(1.0F, entity.getHealth() / maxHp));
+            int hpColor = hpPercent > 0.5F ? ColorUtil.rgba(255, 215, 80, 255) : ColorUtil.rgba(255, 75, 75, 255);
+            Fonts.drawString(font, " " + hpText, cursor, textY, textSize, hpColor);
+        }
+
+        // Equipment in Lumen style
+        if (!equipment.isEmpty()) {
+            float equipY = pillY - 14.0F * unit - 3.0F * unit;
+            drawEquipment(event, equipment, anchor.x(), equipY, gap, unit);
+        }
+    }
+
     private void drawEquipment(Render2DEvent event, List<ItemStack> equipment, float anchorX, float y, float gap, float unit) {
         var extractor = event.getGuiGraphicsExtractor();
         if (extractor == null || equipment.isEmpty()) return;
@@ -609,7 +712,7 @@ public final class NameTags extends Module {
 
         float startX = anchorX - totalWidth / 2.0F;
 
-        Render2D.drawBlur(startX - 4.0F * unit, y - 2.0F * unit, totalWidth + 8.0F * unit, maxHeight + 4.0F * unit, 4.0F * unit, 1, BG_COLOR, 1.0F);
+        Render2D.drawHudCard(startX - 4.0F * unit, y - 2.0F * unit, totalWidth + 8.0F * unit, maxHeight + 4.0F * unit, 4.0F * unit, 1.0F);
         Render2DUtil.flush();
 
         Matrix3x2fStack pose = extractor.pose();
@@ -715,7 +818,7 @@ public final class NameTags extends Module {
         float pillX = anchor.x() - pillWidth / 2.0F;
         float pillY = anchor.y() - totalHeight;
 
-        Render2D.drawBlur(pillX, pillY, pillWidth, totalHeight, RADIUS * unit, 1, BG_COLOR, 1.0F);
+        Render2D.drawLiquidGlass(pillX, pillY, pillWidth, totalHeight, RADIUS * unit, 1.0F, Theme.getAccentColor());
 
         float cursorY = pillY + PADDING * unit;
 
@@ -775,7 +878,7 @@ public final class NameTags extends Module {
         float centerY = pillY + pillHeight / 2.0F;
         float textY = font.centeredTextY(centerY, style.textSize());
 
-        Render2D.drawBlur(pillX, pillY, width, pillHeight, RADIUS * unit, 1, BG_COLOR, 1.0F);
+        Render2D.drawLiquidGlass(pillX, pillY, width, pillHeight, RADIUS * unit, 1.0F, Theme.getAccentColor());
 
         var extractor = event.getGuiGraphicsExtractor();
         if (extractor != null) {
@@ -821,7 +924,7 @@ public final class NameTags extends Module {
         float centerY = pillY + pillHeight / 2.0F;
         float textY = font.centeredTextY(centerY, textSize);
 
-        Render2D.drawBlur(pillX, pillY, width, pillHeight, RADIUS * unit, 1, BG_COLOR, 1.0F);
+        Render2D.drawLiquidGlass(pillX, pillY, width, pillHeight, RADIUS * unit, 1.0F, Theme.getAccentColor());
 
         float cursor = pillX + PADDING * unit;
 

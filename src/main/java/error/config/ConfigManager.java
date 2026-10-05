@@ -65,6 +65,7 @@ public class ConfigManager {
             themeJson.addProperty("accentMode", Theme.getAccentMode());
             themeJson.addProperty("backgroundMode", Theme.getBackgroundMode());
             themeJson.addProperty("glassStyle", Theme.getGlassStyle());
+            themeJson.addProperty("uiStyle", Theme.getUiStyle());
             themeJson.addProperty("bgColor1", Theme.getBgColor1());
             themeJson.addProperty("bgColor2", Theme.getBgColor2());
             themeJson.addProperty("panelAlpha", Theme.getPanelAlpha());
@@ -173,6 +174,7 @@ public class ConfigManager {
                 if (themeJson.has("accentMode")) Theme.setAccentMode(themeJson.get("accentMode").getAsString());
                 if (themeJson.has("backgroundMode")) Theme.setBackgroundMode(themeJson.get("backgroundMode").getAsString());
                 if (themeJson.has("glassStyle")) Theme.setGlassStyle(themeJson.get("glassStyle").getAsString());
+                if (themeJson.has("uiStyle")) Theme.setUiStyle(themeJson.get("uiStyle").getAsString());
                 if (themeJson.has("bgColor1")) Theme.setBgColor1(themeJson.get("bgColor1").getAsInt());
                 if (themeJson.has("bgColor2")) Theme.setBgColor2(themeJson.get("bgColor2").getAsInt());
                 if (themeJson.has("panelAlpha")) Theme.setPanelAlpha(themeJson.get("panelAlpha").getAsFloat());
@@ -197,6 +199,9 @@ public class ConfigManager {
                                 List<Integer> binds = new ArrayList<>();
                                 for (JsonElement be : bindElem.getAsJsonArray()) {
                                     binds.add(be.getAsInt());
+                                }
+                                if (module instanceof error.module.impl.render.ClickGui && binds.isEmpty()) {
+                                    binds.add(org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT_SHIFT);
                                 }
                                 module.getBind().setValue(binds);
                             }
@@ -289,11 +294,144 @@ public class ConfigManager {
         } catch (Exception ignored) {}
     }
 
-    public String createShareCode(String configName, int usages) {
-        return "ERROR-" + System.currentTimeMillis();
+    private static final String KEY_CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    private static final java.security.SecureRandom RANDOM = new java.security.SecureRandom();
+
+    public static String generateRandomKey() {
+        StringBuilder sb = new StringBuilder("ERR-");
+        for (int i = 0; i < 16; i++) {
+            sb.append(KEY_CHARS.charAt(RANDOM.nextInt(KEY_CHARS.length())));
+        }
+        return sb.toString();
     }
 
-    public boolean loadShareCode(String code, boolean notify) {
+    public synchronized String getOrCreateShareKey(String configName) {
+        if (configName == null || configName.trim().isEmpty()) configName = "default";
+        String cleanName = configName.replace(".json", "").trim();
+
+        File keysFile = new File(configDir, "shared_keys.json");
+        JsonObject keysRoot = new JsonObject();
+        if (keysFile.exists()) {
+            try {
+                String content = java.nio.file.Files.readString(keysFile.toPath(), StandardCharsets.UTF_8);
+                JsonElement el = JsonParser.parseString(content);
+                if (el != null && el.isJsonObject()) {
+                    keysRoot = el.getAsJsonObject();
+                }
+            } catch (Exception ignored) {}
+        }
+
+        JsonObject configsMap = keysRoot.has("configs") ? keysRoot.getAsJsonObject("configs") : new JsonObject();
+        JsonObject keysMap = keysRoot.has("keys") ? keysRoot.getAsJsonObject("keys") : new JsonObject();
+
+        String existingKey = null;
+        if (configsMap.has(cleanName)) {
+            existingKey = configsMap.get(cleanName).getAsString();
+        }
+
+        File cfgFile = getConfigFile(cleanName);
+        if (cfgFile.exists()) {
+            try {
+                String content = java.nio.file.Files.readString(cfgFile.toPath(), StandardCharsets.UTF_8);
+                JsonElement el = JsonParser.parseString(content);
+                if (el != null && el.isJsonObject() && el.getAsJsonObject().has("shareKey")) {
+                    String k = el.getAsJsonObject().get("shareKey").getAsString();
+                    if (k != null && k.startsWith("ERR-") && k.length() == 20) {
+                        existingKey = k;
+                    }
+                }
+            } catch (Exception ignored) {}
+        }
+
+        if (existingKey == null || !existingKey.startsWith("ERR-") || existingKey.length() != 20) {
+            existingKey = generateRandomKey();
+        }
+
+        configsMap.addProperty(cleanName, existingKey);
+        keysMap.addProperty(existingKey, cleanName);
+        keysRoot.add("configs", configsMap);
+        keysRoot.add("keys", keysMap);
+
+        try {
+            java.nio.file.Files.writeString(keysFile.toPath(), gson.toJson(keysRoot), StandardCharsets.UTF_8);
+
+            if (cfgFile.exists()) {
+                File sharedDir = new File(configDir, "shared");
+                if (!sharedDir.exists()) sharedDir.mkdirs();
+                File sharedCopy = new File(sharedDir, existingKey + ".json");
+                java.nio.file.Files.copy(cfgFile.toPath(), sharedCopy.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            }
+        } catch (Exception ignored) {}
+
+        return existingKey;
+    }
+
+    public String createShareCode(String configName, int usages) {
+        return getOrCreateShareKey(configName);
+    }
+
+    public synchronized boolean loadShareCode(String code, boolean notify) {
+        if (code == null || code.trim().isEmpty()) {
+            if (notify) ChatUtil.error("Ключ не может быть пустым!");
+            return false;
+        }
+
+        String trimmed = code.trim();
+        String upper = trimmed.toUpperCase();
+
+        File sharedFile = new File(new File(configDir, "shared"), upper + ".json");
+        if (sharedFile.exists()) {
+            try {
+                String json = java.nio.file.Files.readString(sharedFile.toPath(), StandardCharsets.UTF_8);
+                String importName = "shared_" + (upper.length() > 8 ? upper.substring(4, 10) : upper);
+                File target = getConfigFile(importName);
+                java.nio.file.Files.writeString(target.toPath(), json, StandardCharsets.UTF_8);
+                return loadConfig(importName, notify);
+            } catch (Exception ignored) {}
+        }
+
+        File keysFile = new File(configDir, "shared_keys.json");
+        if (keysFile.exists()) {
+            try {
+                String content = java.nio.file.Files.readString(keysFile.toPath(), StandardCharsets.UTF_8);
+                JsonElement el = JsonParser.parseString(content);
+                if (el != null && el.isJsonObject()) {
+                    JsonObject root = el.getAsJsonObject();
+                    if (root.has("keys")) {
+                        JsonObject keysMap = root.getAsJsonObject("keys");
+                        if (keysMap.has(upper)) {
+                            String targetName = keysMap.get(upper).getAsString();
+                            File targetFile = getConfigFile(targetName);
+                            if (targetFile.exists()) {
+                                return loadConfig(targetName, notify);
+                            }
+                        }
+                    }
+                }
+            } catch (Exception ignored) {}
+        }
+
+        if (configDir.exists() && configDir.isDirectory()) {
+            File[] files = configDir.listFiles((dir, name) -> name.endsWith(".json"));
+            if (files != null) {
+                for (File f : files) {
+                    try {
+                        String content = java.nio.file.Files.readString(f.toPath(), StandardCharsets.UTF_8);
+                        JsonElement el = JsonParser.parseString(content);
+                        if (el != null && el.isJsonObject() && el.getAsJsonObject().has("shareKey")) {
+                            if (upper.equalsIgnoreCase(el.getAsJsonObject().get("shareKey").getAsString())) {
+                                String cfgName = f.getName().replace(".json", "");
+                                return loadConfig(cfgName, notify);
+                            }
+                        }
+                    } catch (Exception ignored) {}
+                }
+            }
+        }
+
+        if (notify) {
+            ChatUtil.error("Конфигурация с ключом '" + trimmed + "' не найдена!");
+        }
         return false;
     }
 

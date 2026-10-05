@@ -41,7 +41,7 @@
     "input.MouseHandlerMixin",
     "gui.ScreenMixin",
     "gui.ContainerEventHandlerMixin",
-    "gui.AbstractWidgetMixin",
+    "gui.AbstractButtonMixin",
     "render.VulkanDeviceMixin",
     "render.RenderPipelinesMixin",
     "render.CameraMixin",

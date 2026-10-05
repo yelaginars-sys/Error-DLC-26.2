@@ -20,7 +20,15 @@ public final class Theme {
     private static String glassStyle = "AURORA";
 
     @Getter @Setter
-    private static String uiStyle = "WINTER_GLASS"; // WINTER_GLASS, OBSIDIAN_BLACK, CHRISTMAS, NEON_CYBER, RETRO_UI
+    private static String uiStyle = "Жидкое стекло"; // "Жидкое стекло", "Новый Год"
+
+    public static boolean isLiquidGlass() {
+        return !"Новый Год".equalsIgnoreCase(uiStyle);
+    }
+
+    public static boolean isNewYear() {
+        return "Новый Год".equalsIgnoreCase(uiStyle);
+    }
 
     @Getter @Setter
     private static int bgColor1 = ColorUtil.rgba(18, 18, 24, 255);

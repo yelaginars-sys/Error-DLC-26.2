@@ -92,9 +92,13 @@ public final class AmogusModel {
         shell.xRot = vanilla.body.xRot * 0.5F;
         shell.yRot = vanilla.body.yRot * 0.35F;
 
-        vis.xRot = vanilla.head.xRot * 0.35F;
-        vis.yRot = vanilla.head.yRot * 0.45F;
-        vis.zRot = vanilla.head.zRot * 0.2F;
+        // Lock visor (eyes) to body shell so they stay anchored and do not detach
+        vis.xRot = shell.xRot;
+        vis.yRot = shell.yRot;
+        vis.zRot = shell.zRot;
+        vis.x = shell.x;
+        vis.y = shell.y;
+        vis.z = shell.z;
 
         lLeg.xRot = vanilla.leftLeg.xRot;
         lLeg.yRot = vanilla.leftLeg.yRot;

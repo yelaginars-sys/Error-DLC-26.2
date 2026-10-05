@@ -42,6 +42,13 @@ public class TriggerBot extends Module {
         INSTANCE = this;
     }
 
+    public LivingEntity getTarget() {
+        if (mc != null && mc.crosshairPickEntity instanceof LivingEntity living) {
+            return living;
+        }
+        return null;
+    }
+
     @Override
     public void onEnable() {
         currentTick = 0;

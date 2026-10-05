@@ -1,14 +1,16 @@
 package error.cosmetic;
 
 public enum CosmeticType {
+    ALL("Все"),
+    MODEL("3D Модели"),
     WINGS("Крылья"),
-    HAT("Шляпа"),
-    MASK("Маска"),
-    BACKPACK("Рюкзак"),
-    PET("Питомец"),
-    MODEL("3D Модель"),
-    CAPE("Плащ"),
-    BADGE("Значок"),
+    HAT("Шапки"),
+    MASK("Маски"),
+    BACKPACK("Рюкзаки"),
+    PET("Питомцы"),
+    CAR("Машины"),
+    CAPE("Плащи"),
+    BADGE("Значки"),
     AURA("Аура");
 
     private final String displayName;

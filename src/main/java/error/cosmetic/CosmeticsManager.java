@@ -31,7 +31,7 @@ public class CosmeticsManager {
         cosmetics.add(new CosmeticItem("model_white_demon", "Белый Демон", CosmeticType.MODEL, false, ColorUtil.rgba(245, 245, 255, 255), "CustomModels"));
 
         // --- WINGS ---
-        cosmetics.add(new CosmeticItem("wings_draco", "Крылья Дракона", CosmeticType.WINGS, true, ColorUtil.rgba(235, 145, 225, 255), "cosmetics/wings/draco"));
+        cosmetics.add(new CosmeticItem("wings_draco", "Крылья Дракона", CosmeticType.WINGS, false, ColorUtil.rgba(235, 145, 225, 255), "cosmetics/wings/draco"));
         cosmetics.add(new CosmeticItem("wings_angel", "Ангельские Крылья", CosmeticType.WINGS, false, ColorUtil.rgba(255, 255, 255, 255), "cosmetics/wings/angel"));
         cosmetics.add(new CosmeticItem("wings_archangel", "Крылья Архангела", CosmeticType.WINGS, false, ColorUtil.rgba(255, 215, 0, 255), "cosmetics/wings/archangel"));
         cosmetics.add(new CosmeticItem("wings_blackhole", "Крылья Черная Дыра", CosmeticType.WINGS, false, ColorUtil.rgba(130, 40, 220, 255), "cosmetics/wings/blackhole"));
@@ -43,11 +43,10 @@ public class CosmeticsManager {
 
         // --- HATS ---
         cosmetics.add(new CosmeticItem("hat_angel_halo", "Ангельский Нимб", CosmeticType.HAT, false, ColorUtil.rgba(255, 223, 0, 255), "cosmetics/hats/angel_halo"));
-        cosmetics.add(new CosmeticItem("hat_angel_halo_white", "Белый Нимб", CosmeticType.HAT, false, ColorUtil.rgba(240, 248, 255, 255), "cosmetics/hats/angel_halo_white"));
         cosmetics.add(new CosmeticItem("hat_bear", "Шапка Медведя", CosmeticType.HAT, false, ColorUtil.rgba(160, 82, 45, 255), "cosmetics/hats/bear"));
-        cosmetics.add(new CosmeticItem("hat_blackhole_halo", "Нимб Черная Дыра", CosmeticType.HAT, false, ColorUtil.rgba(75, 0, 130, 255), "cosmetics/hats/blackhole_halo"));
         cosmetics.add(new CosmeticItem("hat_frog", "Шапка Лягушки", CosmeticType.HAT, false, ColorUtil.rgba(50, 205, 50, 255), "cosmetics/hats/frog"));
         cosmetics.add(new CosmeticItem("hat_pilot", "Шлем Пилота", CosmeticType.HAT, false, ColorUtil.rgba(112, 128, 144, 255), "cosmetics/hats/pilot"));
+        cosmetics.add(new CosmeticItem("hat_capybara", "Шапка Капибары", CosmeticType.HAT, false, ColorUtil.rgba(180, 120, 60, 255), "cosmetics/hats/capybara"));
 
         // --- MASKS ---
         cosmetics.add(new CosmeticItem("mask_angry", "Злая Маска", CosmeticType.MASK, false, ColorUtil.rgba(255, 69, 0, 255), "cosmetics/masks/angry"));
@@ -58,9 +57,9 @@ public class CosmeticsManager {
         // --- BACKPACKS ---
         cosmetics.add(new CosmeticItem("backpack_adidas", "Рюкзак Adidas", CosmeticType.BACKPACK, false, ColorUtil.rgba(20, 20, 20, 255), "cosmetics/backpacks/adidas"));
         cosmetics.add(new CosmeticItem("backpack_gucci", "Рюкзак Gucci", CosmeticType.BACKPACK, false, ColorUtil.rgba(34, 139, 34, 255), "cosmetics/backpacks/gucci"));
-        cosmetics.add(new CosmeticItem("backpack_hermes", "Рюкзак Hermes", CosmeticType.BACKPACK, false, ColorUtil.rgba(255, 140, 0, 255), "cosmetics/backpacks/hermes"));
         cosmetics.add(new CosmeticItem("backpack_louis_vuitton", "Рюкзак Louis Vuitton", CosmeticType.BACKPACK, false, ColorUtil.rgba(139, 69, 19, 255), "cosmetics/backpacks/lui_vuitton"));
         cosmetics.add(new CosmeticItem("backpack_nike", "Рюкзак Nike", CosmeticType.BACKPACK, false, ColorUtil.rgba(220, 20, 60, 255), "cosmetics/backpacks/nike"));
+        cosmetics.add(new CosmeticItem("backpack_supreme", "Рюкзак Supreme", CosmeticType.BACKPACK, false, ColorUtil.rgba(235, 30, 30, 255), "cosmetics/backpacks/supreme"));
 
         // --- PETS ---
         cosmetics.add(new CosmeticItem("pet_dragon", "Дракончик", CosmeticType.PET, false, ColorUtil.rgba(148, 0, 211, 255), "cosmetics/pets/dragon"));
@@ -69,20 +68,36 @@ public class CosmeticsManager {
         cosmetics.add(new CosmeticItem("pet_panda", "Панда", CosmeticType.PET, false, ColorUtil.rgba(240, 240, 240, 255), "cosmetics/pets/panda"));
         cosmetics.add(new CosmeticItem("pet_patrick", "Патрик", CosmeticType.PET, false, ColorUtil.rgba(255, 105, 180, 255), "cosmetics/pets/patrick"));
         cosmetics.add(new CosmeticItem("pet_spongebob", "Губка Боб", CosmeticType.PET, false, ColorUtil.rgba(255, 255, 0, 255), "cosmetics/pets/spongebob"));
+        cosmetics.add(new CosmeticItem("pet_creeper", "Крипер", CosmeticType.PET, false, ColorUtil.rgba(60, 180, 60, 255), "cosmetics/pets/creeper"));
+
+        // --- CARS & BIKES ---
+        cosmetics.add(new CosmeticItem("car_pitbike", "Питбайк KAYO", CosmeticType.CAR, false, ColorUtil.rgba(50, 205, 50, 255), "cosmetics/cars/pitbike"));
+        cosmetics.add(new CosmeticItem("car_uaz", "УАЗ-452 Буханка", CosmeticType.CAR, false, ColorUtil.rgba(85, 107, 47, 255), "cosmetics/cars/uaz"));
+        cosmetics.add(new CosmeticItem("car_bmw_m5", "BMW M5 CS", CosmeticType.CAR, false, ColorUtil.rgba(0, 102, 204, 255), "cosmetics/cars/bmw_m5"));
+        cosmetics.add(new CosmeticItem("car_g63", "Mercedes G63 AMG", CosmeticType.CAR, false, ColorUtil.rgba(30, 30, 30, 255), "cosmetics/cars/g63"));
+        cosmetics.add(new CosmeticItem("car_porsche_911", "Porsche 911 GT3", CosmeticType.CAR, false, ColorUtil.rgba(255, 165, 0, 255), "cosmetics/cars/porsche_911"));
+        cosmetics.add(new CosmeticItem("car_lambo", "Lamborghini Aventador", CosmeticType.CAR, false, ColorUtil.rgba(255, 215, 0, 255), "cosmetics/cars/lambo"));
+        cosmetics.add(new CosmeticItem("car_cybertruck", "Tesla Cybertruck", CosmeticType.CAR, false, ColorUtil.rgba(180, 180, 190, 255), "cosmetics/cars/cybertruck"));
+        cosmetics.add(new CosmeticItem("car_bugatti", "Bugatti Chiron", CosmeticType.CAR, false, ColorUtil.rgba(40, 120, 220, 255), "cosmetics/cars/bugatti"));
 
         // --- CAPES & BADGES ---
-        cosmetics.add(new CosmeticItem("error_cape", "Плащ Error DLC", CosmeticType.CAPE, true, ColorUtil.rgba(140, 80, 180, 255), "textures/cosmetics/cape.png"));
-        cosmetics.add(new CosmeticItem("verified_badge", "Значок Верификата", CosmeticType.BADGE, true, ColorUtil.rgba(85, 255, 255, 255), "textures/cosmetics/badge.png"));
+        cosmetics.add(new CosmeticItem("error_cape", "Плащ Error DLC", CosmeticType.CAPE, false, ColorUtil.rgba(140, 80, 180, 255), "textures/cosmetics/cape.png"));
+        cosmetics.add(new CosmeticItem("verified_badge", "Значок Верификата", CosmeticType.BADGE, false, ColorUtil.rgba(85, 255, 255, 255), "textures/cosmetics/badge.png"));
     }
 
     public void onToggleCosmetic(CosmeticItem item) {
+        item.setEnabled(!item.isEnabled());
+
+        if (item.isEnabled()) {
+            for (CosmeticItem c : cosmetics) {
+                if (c.getType() == item.getType() && c != item) {
+                    c.setEnabled(false);
+                }
+            }
+        }
+
         if (item.getType() == CosmeticType.MODEL) {
             if (item.isEnabled()) {
-                for (CosmeticItem c : cosmetics) {
-                    if (c.getType() == CosmeticType.MODEL && c != item) {
-                        c.setEnabled(false);
-                    }
-                }
                 String modelName = mapCosmeticIdToModel(item.getId());
                 if (CustomModels.INSTANCE != null) {
                     CustomModels.INSTANCE.model.setValue(modelName);
@@ -125,5 +140,24 @@ public class CosmeticsManager {
             }
         }
         return false;
+    }
+
+    public CosmeticItem getEquipped(CosmeticType type) {
+        for (CosmeticItem item : cosmetics) {
+            if (item.getType() == type && item.isEnabled()) {
+                return item;
+            }
+        }
+        return null;
+    }
+
+    public List<CosmeticItem> getEquippedCosmetics() {
+        List<CosmeticItem> list = new ArrayList<>();
+        for (CosmeticItem item : cosmetics) {
+            if (item.isEnabled()) {
+                list.add(item);
+            }
+        }
+        return list;
     }
 }

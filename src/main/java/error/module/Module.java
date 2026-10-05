@@ -28,8 +28,8 @@ public abstract class Module implements EventListener<Event>, IMinecraft {
     private boolean expanded;
     private boolean binding;
 
-    @Getter @Setter private boolean hiddenFromHud = false;
-    @Getter @Setter private String  bindType      = "Toggle"; // "Toggle" or "Hold"
+    private boolean hiddenFromHud = false;
+    private String  bindType      = "Toggle"; // "Toggle" or "Hold"
 
     private final Animation expandAnim = new Animation(0.0F, 0.16F);
     private final Animation bindAnim = new Animation(0.0F, 0.14F);
@@ -100,6 +100,38 @@ public abstract class Module implements EventListener<Event>, IMinecraft {
                 Client.INSTANCE.configManager.autoSave();
             }
         }
+    }
+
+    public String getName() {
+        return this.name;
+    }
+
+    public Category getCategory() {
+        return this.category;
+    }
+
+    public BindSetting getBind() {
+        return this.bind;
+    }
+
+    public List<Setting<?>> getSettings() {
+        return this.settings;
+    }
+
+    public boolean isHiddenFromHud() {
+        return this.hiddenFromHud;
+    }
+
+    public void setHiddenFromHud(boolean hiddenFromHud) {
+        this.hiddenFromHud = hiddenFromHud;
+    }
+
+    public String getBindType() {
+        return this.bindType;
+    }
+
+    public void setBindType(String bindType) {
+        this.bindType = bindType;
     }
 
     public String getDescription() {

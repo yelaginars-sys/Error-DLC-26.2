@@ -135,10 +135,14 @@ public abstract class CameraMixin {
         float targetYaw = this.yRot;
         float targetPitch = this.xRot;
 
+        error.module.impl.render.InterpolateF5 f5Mod = error.module.impl.render.InterpolateF5.INSTANCE;
+        boolean f5Active = f5Mod != null && f5Mod.isEnabled();
+        boolean modActive = mod != null && mod.isEnabled();
+
         if (freeCam != null && freeCam.justDisabled) {
             freeCam.justDisabled = false;
 
-            if (mod != null && mod.isEnabled() && mod.modes.isEnabled("BossBar")) {
+            if (f5Active || modActive) {
                 startOffsetX = freeCam.lastCamX - targetX;
                 startOffsetY = freeCam.lastCamY - targetY;
                 startOffsetZ = freeCam.lastCamZ - targetZ;
@@ -153,7 +157,7 @@ public abstract class CameraMixin {
             }
         }
 
-        if (mod == null || !mod.isEnabled() || !mod.modes.isEnabled("BossBar")) {
+        if (!f5Active && !modActive) {
             isTransitioning = false;
             cameraInitialized = false;
             lastCameraType = null;

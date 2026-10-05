@@ -36,4 +36,28 @@ public abstract class HudMixin {
             RenderExtend.exit2D();
         }
     }
+
+    @Inject(method = "extractItemHotbar", at = @At("HEAD"), cancellable = true)
+    private void onExtractItemHotbar(GuiGraphicsExtractor guiGraphicsExtractor, DeltaTracker deltaTracker, CallbackInfo ci) {
+        error.module.impl.render.Interface iface = error.module.impl.render.Interface.getInstance();
+        if (iface != null && iface.isEnabled() && iface.customHotbar.getValue()) {
+            ci.cancel();
+        }
+    }
+
+    @Inject(method = "extractScoreboardSidebar", at = @At("HEAD"), cancellable = true)
+    private void onExtractScoreboardSidebar(GuiGraphicsExtractor guiGraphicsExtractor, DeltaTracker deltaTracker, CallbackInfo ci) {
+        error.module.impl.render.Interface iface = error.module.impl.render.Interface.getInstance();
+        if (iface != null && iface.isEnabled() && iface.customScoreboard.getValue()) {
+            ci.cancel();
+        }
+    }
+
+    @Inject(method = "extractEffects", at = @At("HEAD"), cancellable = true)
+    private void onExtractEffects(GuiGraphicsExtractor guiGraphicsExtractor, DeltaTracker deltaTracker, CallbackInfo ci) {
+        error.module.impl.render.Interface iface = error.module.impl.render.Interface.getInstance();
+        if (iface != null && iface.isEnabled() && iface.potions.getValue()) {
+            ci.cancel();
+        }
+    }
 }

@@ -704,21 +704,19 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
         float elapsed = now - notificationScrollStarted;
         float remainingRatio = Math.max(0.0F, Math.min(1.0F, 1.0F - (elapsed / totalDuration)));
 
-        float dotSize = 5.0F;
-        float dotX = x + 10.0F;
-        float dotY = y + (height - dotSize) / 2.0F;
-        float dotRadius = dotSize / 2.0F;
+        float ringRadius = 4.2F;
+        float ringThickness = 1.3F;
+        float cx = x + 12.5F;
+        float cy = y + height / 2.0F;
 
-        // Fill dot
-        Render2D.drawShadow(dotX, dotY, dotSize, dotSize, dotRadius, 4.0F, dotColor);
-        Render2D.drawRoundedRect(dotX, dotY, dotSize, dotSize, dotRadius, dotColor);
+        // Subtle background hollow track ring
+        Render2D.drawCircleOutline(cx, cy, ringRadius, ringThickness, ColorUtil.rgba(255, 255, 255, (int) (35 * alpha)));
 
         // Circular timer outline ring that winds down to 0
         if (remainingRatio > 0.001F) {
-            float ringRadius = dotRadius + 1.8F;
             float sweepAngle = 360.0F * remainingRatio;
-            int ringColor = ColorUtil.rgba(ColorUtil.red(dotColor), ColorUtil.green(dotColor), ColorUtil.blue(dotColor), (int) (230 * alpha));
-            Render2D.drawArc(dotX + dotRadius, dotY + dotRadius, ringRadius, 1.2F, -90.0F, sweepAngle, ringColor);
+            int ringColor = ColorUtil.rgba(ColorUtil.red(dotColor), ColorUtil.green(dotColor), ColorUtil.blue(dotColor), (int) (240 * alpha));
+            Render2D.drawArc(cx, cy, ringRadius, ringThickness, -90.0F, sweepAngle, ringColor);
         }
 
         float textX = x + 23.0F;

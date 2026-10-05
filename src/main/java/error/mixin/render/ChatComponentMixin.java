@@ -45,55 +45,12 @@ public abstract class ChatComponentMixin {
 
     @Inject(method = "addMessage(Lnet/minecraft/network/chat/Component;Lnet/minecraft/network/chat/MessageSignature;Lnet/minecraft/client/multiplayer/chat/GuiMessageSource;Lnet/minecraft/client/multiplayer/chat/GuiMessageTag;)V", at = @At("HEAD"), cancellable = true)
     private void onAddMessage(Component contents, MessageSignature signature, GuiMessageSource source, GuiMessageTag tag, CallbackInfo ci) {
-        if (error$isModifying) return;
-
-        BetterMinecraft mod = BetterMinecraft.INSTANCE;
-        if (mod == null || !mod.isEnabled() || !mod.modes.isEnabled("Chat") || contents == null) return;
-
-        String rawText = stripStack(contents.getString());
-        if (rawText.isBlank()) return;
-
-        Integer currentCount = error$countMap.get(rawText);
-
-        if (currentCount != null) {
-            int newCount = currentCount + 1;
-            error$countMap.put(rawText, newCount);
-
-            if (this.allMessages != null) {
-                this.allMessages.removeIf(msg -> {
-                    if (msg == null || msg.content() == null) return false;
-                    return stripStack(msg.content().getString()).equals(rawText);
-                });
-            }
-
-            this.refreshTrimmedMessages();
-
-            error$isModifying = true;
-            MutableComponent stacked = contents.copy().append(Component.literal(" §7(x" + newCount + ")"));
-            this.addMessage(stacked, signature, source, tag);
-            error$isModifying = false;
-
-            ci.cancel();
-        } else {
-            error$countMap.put(rawText, 1);
-        }
+        // Vanilla chat enabled
     }
 
     @WrapOperation(method = "forEachLine", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/components/ChatComponent$LineConsumer;accept(Lnet/minecraft/client/multiplayer/chat/GuiMessage$Line;IF)V"))
     private void wrapLineConsumerAccept(@Coerce Object consumer, GuiMessage.Line line, int lineIndex, float alpha, Operation<Void> original) {
-        BetterMinecraft mod = BetterMinecraft.INSTANCE;
-        if (mod == null || !mod.isEnabled() || !mod.modes.isEnabled("Чат") ) {
-            original.call(consumer, line, lineIndex, alpha);
-            return;
-        }
-
-        long now = System.currentTimeMillis();
-        long spawnTime = error$lineTimestamps.computeIfAbsent(line, k -> now);
-        float duration = Math.max(10.0F, mod.animSpeed.getValue());
-        float progress = Math.min(1.0F, (now - spawnTime) / duration);
-
-        float ease = 1.0F - (float) Math.pow(1.0F - progress, 3.0F);
-        original.call(consumer, line, lineIndex, alpha * ease);
+        original.call(consumer, line, lineIndex, alpha);
     }
 
     @Inject(method = "clearMessages", at = @At("HEAD"))

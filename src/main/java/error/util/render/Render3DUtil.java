@@ -87,21 +87,26 @@ public final class Render3DUtil {
             return null;
         }
 
-        Vector4f clip = new Vector4f(
+        Vector4f view = new Vector4f(
                 (float) (pos.x - cameraState.pos.x()),
                 (float) (pos.y - cameraState.pos.y()),
                 (float) (pos.z - cameraState.pos.z()),
                 1.0F
         );
-        cameraState.viewRotationMatrix.transform(clip);
+        cameraState.viewRotationMatrix.transform(view);
+        if (view.z >= -0.15F) {
+            return null;
+        }
+
+        Vector4f clip = new Vector4f(view);
         LEVEL_PROJECTION.transform(clip);
-        if (clip.w <= 1.0E-4F) {
+        if (clip.w <= 0.05F) {
             return null;
         }
 
         float ndcX = clip.x / clip.w;
         float ndcY = clip.y / clip.w;
-        if (Math.abs(ndcX) > 2.0F || Math.abs(ndcY) > 2.0F) {
+        if (Math.abs(ndcX) > 1.35F || Math.abs(ndcY) > 1.35F) {
             return null;
         }
 

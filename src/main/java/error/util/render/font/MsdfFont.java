@@ -288,7 +288,7 @@ public final class MsdfFont {
 
     public record Bounds(float left, float bottom, float right, float top) {}
     private static final class FontFile { Atlas atlas; Metrics metrics; List<RawGlyph> glyphs; List<KerningPair> kerning; }
-    private static final class Atlas { double distanceRange = 2.0; int width = 512, height = 512, size = 32; }
+    private static final class Atlas { double distanceRange = 2.0; int width = 512, height = 512; double size = 32; }
     private static final class Metrics { double lineHeight = 1.0, ascender = 0.8, descender = -0.2; }
     private static final class RawGlyph { int unicode; double advance; RawBounds planeBounds, atlasBounds; }
     private static final class RawBounds { double left, bottom, right, top; }

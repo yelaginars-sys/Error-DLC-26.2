@@ -26,8 +26,23 @@ public abstract class TitleScreenMixin extends Screen {
         super(title);
     }
 
+    @Unique private Screen error$targetScreen = null;
+    @Unique private long error$transitionStartTime = 0L;
+    @Unique private static final long TRANSITION_DURATION = 200L;
+
+    @Unique
+    private void error$switchScreen(Screen screen) {
+        if (this.error$targetScreen != null) return;
+        this.error$targetScreen = screen;
+        this.error$transitionStartTime = System.currentTimeMillis();
+        error.util.client.ClientSoundPlayer.playGuiClick();
+    }
+
     @Inject(method = "init", at = @At("TAIL"))
     private void alignTitleButtons(CallbackInfo ci) {
+        // Reset transition state
+        this.error$targetScreen = null;
+
         // Hide yellow splash text
         this.splash = null;
 
@@ -70,30 +85,33 @@ public abstract class TitleScreenMixin extends Screen {
         float h = 20.0F;
         float gap = 4.0F;
 
-        // 1. Singleplayer
+        // 1. Singleplayer - wired with smooth transition animation
         if (spButton != null) {
-            spButton.setX((int) (centerX - w / 2.0F));
-            spButton.setY((int) startY);
-            spButton.setWidth((int) w);
-            spButton.setHeight((int) h);
+            this.removeWidget(spButton);
         }
+        spButton = Button.builder(Component.translatable("menu.singleplayer"), b -> {
+            error$switchScreen(new net.minecraft.client.gui.screens.worldselection.SelectWorldScreen(this));
+        }).bounds((int) (centerX - w / 2.0F), (int) startY, (int) w, (int) h).build();
+        this.addRenderableWidget(spButton);
 
-        // 2. Multiplayer
+        // 2. Multiplayer - wired with smooth transition animation
         float currentY = startY + h + gap;
         if (mpButton != null) {
-            mpButton.setX((int) (centerX - w / 2.0F));
-            mpButton.setY((int) currentY);
-            mpButton.setWidth((int) w);
-            mpButton.setHeight((int) h);
-            currentY += h + gap;
+            this.removeWidget(mpButton);
         }
+        mpButton = Button.builder(Component.translatable("menu.multiplayer"), b -> {
+            error$switchScreen(new net.minecraft.client.gui.screens.multiplayer.JoinMultiplayerScreen(this));
+        }).bounds((int) (centerX - w / 2.0F), (int) currentY, (int) w, (int) h).build();
+        this.addRenderableWidget(mpButton);
+
+        currentY += h + gap;
 
         // 3. Account Manager Button (Always re-created to prevent disappearing on screen re-init)
         if (error$accountButton != null) {
             this.removeWidget(error$accountButton);
         }
         error$accountButton = Button.builder(Component.literal("Аккаунт менеджер"), b -> {
-            Minecraft.getInstance().setScreenAndShow(new AccountManagerScreen(this));
+            error$switchScreen(new AccountManagerScreen(this));
         }).bounds((int) (centerX - w / 2.0F), (int) currentY, (int) w, (int) h).build();
         this.addRenderableWidget(error$accountButton);
 
@@ -113,6 +131,31 @@ public abstract class TitleScreenMixin extends Screen {
             quitButton.setY((int) currentY);
             quitButton.setWidth((int) optionsW);
             quitButton.setHeight((int) h);
+        }
+    }
+
+    @Inject(method = "extractRenderState", at = @At("TAIL"))
+    private void onRenderTransition(net.minecraft.client.gui.GuiGraphicsExtractor extractor, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
+        if (this.error$targetScreen != null) {
+            long elapsed = System.currentTimeMillis() - this.error$transitionStartTime;
+            float progress = Math.clamp((float) elapsed / (float) TRANSITION_DURATION, 0.0F, 1.0F);
+            float ease = progress * progress * progress;
+
+            error.util.render.Render2DUtil.beginFrame();
+            int alpha = (int) (ease * 255);
+            error.util.render.Render2D.drawRect(0, 0, this.width, this.height, error.util.client.clients.ColorUtil.rgba(0, 0, 0, alpha));
+
+            if (alpha > 15) {
+                int accentGlow = error.util.client.clients.ColorUtil.withAlpha(error.util.client.clients.Theme.getAccentColor(), (int) (ease * 140));
+                float glowH = 34.0F * ease;
+                error.util.render.Render2D.drawShadow(0, (this.height - glowH) / 2.0F, this.width, glowH, 20.0F, 16.0F, accentGlow);
+            }
+            error.util.render.Render2DUtil.flush();
+
+            if (progress >= 1.0F) {
+                Minecraft.getInstance().setScreenAndShow(this.error$targetScreen);
+                this.error$targetScreen = null;
+            }
         }
     }
 }

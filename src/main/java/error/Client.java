@@ -45,6 +45,7 @@ public class Client implements ModInitializer {
         error.cosmetic.CosmeticsManager.getInstance();
         this.eventManager.register(HudManager.getInstance());
         this.eventManager.register(Tps.INSTANCE);
+        error.event.ServerEventManager.getInstance();
         } finally {
             error.config.ConfigManager.isLoadingConfig = false;
         }

@@ -13,8 +13,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- */
 @Getter
 public class Modules {
     private final List<Module> modules = new ArrayList<>();
@@ -89,6 +87,9 @@ public class Modules {
     public AspectRatio aspectRatio;
     public BlockOutline blockOutline;
     public RenderDemoModule renderDemoModule;
+    public DiscordRPC discordRPC;
+    public TargetEsp targetEsp;
+    public InterpolateF5 interpolateF5;
 
     public void init() {
         this.clickGui = new ClickGui();
@@ -162,6 +163,9 @@ public class Modules {
         this.clientSounds = new ClientSounds();
         this.unHook = new UnHook();
         this.renderDemoModule = new RenderDemoModule();
+        this.discordRPC = DiscordRPC.getInstance();
+        this.targetEsp = new TargetEsp();
+        this.interpolateF5 = new InterpolateF5();
 
         register(
                 this.clickGui,
@@ -234,7 +238,10 @@ public class Modules {
                 this.particles,
                 this.clientSounds,
                 this.unHook,
-                this.renderDemoModule
+                this.renderDemoModule,
+                this.discordRPC,
+                this.targetEsp,
+                this.interpolateF5
         );
 
         if (this.maceHelper != null) this.maceHelper.setState(true);
@@ -244,14 +251,16 @@ public class Modules {
 
     public void register(Module... mods) {
         for (Module mod : mods) {
-            modules.add(mod);
+            if (mod != null && !modules.contains(mod)) {
+                modules.add(mod);
+            }
         }
     }
 
     @SuppressWarnings("unchecked")
     public <T extends Module> T getModule(Class<T> clazz) {
         for (Module module : modules) {
-            if (module.getClass() == clazz) {
+            if (module != null && module.getClass() == clazz) {
                 return (T) module;
             }
         }
@@ -259,8 +268,9 @@ public class Modules {
     }
 
     public Module getModule(String name) {
+        if (name == null) return null;
         for (Module module : modules) {
-            if (module.getName().equalsIgnoreCase(name)) {
+            if (module != null && module.getName() != null && module.getName().equalsIgnoreCase(name)) {
                 return module;
             }
         }
@@ -269,14 +279,17 @@ public class Modules {
 
     public List<Module> getByCategory(Category category) {
         return modules.stream()
-                .filter(m -> m.getCategory() == category)
+                .filter(m -> m != null && m.getCategory() == category)
                 .collect(Collectors.toList());
     }
 
     public void onKey(int key, int action) {
         if (key == GLFW.GLFW_KEY_UNKNOWN || key == 0) return;
+        if (error.ui.clickgui.LiquidClickGui.isOpen) return;
+        net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+        if (mc != null && mc.gui != null && mc.gui.screen() != null) return;
         for (Module module : modules) {
-            if (module.getBind().matches(key)) {
+            if (module != null && module.getBind() != null && module.getBind().matches(key)) {
                 BindMode mode = module.getBind().getMode(0, BindMode.TOGGLE);
                 if (mode == BindMode.HOLD) {
                     if (action == GLFW.GLFW_PRESS) {
@@ -294,8 +307,11 @@ public class Modules {
     }
 
     public void onMouse(int button, int action) {
+        if (error.ui.clickgui.LiquidClickGui.isOpen) return;
+        net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+        if (mc != null && mc.gui != null && mc.gui.screen() != null) return;
         for (Module module : modules) {
-            if (module.getBind().matchesMouse(button)) {
+            if (module != null && module.getBind() != null && module.getBind().matchesMouse(button)) {
                 BindMode mode = module.getBind().getMode(0, BindMode.TOGGLE);
                 if (mode == BindMode.HOLD) {
                     if (action == GLFW.GLFW_PRESS) {

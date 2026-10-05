@@ -78,6 +78,9 @@ public abstract class LivingEntityRendererMixin<T extends LivingEntity, S extend
             }
         }
         collector.submitModel((net.minecraft.client.model.Model) model, state, pose, renderType, light, overlay, color, sprite, outlineColor, crumbling);
+        if (state instanceof net.minecraft.client.renderer.entity.state.AvatarRenderState avatarState && model instanceof net.minecraft.client.model.player.PlayerModel playerModel) {
+            error.cosmetic.geo.CosmeticRenderer.renderCosmetics(collector, pose, avatarState, playerModel, light, overlay);
+        }
     }
 
     @Inject(method = "extractRenderState", at = @At("TAIL"))

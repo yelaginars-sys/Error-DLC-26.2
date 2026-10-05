@@ -15,6 +15,9 @@ public class ClickGui extends Module {
     public ClickGui() {
         super("ClickGUI", "Интерфейс настройки функций и визуального стиля клиента", Category.MISC, GLFW.GLFW_KEY_RIGHT_SHIFT);
         INSTANCE = this;
+        if (this.getBind().isEmpty()) {
+            this.getBind().setSingle(GLFW.GLFW_KEY_RIGHT_SHIFT);
+        }
     }
 
     @Override
