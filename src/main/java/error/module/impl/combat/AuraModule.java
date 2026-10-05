@@ -31,7 +31,7 @@ public class AuraModule extends Module {
     private final SliderSetting fov = slider("FOV", 360.0f, 1.0f, 360.0f, 1.0f);
 
     private final HeaderSetting rotHeader = header("Rotations");
-    private final ModeSetting rotMode = mode("Rotation", "SpookyTime", "SpookyTime", "4pookyTime", "Linear", "Matrix", "Funtime", "Builder");
+    private final ModeSetting rotMode = mode("Rotation", "SpookyTime", "SpookyTime", "4pookyTime", "Linear", "Matrix", "Funtime", "Builder", "Lumen", "Grim", "Snap", "Smooth");
     private final ModeSetting moveFix = mode("Movement Correction", "Silent", "Silent", "Current");
     private final ModeSetting disengageMode = mode("Disengage", "Smooth", "Smooth", "Instant");
     private final ModeSetting sprintReset = mode("Sprint Reset", "Legit", "None", "Legit", "Packet");

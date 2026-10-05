@@ -5,18 +5,20 @@ import error.util.rotation.*;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/**
- */
 public final class RotationRegistry {
     private static final Map<String, AuraRotation> ROTATIONS = new LinkedHashMap<>();
 
     static {
-        register(new LinearRotation());
-        register(new MatrixRotation());
         register(new SpookyTime());
         ROTATIONS.put("4pookytime", get("SpookyTime"));
+        register(new LinearRotation());
+        register(new MatrixRotation());
         register(new FuntimeRotation());
         register(new BuilderRotation());
+        register(new LumenRotation());
+        register(new GrimRotation());
+        register(new SnapRotation());
+        register(new SmoothRotation());
     }
 
     public static void register(AuraRotation rotation) {
