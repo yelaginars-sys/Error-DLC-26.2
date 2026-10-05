@@ -108,19 +108,28 @@ public final class PotionsHud extends HudElement {
                 return;
             }
 
-            // Preview in ChatScreen with 2 dummy effects
-            Render2D.drawHudPill(this.x, this.y, headerW, HEADER_H, 1.0F);
-            Fonts.drawIcon(IconUse.POTION, this.x + 6.0F, this.y + 2.5F, 9.0F, accent);
-            Fonts.drawString(Fonts.SF_MEDIUM, "Potions", this.x + 6.0F + headerIconW + 4.0F, this.y + 2.5F, 9.5F, 0xFFFFFFFF);
-
             List<DummyEffect> dummies = List.of(
                     new DummyEffect(MobEffects.SPEED, "Скорость", " LVL. 2", "01:25"),
                     new DummyEffect(MobEffects.STRENGTH, "Сила", " LVL. 1", "00:45")
             );
 
-            float rowY = this.y + HEADER_H + GAP_Y;
             float maxPreviewW = headerW;
+            for (DummyEffect d : dummies) {
+                float durTextW = Fonts.SF_MEDIUM.getWidth(d.dur, 8.5F);
+                float durW = 4.5F + ICON_SIZE + 3.5F + durTextW + 4.5F;
+                float nameTextW = Fonts.SF_MEDIUM.getWidth(d.name, 8.5F);
+                float lvlTextW = d.lvl.isEmpty() ? 0 : Fonts.SF_MEDIUM.getWidth(d.lvl, 8.0F);
+                float nameW = 5.5F + nameTextW + lvlTextW + 5.5F;
+                float rowTotalW = durW + GAP_X + nameW;
+                if (rowTotalW > maxPreviewW) maxPreviewW = rowTotalW;
+            }
 
+            // Preview in ChatScreen with 2 dummy effects
+            Render2D.drawHudPill(this.x, this.y, maxPreviewW, HEADER_H, 1.0F);
+            Fonts.drawIcon(IconUse.POTION, this.x + 6.0F, this.y + 2.5F, 9.0F, accent);
+            Fonts.drawString(Fonts.SF_MEDIUM, "Potions", this.x + 6.0F + headerIconW + 4.0F, this.y + 2.5F, 9.5F, 0xFFFFFFFF);
+
+            float rowY = this.y + HEADER_H + GAP_Y;
             for (DummyEffect d : dummies) {
                 float durTextW = Fonts.SF_MEDIUM.getWidth(d.dur, 8.5F);
                 float durW = 4.5F + ICON_SIZE + 3.5F + durTextW + 4.5F;
@@ -199,7 +208,7 @@ public final class PotionsHud extends HudElement {
         this.height = totalHeightAnim.getValue();
 
         // 1. Draw Header Pill
-        Render2D.drawHudPill(this.x, this.y, headerW, HEADER_H, 1.0F);
+        Render2D.drawHudPill(this.x, this.y, this.width, HEADER_H, 1.0F);
         Fonts.drawIcon(IconUse.POTION, this.x + 6.0F, this.y + 2.5F, 9.0F, accent);
         Fonts.drawString(Fonts.SF_MEDIUM, "Potions", this.x + 6.0F + headerIconW + 4.0F, this.y + 2.5F, 9.5F, 0xFFFFFFFF);
 

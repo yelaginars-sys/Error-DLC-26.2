@@ -141,7 +141,7 @@ public final class CooldownHud extends HudElement implements error.IMinecraft {
 
         // 1. Draw Header Capsule [ ⏱ Cooldowns ]
         float curY = this.y;
-        Render2D.drawLiquidGlass(this.x, curY, headerW, 14.0F, 4.0F, 1.0F, accent);
+        Render2D.drawLiquidGlass(this.x, curY, this.width, 14.0F, 4.0F, 1.0F, accent);
         Fonts.drawIcon(error.util.render.font.IconUse.CLOCK, this.x + 6.0F, curY + 2.5F, 9.0F, accent);
         Fonts.drawString(Fonts.SF_MEDIUM, headerTitle, this.x + 6.0F + headerIconW + 4.0F, curY + 2.5F, 9.5F, 0xFFFFFFFF);
 

@@ -84,16 +84,18 @@ public final class KeyBindsHud extends HudElement {
             }
 
             // Preview in ChatScreen
-            Render2D.drawHudPill(this.x, this.y, headerW, HEADER_H, 1.0F);
+            String dummyKey = "» V";
+            String dummyName = "Velocity";
+            float keyW = Fonts.SF_MEDIUM.getWidth(dummyKey, 9.0F) + 10.0F;
+            float nameW = Fonts.SF_MEDIUM.getWidth(dummyName, 9.0F) + 10.0F;
+            float maxPreviewW = Math.max(headerW, keyW + GAP_X + nameW);
+
+            Render2D.drawHudPill(this.x, this.y, maxPreviewW, HEADER_H, 1.0F);
             Fonts.drawIcon(IconUse.KEYBOARD, this.x + 6.0F, this.y + 2.5F, 9.0F, accent);
             Fonts.drawString(Fonts.SF_MEDIUM, "Binds", this.x + 6.0F + headerIconW + 4.0F, this.y + 2.5F, 9.5F, 0xFFFFFFFF);
 
             // Dummy row in ChatScreen
             float rowY = this.y + HEADER_H + GAP_Y;
-            String dummyKey = "» V";
-            String dummyName = "Velocity";
-            float keyW = Fonts.SF_MEDIUM.getWidth(dummyKey, 9.0F) + 10.0F;
-            float nameW = Fonts.SF_MEDIUM.getWidth(dummyName, 9.0F) + 10.0F;
 
             Render2D.drawHudPill(this.x, rowY, keyW, ROW_H, 0.7F);
             Fonts.drawString(Fonts.SF_MEDIUM, "»", this.x + 5.0F, rowY + 2.0F, 9.0F, accent);
@@ -102,7 +104,7 @@ public final class KeyBindsHud extends HudElement {
             Render2D.drawHudPill(this.x + keyW + GAP_X, rowY, nameW, ROW_H, 0.7F);
             Fonts.drawString(Fonts.SF_MEDIUM, dummyName, this.x + keyW + GAP_X + 5.0F, rowY + 2.0F, 9.0F, 0xFFFFFFFF);
 
-            this.width = Math.max(headerW, keyW + GAP_X + nameW);
+            this.width = maxPreviewW;
             this.height = HEADER_H + GAP_Y + ROW_H;
             return;
         }
@@ -133,7 +135,7 @@ public final class KeyBindsHud extends HudElement {
         this.height = totalHeightAnim.getValue();
 
         // 1. Draw Header Pill
-        Render2D.drawHudPill(this.x, this.y, headerW, HEADER_H, 1.0F);
+        Render2D.drawHudPill(this.x, this.y, this.width, HEADER_H, 1.0F);
         Fonts.drawIcon(IconUse.KEYBOARD, this.x + 6.0F, this.y + 2.5F, 9.0F, accent);
         Fonts.drawString(Fonts.SF_MEDIUM, "Binds", this.x + 6.0F + headerIconW + 4.0F, this.y + 2.5F, 9.5F, 0xFFFFFFFF);
 

@@ -115,7 +115,7 @@ public final class StaffHud extends HudElement implements error.IMinecraft {
         this.height = totalHeightAnim.getValue();
 
         // 1. Draw Header Capsule [ 🛡 Staff ]
-        Render2D.drawLiquidGlass(this.x, this.y, headerW, HEADER_H, 4.0F, 1.0F, accent);
+        Render2D.drawLiquidGlass(this.x, this.y, this.width, HEADER_H, 4.0F, 1.0F, accent);
         Fonts.drawIcon(IconUse.STAFF, this.x + 6.0F, this.y + 2.5F, 9.0F, accent);
         Fonts.drawString(Fonts.SF_MEDIUM, "Staff", this.x + 6.0F + headerIconW + 4.0F, this.y + 2.5F, 9.5F, 0xFFFFFFFF);
 
