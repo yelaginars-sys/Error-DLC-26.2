@@ -27,6 +27,8 @@ public final class Interface extends Module {
     public final CheckBox staffList        = checkbox("Staff List", true);
     public final CheckBox binds            = checkbox("Binds", true);
     public final CheckBox potions          = checkbox("Potions", true);
+    public final CheckBox arrayList        = checkbox("ArrayList", true);
+    public final CheckBox arrayListSuffix  = checkbox("Суффиксы в ArrayList", true);
     public final CheckBox serverHelper     = checkbox("Server Helper", true);
     public final CheckBox customHotbar     = checkbox("Custom Hotbar", true);
     public final CheckBox customScoreboard = checkbox("Custom Scoreboard", true);
@@ -149,6 +151,13 @@ public final class Interface extends Module {
                 }
             } else if (el instanceof error.ui.hud.impl.StaffHud) {
                 boolean on = active && this.staffList.getValue();
+                el.setEnabled(on);
+                if (!on) {
+                    el.getFadeAnim().setTarget(0.0F);
+                    el.getFadeAnim().setValue(0.0F);
+                }
+            } else if (el instanceof error.ui.hud.impl.ArrayListHud) {
+                boolean on = active && this.arrayList.getValue();
                 el.setEnabled(on);
                 if (!on) {
                     el.getFadeAnim().setTarget(0.0F);

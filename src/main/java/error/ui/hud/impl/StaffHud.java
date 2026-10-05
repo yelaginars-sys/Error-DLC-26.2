@@ -9,28 +9,52 @@ import error.util.client.clients.Theme;
 import error.util.math.Animation;
 import error.util.render.Render2D;
 import error.util.render.font.Fonts;
-import error.util.render.font.IconUse;
 import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.client.multiplayer.PlayerInfo;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.entity.player.Player;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
+import java.util.regex.Pattern;
 
 public final class StaffHud extends HudElement implements error.IMinecraft {
 
-    public record StaffEntry(String name, String role, boolean isVanish, float alpha) {}
+    public enum StaffStatus {
+        VANISHED("VANISH", 0xFFFF4545),
+        NEAR("NEAR", 0xFFFFAA00),
+        SPEC("SPEC", 0xFF55FFFF),
+        STAFF("STAFF", 0xFF55FF55);
 
-    private final Animation totalWidthAnim = new Animation(85.0F, 0.20F);
-    private final Animation totalHeightAnim = new Animation(15.0F, 0.20F);
+        public final String label;
+        public final int color;
 
-    private static final float ROW_H = 14.0F;
-    private static final float HEADER_H = 14.0F;
-    private static final float GAP_X = 2.0F;
-    private static final float GAP_Y = 2.5F;
+        StaffStatus(String label, int color) {
+            this.label = label;
+            this.color = color;
+        }
+    }
+
+    private record Entry(String name, StaffStatus status, Identifier skin, float alpha) {}
+
+    private static final Pattern STAFF_PATTERN = Pattern.compile(
+            ".*((s|ꜱ)upp|mod|der|adm|help|wne|мод|хелп|помо|адм|владе|отри|таф|taf|curat|курато|dev|раз|сапп|yt|ютуб|стажер|сотрудник).*",
+            Pattern.CASE_INSENSITIVE
+    );
+
+    private final Map<String, Animation> anims = new HashMap<>();
+    private final Animation widthAnim = new Animation(85.0F, 0.22F);
+    private final Animation heightAnim = new Animation(18.0F, 0.22F);
+
+    private static final float ROW_H = 15.0F;
+    private static final float HEADER_H = 17.0F;
+    private static final float PILL_R = 7.5F;
+    private static final float AVATAR_SIZE = 9.5F;
+    private static final float GAP_Y = 3.0F;
+
+    private static final Identifier STEVE_SKIN = Identifier.fromNamespaceAndPath("minecraft", "textures/entity/player/wide/steve.png");
 
     public StaffHud() {
-        super("staff_list", "Staff List", 10.0F, 220.0F, 90.0F, 40.0F, true);
+        super("staff_list", "Staffs", 10.0F, 220.0F, 90.0F, 40.0F, true);
     }
 
     @Override
@@ -42,6 +66,21 @@ public final class StaffHud extends HudElement implements error.IMinecraft {
         return super.shouldRender();
     }
 
+    private StaffStatus getPlayerStatus(String name, boolean isSpectator) {
+        if (isSpectator) return StaffStatus.SPEC;
+        if (mc.level != null) {
+            for (Player p : mc.level.players()) {
+                if (p.getScoreboardName().equalsIgnoreCase(name)) {
+                    if (mc.player != null && mc.player.distanceTo(p) <= 50.0F) {
+                        return StaffStatus.NEAR;
+                    }
+                    return StaffStatus.STAFF;
+                }
+            }
+        }
+        return StaffStatus.VANISHED;
+    }
+
     @Override
     public void draw(Render2DEvent event) {
         if (mc.player == null || mc.level == null) return;
@@ -49,103 +88,146 @@ public final class StaffHud extends HudElement implements error.IMinecraft {
         boolean inChat = mc.gui != null && mc.gui.screen() instanceof ChatScreen;
         StaffManager manager = StaffManager.getInstance();
 
-        List<StaffEntry> staffList = new ArrayList<>();
+        Map<String, StaffStatus> currentStaff = new LinkedHashMap<>();
+        Map<String, Identifier> staffSkins = new HashMap<>();
 
         if (mc.getConnection() != null) {
             for (PlayerInfo info : mc.getConnection().getOnlinePlayers()) {
                 String name = info.getProfile().name();
                 String displayName = info.getTabListDisplayName() != null ? info.getTabListDisplayName().getString() : name;
 
-                boolean isManualStaff = manager.isStaff(name);
-                boolean isPrefixStaff = StaffManager.hasStaffPrefix(displayName);
+                boolean isManualStaff = manager != null && manager.isStaff(name);
+                boolean isPrefixStaff = STAFF_PATTERN.matcher(displayName).matches() || STAFF_PATTERN.matcher(name).matches();
                 boolean isSpectator = info.getGameMode() == net.minecraft.world.level.GameType.SPECTATOR;
 
                 if (isManualStaff || isPrefixStaff || isSpectator) {
-                    String role = "STAFF";
-                    String lowerDisp = displayName.toLowerCase(Locale.ROOT);
-                    if (lowerDisp.contains("admin") || lowerDisp.contains("админ")) role = "ADMIN";
-                    else if (lowerDisp.contains("moder") || lowerDisp.contains("модер")) role = "MODER";
-                    else if (lowerDisp.contains("helper") || lowerDisp.contains("хелпер")) role = "HELPER";
-                    else if (isSpectator) role = "SPEC";
-
-                    staffList.add(new StaffEntry(name, role, isSpectator, 1.0F));
+                    currentStaff.put(name, getPlayerStatus(name, isSpectator));
+                    try {
+                        staffSkins.put(name, info.getSkin().body().texturePath());
+                    } catch (Throwable ignored) {
+                        staffSkins.put(name, STEVE_SKIN);
+                    }
                 }
             }
         }
 
-        // Preview in ChatScreen if no staff online
-        if (staffList.isEmpty() && inChat) {
-            staffList.add(new StaffEntry("Adm1n", "SPEC", true, 1.0F));
-            staffList.add(new StaffEntry("Moderator", "ACTIVE", false, 1.0F));
+        // Update animations
+        for (String name : currentStaff.keySet()) {
+            Animation a = anims.computeIfAbsent(name, k -> new Animation(0.0F, 0.20F));
+            a.setTarget(1.0F);
+            a.update();
         }
 
-        int accent = Theme.getAccentColor();
+        anims.entrySet().removeIf(e -> {
+            boolean active = currentStaff.containsKey(e.getKey());
+            if (!active) {
+                e.getValue().setTarget(0.0F);
+                e.getValue().update();
+            }
+            return !active && e.getValue().getValue() <= 0.01F;
+        });
 
-        float headerIconW = Fonts.getIconWidth(IconUse.STAFF, 9.0F);
-        float headerTextW = Fonts.SF_MEDIUM.getWidth("Staff", 9.5F);
-        float headerW = 6.0F + headerIconW + 4.0F + headerTextW + 7.0F;
+        List<Entry> entries = new ArrayList<>();
+        for (Map.Entry<String, StaffStatus> e : currentStaff.entrySet()) {
+            Animation a = anims.get(e.getKey());
+            if (a != null && a.getValue() > 0.01F) {
+                entries.add(new Entry(e.getKey(), e.getValue(), staffSkins.getOrDefault(e.getKey(), STEVE_SKIN), a.getValue()));
+            }
+        }
 
-        if (staffList.isEmpty()) {
+        if (entries.isEmpty() && inChat) {
+            entries.add(new Entry("Adm1n", StaffStatus.VANISHED, STEVE_SKIN, 1.0F));
+            entries.add(new Entry("Moderator", StaffStatus.NEAR, STEVE_SKIN, 1.0F));
+        }
+
+        if (entries.isEmpty()) {
             this.width = 0.0F;
             this.height = 0.0F;
             return;
         }
 
-        float maxRowW = headerW;
-        float totalH = HEADER_H;
+        // Calculate dynamic width
+        float maxRowW = 85.0F;
+        float headerTitleW = Fonts.SF_MEDIUM.getWidth("Staffs", 9.0F);
+        float headerMinW = 20.0F + headerTitleW + 8.0F;
+        maxRowW = Math.max(maxRowW, headerMinW);
 
-        for (StaffEntry entry : staffList) {
-            float nameTextW = Fonts.SF_MEDIUM.getWidth(entry.name, 9.0F);
-            float roleTextW = Fonts.SF_MEDIUM.getWidth(entry.role, 8.5F);
-
-            float leftPillW = 6.0F + 4.0F + 3.0F + nameTextW + 6.0F;
-            float rightPillW = 5.0F + roleTextW + 5.0F;
-            float rowW = leftPillW + GAP_X + rightPillW;
-
-            if (rowW > maxRowW) maxRowW = rowW;
-            totalH += (ROW_H + GAP_Y) * entry.alpha;
+        for (Entry e : entries) {
+            float nameW = Fonts.SF_MEDIUM.getWidth(e.name, 8.5F);
+            float statusW = Fonts.SF_MEDIUM.getWidth(e.status.label, 8.0F);
+            float rowTotalW = (16.0F + nameW + 8.0F) + 6.0F + (statusW + 12.0F);
+            maxRowW = Math.max(maxRowW, rowTotalW);
         }
 
-        totalWidthAnim.setTarget(maxRowW);
-        totalWidthAnim.update();
-        totalHeightAnim.setTarget(totalH);
-        totalHeightAnim.update();
+        float totalH = HEADER_H;
+        for (Entry e : entries) {
+            totalH += (ROW_H + GAP_Y) * e.alpha;
+        }
 
-        this.width = totalWidthAnim.getValue();
-        this.height = totalHeightAnim.getValue();
+        widthAnim.setTarget(maxRowW);
+        widthAnim.update();
+        heightAnim.setTarget(totalH);
+        heightAnim.update();
 
-        // 1. Draw Header Capsule [ 🛡 Staff ]
-        Render2D.drawLiquidGlass(this.x, this.y, this.width, HEADER_H, 4.0F, 1.0F, accent);
-        Fonts.drawIcon(IconUse.STAFF, this.x + 6.0F, this.y + 2.5F, 9.0F, accent);
-        Fonts.drawString(Fonts.SF_MEDIUM, "Staff", this.x + 6.0F + headerIconW + 4.0F, this.y + 2.5F, 9.5F, 0xFFFFFFFF);
+        this.width = widthAnim.getValue();
+        this.height = heightAnim.getValue();
 
-        // 2. Draw Active Staff Rows
-        float currY = this.y + HEADER_H + GAP_Y;
-        for (StaffEntry entry : staffList) {
-            float a = entry.alpha;
-            if (a <= 0.01F) continue;
+        int accent = Theme.getAccentColor();
+        float curX = this.x;
+        float curY = this.y;
 
-            float nameTextW = Fonts.SF_MEDIUM.getWidth(entry.name, 9.0F);
-            float roleTextW = Fonts.SF_MEDIUM.getWidth(entry.role, 8.5F);
+        // 1. Header Capsule
+        int headerBg = ColorUtil.rgba(14, 16, 22, 175);
+        int outlineCol = ColorUtil.rgba(255, 255, 255, 20);
 
-            float leftPillW = 6.0F + 4.0F + 3.0F + nameTextW + 6.0F;
-            float rightPillW = Math.max(5.0F + roleTextW + 5.0F, this.width - leftPillW - GAP_X);
+        Render2D.drawShadow(curX, curY, this.width, HEADER_H, PILL_R, 6.0F, ColorUtil.rgba(0, 0, 0, 80));
+        Render2D.drawRoundedRect(curX, curY, this.width, HEADER_H, PILL_R, headerBg);
+        Render2D.drawRoundedOutline(curX, curY, this.width, HEADER_H, PILL_R, 0.75F, outlineCol);
 
-            int textAlpha = ColorUtil.rgba(255, 255, 255, (int) (255 * a));
-            int roleCol = entry.isVanish ? ColorUtil.rgba(245, 180, 50, (int) (255 * a)) : ColorUtil.withAlpha(accent, (int) (255 * a));
-            int dotCol = entry.isVanish ? ColorUtil.rgba(245, 180, 50, (int) (255 * a)) : ColorUtil.rgba(80, 240, 110, (int) (255 * a));
+        // Energy Glyph "r"
+        Fonts.drawString(Fonts.ENERGY, "r", curX + 6.0F, curY + 2.5F, 10.0F, accent);
+        Fonts.drawString(Fonts.SF_MEDIUM, "Staffs", curX + 19.0F, curY + 3.0F, 9.0F, 0xFFFFFFFF);
 
-            // Left Pill: [ ● PlayerName ]
-            Render2D.drawLiquidGlass(this.x, currY, leftPillW, ROW_H, 3.5F, a, accent);
-            Render2D.drawCircle(this.x + 6.0F, currY + ROW_H * 0.5F, 2.0F, dotCol);
-            Fonts.drawString(Fonts.SF_MEDIUM, entry.name, this.x + 12.0F, currY + 2.5F, 9.0F, textAlpha);
+        curY += HEADER_H + GAP_Y;
 
-            // Right Pill: [ ROLE ]
-            Render2D.drawLiquidGlass(this.x + leftPillW + GAP_X, currY, rightPillW, ROW_H, 3.5F, a, accent);
-            float roleX = this.x + leftPillW + GAP_X + (rightPillW - roleTextW) * 0.5F;
-            Fonts.drawString(Fonts.SF_MEDIUM, entry.role, roleX, currY + 2.5F, 8.5F, roleCol);
+        // 2. Entries: Left capsule (Avatar + Name) and Right capsule (Status)
+        for (Entry e : entries) {
+            if (e.alpha <= 0.01F) continue;
 
-            currY += (ROW_H + GAP_Y) * a;
+            int rowBg = ColorUtil.rgba(14, 16, 22, (int) (165 * e.alpha));
+            int rowOutline = ColorUtil.rgba(255, 255, 255, (int) (18 * e.alpha));
+            int textWhite = ColorUtil.rgba(255, 255, 255, (int) (245 * e.alpha));
+            int statusCol = ColorUtil.withAlpha(e.status.color, (int) (245 * e.alpha));
+
+            float nameW = Fonts.SF_MEDIUM.getWidth(e.name, 8.5F);
+            float statusW = Fonts.SF_MEDIUM.getWidth(e.status.label, 8.0F);
+
+            float leftPillW = 16.0F + nameW + 8.0F;
+            float rightPillW = statusW + 12.0F;
+
+            float rightPillX = curX + this.width - rightPillW;
+
+            // Left Capsule
+            Render2D.drawShadow(curX, curY, leftPillW, ROW_H, PILL_R, 5.0F, ColorUtil.rgba(0, 0, 0, (int) (60 * e.alpha)));
+            Render2D.drawRoundedRect(curX, curY, leftPillW, ROW_H, PILL_R, rowBg);
+            Render2D.drawRoundedOutline(curX, curY, leftPillW, ROW_H, PILL_R, 0.65F, rowOutline);
+
+            // Avatar
+            float avatarY = curY + (ROW_H - AVATAR_SIZE) * 0.5F;
+            Render2D.drawHead(e.skin, curX + 4.5F, avatarY, AVATAR_SIZE, 3.0F, e.alpha);
+
+            // Name
+            Fonts.drawString(Fonts.SF_MEDIUM, e.name, curX + 16.5F, curY + 2.0F, 8.5F, textWhite);
+
+            // Right Capsule
+            Render2D.drawShadow(rightPillX, curY, rightPillW, ROW_H, PILL_R, 5.0F, ColorUtil.rgba(0, 0, 0, (int) (60 * e.alpha)));
+            Render2D.drawRoundedRect(rightPillX, curY, rightPillW, ROW_H, PILL_R, rowBg);
+            Render2D.drawRoundedOutline(rightPillX, curY, rightPillW, ROW_H, PILL_R, 0.65F, rowOutline);
+
+            // Status tag
+            Fonts.drawCenteredString(Fonts.SF_MEDIUM, e.status.label, rightPillX + rightPillW * 0.5F, curY + 2.2F, 8.0F, statusCol);
+
+            curY += (ROW_H + GAP_Y) * e.alpha;
         }
     }
 }

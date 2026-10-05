@@ -9,7 +9,6 @@ import error.util.math.Animation;
 import error.util.render.Render2D;
 import error.util.render.Render2DUtil;
 import error.util.render.font.Fonts;
-import error.util.render.font.IconUse;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.Hud;
 import net.minecraft.client.gui.screens.ChatScreen;
@@ -22,17 +21,19 @@ import net.minecraft.world.effect.MobEffects;
 
 import java.util.*;
 
-public final class PotionsHud extends HudElement {
+public final class PotionsHud extends HudElement implements error.IMinecraft {
+
+    private record EffectEntry(Holder<MobEffect> holder, String name, String lvl, String durationStr, int durationTicks, float alpha) {}
 
     private final Map<Holder<MobEffect>, Animation> anims = new HashMap<>();
-    private final Animation totalWidthAnim = new Animation(70.0F, 0.20F);
-    private final Animation totalHeightAnim = new Animation(15.0F, 0.20F);
+    private final Animation widthAnim = new Animation(85.0F, 0.22F);
+    private final Animation heightAnim = new Animation(18.0F, 0.22F);
 
-    private static final float ROW_H = 14.0F;
-    private static final float HEADER_H = 14.0F;
-    private static final float ICON_SIZE = 8.5F;
-    private static final float GAP_X = 2.0F;
-    private static final float GAP_Y = 2.5F;
+    private static final float ROW_H = 15.0F;
+    private static final float HEADER_H = 17.0F;
+    private static final float PILL_R = 7.5F;
+    private static final float ICON_SIZE = 9.0F;
+    private static final float GAP_Y = 3.0F;
 
     public PotionsHud() {
         super("potions", "Potions", 10.0F, 160.0F, 90.0F, 40.0F, true);
@@ -47,219 +48,185 @@ public final class PotionsHud extends HudElement {
         return super.shouldRender();
     }
 
+    private static String toRoman(int num) {
+        return switch (num) {
+            case 1 -> "I";
+            case 2 -> "II";
+            case 3 -> "III";
+            case 4 -> "IV";
+            case 5 -> "V";
+            case 6 -> "VI";
+            default -> String.valueOf(num);
+        };
+    }
+
     private static String formatDuration(int duration, boolean infinite) {
-        if (infinite || duration >= 32767 * 20) return "inf";
+        if (infinite || duration >= 32767 * 20) return "**:**";
         int secs = Math.max(0, duration / 20);
         int mins = secs / 60;
         int rem = secs % 60;
         return (mins < 10 ? "0" + mins : String.valueOf(mins)) + ":" + (rem < 10 ? "0" + rem : String.valueOf(rem));
     }
 
-    private static final class DummyEffect {
-        final Holder<MobEffect> holder;
-        final String name;
-        final String lvl;
-        final String dur;
-
-        DummyEffect(Holder<MobEffect> holder, String name, String lvl, String dur) {
-            this.holder = holder;
-            this.name = name;
-            this.lvl = lvl;
-            this.dur = dur;
+    private static int getDurationColor(int durationTicks, float alpha) {
+        int a = (int) (240 * alpha);
+        if (durationTicks <= 200) { // <= 10 sec
+            return ColorUtil.rgba(255, 85, 85, a);
+        } else if (durationTicks <= 600) { // <= 30 sec
+            return ColorUtil.rgba(255, 170, 0, a);
         }
+        return ColorUtil.rgba(235, 235, 235, a);
     }
 
     @Override
     public void draw(Render2DEvent event) {
-        boolean inChat = error.IMinecraft.mc.gui != null && error.IMinecraft.mc.gui.screen() instanceof ChatScreen;
+        boolean inChat = mc.gui != null && mc.gui.screen() instanceof ChatScreen;
 
         List<MobEffectInstance> effects = new ArrayList<>();
-        if (error.IMinecraft.mc.player != null) {
-            effects.addAll(error.IMinecraft.mc.player.getActiveEffects());
+        if (mc.player != null) {
+            effects.addAll(mc.player.getActiveEffects());
         }
 
-        Set<Holder<MobEffect>> activeTypes = new HashSet<>();
+        Set<Holder<MobEffect>> activeHolders = new HashSet<>();
         for (MobEffectInstance inst : effects) {
-            activeTypes.add(inst.getEffect());
+            activeHolders.add(inst.getEffect());
             Animation a = anims.computeIfAbsent(inst.getEffect(), k -> new Animation(0.0F, 0.20F));
             a.setTarget(1.0F);
             a.update();
         }
 
-        for (Map.Entry<Holder<MobEffect>, Animation> entry : anims.entrySet()) {
-            if (!activeTypes.contains(entry.getKey())) {
-                entry.getValue().setTarget(0.0F);
-                entry.getValue().update();
+        anims.entrySet().removeIf(e -> {
+            boolean active = activeHolders.contains(e.getKey());
+            if (!active) {
+                e.getValue().setTarget(0.0F);
+                e.getValue().update();
+            }
+            return !active && e.getValue().getValue() <= 0.01F;
+        });
+
+        List<EffectEntry> entries = new ArrayList<>();
+        for (MobEffectInstance inst : effects) {
+            Animation a = anims.get(inst.getEffect());
+            if (a != null && a.getValue() > 0.01F) {
+                String durStr = formatDuration(inst.getDuration(), inst.isInfiniteDuration());
+                String nameStr = inst.getEffect().value().getDisplayName().getString();
+                int amp = inst.getAmplifier() + 1;
+                String lvlStr = amp > 1 ? " " + toRoman(amp) : "";
+                entries.add(new EffectEntry(inst.getEffect(), nameStr, lvlStr, durStr, inst.getDuration(), a.getValue()));
             }
         }
-        anims.entrySet().removeIf(e -> !activeTypes.contains(e.getKey()) && e.getValue().getValue() <= 0.01F);
 
-        int accent = Theme.getAccentColor();
-        GuiGraphicsExtractor extractor = event.getGuiGraphicsExtractor();
+        if (entries.isEmpty() && inChat) {
+            entries.add(new EffectEntry(MobEffects.STRENGTH, "Сила", " II", "01:45", 2100, 1.0F));
+            entries.add(new EffectEntry(MobEffects.SPEED, "Скорость", " II", "00:25", 500, 1.0F));
+        }
 
-        float headerIconW = Fonts.getIconWidth(IconUse.POTION, 9.0F);
-        float headerTextW = Fonts.SF_MEDIUM.getWidth("Potions", 9.5F);
-        float headerW = 6.0F + headerIconW + 4.0F + headerTextW + 7.0F;
-
-        if (effects.isEmpty()) {
-            if (!inChat) {
-                this.width = 0;
-                this.height = 0;
-                return;
-            }
-
-            List<DummyEffect> dummies = List.of(
-                    new DummyEffect(MobEffects.SPEED, "Скорость", " LVL. 2", "01:25"),
-                    new DummyEffect(MobEffects.STRENGTH, "Сила", " LVL. 1", "00:45")
-            );
-
-            float maxPreviewW = headerW;
-            for (DummyEffect d : dummies) {
-                float durTextW = Fonts.SF_MEDIUM.getWidth(d.dur, 8.5F);
-                float durW = 4.5F + ICON_SIZE + 3.5F + durTextW + 4.5F;
-                float nameTextW = Fonts.SF_MEDIUM.getWidth(d.name, 8.5F);
-                float lvlTextW = d.lvl.isEmpty() ? 0 : Fonts.SF_MEDIUM.getWidth(d.lvl, 8.0F);
-                float nameW = 5.5F + nameTextW + lvlTextW + 5.5F;
-                float rowTotalW = durW + GAP_X + nameW;
-                if (rowTotalW > maxPreviewW) maxPreviewW = rowTotalW;
-            }
-
-            // Preview in ChatScreen with 2 dummy effects
-            Render2D.drawHudPill(this.x, this.y, maxPreviewW, HEADER_H, 1.0F);
-            Fonts.drawIcon(IconUse.POTION, this.x + 6.0F, this.y + 2.5F, 9.0F, accent);
-            Fonts.drawString(Fonts.SF_MEDIUM, "Potions", this.x + 6.0F + headerIconW + 4.0F, this.y + 2.5F, 9.5F, 0xFFFFFFFF);
-
-            float rowY = this.y + HEADER_H + GAP_Y;
-            for (DummyEffect d : dummies) {
-                float durTextW = Fonts.SF_MEDIUM.getWidth(d.dur, 8.5F);
-                float durW = 4.5F + ICON_SIZE + 3.5F + durTextW + 4.5F;
-
-                float nameTextW = Fonts.SF_MEDIUM.getWidth(d.name, 8.5F);
-                float lvlTextW = d.lvl.isEmpty() ? 0 : Fonts.SF_MEDIUM.getWidth(d.lvl, 8.0F);
-                float nameW = 5.5F + nameTextW + lvlTextW + 5.5F;
-
-                // Left Pill
-                Render2D.drawHudPill(this.x, rowY, durW, ROW_H, 0.85F);
-
-                // Effect Logo/Sprite
-                Identifier sprite = Hud.getMobEffectSprite(d.holder);
-                if (extractor != null && sprite != null) {
-                    Render2DUtil.flush();
-                    float iconX = this.x + 4.5F;
-                    float iconY = rowY + (ROW_H - ICON_SIZE) / 2.0F;
-                    try {
-                        extractor.blitSprite(RenderPipelines.GUI_TEXTURED, sprite, (int) iconX, (int) iconY, (int) Math.round(ICON_SIZE), (int) Math.round(ICON_SIZE), 0xFFFFFFFF);
-                    } catch (Throwable t) {
-                        extractor.blitSprite(RenderPipelines.GUI_TEXTURED, sprite, (int) iconX, (int) iconY, (int) Math.round(ICON_SIZE), (int) Math.round(ICON_SIZE));
-                    }
-                }
-
-                Fonts.drawString(Fonts.SF_MEDIUM, d.dur, this.x + 4.5F + ICON_SIZE + 3.5F, rowY + 2.5F, 8.5F, 0xFFFFFFFF);
-
-                // Right Pill
-                Render2D.drawHudPill(this.x + durW + GAP_X, rowY, nameW, ROW_H, 0.85F);
-                Fonts.drawString(Fonts.SF_MEDIUM, d.name, this.x + durW + GAP_X + 5.5F, rowY + 2.5F, 8.5F, 0xFFFFFFFF);
-                if (!d.lvl.isEmpty()) {
-                    Fonts.drawString(Fonts.SF_MEDIUM, d.lvl, this.x + durW + GAP_X + 5.5F + nameTextW, rowY + 2.8F, 8.0F, accent);
-                }
-
-                float rowTotalW = durW + GAP_X + nameW;
-                if (rowTotalW > maxPreviewW) maxPreviewW = rowTotalW;
-                rowY += ROW_H + GAP_Y;
-            }
-
-            this.width = maxPreviewW;
-            this.height = (rowY - this.y) - GAP_Y;
+        if (entries.isEmpty()) {
+            this.width = 0.0F;
+            this.height = 0.0F;
             return;
         }
 
-        // Calculate size
-        float maxRowW = headerW;
-        float totalH = HEADER_H;
+        // Calculate dynamic width
+        float maxRowW = 85.0F;
+        float headerTitleW = Fonts.SF_MEDIUM.getWidth("Potions", 9.0F);
+        float headerMinW = 20.0F + headerTitleW + 8.0F;
+        maxRowW = Math.max(maxRowW, headerMinW);
 
-        for (MobEffectInstance inst : effects) {
-            Animation anim = anims.get(inst.getEffect());
-            float a = anim != null ? anim.getValue() : 1.0F;
-            if (a <= 0.01F) continue;
-
-            String durStr = formatDuration(inst.getDuration(), inst.isInfiniteDuration());
-            String nameStr = inst.getEffect().value().getDisplayName().getString();
-            int amp = inst.getAmplifier() + 1;
-            String lvlStr = amp > 1 ? " LVL. " + amp : "";
-
-            float durTextW = Fonts.SF_MEDIUM.getWidth(durStr, 8.5F);
-            float durW = 4.5F + ICON_SIZE + 3.5F + durTextW + 4.5F;
-
-            float nameTextW = Fonts.SF_MEDIUM.getWidth(nameStr, 8.5F);
-            float lvlTextW = lvlStr.isEmpty() ? 0 : Fonts.SF_MEDIUM.getWidth(lvlStr, 8.0F);
-            float nameW = 5.5F + nameTextW + lvlTextW + 5.5F;
-
-            float rowW = durW + GAP_X + nameW;
-            if (rowW > maxRowW) maxRowW = rowW;
-            totalH += (ROW_H + GAP_Y) * a;
+        for (EffectEntry e : entries) {
+            float nameW = Fonts.SF_MEDIUM.getWidth(e.name + e.lvl, 8.5F);
+            float durW = Fonts.SF_MEDIUM.getWidth(e.durationStr, 8.0F);
+            float rowTotalW = (16.0F + nameW + 8.0F) + 6.0F + (durW + 12.0F);
+            maxRowW = Math.max(maxRowW, rowTotalW);
         }
 
-        totalWidthAnim.setTarget(maxRowW);
-        totalWidthAnim.update();
-        totalHeightAnim.setTarget(totalH);
-        totalHeightAnim.update();
+        float totalH = HEADER_H;
+        for (EffectEntry e : entries) {
+            totalH += (ROW_H + GAP_Y) * e.alpha;
+        }
 
-        this.width = totalWidthAnim.getValue();
-        this.height = totalHeightAnim.getValue();
+        widthAnim.setTarget(maxRowW);
+        widthAnim.update();
+        heightAnim.setTarget(totalH);
+        heightAnim.update();
 
-        // 1. Draw Header Pill
-        Render2D.drawHudPill(this.x, this.y, this.width, HEADER_H, 1.0F);
-        Fonts.drawIcon(IconUse.POTION, this.x + 6.0F, this.y + 2.5F, 9.0F, accent);
-        Fonts.drawString(Fonts.SF_MEDIUM, "Potions", this.x + 6.0F + headerIconW + 4.0F, this.y + 2.5F, 9.5F, 0xFFFFFFFF);
+        this.width = widthAnim.getValue();
+        this.height = heightAnim.getValue();
 
-        // 2. Draw Active Effect Rows
-        float currY = this.y + HEADER_H + GAP_Y;
-        for (MobEffectInstance inst : effects) {
-            Animation anim = anims.get(inst.getEffect());
-            float a = anim != null ? anim.getValue() : 1.0F;
-            if (a <= 0.01F) continue;
+        int accent = Theme.getAccentColor();
+        float curX = this.x;
+        float curY = this.y;
 
-            String durStr = formatDuration(inst.getDuration(), inst.isInfiniteDuration());
-            String nameStr = inst.getEffect().value().getDisplayName().getString();
-            int amp = inst.getAmplifier() + 1;
-            String lvlStr = amp > 1 ? " LVL. " + amp : "";
+        // 1. Header Capsule
+        int headerBg = ColorUtil.rgba(14, 16, 22, 175);
+        int outlineCol = ColorUtil.rgba(255, 255, 255, 20);
 
-            float durTextW = Fonts.SF_MEDIUM.getWidth(durStr, 8.5F);
-            float durW = 4.5F + ICON_SIZE + 3.5F + durTextW + 4.5F;
+        Render2D.drawShadow(curX, curY, this.width, HEADER_H, PILL_R, 6.0F, ColorUtil.rgba(0, 0, 0, 80));
+        Render2D.drawRoundedRect(curX, curY, this.width, HEADER_H, PILL_R, headerBg);
+        Render2D.drawRoundedOutline(curX, curY, this.width, HEADER_H, PILL_R, 0.75F, outlineCol);
 
-            float nameTextW = Fonts.SF_MEDIUM.getWidth(nameStr, 8.5F);
-            float lvlTextW = lvlStr.isEmpty() ? 0 : Fonts.SF_MEDIUM.getWidth(lvlStr, 8.0F);
-            float nameW = 5.5F + nameTextW + lvlTextW + 5.5F;
+        // Energy Glyph "q"
+        Fonts.drawString(Fonts.ENERGY, "q", curX + 6.0F, curY + 2.5F, 10.0F, accent);
+        Fonts.drawString(Fonts.SF_MEDIUM, "Potions", curX + 19.0F, curY + 3.0F, 9.0F, 0xFFFFFFFF);
 
-            int textAlpha = ColorUtil.rgba(255, 255, 255, (int) (255 * a));
-            int accentAlpha = ColorUtil.withAlpha(accent, (int) (255 * a));
+        curY += HEADER_H + GAP_Y;
 
-            // Left Pill: [ (Logo) MM:SS ]
-            Render2D.drawHudPill(this.x, currY, durW, ROW_H, a);
+        GuiGraphicsExtractor extractor = event.getGuiGraphicsExtractor();
 
-            // Effect Logo / Sprite
-            Identifier sprite = Hud.getMobEffectSprite(inst.getEffect());
+        // 2. Entries: Left capsule (Icon + Name + Level) and Right capsule (Duration)
+        for (EffectEntry e : entries) {
+            if (e.alpha <= 0.01F) continue;
+
+            int rowBg = ColorUtil.rgba(14, 16, 22, (int) (165 * e.alpha));
+            int rowOutline = ColorUtil.rgba(255, 255, 255, (int) (18 * e.alpha));
+            int textWhite = ColorUtil.rgba(255, 255, 255, (int) (245 * e.alpha));
+            int durColor = getDurationColor(e.durationTicks, e.alpha);
+
+            float nameW = Fonts.SF_MEDIUM.getWidth(e.name, 8.5F);
+            float lvlW = e.lvl.isEmpty() ? 0 : Fonts.SF_MEDIUM.getWidth(e.lvl, 8.0F);
+            float durTextW = Fonts.SF_MEDIUM.getWidth(e.durationStr, 8.0F);
+
+            float leftPillW = 16.0F + nameW + lvlW + 8.0F;
+            float rightPillW = durTextW + 12.0F;
+
+            float rightPillX = curX + this.width - rightPillW;
+
+            // Left Capsule
+            Render2D.drawShadow(curX, curY, leftPillW, ROW_H, PILL_R, 5.0F, ColorUtil.rgba(0, 0, 0, (int) (60 * e.alpha)));
+            Render2D.drawRoundedRect(curX, curY, leftPillW, ROW_H, PILL_R, rowBg);
+            Render2D.drawRoundedOutline(curX, curY, leftPillW, ROW_H, PILL_R, 0.65F, rowOutline);
+
+            // Effect Icon
+            Identifier sprite = Hud.getMobEffectSprite(e.holder);
             if (extractor != null && sprite != null) {
                 Render2DUtil.flush();
-                float iconX = this.x + 4.5F;
-                float iconY = currY + (ROW_H - ICON_SIZE) / 2.0F;
+                float iconX = curX + 4.5F;
+                float iconY = curY + (ROW_H - ICON_SIZE) / 2.0F;
+                int iconTint = ColorUtil.rgba(255, 255, 255, (int) (240 * e.alpha));
                 try {
-                    extractor.blitSprite(RenderPipelines.GUI_TEXTURED, sprite, (int) iconX, (int) iconY, (int) Math.round(ICON_SIZE), (int) Math.round(ICON_SIZE), textAlpha);
+                    extractor.blitSprite(RenderPipelines.GUI_TEXTURED, sprite, (int) iconX, (int) iconY, (int) Math.round(ICON_SIZE), (int) Math.round(ICON_SIZE), iconTint);
                 } catch (Throwable t) {
                     extractor.blitSprite(RenderPipelines.GUI_TEXTURED, sprite, (int) iconX, (int) iconY, (int) Math.round(ICON_SIZE), (int) Math.round(ICON_SIZE));
                 }
+            } else {
+                Render2D.drawCircle(curX + 8.0F, curY + ROW_H * 0.5F, 2.0F, ColorUtil.withAlpha(accent, (int) (230 * e.alpha)));
             }
 
-            Fonts.drawString(Fonts.SF_MEDIUM, durStr, this.x + 4.5F + ICON_SIZE + 3.5F, currY + 2.5F, 8.5F, textAlpha);
-
-            // Right Pill: [ Name LVL. X ]
-            Render2D.drawHudPill(this.x + durW + GAP_X, currY, nameW, ROW_H, a);
-            Fonts.drawString(Fonts.SF_MEDIUM, nameStr, this.x + durW + GAP_X + 5.5F, currY + 2.5F, 8.5F, textAlpha);
-            if (!lvlStr.isEmpty()) {
-                Fonts.drawString(Fonts.SF_MEDIUM, lvlStr, this.x + durW + GAP_X + 5.5F + nameTextW, currY + 2.8F, 8.0F, accentAlpha);
+            // Name + Level
+            Fonts.drawString(Fonts.SF_MEDIUM, e.name, curX + 16.0F, curY + 2.0F, 8.5F, textWhite);
+            if (!e.lvl.isEmpty()) {
+                Fonts.drawString(Fonts.SF_MEDIUM, e.lvl, curX + 16.0F + nameW, curY + 2.2F, 8.0F, ColorUtil.withAlpha(accent, (int) (240 * e.alpha)));
             }
 
-            currY += (ROW_H + GAP_Y) * a;
+            // Right Capsule
+            Render2D.drawShadow(rightPillX, curY, rightPillW, ROW_H, PILL_R, 5.0F, ColorUtil.rgba(0, 0, 0, (int) (60 * e.alpha)));
+            Render2D.drawRoundedRect(rightPillX, curY, rightPillW, ROW_H, PILL_R, rowBg);
+            Render2D.drawRoundedOutline(rightPillX, curY, rightPillW, ROW_H, PILL_R, 0.65F, rowOutline);
+
+            // Duration text centered in right capsule
+            Fonts.drawCenteredString(Fonts.SF_MEDIUM, e.durationStr, rightPillX + rightPillW * 0.5F, curY + 2.2F, 8.0F, durColor);
+
+            curY += (ROW_H + GAP_Y) * e.alpha;
         }
     }
 }

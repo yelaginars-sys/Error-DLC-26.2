@@ -53,6 +53,7 @@ public final class HudManager implements IMinecraft {
         register(new CustomScoreboardHud());
         register(new CooldownHud());
         register(new StaffHud());
+        register(new ArrayListHud());
     }
 
     public static HudManager getInstance() {
@@ -86,9 +87,23 @@ public final class HudManager implements IMinecraft {
         return mc.mouseHandler.ypos() / (double) mc.getWindow().getGuiScale();
     }
 
+    private long lastFrameTime = 0L;
+    private final Animation snapAlphaX = new Animation(0.0F, 0.15F);
+    private final Animation snapAlphaY = new Animation(0.0F, 0.15F);
+
     @EventTarget(priority = 500)
     public void onRender2D(Render2DEvent event) {
         if (mc == null || mc.getWindow() == null || error.module.impl.misc.UnHook.unhooked) return;
+
+        long currentTime = System.nanoTime();
+        if (lastFrameTime <= 0L) lastFrameTime = currentTime;
+        float dt = (currentTime - lastFrameTime) / 1_000_000_000.0F;
+        lastFrameTime = currentTime;
+        dt = Math.min(Math.max(dt, 0.001F), 0.05F);
+
+        for (HudElement element : elements) {
+            element.updatePhysics(dt);
+        }
 
         boolean isEditMode = isDraggableScreenOpen();
         double mouseX = getMouseX();
@@ -105,15 +120,26 @@ public final class HudManager implements IMinecraft {
             if (showGuidelines) {
                 float screenW = mc.getWindow().getGuiScaledWidth();
                 float screenH = mc.getWindow().getGuiScaledHeight();
-                int whiteLine = ColorUtil.rgba(255, 255, 255, 110);
 
-                if (activeSnapX >= 0) {
-                    Render2D.drawRoundedRect(activeSnapX - 0.5F, 0.0F, 1.0F, screenH, 0.5F, whiteLine);
+                snapAlphaX.setTarget(activeSnapX >= 0 ? 1.0F : 0.0F);
+                snapAlphaX.update();
+                snapAlphaY.setTarget(activeSnapY >= 0 ? 1.0F : 0.0F);
+                snapAlphaY.update();
+
+                if (snapAlphaX.getValue() > 0.01F && activeSnapX >= 0) {
+                    int lineCol = ColorUtil.rgba(255, 255, 255, (int) (140 * snapAlphaX.getValue()));
+                    Render2D.drawRoundedRect(activeSnapX - 0.5F, 0.0F, 1.0F, screenH, 0.5F, lineCol);
                 }
-                if (activeSnapY >= 0) {
-                    Render2D.drawRoundedRect(0.0F, activeSnapY - 0.5F, screenW, 1.0F, 0.5F, whiteLine);
+                if (snapAlphaY.getValue() > 0.01F && activeSnapY >= 0) {
+                    int lineCol = ColorUtil.rgba(255, 255, 255, (int) (140 * snapAlphaY.getValue()));
+                    Render2D.drawRoundedRect(0.0F, activeSnapY - 0.5F, screenW, 1.0F, 0.5F, lineCol);
                 }
             }
+        } else {
+            snapAlphaX.setTarget(0.0F);
+            snapAlphaX.setValue(0.0F);
+            snapAlphaY.setTarget(0.0F);
+            snapAlphaY.setValue(0.0F);
         }
 
         for (HudElement element : elements) {
@@ -191,29 +217,21 @@ public final class HudManager implements IMinecraft {
         desiredY = Math.max(0.0F, Math.min(screenH - target.getHeight(), desiredY));
 
         if (collisionsEnabled) {
-            float originalX = target.getX();
-            float originalY = target.getY();
+            float originalX = target.getTargetX();
+            float originalY = target.getTargetY();
 
-            target.setX(desiredX);
-            if (checkOverlapBoxes(target.getX(), target.getY(), target.getWidth(), target.getHeight(), target)) {
-                target.setX(originalX);
+            target.setTargetX(desiredX);
+            if (checkOverlapBoxes(target.getTargetX(), target.getTargetY(), target.getWidth(), target.getHeight(), target)) {
+                target.setTargetX(originalX);
             }
 
-            target.setY(desiredY);
-            if (checkOverlapBoxes(target.getX(), target.getY(), target.getWidth(), target.getHeight(), target)) {
-                target.setY(originalY);
+            target.setTargetY(desiredY);
+            if (checkOverlapBoxes(target.getTargetX(), target.getTargetY(), target.getWidth(), target.getHeight(), target)) {
+                target.setTargetY(originalY);
             }
         } else {
-            // Smooth lerp movement towards target position
-            float smoothX = target.getX() + (desiredX - target.getX()) * 0.45F;
-            float smoothY = target.getY() + (desiredY - target.getY()) * 0.45F;
-
-            // Direct snap if close enough to prevent infinite micro-adjustments
-            if (Math.abs(desiredX - smoothX) < 0.1F) smoothX = desiredX;
-            if (Math.abs(desiredY - smoothY) < 0.1F) smoothY = desiredY;
-
-            target.setX(smoothX);
-            target.setY(smoothY);
+            target.setTargetX(desiredX);
+            target.setTargetY(desiredY);
         }
     }
 

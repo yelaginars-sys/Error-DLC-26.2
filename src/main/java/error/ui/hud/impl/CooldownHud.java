@@ -9,6 +9,7 @@ import error.util.math.Animation;
 import error.util.render.Render2D;
 import error.util.render.Render2DUtil;
 import error.util.render.font.Fonts;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -30,22 +31,20 @@ public final class CooldownHud extends HudElement implements error.IMinecraft {
             new CooldownDef(Items.SHIELD, "Щит", 100),
             new CooldownDef(Items.CROSSBOW, "Арбалет", 100),
             new CooldownDef(Items.WIND_CHARGE, "Ветряной заряд", 100),
-            new CooldownDef(Items.GOAT_HORN, "Козий рог", 100),
-            new CooldownDef(Items.ENDER_EYE, "Дезориентация", 160),
-            new CooldownDef(Items.NETHERITE_SCRAP, "Трапка", 200),
-            new CooldownDef(Items.DRIED_KELP, "Пласт", 100),
-            new CooldownDef(Items.SUGAR, "Явная пыль", 100),
-            new CooldownDef(Items.SNOWBALL, "Ком снега", 60),
-            new CooldownDef(Items.PHANTOM_MEMBRANE, "Божья аура", 200),
-            new CooldownDef(Items.NETHER_STAR, "Стан", 240),
-            new CooldownDef(Items.PRISMARINE_SHARD, "Взрывная трапка", 160),
-            new CooldownDef(Items.FIRE_CHARGE, "Взрывная штучка", 160),
-            new CooldownDef(Items.POTION, "Исцеление", 60)
+            new CooldownDef(Items.GOAT_HORN, "Козий рог", 100)
     );
+
+    private record Entry(CooldownDef def, String timeStr, float seconds, float alpha) {}
 
     private final Map<Item, Animation> anims = new LinkedHashMap<>();
     private final Map<Item, Float> activeProgress = new HashMap<>();
-    private final Animation widthAnim = new Animation(80.0F, 0.20F);
+    private final Animation widthAnim = new Animation(85.0F, 0.22F);
+    private final Animation heightAnim = new Animation(18.0F, 0.22F);
+
+    private static final float ROW_H = 15.0F;
+    private static final float HEADER_H = 17.0F;
+    private static final float PILL_R = 7.5F;
+    private static final float GAP_Y = 3.0F;
 
     public CooldownHud() {
         super("cooldowns", "Cooldowns", 20.0F, 100.0F, 90.0F, 20.0F, true);
@@ -61,10 +60,20 @@ public final class CooldownHud extends HudElement implements error.IMinecraft {
     }
 
     private static String formatTime(float seconds) {
-        int total = Math.max(0, (int) Math.ceil(seconds));
+        int total = (int) Math.ceil(Math.max(seconds, 0.0F));
         int min = total / 60;
         int sec = total % 60;
-        return (min < 10 ? "0" + min : String.valueOf(min)) + ":" + (sec < 10 ? "0" + sec : String.valueOf(sec));
+        return String.format("%d:%02dс", min, sec);
+    }
+
+    private static int getTimeColor(float seconds, float alpha) {
+        int a = (int) (240 * alpha);
+        if (seconds <= 1.5F) {
+            return ColorUtil.rgba(255, 85, 85, a);
+        } else if (seconds <= 3.0F) {
+            return ColorUtil.rgba(255, 170, 0, a);
+        }
+        return ColorUtil.rgba(235, 235, 235, a);
     }
 
     @Override
@@ -73,7 +82,6 @@ public final class CooldownHud extends HudElement implements error.IMinecraft {
 
         boolean inChat = mc.gui != null && mc.gui.screen() instanceof ChatScreen;
 
-        // Poll cooldowns from player
         activeProgress.clear();
         for (CooldownDef def : TRACKED_ITEMS) {
             ItemStack stack = new ItemStack(def.item);
@@ -83,117 +91,127 @@ public final class CooldownHud extends HudElement implements error.IMinecraft {
             }
         }
 
-        // In ChatScreen, mock entries if empty for easy dragging and preview
         if (activeProgress.isEmpty() && inChat) {
             activeProgress.put(Items.ENDER_PEARL, 0.65F);
-            activeProgress.put(Items.GOLDEN_APPLE, 0.40F);
+            activeProgress.put(Items.GOLDEN_APPLE, 0.35F);
         }
 
-        // Update entry animations
         for (CooldownDef def : TRACKED_ITEMS) {
-            Animation anim = anims.computeIfAbsent(def.item, i -> new Animation(0.0F, 0.18F));
+            Animation anim = anims.computeIfAbsent(def.item, i -> new Animation(0.0F, 0.20F));
             boolean active = activeProgress.containsKey(def.item);
             anim.setTarget(active ? 1.0F : 0.0F);
             anim.update();
         }
 
-        // Count visible entries
-        List<CooldownDef> visibleDefs = new ArrayList<>();
-        float maxEntryW = 75.0F;
-
+        List<Entry> entries = new ArrayList<>();
         for (CooldownDef def : TRACKED_ITEMS) {
             Animation anim = anims.get(def.item);
             if (anim != null && anim.getValue() > 0.01F) {
-                visibleDefs.add(def);
-
                 float prog = activeProgress.getOrDefault(def.item, 0.0F);
                 float sec = (prog * def.defaultTicks) / 20.0F;
-                String timeStr = formatTime(sec);
-
-                float timeW = Fonts.SF_MEDIUM.getWidth(timeStr, 8.5F);
-                float nameW = Fonts.SF_MEDIUM.getWidth(def.name, 9.0F);
-                float leftPillW = 14.0F + timeW + 4.0F;
-                float rightPillW = nameW + 8.0F;
-                float entryW = leftPillW + 2.0F + rightPillW;
-                if (entryW > maxEntryW) maxEntryW = entryW;
+                entries.add(new Entry(def, formatTime(sec), sec, anim.getValue()));
             }
         }
 
-        if (visibleDefs.isEmpty() && !inChat) {
+        if (entries.isEmpty()) {
             this.width = 0.0F;
             this.height = 0.0F;
             return;
         }
 
-        // Header Dimensions
-        String headerTitle = "Cooldowns";
-        float headerIconW = Fonts.getIconWidth(error.util.render.font.IconUse.CLOCK, 9.0F);
-        float headerTextW = Fonts.SF_MEDIUM.getWidth(headerTitle, 9.5F);
-        float headerW = 6.0F + headerIconW + 4.0F + headerTextW + 7.0F;
+        // Calculate dynamic width
+        float maxRowW = 85.0F;
+        float headerTitleW = Fonts.SF_MEDIUM.getWidth("Cooldowns", 9.0F);
+        float headerMinW = 20.0F + headerTitleW + 8.0F;
+        maxRowW = Math.max(maxRowW, headerMinW);
 
-        float targetWidth = Math.max(headerW, maxEntryW);
-        widthAnim.setTarget(targetWidth);
+        for (Entry e : entries) {
+            float nameW = Fonts.SF_MEDIUM.getWidth(e.def.name, 8.5F);
+            float timeW = Fonts.SF_MEDIUM.getWidth(e.timeStr, 8.0F);
+            float rowTotalW = (16.0F + nameW + 8.0F) + 6.0F + (timeW + 12.0F);
+            maxRowW = Math.max(maxRowW, rowTotalW);
+        }
+
+        float totalH = HEADER_H;
+        for (Entry e : entries) {
+            totalH += (ROW_H + GAP_Y) * e.alpha;
+        }
+
+        widthAnim.setTarget(maxRowW);
         widthAnim.update();
+        heightAnim.setTarget(totalH);
+        heightAnim.update();
 
         this.width = widthAnim.getValue();
+        this.height = heightAnim.getValue();
 
         int accent = Theme.getAccentColor();
-
-        // 1. Draw Header Capsule [ ⏱ Cooldowns ]
+        float curX = this.x;
         float curY = this.y;
-        Render2D.drawLiquidGlass(this.x, curY, this.width, 14.0F, 4.0F, 1.0F, accent);
-        Fonts.drawIcon(error.util.render.font.IconUse.CLOCK, this.x + 6.0F, curY + 2.5F, 9.0F, accent);
-        Fonts.drawString(Fonts.SF_MEDIUM, headerTitle, this.x + 6.0F + headerIconW + 4.0F, curY + 2.5F, 9.5F, 0xFFFFFFFF);
 
-        curY += 16.0F;
+        // 1. Header Capsule
+        int headerBg = ColorUtil.rgba(14, 16, 22, 175);
+        int outlineCol = ColorUtil.rgba(255, 255, 255, 20);
 
-        var extractor = event.getGuiGraphicsExtractor();
+        Render2D.drawShadow(curX, curY, this.width, HEADER_H, PILL_R, 6.0F, ColorUtil.rgba(0, 0, 0, 80));
+        Render2D.drawRoundedRect(curX, curY, this.width, HEADER_H, PILL_R, headerBg);
+        Render2D.drawRoundedOutline(curX, curY, this.width, HEADER_H, PILL_R, 0.75F, outlineCol);
 
-        // 2. Draw each active cooldown entry
-        for (CooldownDef def : visibleDefs) {
-            Animation anim = anims.get(def.item);
-            float a = anim.getValue();
-            if (a <= 0.01F) continue;
+        // Energy Glyph "s"
+        Fonts.drawString(Fonts.ENERGY, "s", curX + 6.0F, curY + 2.5F, 10.0F, accent);
+        Fonts.drawString(Fonts.SF_MEDIUM, "Cooldowns", curX + 19.0F, curY + 3.0F, 9.0F, 0xFFFFFFFF);
 
-            float prog = activeProgress.getOrDefault(def.item, 0.0F);
-            float sec = (prog * def.defaultTicks) / 20.0F;
-            String timeStr = formatTime(sec);
+        curY += HEADER_H + GAP_Y;
 
-            float timeW = Fonts.SF_MEDIUM.getWidth(timeStr, 8.5F);
-            float nameW = Fonts.SF_MEDIUM.getWidth(def.name, 9.0F);
+        GuiGraphicsExtractor extractor = event.getGuiGraphicsExtractor();
 
-            float leftPillW = 14.0F + timeW + 4.0F;
-            float rightPillW = Math.max(nameW + 8.0F, this.width - leftPillW - 2.0F);
-            float rowH = 14.0F;
+        // 2. Entries: Left capsule (Item + Name) and Right capsule (Time)
+        for (Entry e : entries) {
+            if (e.alpha <= 0.01F) continue;
 
-            // Left Pill: Item icon + Time
-            Render2D.drawLiquidGlass(this.x, curY, leftPillW, rowH, 3.5F, a, accent);
+            int rowBg = ColorUtil.rgba(14, 16, 22, (int) (165 * e.alpha));
+            int rowOutline = ColorUtil.rgba(255, 255, 255, (int) (18 * e.alpha));
+            int textWhite = ColorUtil.rgba(255, 255, 255, (int) (245 * e.alpha));
+            int timeCol = getTimeColor(e.seconds, e.alpha);
 
-            // Right Pill: Name
-            Render2D.drawLiquidGlass(this.x + leftPillW + 2.0F, curY, rightPillW, rowH, 3.5F, a, accent);
+            float nameW = Fonts.SF_MEDIUM.getWidth(e.def.name, 8.5F);
+            float timeW = Fonts.SF_MEDIUM.getWidth(e.timeStr, 8.0F);
 
-            // Render Item Icon in left pill
+            float leftPillW = 16.0F + nameW + 8.0F;
+            float rightPillW = timeW + 12.0F;
+
+            float rightPillX = curX + this.width - rightPillW;
+
+            // Left Capsule
+            Render2D.drawShadow(curX, curY, leftPillW, ROW_H, PILL_R, 5.0F, ColorUtil.rgba(0, 0, 0, (int) (60 * e.alpha)));
+            Render2D.drawRoundedRect(curX, curY, leftPillW, ROW_H, PILL_R, rowBg);
+            Render2D.drawRoundedOutline(curX, curY, leftPillW, ROW_H, PILL_R, 0.65F, rowOutline);
+
+            // Item Icon
             if (extractor != null) {
                 Render2DUtil.flush();
                 try {
                     var pose = extractor.pose();
                     pose.pushMatrix();
-                    pose.translate(this.x + 2.0F, curY + 2.0F);
+                    pose.translate(curX + 3.0F, curY + 2.5F);
                     pose.scale(0.625F, 0.625F); // 10px / 16px
-                    extractor.item(new ItemStack(def.item), 0, 0);
+                    extractor.item(new ItemStack(e.def.item), 0, 0);
                     pose.popMatrix();
                 } catch (Throwable ignored) {}
             }
 
-            // Time string in left pill
-            Fonts.drawString(Fonts.SF_MEDIUM, timeStr, this.x + 13.5F, curY + 3.0F, 8.5F, ColorUtil.rgba(255, 255, 255, (int) (240 * a)));
+            // Name
+            Fonts.drawString(Fonts.SF_MEDIUM, e.def.name, curX + 16.0F, curY + 2.0F, 8.5F, textWhite);
 
-            // Item Name in right pill
-            Fonts.drawString(Fonts.SF_MEDIUM, def.name, this.x + leftPillW + 2.0F + 4.0F, curY + 2.5F, 9.0F, ColorUtil.rgba(240, 240, 240, (int) (240 * a)));
+            // Right Capsule
+            Render2D.drawShadow(rightPillX, curY, rightPillW, ROW_H, PILL_R, 5.0F, ColorUtil.rgba(0, 0, 0, (int) (60 * e.alpha)));
+            Render2D.drawRoundedRect(rightPillX, curY, rightPillW, ROW_H, PILL_R, rowBg);
+            Render2D.drawRoundedOutline(rightPillX, curY, rightPillW, ROW_H, PILL_R, 0.65F, rowOutline);
 
-            curY += (rowH + 2.0F) * a;
+            // Time centered in right capsule
+            Fonts.drawCenteredString(Fonts.SF_MEDIUM, e.timeStr, rightPillX + rightPillW * 0.5F, curY + 2.2F, 8.0F, timeCol);
+
+            curY += (ROW_H + GAP_Y) * e.alpha;
         }
-
-        this.height = curY - this.y;
     }
 }
