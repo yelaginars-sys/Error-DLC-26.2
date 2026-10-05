@@ -65,7 +65,8 @@
     "render.LevelRendererMixin",
     "render.GameRendererMixin",
     "render.ItemInHandRendererMixin",
-    "render.ShaderManagerMixin"
+    "render.ShaderManagerMixin",
+    "client.WebBlockMixin"
   ],
   "injectors": {
     "defaultRequire": 1

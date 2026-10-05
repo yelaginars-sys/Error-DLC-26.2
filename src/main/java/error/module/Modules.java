@@ -89,6 +89,18 @@ public class Modules {
     public DeathCoords deathCoords;
     public KeyFinderTeleport keyFinderTeleport;
     public PearlTarget pearlTarget;
+    public SpeedExploit speedExploit;
+    public Speed speed;
+    public ElytraExploit elytraExploit;
+    public PlayerFakelags playerFakelags;
+    public error.module.impl.movement.NoSlow noSlow;
+    public error.module.impl.movement.NoWeb noWeb;
+    public error.module.impl.movement.NoClip noClip;
+    public error.module.impl.movement.Disabler disabler;
+    public error.module.impl.movement.NoFallExploit noFallExploit;
+    public error.module.impl.movement.ElytraBooster elytraBooster;
+    public error.module.impl.movement.ElytraResolver elytraResolver;
+    public error.module.impl.movement.ElytraSample elytraSample;
 
     public void init() {
         this.clickGui = new ClickGui();
@@ -164,6 +176,18 @@ public class Modules {
         this.deathCoords = new DeathCoords();
         this.keyFinderTeleport = new KeyFinderTeleport();
         this.pearlTarget = new PearlTarget();
+        this.speedExploit = new SpeedExploit();
+        this.speed = new Speed();
+        this.elytraExploit = new ElytraExploit();
+        this.playerFakelags = new PlayerFakelags();
+        this.noSlow = new error.module.impl.movement.NoSlow();
+        this.noWeb = new error.module.impl.movement.NoWeb();
+        this.noClip = new error.module.impl.movement.NoClip();
+        this.disabler = new error.module.impl.movement.Disabler();
+        this.noFallExploit = new error.module.impl.movement.NoFallExploit();
+        this.elytraBooster = new error.module.impl.movement.ElytraBooster();
+        this.elytraResolver = new error.module.impl.movement.ElytraResolver();
+        this.elytraSample = new error.module.impl.movement.ElytraSample();
 
         register(
                 this.anInterface,
@@ -237,7 +261,19 @@ public class Modules {
                 this.obsidianFarm,
                 this.deathCoords,
                 this.keyFinderTeleport,
-                this.pearlTarget
+                this.pearlTarget,
+                this.speedExploit,
+                this.speed,
+                this.elytraExploit,
+                this.playerFakelags,
+                this.noSlow,
+                this.noWeb,
+                this.noClip,
+                this.disabler,
+                this.noFallExploit,
+                this.elytraBooster,
+                this.elytraResolver,
+                this.elytraSample
         );
 
         if (this.maceHelper != null) this.maceHelper.setState(true);

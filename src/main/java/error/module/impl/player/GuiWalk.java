@@ -29,14 +29,16 @@ public class GuiWalk extends Module {
 
     public static GuiWalk INSTANCE;
 
-    private final ModeSetting clickBypass = mode("Click Bypass", "Multi", "None", "Legit", "Multi");
-    private final CheckBox noCloseOnEmpty = checkbox("No Close On Empty", true);
-    private final CheckBox sneak = checkbox("Sneak", false);
-    private final CheckBox jump = checkbox("Jump", true);
+    public final ModeSetting mode = mode("Режим", "Vanilla", "Vanilla", "ReallyWorld", "FunTime", "HolyWorld");
+    public final ModeSetting clickBypass = mode("Click Bypass", "Multi", "None", "Legit", "Multi");
+    public final CheckBox noCloseOnEmpty = checkbox("No Close On Empty", true);
+    public final CheckBox sneak = checkbox("Sneak", false);
+    public final CheckBox jump = checkbox("Jump", true);
 
     private final Queue<Packet<?>> packetQueue = new ConcurrentLinkedQueue<>();
     private boolean isSendingInternal = false;
     private boolean hasInteracted = false;
+    private long serverActionTime = 0L;
 
     private enum State {
         IDLE,
@@ -96,21 +98,27 @@ public class GuiWalk extends Module {
         if (!inGui) return;
 
         if (event.isSend()) {
-            String mode = clickBypass.getValue();
+            String sMode = this.mode.getValue();
+            String cMode = clickBypass.getValue();
+
+            if (sMode.equalsIgnoreCase("Vanilla")) {
+                return;
+            }
 
             if (event.is(ServerboundContainerClickPacket.class)) {
                 hasInteracted = true;
 
-                if (mode.equalsIgnoreCase("Multi")) {
+                if (sMode.equalsIgnoreCase("ReallyWorld") || cMode.equalsIgnoreCase("Multi")) {
                     if (isPlayerMoving() || state != State.IDLE) {
                         event.setCancelled(true);
                         packetQueue.add(event.getPacket());
                     }
-                } else if (mode.equalsIgnoreCase("Legit")) {
+                } else if (sMode.equalsIgnoreCase("FunTime") || sMode.equalsIgnoreCase("HolyWorld") || cMode.equalsIgnoreCase("Legit")) {
                     event.setCancelled(true);
                     packetQueue.add(event.getPacket());
                     if (state == State.IDLE) {
                         state = State.STOP_SPRINT;
+                        serverActionTime = System.currentTimeMillis();
                     }
                 }
             }
@@ -126,6 +134,7 @@ public class GuiWalk extends Module {
                     packetQueue.add(event.getPacket());
                     if (state == State.IDLE) {
                         state = State.STOP_SPRINT;
+                        serverActionTime = System.currentTimeMillis();
                     }
                 }
             }

@@ -24,7 +24,12 @@ public abstract class MultiPlayerGameModeMixin {
     @Inject(method = "attack", at = @At("HEAD"), cancellable = true)
     private void onAttack(Player player, Entity target, CallbackInfo ci) {
         if (target != null) {
-            Client.getInstance().getEventManager().call(new AttackEvent(target));
+            AttackEvent attackEvent = new AttackEvent(target);
+            Client.getInstance().getEventManager().call(attackEvent);
+            if (attackEvent.isCancelled()) {
+                ci.cancel();
+                return;
+            }
             if (target instanceof error.module.impl.misc.FakePlayerEntity fakePlayer) {
                 float damage = (float) player.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE);
                 fakePlayer.takeLocalHit(player.damageSources().playerAttack(player), damage);

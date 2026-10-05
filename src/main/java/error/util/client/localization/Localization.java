@@ -83,6 +83,9 @@ public final class Localization {
         RU_DICT.put("AHHelper", "Аукцион Помощник");
         RU_DICT.put("AntiPush", "Анти Толкание");
         RU_DICT.put("NoPush", "Анти Толкание");
+        RU_DICT.put("NoSlow", "Без Замедления");
+        RU_DICT.put("NoWeb", "Анти Паутина");
+        RU_DICT.put("NoClip", "Проход Сквозь Блоки");
         RU_DICT.put("ProjectileHelper", "Помощник Снарядов");
         RU_DICT.put("AutoTool", "Авто Инструмент");
         RU_DICT.put("ClickFriend", "Кликер Друзей");
@@ -341,7 +344,11 @@ public final class Localization {
         RU_DICT.put("KeyFinderTeleport.desc", "Автоматически ищет ключ карты и спавнеры под землёй");
         RU_DICT.put("PearlTarget.desc", "Бросает эндер-жемчуг за таргетом из киллауры при попытке убежать");
 
-        RU_DICT.put("AirStuck.desc", "Замораживает положение игрока в воздухе");
+        RU_DICT.put("AirStuck.desc", "Замораживает положение игрока в воздухе (RW 1.21 / RW 1.16)");
+        RU_DICT.put("SpeedExploit.desc", "Эксплойт ускорения через пакетный таймер и задержку понгов");
+        RU_DICT.put("Speed.desc", "Увеличение скорости передвижения под различные проверки");
+        RU_DICT.put("ElytraExploit.desc", "Эксплойт ускорения на элитрах (ReallyWorld / Обычный)");
+        RU_DICT.put("PlayerFakeLags.desc", "Искусственные сетевые лаги (Blink / Pulse)");
         RU_DICT.put("NoFall.desc", "Отменяет урон от падения с любой высоты");
         RU_DICT.put("Sprint.desc", "Автоматически удерживает спринт во время бега");
         RU_DICT.put("Timer.desc", "Изменяет скорость игрового времени и процессов");
@@ -373,6 +380,11 @@ public final class Localization {
         RU_DICT.put("SwingAnimation.desc", "Настройка кастомной анимации взмаха рукой и блоком");
         RU_DICT.put("ViewModel.desc", "Изменяет размер, дистанцию и позицию оружия в руках");
         RU_DICT.put("WorldParticles.desc", "Спавнит красивые частицы в окружающем мире");
+        RU_DICT.put("Disabler.desc", "Десинхронизация тиков и байпасс античитов Grim и Matrix");
+        RU_DICT.put("NoFallExploit.desc", "Обход урона от падения через элитры и десинк");
+        RU_DICT.put("ElytraBooster.desc", "Ускорение и контроль полета на элитрах");
+        RU_DICT.put("ElytraResolver.desc", "Долет и отлет для элитра-ротки и боевых маневров");
+        RU_DICT.put("ElytraSample.desc", "Предикт траектории цели при полете на элитрах");
     }
 
     public static String get(String text) {

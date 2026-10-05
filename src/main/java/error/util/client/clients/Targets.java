@@ -53,6 +53,7 @@ public final class Targets {
         if (mc.player == null || entity == null || entity == mc.player) return false;
         if (!(entity instanceof LivingEntity living) || !living.isAlive() || living.isDeadOrDying() || living.isRemoved()) return false;
         if (mc.player.distanceToSqr(entity) > (range * range)) return false;
+        if (error.module.impl.combat.AntiBot.isBot(entity)) return false;
 
         if (living.isInvisible() && !(filter.isEnabled("Invisibles") || filter.isEnabled("Невидимые") || filter.isEnabled("Невидимки"))) {
             return false;

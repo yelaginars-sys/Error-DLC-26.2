@@ -16,6 +16,13 @@ public abstract class DeltaTrackerTimerMixin {
     @Shadow
     private float deltaTicks;
 
+    @Inject(method = "advanceGameTime", at = @At("HEAD"), cancellable = true)
+    private void onAdvanceGameTimeHead(long currentMs, CallbackInfoReturnable<Integer> cir) {
+        if (error.module.impl.movement.Disabler.isThrottleActive()) {
+            cir.setReturnValue(0);
+        }
+    }
+
     @Inject(
             method = "advanceGameTime",
             at = @At(

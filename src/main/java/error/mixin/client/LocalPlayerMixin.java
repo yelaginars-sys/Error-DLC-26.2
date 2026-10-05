@@ -52,8 +52,37 @@ public abstract class LocalPlayerMixin {
     }
     @Inject(method = "moveTowardsClosestSpace", at = @At("HEAD"), cancellable = true)
     private void onMoveTowardsClosestSpace(double x, double z, CallbackInfo ci) {
-        if (NoPush.INSTANCE != null && NoPush.INSTANCE.isEnabled() && NoPush.INSTANCE.collisions.isEnabled("Блоки")) {
+        if ((NoPush.INSTANCE != null && NoPush.INSTANCE.isEnabled() && NoPush.INSTANCE.collisions.isEnabled("Блоки"))
+                || (error.module.impl.movement.NoClip.INSTANCE != null && error.module.impl.movement.NoClip.INSTANCE.isEnabled() && error.module.impl.movement.NoClip.INSTANCE.noBlockPush.getValue())) {
             ci.cancel();
+        }
+    }
+
+    @Redirect(
+            method = "modifyInput",
+            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/player/LocalPlayer;isUsingItem()Z")
+    )
+    private boolean redirectIsUsingItemInModifyInput(LocalPlayer player) {
+        if (player.isUsingItem()) {
+            error.event.list.NoSlowEvent event = new error.event.list.NoSlowEvent();
+            Client.getInstance().getEventManager().call(event);
+            if (event.isCancelled()) {
+                return false;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    @Inject(method = "isSlowDueToUsingItem", at = @At("HEAD"), cancellable = true)
+    private void onIsSlowDueToUsingItem(CallbackInfoReturnable<Boolean> cir) {
+        LocalPlayer player = (LocalPlayer) (Object) this;
+        if (player.isUsingItem()) {
+            error.event.list.NoSlowEvent event = new error.event.list.NoSlowEvent();
+            Client.getInstance().getEventManager().call(event);
+            if (event.isCancelled()) {
+                cir.setReturnValue(false);
+            }
         }
     }
 
