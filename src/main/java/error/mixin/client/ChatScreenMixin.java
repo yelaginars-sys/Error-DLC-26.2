@@ -52,4 +52,18 @@ public abstract class ChatScreenMixin {
             }
         }
     }
+
+    @Inject(method = "extractRenderState", at = @At("TAIL"))
+    private void onExtractRenderStateTail(GuiGraphicsExtractor extractor, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
+        if (this.input != null && !error.module.impl.misc.UnHook.unhooked) {
+            ClientCommandSuggestions.getInstance().update(this.input.getValue());
+            float screenW = Minecraft.getInstance().getWindow().getGuiScaledWidth();
+            float screenH = Minecraft.getInstance().getWindow().getGuiScaledHeight();
+            error.util.RenderExtend.enter2D(null, extractor, null);
+            error.util.display.batch.DisplayBatcher.begin(extractor);
+            ClientCommandSuggestions.getInstance().render(screenW, screenH, 1.0F);
+            error.util.display.batch.DisplayBatcher.end();
+            error.util.RenderExtend.exit2D();
+        }
+    }
 }

@@ -211,40 +211,81 @@ public final class ClientSoundPlayer {
         }
     }
 
+    private static long lastTypeTime;
+
+    public static void playType() {
+        long now = System.currentTimeMillis();
+        if (now - lastTypeTime < 20L) return;
+        lastTypeTime = now;
+        playSound("gui_key_click.wav", 0.38, 1.0F + (float) (Math.random() * 0.12F - 0.06F));
+    }
+
+    public static void playErase() {
+        long now = System.currentTimeMillis();
+        if (now - lastTypeTime < 20L) return;
+        lastTypeTime = now;
+        playSound("gui_key_click.wav", 0.33, 0.88F);
+    }
+
+    public static void playSearchClear() {
+        playSound("gui_clear.wav", 0.4, 1.0F);
+    }
+
     private static InputStream openSoundStream(String fileName) {
         String[] prefixes = {
             "/assets/error/sounds/",
+            "/assets/error/sounds/gui/",
             "/assets/client/sound/",
+            "/assets/client/sound/gui/",
             "/assets/client/sounds/",
             "assets/error/sounds/",
+            "assets/error/sounds/gui/",
             "assets/client/sound/",
+            "assets/client/sound/gui/",
             "assets/client/sounds/"
         };
 
-        for (String prefix : prefixes) {
-            String path = prefix + fileName;
-            InputStream is = ClientSoundPlayer.class.getResourceAsStream(path);
-            if (is != null) return is;
+        String[] names;
+        if (!fileName.endsWith(".wav") && !fileName.endsWith(".ogg") && !fileName.endsWith(".WAV")) {
+            names = new String[]{fileName + ".wav", fileName, fileName.toLowerCase() + ".wav"};
+        } else {
+            names = new String[]{fileName, fileName.toLowerCase()};
+        }
 
-            ClassLoader cl = Thread.currentThread().getContextClassLoader();
-            if (cl != null) {
-                is = cl.getResourceAsStream(path.startsWith("/") ? path.substring(1) : path);
+        for (String name : names) {
+            for (String prefix : prefixes) {
+                String path = prefix + name;
+                InputStream is = ClientSoundPlayer.class.getResourceAsStream(path);
                 if (is != null) return is;
+
+                ClassLoader cl = Thread.currentThread().getContextClassLoader();
+                if (cl != null) {
+                    is = cl.getResourceAsStream(path.startsWith("/") ? path.substring(1) : path);
+                    if (is != null) return is;
+                }
             }
         }
 
         try {
             Minecraft mc = Minecraft.getInstance();
             if (mc != null && mc.getResourceManager() != null) {
-                try {
-                    return mc.getResourceManager().open(Identifier.fromNamespaceAndPath("error", "sounds/" + fileName));
-                } catch (Throwable ignored) {}
-                try {
-                    return mc.getResourceManager().open(Identifier.fromNamespaceAndPath("client", "sound/" + fileName));
-                } catch (Throwable ignored) {}
-                try {
-                    return mc.getResourceManager().open(Identifier.fromNamespaceAndPath("client", "sounds/" + fileName));
-                } catch (Throwable ignored) {}
+                for (String name : names) {
+                    try {
+                        return mc.getResourceManager().open(Identifier.fromNamespaceAndPath("error", "sounds/" + name));
+                    } catch (Throwable ignored) {}
+                    try {
+                        return mc.getResourceManager().open(Identifier.fromNamespaceAndPath("error", "sounds/gui/" + name));
+                    } catch (Throwable ignored) {}
+                    try {
+                        return mc.getResourceManager().open(Identifier.fromNamespaceAndPath("client", "sound/" + name));
+                    } catch (Throwable ignored) {}
+                    try {
+                        return mc.getResourceManager().open(Identifier.fromNamespaceAndPath("client", "sound/gui/" + name));
+                    } catch (Throwable ignored) {}
+                    try {
+                        return mc.getResourceManager().open(Identifier.fromNamespaceAndPath("client", "sounds/" + name));
+                    } catch (Throwable ignored) {}
+                }
             }
         } catch (Throwable ignored) {}
 

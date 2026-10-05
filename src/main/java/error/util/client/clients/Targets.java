@@ -54,7 +54,7 @@ public final class Targets {
         if (!(entity instanceof LivingEntity living) || !living.isAlive() || living.isDeadOrDying() || living.isRemoved()) return false;
         if (mc.player.distanceToSqr(entity) > (range * range)) return false;
 
-        if (living.isInvisible() && !(filter.isEnabled("Invisibles") || filter.isEnabled("Невидимые"))) {
+        if (living.isInvisible() && !(filter.isEnabled("Invisibles") || filter.isEnabled("Невидимые") || filter.isEnabled("Невидимки"))) {
             return false;
         }
 
@@ -87,9 +87,9 @@ public final class Targets {
             return true;
         }
 
-        if (filter.isEnabled("Villagers") && (entity instanceof Villager || entity instanceof IronGolem)) return true;
-        if ((filter.isEnabled("Mobs") || filter.isEnabled("Мобы")) && (entity instanceof Enemy)) return true;
-        if ((filter.isEnabled("Animals") || filter.isEnabled("Животные")) &&
+        if ((filter.isEnabled("Villagers") || filter.isEnabled("Жители")) && (entity instanceof Villager || entity instanceof IronGolem)) return true;
+        if ((filter.isEnabled("Mobs") || filter.isEnabled("Мобы") || filter.isEnabled("Монстры")) && (entity instanceof Enemy)) return true;
+        if ((filter.isEnabled("Animals") || filter.isEnabled("Животные") || filter.isEnabled("Мирные")) &&
                 (entity instanceof Animal || entity instanceof WaterAnimal || entity instanceof AmbientCreature)) return true;
 
         return false;

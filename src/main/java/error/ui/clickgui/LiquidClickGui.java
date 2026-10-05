@@ -812,9 +812,9 @@ public class LiquidClickGui extends Screen {
             Fonts.drawString(Fonts.SF_MEDIUM, multi.getName(), x + 4.0F, y + 4.5F, 5.2F, 0xFFD0E0F0);
 
             List<String> active = multi.getValue();
-            String val = active.isEmpty() ? "Никакие" : String.join(", ", active);
+            String val = active.isEmpty() ? "Никакие" : (active.size() == multi.getModes().size() ? "Все (" + active.size() + ")" : (active.size() == 1 ? active.get(0) : active.size() + " выбр."));
             float valW = Fonts.SF_MEDIUM.getWidth(val, 5.0F);
-            float btnW = Math.max(36.0F, valW + 14.0F);
+            float btnW = Math.max(36.0F, Math.min(w - 55.0F, valW + 14.0F));
             float btnX = x + w - btnW - 4.0F;
             float btnY = y + 2.5F;
 
@@ -1260,14 +1260,14 @@ public class LiquidClickGui extends Screen {
         float dh = this.dropdownPopupH;
 
         // Soft drop shadow
-        Render2D.drawShadow(dx, dy, dw, dh, 6.0F, 12.0F, ColorUtil.rgba(0, 0, 0, (int) (110 * alphaVal)));
-        // Translucent liquid glass body (exact same frosted glass as GUI)
-        int dropDarken = ColorUtil.rgba(12, 16, 28, (int) (40 * alphaVal));
+        Render2D.drawShadow(dx, dy, dw, dh, 6.0F, 14.0F, ColorUtil.rgba(0, 0, 0, (int) (180 * alphaVal)));
+        // Translucent liquid glass body
+        int dropDarken = ColorUtil.rgba(14, 18, 28, (int) (235 * alphaVal));
         int dropFrosted = ColorUtil.rgba(255, 255, 255, (int) (14 * alphaVal));
         Render2D.drawRoundedRect(dx, dy, dw, dh, 6.0F, dropDarken);
         Render2D.drawRoundedRect(dx, dy, dw, dh, 6.0F, dropFrosted);
-        Render2D.drawRoundedOutline(dx, dy, dw, dh, 6.0F, 0.75F, ColorUtil.rgba(255, 255, 255, (int) (35 * alphaVal)));
-        Render2D.drawRoundedOutline(dx, dy, dw, dh, 6.0F, 0.5F, ColorUtil.withAlpha(accentColor, (int) (65 * alphaVal)));
+        Render2D.drawRoundedOutline(dx, dy, dw, dh, 6.0F, 0.75F, ColorUtil.rgba(255, 255, 255, (int) (40 * alphaVal)));
+        Render2D.drawRoundedOutline(dx, dy, dw, dh, 6.0F, 0.5F, ColorUtil.withAlpha(accentColor, (int) (110 * alphaVal)));
 
         float rowY = dy + 3.0F;
         float rowH = 15.0F;
@@ -1302,13 +1302,13 @@ public class LiquidClickGui extends Screen {
         float dw = this.dropdownPopupW;
         float dh = this.dropdownPopupH;
 
-        Render2D.drawShadow(dx, dy, dw, dh, 6.0F, 12.0F, ColorUtil.rgba(0, 0, 0, (int) (110 * alphaVal)));
-        int dropDarken = ColorUtil.rgba(12, 16, 28, (int) (40 * alphaVal));
+        Render2D.drawShadow(dx, dy, dw, dh, 6.0F, 14.0F, ColorUtil.rgba(0, 0, 0, (int) (180 * alphaVal)));
+        int dropDarken = ColorUtil.rgba(14, 18, 28, (int) (235 * alphaVal));
         int dropFrosted = ColorUtil.rgba(255, 255, 255, (int) (14 * alphaVal));
         Render2D.drawRoundedRect(dx, dy, dw, dh, 6.0F, dropDarken);
         Render2D.drawRoundedRect(dx, dy, dw, dh, 6.0F, dropFrosted);
-        Render2D.drawRoundedOutline(dx, dy, dw, dh, 6.0F, 0.75F, ColorUtil.rgba(255, 255, 255, (int) (35 * alphaVal)));
-        Render2D.drawRoundedOutline(dx, dy, dw, dh, 6.0F, 0.5F, ColorUtil.withAlpha(accentColor, (int) (65 * alphaVal)));
+        Render2D.drawRoundedOutline(dx, dy, dw, dh, 6.0F, 0.75F, ColorUtil.rgba(255, 255, 255, (int) (40 * alphaVal)));
+        Render2D.drawRoundedOutline(dx, dy, dw, dh, 6.0F, 0.5F, ColorUtil.withAlpha(accentColor, (int) (110 * alphaVal)));
 
         float rowY = dy + 3.0F;
         float rowH = 15.0F;
@@ -2014,6 +2014,7 @@ public class LiquidClickGui extends Screen {
             }
             // Click outside closes dropdown
             this.activeDropdownMode = null;
+            return true;
         }
 
         if (this.activeDropdownMultiMode != null) {
@@ -2039,6 +2040,7 @@ public class LiquidClickGui extends Screen {
                 return true;
             }
             this.activeDropdownMultiMode = null;
+            return true;
         }
 
         // Handle Module Middle-Click Bind Modal Clicks if Open
@@ -2292,6 +2294,9 @@ public class LiquidClickGui extends Screen {
             float searchY = y + 14.0F;
 
             if (mouseX >= searchX && mouseX <= searchX + searchW && mouseY >= searchY && mouseY <= searchY + searchH) {
+                if (!this.searchFocused) {
+                    error.util.client.ClientSoundPlayer.playGuiClick();
+                }
                 this.searchFocused = true;
                 this.newConfigFocused = false;
                 this.shareKeyFocused = false;
@@ -2706,6 +2711,7 @@ public class LiquidClickGui extends Screen {
                                     this.activeDropdownMode = null;
                                 } else {
                                     this.activeDropdownMode = ms;
+                                    this.activeDropdownMultiMode = null;
                                     float valW = Fonts.SF_MEDIUM.getWidth(ms.getValue(), 5.0F);
                                     float btnW = Math.max(36.0F, valW + 14.0F);
                                     float setW = cardW - 16.0F;
@@ -2719,6 +2725,33 @@ public class LiquidClickGui extends Screen {
                                     this.dropdownPopupW = Math.max(btnW + 10.0F, maxOptW);
                                     this.dropdownPopupX = Math.min(screenW - this.dropdownPopupW - 8.0F, Math.max(8.0F, btnX + btnW - this.dropdownPopupW));
                                     this.dropdownPopupH = ms.getModes().size() * 16.0F + 6.0F;
+                                    this.dropdownPopupY = btnY + 13.0F;
+                                    if (this.dropdownPopupY + this.dropdownPopupH > screenH - 8.0F) {
+                                        this.dropdownPopupY = Math.max(8.0F, btnY - this.dropdownPopupH - 2.0F);
+                                    }
+                                    error.util.client.ClientSoundPlayer.playGuiClick();
+                                }
+                            } else if (setting instanceof MultiModeSetting multi) {
+                                if (this.activeDropdownMultiMode == multi) {
+                                    this.activeDropdownMultiMode = null;
+                                } else {
+                                    this.activeDropdownMultiMode = multi;
+                                    this.activeDropdownMode = null;
+                                    List<String> active = multi.getValue();
+                                    String val = active.isEmpty() ? "Никакие" : (active.size() == multi.getModes().size() ? "Все (" + active.size() + ")" : (active.size() == 1 ? active.get(0) : active.size() + " выбр."));
+                                    float valW = Fonts.SF_MEDIUM.getWidth(val, 5.0F);
+                                    float btnW = Math.max(36.0F, Math.min(cardW - 55.0F, valW + 14.0F));
+                                    float setW = cardW - 16.0F;
+                                    float btnX = cardX + 8.0F + setW - btnW - 4.0F;
+                                    float btnY = setY + 2.5F;
+
+                                    float maxOptW = 75.0F;
+                                    for (String opt : multi.getModes()) {
+                                        maxOptW = Math.max(maxOptW, Fonts.SF_MEDIUM.getWidth(opt, 5.0F) + 26.0F);
+                                    }
+                                    this.dropdownPopupW = Math.max(btnW + 10.0F, maxOptW);
+                                    this.dropdownPopupX = Math.min(screenW - this.dropdownPopupW - 8.0F, Math.max(8.0F, btnX + btnW - this.dropdownPopupW));
+                                    this.dropdownPopupH = multi.getModes().size() * 16.0F + 6.0F;
                                     this.dropdownPopupY = btnY + 13.0F;
                                     if (this.dropdownPopupY + this.dropdownPopupH > screenH - 8.0F) {
                                         this.dropdownPopupY = Math.max(8.0F, btnY - this.dropdownPopupH - 2.0F);
@@ -2955,8 +2988,8 @@ public class LiquidClickGui extends Screen {
             if (event.key() == GLFW.GLFW_KEY_BACKSPACE) {
                 if (!this.newConfigInput.isEmpty()) {
                     this.newConfigInput = this.newConfigInput.substring(0, this.newConfigInput.length() - 1);
-                    error.util.client.ClientSoundPlayer.playSound("searchtyping.wav", 0.35, 0.95F + (float) (Math.random() * 0.1));
                 }
+                error.util.client.ClientSoundPlayer.playErase();
                 return true;
             } else if (event.key() == GLFW.GLFW_KEY_ENTER) {
                 if (!newConfigInput.trim().isEmpty() && Client.INSTANCE != null && Client.INSTANCE.configManager != null) {
@@ -2967,10 +3000,11 @@ public class LiquidClickGui extends Screen {
             } else if (isPaste) {
                 String clip = GLFW.glfwGetClipboardString(Minecraft.getInstance().getWindow().handle());
                 if (clip != null) newConfigInput += clip.trim();
-                error.util.client.ClientSoundPlayer.playSound("searchtyping.wav", 0.35, 0.95F + (float) (Math.random() * 0.1));
+                error.util.client.ClientSoundPlayer.playType();
                 return true;
             } else if (event.key() == GLFW.GLFW_KEY_ESCAPE) {
                 this.newConfigFocused = false;
+                error.util.client.ClientSoundPlayer.playSearchClear();
                 return true;
             }
         }
@@ -2979,8 +3013,8 @@ public class LiquidClickGui extends Screen {
             if (event.key() == GLFW.GLFW_KEY_BACKSPACE) {
                 if (!this.shareKeyInput.isEmpty()) {
                     this.shareKeyInput = this.shareKeyInput.substring(0, this.shareKeyInput.length() - 1);
-                    error.util.client.ClientSoundPlayer.playSound("searchtyping.wav", 0.35, 0.95F + (float) (Math.random() * 0.1));
                 }
+                error.util.client.ClientSoundPlayer.playErase();
                 return true;
             } else if (event.key() == GLFW.GLFW_KEY_ENTER) {
                 handleImportConfigKey();
@@ -2988,10 +3022,11 @@ public class LiquidClickGui extends Screen {
             } else if (isPaste) {
                 String clip = GLFW.glfwGetClipboardString(Minecraft.getInstance().getWindow().handle());
                 if (clip != null) shareKeyInput += clip.trim();
-                error.util.client.ClientSoundPlayer.playSound("searchtyping.wav", 0.35, 0.95F + (float) (Math.random() * 0.1));
+                error.util.client.ClientSoundPlayer.playType();
                 return true;
             } else if (event.key() == GLFW.GLFW_KEY_ESCAPE) {
                 this.shareKeyFocused = false;
+                error.util.client.ClientSoundPlayer.playSearchClear();
                 return true;
             }
         }
@@ -3001,8 +3036,8 @@ public class LiquidClickGui extends Screen {
             if (event.key() == GLFW.GLFW_KEY_BACKSPACE) {
                 if (!this.friendInput.isEmpty()) {
                     this.friendInput = this.friendInput.substring(0, this.friendInput.length() - 1);
-                    error.util.client.ClientSoundPlayer.playSound("searchtyping.wav", 0.35, 0.95F + (float) (Math.random() * 0.1));
                 }
+                error.util.client.ClientSoundPlayer.playErase();
                 return true;
             } else if (event.key() == GLFW.GLFW_KEY_ENTER) {
                 if (!friendInput.trim().isEmpty()) {
@@ -3014,9 +3049,11 @@ public class LiquidClickGui extends Screen {
             } else if (isPaste) {
                 String clip = GLFW.glfwGetClipboardString(Minecraft.getInstance().getWindow().handle());
                 if (clip != null) friendInput += clip.trim();
+                error.util.client.ClientSoundPlayer.playType();
                 return true;
             } else if (event.key() == GLFW.GLFW_KEY_ESCAPE) {
                 this.friendInputFocused = false;
+                error.util.client.ClientSoundPlayer.playSearchClear();
                 return true;
             }
         }
@@ -3026,16 +3063,17 @@ public class LiquidClickGui extends Screen {
             if (event.key() == GLFW.GLFW_KEY_BACKSPACE) {
                 if (!this.searchQuery.isEmpty()) {
                     this.searchQuery = this.searchQuery.substring(0, this.searchQuery.length() - 1);
-                    error.util.client.ClientSoundPlayer.playSound("searchtyping.wav", 0.35, 0.95F + (float) (Math.random() * 0.1));
                 }
+                error.util.client.ClientSoundPlayer.playErase();
                 return true;
             } else if (isPaste) {
                 String clip = GLFW.glfwGetClipboardString(Minecraft.getInstance().getWindow().handle());
                 if (clip != null) searchQuery += clip.trim();
-                error.util.client.ClientSoundPlayer.playSound("searchtyping.wav", 0.35, 0.95F + (float) (Math.random() * 0.1));
+                error.util.client.ClientSoundPlayer.playType();
                 return true;
             } else if (event.key() == GLFW.GLFW_KEY_ESCAPE) {
                 this.searchFocused = false;
+                error.util.client.ClientSoundPlayer.playSearchClear();
                 return true;
             }
         }
@@ -3089,7 +3127,7 @@ public class LiquidClickGui extends Screen {
                 typed = true;
             }
             if (typed) {
-                error.util.client.ClientSoundPlayer.playSound("searchtyping.wav", 0.35, 0.95F + (float) (Math.random() * 0.1));
+                error.util.client.ClientSoundPlayer.playType();
                 return true;
             }
         }
