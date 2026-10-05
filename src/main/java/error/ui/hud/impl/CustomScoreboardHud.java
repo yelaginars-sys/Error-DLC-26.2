@@ -183,6 +183,20 @@ public final class CustomScoreboardHud extends HudElement {
 
         int accent = Theme.getAccentColor();
 
+        Interface iface = Interface.getInstance();
+        if (iface != null) {
+            String mode = iface.scoreboardMode.getValue();
+            if ("Скрыт".equalsIgnoreCase(mode)) {
+                return;
+            }
+            if ("Ванильный".equalsIgnoreCase(mode)) {
+                return;
+            }
+        }
+
+        boolean dropShadow = iface == null || iface.scoreboardShadow.getValue();
+        boolean removeScores = iface != null && iface.scoreboardRemoveScores.getValue();
+
         // 1. Draw Liquid Glass Card
         Render2D.drawHudCard(this.x, this.y, this.width, this.height, 8.0F, 1.0F);
 
@@ -194,7 +208,7 @@ public final class CustomScoreboardHud extends HudElement {
         // 2. Centered Title
         float titleX = this.x + (this.width - titleW) * 0.5F;
         float titleY = this.y + 6.0F;
-        extractor.text(mc.font, title, (int) titleX, (int) titleY, 0xFFFFFFFF, false);
+        extractor.text(mc.font, title, (int) titleX, (int) titleY, 0xFFFFFFFF, dropShadow);
 
         // 3. Divider Line
         if (!lines.isEmpty()) {
@@ -207,11 +221,11 @@ public final class CustomScoreboardHud extends HudElement {
                 ScoreLine sl = lines.get(i);
                 float ly = startLineY + i * 10.0F;
 
-                extractor.text(mc.font, sl.name, (int) (this.x + 7.0F), (int) ly, 0xFFFFFFFF, false);
+                extractor.text(mc.font, sl.name, (int) (this.x + 7.0F), (int) ly, 0xFFFFFFFF, dropShadow);
 
-                if (sl.scoreW > 0 && sl.score != null) {
+                if (!removeScores && sl.scoreW > 0 && sl.score != null) {
                     float sx = this.x + this.width - 7.0F - sl.scoreW;
-                    extractor.text(mc.font, sl.score, (int) sx, (int) ly, ColorUtil.rgba(230, 80, 80, 240), false);
+                    extractor.text(mc.font, sl.score, (int) sx, (int) ly, ColorUtil.rgba(230, 80, 80, 240), dropShadow);
                 }
             }
         }

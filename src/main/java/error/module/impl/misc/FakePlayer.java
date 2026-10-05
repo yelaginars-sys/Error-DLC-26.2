@@ -2,29 +2,27 @@ package error.module.impl.misc;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.RemotePlayer;
-import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
+import error.event.EventTarget;
+import error.event.list.PlayerTickEvent;
 import error.module.Category;
 import error.module.Module;
 import error.setting.impl.CheckBox;
+import error.setting.impl.SliderSetting;
 
-import java.lang.reflect.Field;
-
-/**
- */
 public final class FakePlayer extends Module {
 
     private static final int FAKE_PLAYER_ID = -1337;
-    private static final EntityDataAccessor<Byte> SKIN_CUSTOMISATION = resolveSkinCustomisation();
 
     public final CheckBox copyInventory = checkbox("Copy Inv", true);
-    public final CheckBox copyHealth = checkbox("Copy hp", true);
+    public final CheckBox copyHealth    = checkbox("Copy hp", true);
+    public final SliderSetting health   = slider("Здоровье", 20.0f, 1.0f, 100.0f, 1.0f);
 
     private RemotePlayer fakePlayer;
 
     public FakePlayer() {
-        super("FakePlayer", "Спавнит фек игрока", Category.MISC);
+        super("FakePlayer", "Спавнит фейкового игрока для тестов", Category.MISC);
     }
 
     @Override
@@ -43,6 +41,23 @@ public final class FakePlayer extends Module {
         removeFakePlayer();
     }
 
+    @EventTarget
+    public void onTick(PlayerTickEvent event) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null || mc.level == null) return;
+
+        if (this.fakePlayer == null || !this.fakePlayer.isAlive()) {
+            if (this.isEnabled()) {
+                spawnFakePlayer(mc);
+            }
+            return;
+        }
+
+        if (!this.copyHealth.getValue()) {
+            this.fakePlayer.setHealth(this.health.getValue());
+        }
+    }
+
     private void spawnFakePlayer(Minecraft mc) {
         removeFakePlayer();
 
@@ -56,14 +71,20 @@ public final class FakePlayer extends Module {
         this.fakePlayer.yBodyRotO = mc.player.yBodyRot;
         this.fakePlayer.setOnGround(mc.player.onGround());
 
-        if (SKIN_CUSTOMISATION != null) {
-            byte skinLayers = mc.player.getEntityData().get(SKIN_CUSTOMISATION);
-            this.fakePlayer.getEntityData().set(SKIN_CUSTOMISATION, skinLayers);
-        }
+        try {
+            java.lang.reflect.Field field = Player.class.getDeclaredField("DATA_PLAYER_MODE_CUSTOMISATION");
+            field.setAccessible(true);
+            @SuppressWarnings("unchecked")
+            net.minecraft.network.syncher.EntityDataAccessor<Byte> accessor = (net.minecraft.network.syncher.EntityDataAccessor<Byte>) field.get(null);
+            byte skinLayers = mc.player.getEntityData().get(accessor);
+            this.fakePlayer.getEntityData().set(accessor, skinLayers);
+        } catch (Throwable ignored) {}
 
         if (this.copyHealth.getValue()) {
             this.fakePlayer.setHealth(mc.player.getHealth());
             this.fakePlayer.setAbsorptionAmount(mc.player.getAbsorptionAmount());
+        } else {
+            this.fakePlayer.setHealth(this.health.getValue());
         }
 
         if (this.copyInventory.getValue()) {
@@ -77,26 +98,11 @@ public final class FakePlayer extends Module {
 
     private void removeFakePlayer() {
         if (this.fakePlayer != null) {
+            if (mc.level != null) {
+                mc.level.removeEntity(FAKE_PLAYER_ID, net.minecraft.world.entity.Entity.RemovalReason.DISCARDED);
+            }
             this.fakePlayer.discard();
             this.fakePlayer = null;
         }
-    }
-
-    @SuppressWarnings("unchecked")
-    private static EntityDataAccessor<Byte> resolveSkinCustomisation() {
-        Class<?> clazz = Player.class;
-        while (clazz != null && clazz != Object.class) {
-            for (Field field : clazz.getDeclaredFields()) {
-                if ("DATA_PLAYER_MODE_CUSTOMISATION".equals(field.getName())) {
-                    try {
-                        field.setAccessible(true);
-                        return (EntityDataAccessor<Byte>) field.get(null);
-                    } catch (Exception ignored) {
-                    }
-                }
-            }
-            clazz = clazz.getSuperclass();
-        }
-        return null;
     }
 }

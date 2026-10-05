@@ -17,6 +17,7 @@ import error.Client;
 import error.friend.FriendManager;
 import error.module.impl.combat.AuraModule;
 import error.setting.impl.MultiModeSetting;
+import net.minecraft.world.phys.Vec3;
 
 import static error.IMinecraft.mc;
 
@@ -48,10 +49,26 @@ public final class Targets {
         return true;
     }
 
-    public static boolean isValidTarget(Entity entity, double range, MultiModeSetting filter) {
+    public static boolean isValidTarget(Entity entity, double range, MultiModeSetting filter, float fovLimit) {
         if (mc.player == null || entity == null || entity == mc.player) return false;
         if (!(entity instanceof LivingEntity living) || !living.isAlive() || living.isDeadOrDying() || living.isRemoved()) return false;
         if (mc.player.distanceToSqr(entity) > (range * range)) return false;
+
+        if (living.isInvisible() && !(filter.isEnabled("Invisibles") || filter.isEnabled("Невидимые"))) {
+            return false;
+        }
+
+        if (fovLimit < 360.0F) {
+            Vec3 eye = mc.player.getEyePosition();
+            Vec3 targetEye = living.getEyePosition();
+            Vec3 dir = targetEye.subtract(eye).normalize();
+            Vec3 look = mc.player.getLookAngle().normalize();
+            double dot = look.dot(dir);
+            double angleDeg = Math.toDegrees(Math.acos(Math.max(-1.0, Math.min(1.0, dot))));
+            if (angleDeg > fovLimit * 0.5) {
+                return false;
+            }
+        }
 
         if (entity instanceof Player player) {
             boolean isFriend = FriendManager.getInstance().isFriend(player);
@@ -78,7 +95,15 @@ public final class Targets {
         return false;
     }
 
+    public static boolean isValidTarget(Entity entity, double range, MultiModeSetting filter) {
+        return isValidTarget(entity, range, filter, 360.0F);
+    }
+
     public static LivingEntity findTarget(double range, MultiModeSetting filter) {
+        return findTarget(range, filter, "Distance", 360.0F);
+    }
+
+    public static LivingEntity findTarget(double range, MultiModeSetting filter, String sortMode, float fovLimit) {
         if (mc.player == null || mc.level == null) {
             reset();
             return null;
@@ -89,7 +114,7 @@ public final class Targets {
 
         if (target != null && target.isAlive() && !target.isRemoved() && !target.isDeadOrDying()
                 && mc.player.distanceToSqr(target) <= rangeSq
-                && isValidTarget(target, range, filter)) {
+                && isValidTarget(target, range, filter, fovLimit)) {
             targetLocked = true;
             return target;
         }
@@ -97,7 +122,7 @@ public final class Targets {
         unlockTarget();
 
         LivingEntity bestTarget = null;
-        double bestDistSq = rangeSq;
+        double bestVal = Double.MAX_VALUE;
 
         for (Entity entity : mc.level.entitiesForRendering()) {
             if (!(entity instanceof LivingEntity living)) continue;
@@ -106,11 +131,26 @@ public final class Targets {
 
             double distSq = mc.player.distanceToSqr(living);
             if (distSq > rangeSq) continue;
-            if (!isValidTarget(living, range, filter)) continue;
+            if (!isValidTarget(living, range, filter, fovLimit)) continue;
 
-            if (bestTarget == null || distSq < bestDistSq) {
+            double val;
+            if ("Health".equalsIgnoreCase(sortMode)) {
+                val = living.getHealth() + living.getAbsorptionAmount();
+            } else if ("Armor".equalsIgnoreCase(sortMode)) {
+                val = living.getArmorValue();
+            } else if ("FOV".equalsIgnoreCase(sortMode)) {
+                Vec3 eye = mc.player.getEyePosition();
+                Vec3 targetEye = living.getEyePosition();
+                Vec3 dir = targetEye.subtract(eye).normalize();
+                Vec3 look = mc.player.getLookAngle().normalize();
+                val = Math.toDegrees(Math.acos(Math.max(-1.0, Math.min(1.0, look.dot(dir)))));
+            } else {
+                val = distSq; // Distance
+            }
+
+            if (bestTarget == null || val < bestVal) {
                 bestTarget = living;
-                bestDistSq = distSq;
+                bestVal = val;
             }
         }
 

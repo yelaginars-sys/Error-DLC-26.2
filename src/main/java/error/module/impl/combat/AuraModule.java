@@ -25,35 +25,45 @@ import error.util.player.MoveUtility;
 public class AuraModule extends Module {
     public static AuraModule INSTANCE;
 
+    private final HeaderSetting mainHeader = header("Main");
     private final SliderSetting attackRange = slider("Attack Range", 3.0f, 1.0f, 6.0f, 0.1f);
     private final SliderSetting aimRange = slider("Aim Range", 4.5f, 1.0f, 8.0f, 0.1f);
+    private final SliderSetting fov = slider("FOV", 360.0f, 1.0f, 360.0f, 1.0f);
 
+    private final HeaderSetting rotHeader = header("Rotations");
     private final ModeSetting rotMode = mode("Rotation", "SpookyTime", "SpookyTime", "4pookyTime", "Linear", "Matrix", "Funtime", "Builder");
     private final ModeSetting moveFix = mode("Movement Correction", "Silent", "Silent", "Current");
     private final ModeSetting disengageMode = mode("Disengage", "Smooth", "Smooth", "Instant");
     private final ModeSetting sprintReset = mode("Sprint Reset", "Legit", "None", "Legit", "Packet");
-    private final MultiModeSetting targets = multiMode("Targets", "Players", "Mobs", "Animals", "Naked", "Friends", "Villagers");
+
+    private final HeaderSetting targetHeader = header("Targets");
+    private final MultiModeSetting targets = multiMode("Targets", "Players", "Mobs", "Animals", "Naked", "Friends", "Villagers", "Invisibles");
+    private final ModeSetting targetSort = mode("Target Sort", "Distance", "Distance", "Health", "Armor", "FOV");
+
+    private final HeaderSetting combatHeader = header("Combat Settings");
+    private final CheckBox autoWeapon = checkbox("Auto Weapon", true);
+    private final CheckBox shieldBreaker = checkbox("Shield Breaker", true);
+    private final CheckBox unshield = checkbox("Unshield", true);
+    private final CheckBox onlyCrits = checkbox("Only Crits", true);
+    private final CheckBox smartCrits = checkbox("Smart Crits", true).visible(onlyCrits::getValue);
+    private final CheckBox maceCrit = checkbox("Mace Crit Boost", true);
+    private final CheckBox randomFallDistance = checkbox("Random Fall Distance", false).visible(onlyCrits::getValue);
+
+    private final HeaderSetting wallHeader = header("Walls & Raytrace");
+    private final CheckBox raytrace = checkbox("Raytrace", true);
+    private final ModeSetting blockHitMode = mode("Block Raycast", "Normal", "Normal", "Partial Blocks", "Through Walls");
+    private final CheckBox aimThroughWalls = checkbox("Aim Through Walls", false);
+    private final CheckBox throughWalls = checkbox("Through Walls", false);
 
     private final HeaderSetting elis = header("Elytra");
     private final CheckBox elytraPredict = checkbox("Elytra Predict", true);
     private final ModeSetting predictType = mode("Predict Type", "Default", "Default", "Limit").visible(elytraPredict::getValue);
     private final SliderSetting distancelytra = slider("Elytra Distance", 15.0f, 1.0f, 40.0f, 1.0f).visible(elytraPredict::getValue);
 
-    private final HeaderSetting dopa = header("Settings");
-    private final CheckBox raytrace = checkbox("Raytrace", true);
-    private final ModeSetting blockHitMode = mode("Block Raycast", "Normal", "Normal", "Partial Blocks", "Through Walls");
-    private final CheckBox aimThroughWalls = checkbox("Aim Through Walls", false);
-    private final CheckBox throughWalls = checkbox("Through Walls", false);
-    private final CheckBox onlyCrits = checkbox("Only Crits", true);
-    private final CheckBox smartCrits = checkbox("Smart Crits", true).visible(onlyCrits::getValue);
-    private final CheckBox maceCrit = checkbox("Mace Crit Boost", true);
-    private final CheckBox randomFallDistance = checkbox("Random Fall Distance", false).visible(onlyCrits::getValue);
-    private final SliderSetting aimAssistForce = slider("AimAssist Force", 0.7f, 0.0f, 1.0f, 0.05f);
-    private final CheckBox maxDamageOffhand = checkbox("Max Damage Offhand", false);
+    private final HeaderSetting miscHeader = header("Misc Settings");
     private final CheckBox autoJump = checkbox("Auto Jump", false);
     private final CheckBox autoEat = checkbox("Auto Eat", false);
     private final SliderSetting eatHealth = slider("Eat Health", 14.0f, 1.0f, 20.0f, 1.0f).visible(autoEat::getValue);
-    private final CheckBox backtrack = checkbox("Backtrack Position History", false);
     private final CheckBox pauseEating = checkbox("Pause while Eating", true);
 
     private LivingEntity target = null;
@@ -64,7 +74,7 @@ public class AuraModule extends Module {
     }
 
     public AuraModule() {
-        super("Aura", "ффф", Category.COMBAT);
+        super("Aura", "Автоматическая атака целей", Category.COMBAT);
         INSTANCE = this;
     }
 
@@ -102,13 +112,47 @@ public class AuraModule extends Module {
         return !player().onGround();
     }
 
+    private void handleWeaponSwitch() {
+        if (player() == null || target == null) return;
+        int bestSlot = -1;
+        double maxDamage = -1.0;
+
+        boolean targetShielding = shieldBreaker.getValue() && target instanceof net.minecraft.world.entity.player.Player p && p.isBlocking();
+
+        for (int i = 0; i < 9; i++) {
+            var stack = player().getInventory().getItem(i);
+            if (stack.isEmpty()) continue;
+
+            if (targetShielding && stack.is(net.minecraft.tags.ItemTags.AXES)) {
+                bestSlot = i;
+                break;
+            }
+
+            if (autoWeapon.getValue() && AttackHandler.isWeapon(stack)) {
+                double dmg = 1.0;
+                if (stack.is(net.minecraft.tags.ItemTags.SWORDS)) dmg = 7.0;
+                else if (stack.is(net.minecraft.tags.ItemTags.AXES)) dmg = 9.0;
+                else if (stack.is(net.minecraft.world.item.Items.MACE)) dmg = 10.0;
+
+                if (dmg > maxDamage) {
+                    maxDamage = dmg;
+                    bestSlot = i;
+                }
+            }
+        }
+
+        if (bestSlot != -1 && bestSlot != player().getInventory().getSelectedSlot()) {
+            player().getInventory().setSelectedSlot(bestSlot);
+        }
+    }
+
     @EventTarget
     public void onTick(PlayerTickEvent event) {
         if (!inGame() || player() == null || mc.gameMode == null) return;
 
         if (event.getPhase() == PlayerTickEvent.Phase.PRE) {
             float maxFindDist = aimRange.getValue() + getElytraRangeBonus();
-            target = Targets.findTarget(maxFindDist, targets);
+            target = Targets.findTarget(maxFindDist, targets, targetSort.getValue(), fov.getValue());
 
             if (target == null) {
                 predictedElytraPos = null;
@@ -116,6 +160,12 @@ public class AuraModule extends Module {
                 AttackHandler.reset();
                 return;
             }
+
+            if (unshield.getValue() && player().isBlocking()) {
+                mc.options.keyUse.setDown(false);
+            }
+
+            handleWeaponSwitch();
 
             Vec3 aimPos;
             boolean isVisible;

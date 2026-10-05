@@ -147,6 +147,7 @@ public class DiscordIPCClient implements Closeable {
         try {
             JsonObject root = new JsonObject();
             root.addProperty("cmd", "SET_ACTIVITY");
+            root.addProperty("nonce", UUID.randomUUID().toString());
 
             JsonObject args = new JsonObject();
             args.addProperty("pid", currentPid);

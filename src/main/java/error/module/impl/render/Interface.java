@@ -29,6 +29,9 @@ public final class Interface extends Module {
     public final CheckBox serverHelper     = checkbox("Server Helper", true);
     public final CheckBox customHotbar     = checkbox("Custom Hotbar", true);
     public final CheckBox customScoreboard = checkbox("Custom Scoreboard", true);
+    public final ModeSetting scoreboardMode = mode("Режим Скорборда", "Кастомный", "Кастомный", "Ванильный", "Скрыт");
+    public final CheckBox scoreboardRemoveScores = checkbox("Скрывать числа скорборда", true);
+    public final CheckBox scoreboardShadow = checkbox("Тень текста Скорборда", true);
     public final ModeSetting colorMode     = mode("Цвет HUD", "Тема", "Тема", "Свой");
     public final ColorSetting customColor  = color("Свой цвет", ColorUtil.rgba(0, 180, 255, 255));
 

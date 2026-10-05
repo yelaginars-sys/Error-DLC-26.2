@@ -57,6 +57,33 @@ public final class Fonts {
         return ICONS_NURIK.getWidth(icon.glyph, size);
     }
 
+    public static void drawStringWithOutline(MsdfFont font, String text, float x, float y, float size, int color, int outlineColor, float outlineThickness) {
+        if (Render2DUtil.hasEmptyScissor()) return;
+        if (font == null || text == null || text.isEmpty()) return;
+        GuiGraphicsExtractor extractor = RenderExtend.currentGuiGraphicsExtractor();
+        if (extractor == null) return;
+
+        Render2DUtil.queue(new TextRenderState(
+                extractor.pose(),
+                font,
+                x, y, size,
+                font.shape(text),
+                color,
+                outlineColor,
+                outlineThickness,
+                0.0F,
+                TextAlign.LEFT,
+                0.0F,
+                Render2DUtil.currentScissor()
+        ));
+    }
+
+    public static void drawStringWithShadow(MsdfFont font, String text, float x, float y, float size, int color) {
+        int shadowColor = error.util.client.clients.ColorUtil.rgba(0, 0, 0, (int) (((color >>> 24) & 0xFF) * 0.75F));
+        drawString(font, text, x + 0.5F, y + 0.5F, size, shadowColor);
+        drawString(font, text, x, y, size, color);
+    }
+
     private static void draw(MsdfFont font, String text, float x, float y, float size, int color, TextAlign align) {
         if (Render2DUtil.hasEmptyScissor()) return;
         if (font == null || text == null || text.isEmpty()) return;
