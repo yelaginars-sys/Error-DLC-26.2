@@ -108,7 +108,7 @@ public abstract class LivingEntityRendererMixin<T extends LivingEntity, S extend
             Vec3 targetToPlayer = playerPos.subtract(targetPos);
             double dot = targetToPlayer.dot(targetLook);
 
-            PredictUtils.Type type = aura.getPredictType();
+            PredictUtils.Type type = PredictUtils.Type.DEFAULT;
             Vec3 predict = PredictUtils.realPredict(target, type);
             double distToPredict = playerPos.distanceTo(predict);
 

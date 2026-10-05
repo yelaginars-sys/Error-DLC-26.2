@@ -1,10 +1,8 @@
 package error.module.impl.combat;
 
 import lombok.Getter;
-import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemUseAnimation;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.Vec3;
 import error.util.*;
 import error.util.UBoxPoints.TargetPoint;
@@ -23,25 +21,24 @@ import java.util.List;
 public class AuraModule extends Module {
     public static AuraModule INSTANCE;
 
-    public final ModeSetting rotMode = mode("Ротация", "Funtime", "Funtime", "HolyLegit", "HolyWorld", "SpookyTime", "4pookyTime", "Spooky", "ReallyWorld", "HelixWave", "Artygrief", "Sloth", "Legit", "Linear", "Matrix", "Builder", "Lumen", "Grim", "Snap", "Smooth");
     public final MultiModeSetting targets = multiMode("Таргеты", List.of("Игроки", "Голые", "Невидимки", "Мобы"), "Игроки", "Голые", "Невидимки", "Мирные", "Мобы", "Друзья", "Жители");
+    public final ModeSetting targetSort = mode("Приоритет", "Дистанция", "Дистанция", "Здоровье", "Угол", "Никакой");
     public final SliderSetting attackRange = slider("Дистанция атаки", 3.0f, 0.0f, 6.0f, 0.05f);
     public final SliderSetting aimRange = slider("Дистанция наводки", 3.0f, 0.0f, 6.0f, 0.05f);
-    public final SliderSetting distancelytra = slider("Дистанция на элитрах", 50.0f, 10.0f, 100.0f, 1.0f);
-    public final CheckBox elytraPredict = checkbox("Предикт элитры", true);
-    public final ModeSetting predictType = mode("Тип предикта", "Default", "Default", "Limit").visible(elytraPredict::getValue);
-    public final CheckBox randomFallDistance = checkbox("Случайный падающий крит", false);
+    public final SliderSetting fov = slider("FOV", 360.0f, 10.0f, 360.0f, 5.0f);
+
+    public final ModeSetting rotMode = mode("Ротация", "Funtime", "Funtime", "HolyLegit", "HolyWorld", "SpookyTime", "4pookyTime", "Spooky", "ReallyWorld", "HelixWave", "Artygrief", "Sloth", "Legit", "Linear", "Matrix", "Builder", "Lumen", "Grim", "Snap", "Smooth");
+    public final ModeSetting moveFix = mode("Коррекция", "Свободная", "Нет", "Свободная", "Сфокусированная", "Полная");
     public final ModeSetting sprintReset = mode("Сброс спринта", "Legit", "None", "Legit", "Packet");
 
-    public PredictUtils.Type getPredictType() {
-        return predictType != null && predictType.getValue().equalsIgnoreCase("Limit") ? PredictUtils.Type.LIMIT : PredictUtils.Type.DEFAULT;
-    }
-    
     public final CheckBox smartCrits = checkbox("Умные криты", true);
     public final CheckBox onlyCrits = checkbox("Только криты", true);
+    public final CheckBox randomFallDistance = checkbox("Случайный падающий крит", false);
+
     public final CheckBox throughWalls = checkbox("Бить через стены", false);
     public final CheckBox bypassRwWalls = checkbox("Обход рв стен", false);
     public final CheckBox lookDownBypass = checkbox("Смотреть вниз", false).visible(bypassRwWalls::getValue);
+
     public final CheckBox unshield = checkbox("Отжимать щит", false);
     public final CheckBox shieldBreaker = checkbox("Ломать щит", true);
     public final CheckBox pauseEating = checkbox("Не бить когда ешь", true);
@@ -49,12 +46,7 @@ public class AuraModule extends Module {
     public final SliderSetting swapDelay = slider("Задержка свапа", 4.0f, 2.0f, 10.0f, 1.0f).visible(autoCerberus::getValue);
     public final CheckBox clientLook = checkbox("Наводка от первого лица", false);
 
-    public final ModeSetting moveFix = mode("Коррекция", "Свободная", "Нет", "Свободная", "Сфокусированная", "Полная");
-    public final ModeSetting targetSort = mode("Приоритет", "Дистанция", "Дистанция", "Здоровье", "Угол", "Никакой");
-    public final SliderSetting fov = slider("FOV", 360.0f, 10.0f, 360.0f, 5.0f);
-
     private LivingEntity target = null;
-    private Vec3 predictedElytraPos = null;
 
     public LivingEntity getTarget() {
         return this.target;
@@ -68,17 +60,9 @@ public class AuraModule extends Module {
     @Override
     public void onDisable() {
         target = null;
-        predictedElytraPos = null;
         RotationHandler.disengage("Smooth");
         AttackHandler.reset();
         Targets.reset();
-    }
-
-    public float getElytraRangeBonus() {
-        if (player() != null && player().getItemBySlot(EquipmentSlot.CHEST).is(Items.ELYTRA) && player().isFallFlying()) {
-            return distancelytra.getValue();
-        }
-        return 0.0f;
     }
 
     public boolean isEating() {
@@ -126,11 +110,10 @@ public class AuraModule extends Module {
         if (!inGame() || player() == null || mc.gameMode == null) return;
 
         if (event.getPhase() == PlayerTickEvent.Phase.PRE) {
-            float maxFindDist = aimRange.getValue() + getElytraRangeBonus();
+            float maxFindDist = aimRange.getValue();
             target = Targets.findTarget(maxFindDist, targets, targetSort.getValue(), fov.getValue());
 
             if (target == null) {
-                predictedElytraPos = null;
                 RotationHandler.disengage("Smooth");
                 AttackHandler.reset();
                 return;

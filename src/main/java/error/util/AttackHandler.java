@@ -41,13 +41,6 @@ public class AttackHandler {
         if (player.getBoundingBox().intersects(target.getBoundingBox())) {
             return true;
         }
-
-        if (player.isFallFlying() && target.isFallFlying() && aura.getElytraPredict().getValue()) {
-            Vec3 predPos = aura.getPredictedElytraPos() != null
-                    ? aura.getPredictedElytraPos()
-                    : PredictUtils.realPredict(target, aura.getPredictType());
-            return player.getEyePosition().distanceTo(predPos) <= 3.5f;
-        }
         return player.distanceTo(target) <= aura.getAttackRange().getValue();
     }
 
