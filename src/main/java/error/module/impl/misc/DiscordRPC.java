@@ -89,7 +89,7 @@ public class DiscordRPC extends Module {
         if (presence == null) return;
 
         presence.startTimestamp = startTime;
-        presence.details = "Error DLC | 26.2";
+        presence.details = "UID: 1337";
 
         if (mc != null && mc.level != null) {
             if (mc.getCurrentServer() != null && mc.getCurrentServer().ip != null) {
@@ -102,7 +102,7 @@ public class DiscordRPC extends Module {
         }
 
         presence.largeImageKey = "logo";
-        presence.largeImageText = "Error DLC | 26.2";
+        presence.largeImageText = "Error DLC | UID: 1337";
 
         presence.button_label_1 = "Telegram";
         presence.button_url_1 = "https://t.me/errordlc";

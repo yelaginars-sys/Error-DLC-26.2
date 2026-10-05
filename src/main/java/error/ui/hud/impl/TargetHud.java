@@ -42,16 +42,16 @@ public final class TargetHud extends HudElement implements error.IMinecraft {
     private int lastHurtTime = 0;
     private float lastHp = -1.0F;
 
-    private static final float CARD_H = 32.0F;
-    private static final float HEAD_SIZE = 19.0F;
+    private static final float CARD_H = 34.0F;
+    private static final float HEAD_SIZE = 20.0F;
     private static final float HEAD_RADIUS = 4.5F;
-    private static final float RING_SIZE = 18.0F;
-    private static final float RING_THICKNESS = 2.2F;
+    private static final float RING_SIZE = 23.0F;
+    private static final float RING_THICKNESS = 2.6F;
     private static final float ITEM_SCALE = 0.5625F; // 9 / 16
     private static final float ITEM_BOX = 9.5F;
 
     public TargetHud() {
-        super("target_hud", "Target HUD", 100.0F, 150.0F, 120.0F, CARD_H, true);
+        super("target_hud", "Target HUD", 100.0F, 150.0F, 125.0F, CARD_H, true);
     }
 
     @Override
@@ -192,7 +192,7 @@ public final class TargetHud extends HudElement implements error.IMinecraft {
                 p.size = 1.2F + rnd.nextFloat() * 1.6F;
                 p.age = 0.0F;
                 p.maxAge = 40.0F + rnd.nextFloat() * 30.0F;
-                p.color = rnd.nextBoolean() ? accent : 0xFFFFFFFF;
+                p.color = accent;
                 ambientParticles.add(p);
             }
 
@@ -232,7 +232,7 @@ public final class TargetHud extends HudElement implements error.IMinecraft {
                 p.size = 2.0F + rnd.nextFloat() * 2.0F;
                 p.age = 0.0F;
                 p.maxAge = 24.0F + rnd.nextFloat() * 18.0F;
-                p.color = rnd.nextBoolean() ? ColorUtil.rgba(255, 70, 70, 255) : accent;
+                p.color = accent;
                 particles.add(p);
             }
         }
@@ -330,7 +330,7 @@ public final class TargetHud extends HudElement implements error.IMinecraft {
                 tipP.size = 1.0F + ThreadLocalRandom.current().nextFloat() * 1.2F;
                 tipP.age = 0.0F;
                 tipP.maxAge = 16.0F;
-                tipP.color = 0xFFFFFFFF;
+                tipP.color = accent;
                 particles.add(tipP);
             }
         }

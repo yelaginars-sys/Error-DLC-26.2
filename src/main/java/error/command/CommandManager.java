@@ -87,4 +87,8 @@ public class CommandManager {
     public String getPrefix() {
         return prefix;
     }
+
+    public CommandDispatcher<Object> getDispatcher() {
+        return dispatcher;
+    }
 }

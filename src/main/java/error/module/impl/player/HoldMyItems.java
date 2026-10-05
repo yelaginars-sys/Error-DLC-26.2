@@ -150,24 +150,7 @@ public class HoldMyItems extends Module {
         swing = easeInOutBack(swing);
         boolean sharpSword = item.is(ItemTags.SWORDS) && isSharpAnimation();
 
-        if ((item.is(Items.EXPERIENCE_BOTTLE) || item.is(Items.WIND_CHARGE) || item.is(Items.EGG)
-                || item.is(Items.ENDER_EYE) || item.is(Items.SNOWBALL)
-                || item.getItem() instanceof SplashPotionItem || item.getItem() instanceof LingeringPotionItem)
-                && player.getOffhandItem().isEmpty() && useAnimation(item) != ItemUseAnimation.SPEAR
-                && !item.is(Items.FIRE_CHARGE) && !player.isSwimming() && !player.isVisuallyCrawling()
-                && !player.onClimbable()) {
-            if (player.getMainArm() == HumanoidArm.LEFT) bl = !bl;
 
-            poseStack.pushPose();
-            poseStack.mulPose(Axis.YP.rotationDegrees(-25.0F * sideFactor));
-            poseStack.mulPose(Axis.XP.rotationDegrees(-10.0F));
-            poseStack.mulPose(Axis.YP.rotationDegrees(25.0F * sideFactor * swing));
-            poseStack.mulPose(Axis.XP.rotationDegrees(30.0F * swing));
-            poseStack.translate(-0.15 * sideFactor, 0.1, 0.1);
-            poseStack.translate(0.0F, -0.55 * swing, 0.4 * swing * 3.14F);
-            self.hmi$renderPlayerArm(poseStack, collector, light, 0.0F, 0.0F, arm.getOpposite());
-            poseStack.popPose();
-        }
 
         if (mc.options.keyAttack.isDown() && !this.isAttacking && swingProgress == 0.0F) {
             this.left = !this.left;
@@ -616,16 +599,8 @@ public class HoldMyItems extends Module {
 
                         poseStack.pushPose();
                     }
-                    case SPEAR, TRIDENT -> {
-                        if (player.getOffhandItem().isEmpty() && !player.isVisuallyCrawling()
-                                && !player.isSwimming() && !player.onClimbable()) {
-                            poseStack.pushPose();
-                            poseStack.mulPose(Axis.YP.rotationDegrees(-25 * l));
-                            poseStack.translate(-0.15 * l, 0.1, 0.1);
-                            self.hmi$renderPlayerArm(poseStack, collector, light, equipProgress, swingProgress, arm.getOpposite());
-                            poseStack.popPose();
-                        }
 
+                    case SPEAR, TRIDENT -> {
                         float m = (float) item.getUseDuration(player) - ((float) player.getUseItemRemainingTicks() - frameInterp + 1.0F);
                         float f = m / 10.0F;
                         if (f > 1.0F) f = 1.0F;

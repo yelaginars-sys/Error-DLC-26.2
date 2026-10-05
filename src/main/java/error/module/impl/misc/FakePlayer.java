@@ -1,9 +1,12 @@
 package error.module.impl.misc;
 
+import com.mojang.authlib.GameProfile;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.RemotePlayer;
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.player.PlayerSkin;
 import error.event.EventTarget;
 import error.event.list.PlayerTickEvent;
 import error.module.Category;
@@ -11,9 +14,9 @@ import error.module.Module;
 import error.setting.impl.CheckBox;
 import error.setting.impl.SliderSetting;
 
-public final class FakePlayer extends Module {
+import java.util.UUID;
 
-    private static final int FAKE_PLAYER_ID = -1337;
+public final class FakePlayer extends Module {
 
     public final CheckBox copyInventory = checkbox("Copy Inv", true);
     public final CheckBox copyHealth    = checkbox("Copy hp", true);
@@ -61,14 +64,31 @@ public final class FakePlayer extends Module {
     private void spawnFakePlayer(Minecraft mc) {
         removeFakePlayer();
 
-        this.fakePlayer = new RemotePlayer(mc.level, mc.player.getGameProfile());
-        this.fakePlayer.setId(FAKE_PLAYER_ID);
+        this.fakePlayer = new RemotePlayer(mc.level, new GameProfile(UUID.randomUUID(), "FakePlayer")) {
+            @Override
+            public PlayerSkin getSkin() {
+                return mc.player != null ? mc.player.getSkin() : super.getSkin();
+            }
+        };
 
-        this.fakePlayer.copyPosition(mc.player);
-        this.fakePlayer.setYHeadRot(mc.player.getYHeadRot());
-        this.fakePlayer.yHeadRotO = mc.player.getYHeadRot();
-        this.fakePlayer.setYBodyRot(mc.player.yBodyRot);
-        this.fakePlayer.yBodyRotO = mc.player.yBodyRot;
+        double rad = Math.toRadians(mc.player.getYRot());
+        double x = mc.player.getX() - Math.sin(rad) * 2.0;
+        double z = mc.player.getZ() + Math.cos(rad) * 2.0;
+        double y = mc.player.getY();
+        BlockPos pos = BlockPos.containing(x, y, z);
+        if (mc.level.getBlockState(pos.below()).isAir()) {
+            BlockPos cur = pos;
+            while (cur.getY() > mc.level.getMinY() && mc.level.getBlockState(cur.below()).isAir()) {
+                cur = cur.below();
+            }
+            y = cur.getY();
+        }
+
+        this.fakePlayer.snapTo(x, y, z, mc.player.getYRot() + 180.0F, 0.0F);
+        this.fakePlayer.setYHeadRot(mc.player.getYRot() + 180.0F);
+        this.fakePlayer.yHeadRotO = mc.player.getYRot() + 180.0F;
+        this.fakePlayer.setYBodyRot(mc.player.getYRot() + 180.0F);
+        this.fakePlayer.yBodyRotO = mc.player.getYRot() + 180.0F;
         this.fakePlayer.setOnGround(mc.player.onGround());
 
         try {
@@ -93,13 +113,14 @@ public final class FakePlayer extends Module {
             }
         }
 
+        this.fakePlayer.setInvulnerable(false);
         mc.level.addEntity(this.fakePlayer);
     }
 
     private void removeFakePlayer() {
         if (this.fakePlayer != null) {
             if (mc.level != null) {
-                mc.level.removeEntity(FAKE_PLAYER_ID, net.minecraft.world.entity.Entity.RemovalReason.DISCARDED);
+                mc.level.removeEntity(this.fakePlayer.getId(), net.minecraft.world.entity.Entity.RemovalReason.DISCARDED);
             }
             this.fakePlayer.discard();
             this.fakePlayer = null;

@@ -28,9 +28,7 @@ public class Modules {
     public WorldParticles worldParticles;
     public Ambience ambience;
     public Arrows arrows;
-    public ElytraBooster elytraBooster;
     public FakePlayer fakePlayer;
-    public ElytraMotion elytraMotion;
     public AirStuck airStuck;
     public NoDelay noDelay;
     public ClickPearl clickPearl;
@@ -78,7 +76,6 @@ public class Modules {
     public CustomModels customModels;
     public MaceHelper maceHelper;
     public MaceSounds maceSounds;
-    public WindCharge windCharge;
     public AutoCaptcha autoCaptcha;
     public IRC irc;
     public ExpThrow expThrow;
@@ -97,7 +94,6 @@ public class Modules {
         this.holdMyItems = new HoldMyItems();
         this.maceHelper = new MaceHelper();
         this.maceSounds = new MaceSounds();
-        this.windCharge = new WindCharge();
         this.autoCaptcha = new AutoCaptcha();
         this.irc = new IRC();
         this.expThrow = new ExpThrow();
@@ -147,10 +143,8 @@ public class Modules {
         this.serverHelper = new ServerHelper();
         this.clickPearl = new ClickPearl();
         this.timer = new Timer();
-        this.elytraBooster = new ElytraBooster();
         this.airStuck = new AirStuck();
         this.fakePlayer = new FakePlayer();
-        this.elytraMotion = new ElytraMotion();
         this.ambience = new Ambience();
         this.nameTags = new NameTags();
         this.auraModule = new AuraModule();
@@ -170,7 +164,6 @@ public class Modules {
                 this.holdMyItems,
                 this.maceHelper,
                 this.maceSounds,
-                this.windCharge,
                 this.autoCaptcha,
                 this.irc,
                 this.expThrow,
@@ -220,10 +213,8 @@ public class Modules {
                 this.serverHelper,
                 this.clickPearl,
                 this.timer,
-                this.elytraBooster,
                 this.airStuck,
                 this.fakePlayer,
-                this.elytraMotion,
                 this.ambience,
                 this.nameTags,
                 this.auraModule,

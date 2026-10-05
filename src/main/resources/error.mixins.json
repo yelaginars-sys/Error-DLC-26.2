@@ -12,6 +12,7 @@
     "accessor.AbstractSliderButtonAccessor",
     "gui.GuiRendererMixin",
     "client.ChatScreenMixin",
+    "client.CommandSuggestionsMixin",
     "accessor.ILocalPlayer",
     "client.LivingEntityRendererMixin",
     "gui.GuiMixin",

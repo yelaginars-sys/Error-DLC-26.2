@@ -113,10 +113,8 @@ public final class Localization {
         RU_DICT.put("ServerHelper", "Сервер Помощник");
         RU_DICT.put("ClickPearl", "Быстрый Перл");
         RU_DICT.put("Timer", "Таймер");
-        RU_DICT.put("ElytraBooster", "Элитра Бустер");
         RU_DICT.put("AirStuck", "Зависание в Воздухе");
         RU_DICT.put("FakePlayer", "Фейк Игрок");
-        RU_DICT.put("ElytraMotion", "Управление Элитрой");
         RU_DICT.put("Ambience", "Окружение");
         RU_DICT.put("HUD", "HUD");
         RU_DICT.put("Interface", "Интерфейс");
@@ -337,8 +335,6 @@ public final class Localization {
         RU_DICT.put("WebTrap.desc", "Автоматически ставит паутину под ноги выбранной цели");
 
         RU_DICT.put("AirStuck.desc", "Замораживает положение игрока в воздухе");
-        RU_DICT.put("ElytraBooster.desc", "Ускоряет полет на элитрах при использовании фейерверков");
-        RU_DICT.put("ElytraMotion.desc", "Позволяет свободно управлять полетом на элитрах");
         RU_DICT.put("NoFall.desc", "Отменяет урон от падения с любой высоты");
         RU_DICT.put("Sprint.desc", "Автоматически удерживает спринт во время бега");
         RU_DICT.put("Timer.desc", "Изменяет скорость игрового времени и процессов");

@@ -115,18 +115,18 @@ public class UseTracker extends Module {
 
         List<ThrownSplashPotion> potions = mc.level.getEntitiesOfClass(ThrownSplashPotion.class, searchBox, Entity::isAlive);
         for (ThrownSplashPotion potion : potions) {
-            PotionInfo info = detectPotionInfo(potion.getItem());
-            if (info == null) continue;
+            String potName = detectPotionName(potion.getItem());
+            if (potName == null) continue;
 
             int id = potion.getId();
             currentPotionIds.add(id);
 
             PotionData data = trackedPotions.get(id);
             if (data == null) {
-                trackedPotions.put(id, new PotionData(info, potion.position(), potion.getItem().copy()));
+                trackedPotions.put(id, new PotionData(potName, potion.position(), potion.getItem().copy()));
             } else {
                 data.lastPos = potion.position();
-                data.info = info;
+                data.potionName = potName;
             }
         }
 
@@ -164,7 +164,7 @@ public class UseTracker extends Module {
         hits.sort(Comparator.comparingDouble(PlayerHit::distance));
         if (hits.isEmpty()) return;
 
-        String potionTitle = data.info.displayName;
+        String potionTitle = data.potionName;
 
         for (int i = 0; i < Math.min(4, hits.size()); i++) {
             PlayerHit hit = hits.get(i);
@@ -177,26 +177,77 @@ public class UseTracker extends Module {
         }
     }
 
-    private PotionInfo detectPotionInfo(ItemStack stack) {
+    private String detectPotionName(ItemStack stack) {
         if (stack.isEmpty()) return null;
 
-        String name = stack.getHoverName().getString().toLowerCase(Locale.ROOT);
-        if (name.contains("святая") || name.contains("holy")) return PotionInfo.HOLY_WATER;
-        if (name.contains("гнев") || name.contains("wrath")) return PotionInfo.WRATH;
-        if (name.contains("паладин") || name.contains("paladin")) return PotionInfo.PALADIN;
-        if (name.contains("ассасин") || name.contains("assassin")) return PotionInfo.ASSASSIN;
+        // 1. Text checks (strip color formatting)
+        StringBuilder sb = new StringBuilder();
+        sb.append(stack.getHoverName().getString()).append(" ");
+        Component customName = stack.get(DataComponents.CUSTOM_NAME);
+        if (customName != null) sb.append(customName.getString()).append(" ");
+        var lore = stack.get(DataComponents.LORE);
+        if (lore != null) sb.append(lore.toString()).append(" ");
+        var customData = stack.get(DataComponents.CUSTOM_DATA);
+        if (customData != null) sb.append(customData.toString()).append(" ");
 
+        String rawText = sb.toString().replaceAll("§[0-9a-fk-or]", "").toLowerCase(Locale.ROOT);
+
+        if (rawText.contains("ассасин") || rawText.contains("assassin")) return "Зелье Ассасина";
+        if (rawText.contains("гнев") || rawText.contains("wrath")) return "Зелье Гнева";
+        if (rawText.contains("паладин") || rawText.contains("палладин") || rawText.contains("paladin")) return "Зелье Паладина";
+        if (rawText.contains("радиаци") || rawText.contains("radiation")) return "Зелье Радиации";
+        if (rawText.contains("снотвор") || rawText.contains("sleep")) return "Снотворное";
+        if (rawText.contains("хлопушк") || rawText.contains("flapper")) return "Хлопушка";
+        if (rawText.contains("святая") || rawText.contains("holy")) return "Святая вода";
+
+        // 2. Effects check based on Debuda mogged signature tables
         PotionContents contents = stack.get(DataComponents.POTION_CONTENTS);
         if (contents != null && contents.hasEffects()) {
+            boolean hasHarm = false;
+            boolean hasStrength = false;
+            boolean hasSpeed = false;
+            boolean hasHaste = false;
+            boolean hasSlowness = false;
+            boolean hasRegen = false;
+            boolean hasHeal = false;
+            boolean hasResistance = false;
+            boolean hasHealthBoost = false;
+            boolean hasPoison = false;
+            boolean hasWither = false;
+            boolean hasWeakness = false;
+            boolean hasBlindness = false;
+
             for (MobEffectInstance inst : contents.getAllEffects()) {
-                if (inst.getEffect() == MobEffects.REGENERATION && inst.getAmplifier() >= 1) return PotionInfo.HOLY_WATER;
-                if (inst.getEffect() == MobEffects.STRENGTH && inst.getAmplifier() >= 3) return PotionInfo.WRATH;
-                if (inst.getEffect() == MobEffects.RESISTANCE && inst.getAmplifier() >= 0) return PotionInfo.PALADIN;
-                if (inst.getEffect() == MobEffects.SPEED && inst.getAmplifier() >= 1) return PotionInfo.ASSASSIN;
+                if (inst.is(MobEffects.INSTANT_DAMAGE)) hasHarm = true;
+                if (inst.is(MobEffects.STRENGTH)) hasStrength = true;
+                if (inst.is(MobEffects.SPEED)) hasSpeed = true;
+                if (inst.is(MobEffects.HASTE)) hasHaste = true;
+                if (inst.is(MobEffects.SLOWNESS)) hasSlowness = true;
+                if (inst.is(MobEffects.REGENERATION)) hasRegen = true;
+                if (inst.is(MobEffects.INSTANT_HEALTH)) hasHeal = true;
+                if (inst.is(MobEffects.RESISTANCE)) hasResistance = true;
+                if (inst.is(MobEffects.HEALTH_BOOST)) hasHealthBoost = true;
+                if (inst.is(MobEffects.POISON)) hasPoison = true;
+                if (inst.is(MobEffects.WITHER)) hasWither = true;
+                if (inst.is(MobEffects.WEAKNESS)) hasWeakness = true;
+                if (inst.is(MobEffects.BLINDNESS)) hasBlindness = true;
             }
+
+            if (hasHarm || (hasStrength && hasSpeed && (hasHaste || !hasSlowness))) return "Зелье Ассасина";
+            if (hasStrength && hasSlowness) return "Зелье Гнева";
+            if (hasResistance && hasHealthBoost) return "Зелье Паладина";
+            if (hasPoison && hasWither) return "Зелье Радиации";
+            if (hasWeakness && (hasBlindness || hasWither)) return "Снотворное";
+            if (hasRegen || hasHeal) return "Святая вода";
         }
 
-        return PotionInfo.HOLY_WATER;
+        // 3. Fallback to clean name of the item itself if custom, or potion name
+        String cleanName = stack.getHoverName().getString().replaceAll("§[0-9a-fk-or]", "").trim();
+        if (!cleanName.isEmpty() && !cleanName.equalsIgnoreCase("Взрывное зелье") && !cleanName.equalsIgnoreCase("Splash Potion")) {
+            return cleanName;
+        }
+
+        return "Кастомное зелье";
     }
 
     private void handleItemUsage(long currentTime) {
@@ -365,31 +416,18 @@ public class UseTracker extends Module {
     }
 
     private static class PotionData {
-        PotionInfo info;
+        String potionName;
         Vec3 lastPos;
         ItemStack stack;
 
-        PotionData(PotionInfo info, Vec3 lastPos, ItemStack stack) {
-            this.info = info;
+        PotionData(String potionName, Vec3 lastPos, ItemStack stack) {
+            this.potionName = potionName;
             this.lastPos = lastPos;
             this.stack = stack;
         }
     }
 
     private record PlayerHit(Player player, int percent, double distance) {}
-
-    private enum PotionInfo {
-        HOLY_WATER("Святая вода"),
-        WRATH("Зелье Гнева"),
-        PALADIN("Зелье Паладина"),
-        ASSASSIN("Зелье Ассасина");
-
-        final String displayName;
-
-        PotionInfo(String displayName) {
-            this.displayName = displayName;
-        }
-    }
 
     private static class PlayerItemState {
         boolean isUsing = false;
