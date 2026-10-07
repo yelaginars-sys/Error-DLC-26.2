@@ -188,6 +188,10 @@ public final class CustomScoreboardHud extends HudElement {
             float cardW = Math.max(80.0F, maxLineW + 16.0F);
             float cardH = 10.0F + 12.0F + (lines.isEmpty() ? 0 : (5.0F + lines.size() * 10.0F)) + 4.0F;
 
+            float prevScaledW = this.width * scale;
+            float prevX = this.x;
+            float prevRight = prevX + prevScaledW;
+
             widthAnim.setTarget(cardW);
             widthAnim.update();
             heightAnim.setTarget(cardH);
@@ -195,11 +199,16 @@ public final class CustomScoreboardHud extends HudElement {
 
             this.width = widthAnim.getValue();
             this.height = heightAnim.getValue();
+            float newScaledW = this.width * scale;
 
-            // Default position anchored to right side if not set/dragged
-            if (!this.dragging && this.x == 0 && this.y == 0) {
-                this.x = mc.getWindow().getGuiScaledWidth() - this.width * scale - 8.0F;
-                this.y = mc.getWindow().getGuiScaledHeight() * 0.35F - (this.height * scale) * 0.5F;
+            // Default position anchored to right side & right-edge pinning on objective change
+            if (!this.dragging) {
+                if (prevX == 0 && this.y == 0) {
+                    this.x = mc.getWindow().getGuiScaledWidth() - newScaledW - 8.0F;
+                    this.y = mc.getWindow().getGuiScaledHeight() * 0.35F - (this.height * scale) * 0.5F;
+                } else if (prevScaledW > 0 && prevRight >= mc.getWindow().getGuiScaledWidth() - 35.0F) {
+                    this.x = prevRight - newScaledW;
+                }
             }
 
             int accent = Theme.getAccentColor();

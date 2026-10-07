@@ -116,10 +116,18 @@ public class Modules {
     public error.module.impl.misc.TotemSounds totemSounds;
     public error.module.impl.player.GodMode godMode;
     public error.module.impl.player.WindHop windHop;
+    public Arrows arrows;
+    public Atmosphere atmosphere;
+    public BaseFinder baseFinder;
+    public Chams chams;
 
     public void init() {
         this.clickGui = new ClickGui();
         this.anInterface = new Interface();
+        this.arrows = new Arrows();
+        this.atmosphere = new Atmosphere();
+        this.baseFinder = new BaseFinder();
+        this.chams = new Chams();
         this.customModels = new CustomModels();
         this.holdMyItems = new HoldMyItems();
         this.maceHelper = new MaceHelper();

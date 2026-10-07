@@ -317,8 +317,8 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
             case PVP -> {
                 String badgeText = pvpSeconds >= 0 ? (pvpSeconds + "s") : "PVP";
                 float badgeW = Fonts.SF_MEDIUM.getWidth(badgeText, 6.5F) + 6.0F;
-                float titleW = Fonts.SF_MEDIUM.getWidth(pvpTitle.isEmpty() ? "Режим PvP" : pvpTitle, 7.5F);
-                yield Math.max(110.0F, 22.0F + badgeW + 6.0F + titleW + 14.0F);
+                float titleW = Fonts.SF_MEDIUM.getWidth("Режим PvP", 7.5F);
+                yield Math.max(95.0F, 22.0F + badgeW + 6.0F + titleW + 10.0F);
             }
             case NOTIFICATION -> {
                 float textW = Fonts.SF_MEDIUM.getWidth(notificationText, 8.0F);
@@ -681,8 +681,8 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
 
         curX += badgeW + 5.0F;
 
-        // PvP Title
-        String display = pvpTitle.isEmpty() ? "Режим PvP" : pvpTitle;
+        // Compact PvP Title
+        String display = "Режим PvP";
         Fonts.drawString(Fonts.SF_MEDIUM, display, curX, textY, 7.5F, ColorUtil.rgba(255, 255, 255, (int) (245 * alpha)));
     }
 
