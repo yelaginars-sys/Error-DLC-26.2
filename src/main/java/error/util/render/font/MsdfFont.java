@@ -70,7 +70,13 @@ public final class MsdfFont {
 
     public static MsdfFont load(Identifier metadataId) {
         return CACHE.computeIfAbsent(metadataId, MsdfFont::readFont);
-    } public float textHeight(float size) {
+    }
+
+    public float getHeight(float size) {
+        return textHeight(size);
+    }
+
+    public float textHeight(float size) {
         return (this.ascenderEm - this.descenderEm) * size;
     }
     public String trimToWidth(String text, float maxWidth, float size) {

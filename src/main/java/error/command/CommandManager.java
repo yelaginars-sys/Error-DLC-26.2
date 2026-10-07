@@ -30,6 +30,7 @@ public class CommandManager {
         register(new FriendCommand());
         register(new StaffCommand());
         register(new TeleportCommand());
+        register(new SpecCommand());
     }
 
     public void register(Command command) {

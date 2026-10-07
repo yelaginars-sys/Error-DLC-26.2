@@ -154,7 +154,6 @@ vec3 applyAutumn(vec3 baseColor, vec2 uv, float intensity) {
 }
 
 vec3 applySpring(vec3 baseColor, vec2 uv, float intensity) {
-    // 1. Wet spring rain color grading
     vec3 hsv = rgb2hsv(baseColor);
     if (hsv.x > 0.20 && hsv.x < 0.44 && hsv.y > 0.10) {
         hsv.y = min(1.0, hsv.y * (1.0 + 0.30 * intensity));
@@ -162,7 +161,6 @@ vec3 applySpring(vec3 baseColor, vec2 uv, float intensity) {
     }
     vec3 col = hsv2rgb(hsv);
 
-    // 2. Procedural puddles on ground surfaces
     vec2 aspect = vec2(u_Width / max(u_Height, 1.0), 1.0);
     float perspective = 1.0 / max(0.12, (1.0 - uv.y) * 2.0 + 0.15);
     vec2 groundUV = (uv - vec2(0.5, 0.5)) * aspect * perspective * 4.0;
@@ -174,7 +172,6 @@ vec3 applySpring(vec3 baseColor, vec2 uv, float intensity) {
     float groundMask = smoothstep(0.30, 0.70, uv.y);
     float puddleMask = smoothstep(0.46, 0.62, puddleNoise) * groundMask;
 
-    // 3. Animated Rain Ripples inside puddles
     float rippleTotal = 0.0;
     if (puddleMask > 0.01) {
         vec2 ripUV = groundUV * 3.5;
@@ -189,7 +186,6 @@ vec3 applySpring(vec3 baseColor, vec2 uv, float intensity) {
         rippleTotal = wave * puddleMask;
     }
 
-    // 4. Mirror Screen-Space Reflection distorted by ripples
     vec2 reflOffset = vec2(rippleTotal * 0.025, (0.10 + rippleTotal * 0.02) * (1.0 - uv.y * 0.45));
     vec2 reflUV = uv + vec2(reflOffset.x, -reflOffset.y);
     reflUV = clamp(reflUV, vec2(0.002), vec2(0.998));
@@ -198,20 +194,16 @@ vec3 applySpring(vec3 baseColor, vec2 uv, float intensity) {
     vec3 skyRefl = vec3(0.68, 0.80, 0.96);
     vec3 mirrorReflection = mix(reflectedScene, skyRefl, 0.35);
 
-    // Fresnel reflectance factor
     float fresnel = pow(clamp(1.0 - uv.y, 0.0, 1.0), 1.5) * 0.65 + 0.35;
 
-    // 5. Specular Glistening Highlight on ripples
     float specular = pow(clamp(rippleTotal * 0.85 + 0.55, 0.0, 1.0), 16.0) * 1.8;
     vec3 specColor = vec3(1.0, 1.0, 1.0) * specular * puddleMask;
 
-    // 6. Wet Porous Ground Darkening outside puddles
     vec3 wetBase = col * mix(vec3(1.0), vec3(0.75, 0.78, 0.82), 0.45 * intensity * groundMask);
 
     col = mix(wetBase, mirrorReflection, puddleMask * fresnel * 0.88 * intensity);
     col += specColor * intensity;
 
-    // 7. Rain Bloom & Wet Vignette
     if (u_Bloom > 0.5) {
         vec2 texelSize = vec2(1.0 / max(u_Width, 1.0), 1.0 / max(u_Height, 1.0));
         vec3 bloom = sampleBloom(uv, texelSize);

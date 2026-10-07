@@ -27,10 +27,10 @@ public class AuraModule extends Module {
     public final SliderSetting aimRange = slider("Дистанция наводки", 3.0f, 0.0f, 6.0f, 0.05f);
     public final SliderSetting fov = slider("FOV", 360.0f, 10.0f, 360.0f, 5.0f);
 
-    public final ModeSetting rotMode = mode("Ротация", "Funtime", "Funtime", "HolyLegit", "HolyWorld", "SpookyTime", "4pookyTime", "Spooky", "ReallyWorld", "HelixWave", "Artygrief", "Sloth", "Legit", "Linear", "Matrix", "Builder", "Lumen", "Grim", "Snap", "Smooth", "Spooky (En)", "ReallyWorld (En)", "FunTime (En)", "AimAssist (En)", "HolyWorld (En)", "ML (En)", "Ares/FT (En)", "Snap (En)");
+    public final ModeSetting rotMode = mode("Ротация", "Funtime", "Funtime", "HolyLegit", "HolyWorld", "SpookyTime", "4pookyTime", "Spooky", "ReallyWorld", "HelixWave", "Artygrief", "Sloth", "Legit", "Linear", "Matrix", "Builder", "Lumen", "Grim", "Snap", "Smooth", "Spooky (En)", "ReallyWorld (En)", "FunTime (En)", "AimAssist (En)", "HolyWorld (En)", "ML (En)", "Ares/FT (En)", "Snap (En)", "FunTime (exs)", "SpookyTime (exs)", "SlimeWorld (exs)", "ReallyWorld (exs)", "LonyGrief (exs)", "HvH (exs)", "Shard (exs)", "Sloth (exs)", "Legit (exs)");
     public final ModeSetting moveFix = mode("Коррекция", "Свободная", "Нет", "Свободная", "Сфокусированная", "Полная");
     public final ModeSetting sprintReset = mode("Сброс спринта", "Legit", "None", "Legit", "Packet")
-            .visible(() -> !rotMode.getValue().endsWith("(En)"));
+            .visible(() -> !rotMode.getValue().endsWith("(En)") && !rotMode.getValue().endsWith("(exs)"));
 
     // Energy Rotations Settings
     public final SliderSetting enAimAssistPower = slider("Сила AimAssist", 0.5f, 0.05f, 1.0f, 0.05f)
@@ -49,6 +49,20 @@ public class AuraModule extends Module {
             .visible(() -> rotMode.getValue().endsWith("(En)") && !rotMode.is("Spooky (En)"));
     public final CheckBox enNoAttackContainer = checkbox("Не бить если открыт контейнер", false)
             .visible(() -> rotMode.is("Ares/FT (En)"));
+
+    // Exclusive (exs) Rotations Settings
+    public final CheckBox exsSpookyBypass = checkbox("Spooky обход (exs)", true)
+            .visible(() -> rotMode.is("SpookyTime (exs)"));
+    public final SliderSetting exsSlimeSmooth = slider("Сглаживание (exs)", 0.6f, 0.1f, 1.0f, 0.05f)
+            .visible(() -> rotMode.is("SlimeWorld (exs)"));
+    public final SliderSetting exsLonyAccel = slider("Ускорение (exs)", 0.12f, 0.05f, 0.50f, 0.01f)
+            .visible(() -> rotMode.is("LonyGrief (exs)"));
+    public final CheckBox exsRwSnap = checkbox("Snap атака (exs)", true)
+            .visible(() -> rotMode.is("ReallyWorld (exs)"));
+    public final SliderSetting exsSlothFov = slider("FOV обзора (exs)", 60.0f, 10.0f, 180.0f, 5.0f)
+            .visible(() -> rotMode.is("Sloth (exs)"));
+    public final CheckBox exsShardMissHits = checkbox("Случайный промах (exs)", true)
+            .visible(() -> rotMode.is("Shard (exs)"));
 
     public final CheckBox smartCrits = checkbox("Умные криты", true);
     public final CheckBox onlyCrits = checkbox("Только криты", true);

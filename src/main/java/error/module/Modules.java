@@ -27,7 +27,6 @@ public class Modules {
     public Removals removals;
     public WorldParticles worldParticles;
     public Ambience ambience;
-    public Arrows arrows;
     public FakePlayer fakePlayer;
     public AirStuck airStuck;
     public NoDelay noDelay;
@@ -49,7 +48,6 @@ public class Modules {
     public PopEffect popEffect;
     public AutoTotem autoTotem;
     public CrystalAura crystalAura;
-    public BlockHighlight blockHighlight;
     public JumpCircles jumpCircles;
     public Predictions predictions;
     public FireworkESP fireworkESP;
@@ -75,7 +73,6 @@ public class Modules {
     public FunPay funPay;
     public SpecScan specScan;
     public HoldMyItems holdMyItems;
-    public Notification notification;
     public CustomModels customModels;
     public MaceHelper maceHelper;
     public MaceSounds maceSounds;
@@ -83,7 +80,6 @@ public class Modules {
     public IRC irc;
     public ExpThrow expThrow;
     public AspectRatio aspectRatio;
-    public BlockOutline blockOutline;
     public RenderDemoModule renderDemoModule;
     public DiscordRPC discordRPC;
     public TargetEsp targetEsp;
@@ -107,11 +103,14 @@ public class Modules {
     public BowSpammer bowSpammer;
     public NoFriendDamage noFriendDamage;
     public AntiBot antiBot;
+    public error.module.impl.combat.MaceExploit maceExploit;
+    public error.module.impl.combat.Backtrack backtrack;
+    public error.module.impl.misc.WardenHelper wardenHelper;
+    public error.module.impl.misc.TotemSounds totemSounds;
 
     public void init() {
         this.clickGui = new ClickGui();
         this.anInterface = new Interface();
-        this.notification = new Notification();
         this.customModels = new CustomModels();
         this.holdMyItems = new HoldMyItems();
         this.maceHelper = new MaceHelper();
@@ -120,7 +119,6 @@ public class Modules {
         this.irc = new IRC();
         this.expThrow = new ExpThrow();
         this.aspectRatio = new AspectRatio();
-        this.blockOutline = new BlockOutline();
         this.sprint = new Sprint();
         this.elytraSwap = new ElytraSwap();
         this.fullBright = new FullBright();
@@ -151,7 +149,6 @@ public class Modules {
         this.predictions = new Predictions();
         this.webTrap = new WebTrap();
         this.viewModel = new ViewModel();
-        this.blockHighlight = new BlockHighlight();
         this.autoSwap = new AutoSwap();
         this.hitEffect = new HitEffect();
         this.autoTotem = new AutoTotem();
@@ -161,7 +158,6 @@ public class Modules {
         this.guiWalk = new GuiWalk();
         this.removals = new Removals();
         this.noDelay = new NoDelay();
-        this.arrows = new Arrows();
         this.freeLook = new FreeLook();
         this.zoom = new Zoom();
         this.seeInvisibles = new SeeInvisibles();
@@ -200,10 +196,11 @@ public class Modules {
         this.bowSpammer = new BowSpammer();
         this.noFriendDamage = new NoFriendDamage();
         this.antiBot = new AntiBot();
+        this.wardenHelper = new error.module.impl.misc.WardenHelper();
+        this.totemSounds = new error.module.impl.misc.TotemSounds();
 
         register(
                 this.anInterface,
-                this.notification,
                 this.customModels,
                 this.holdMyItems,
                 this.maceHelper,
@@ -212,7 +209,6 @@ public class Modules {
                 this.irc,
                 this.expThrow,
                 this.aspectRatio,
-                this.blockOutline,
                 this.sprint,
                 this.elytraSwap,
                 this.fullBright,
@@ -243,7 +239,6 @@ public class Modules {
                 this.predictions,
                 this.webTrap,
                 this.viewModel,
-                this.blockHighlight,
                 this.autoSwap,
                 this.hitEffect,
                 this.autoTotem,
@@ -253,7 +248,6 @@ public class Modules {
                 this.guiWalk,
                 this.removals,
                 this.noDelay,
-                this.arrows,
                 this.freeLook,
                 this.zoom,
                 this.seeInvisibles,
@@ -291,7 +285,11 @@ public class Modules {
                 this.elytraSample,
                 this.bowSpammer,
                 this.noFriendDamage,
-                this.antiBot
+                this.antiBot,
+                this.wardenHelper,
+                this.totemSounds,
+                this.maceExploit,
+                this.backtrack
         );
 
         if (this.maceHelper != null) this.maceHelper.setState(true);

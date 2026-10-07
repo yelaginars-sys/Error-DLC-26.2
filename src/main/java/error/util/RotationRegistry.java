@@ -1,6 +1,7 @@
 package error.util;
 
 import error.util.rotation.*;
+import error.util.rotation.exs.*;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -29,6 +30,17 @@ public final class RotationRegistry {
         register(new EnergyMLRotation());
         register(new EnergyAresRotation());
         register(new EnergySnapRotation());
+
+        // Exclusive (exs) Rotations
+        register(new FunTimeExsRotation());
+        register(new SpookyTimeExsRotation());
+        register(new SlimeWorldExsRotation());
+        register(new ReallyWorldExsRotation());
+        register(new LonyGriefExsRotation());
+        register(new HvHExsRotation());
+        register(new ShardExsRotation());
+        register(new SlothExsRotation());
+        register(new LegitExsRotation());
     }
 
     public static void register(AuraRotation rotation) {

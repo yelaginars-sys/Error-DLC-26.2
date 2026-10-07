@@ -55,7 +55,29 @@ public final class MaceHelper extends Module {
     public boolean isMaceActive() {
         if (!isEnabled() || mc.player == null) return false;
         ItemStack mainHand = mc.player.getMainHandItem();
-        return mainHand.is(Items.MACE);
+        return isMace(mainHand);
+    }
+
+    public static boolean isMace(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) return false;
+        if (stack.is(Items.MACE)) return true;
+        String name = stack.getHoverName().getString().toLowerCase();
+        return name.contains("булава") || name.contains("mace");
+    }
+
+    public void onWindChargeUsed(int originalSlot) {
+        if (!isEnabled() || mc.player == null) return;
+        if (autoEquip.getValue()) {
+            int maceSlot = findMaceSlot();
+            if (maceSlot != -1) {
+                if (!isMaceEquipped) {
+                    previousSlot = (originalSlot >= 0 && originalSlot < 9) ? originalSlot : mc.player.getInventory().getSelectedSlot();
+                    isMaceEquipped = true;
+                }
+                mc.player.getInventory().setSelectedSlot(maceSlot);
+                swapTimestamp = System.currentTimeMillis();
+            }
+        }
     }
 
     public boolean shouldHoldHit() {
@@ -102,7 +124,7 @@ public final class MaceHelper extends Module {
         if (mc.player == null) return -1;
         for (int i = 0; i < 9; i++) {
             ItemStack stack = mc.player.getInventory().getItem(i);
-            if (stack.is(Items.MACE)) return i;
+            if (isMace(stack)) return i;
         }
         return -1;
     }
