@@ -54,7 +54,14 @@ public final class CustomScoreboardHud extends HudElement {
                 if (teamObj != null) return teamObj;
             }
         }
-        return sb.getDisplayObjective(DisplaySlot.SIDEBAR);
+        Objective sidebar = sb.getDisplayObjective(DisplaySlot.SIDEBAR);
+        if (sidebar != null) return sidebar;
+
+        for (DisplaySlot slot : DisplaySlot.values()) {
+            Objective obj = sb.getDisplayObjective(slot);
+            if (obj != null) return obj;
+        }
+        return null;
     }
 
     @Override

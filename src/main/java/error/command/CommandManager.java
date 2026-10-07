@@ -31,6 +31,7 @@ public class CommandManager {
         register(new StaffCommand());
         register(new TeleportCommand());
         register(new SpecCommand());
+        register(new WayCommand());
     }
 
     public void register(Command command) {

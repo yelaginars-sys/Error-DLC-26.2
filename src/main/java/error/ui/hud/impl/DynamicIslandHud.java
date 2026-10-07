@@ -669,7 +669,7 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
 
         float curX = x + 21.0F;
 
-        // Lumen-style Time Badge: [ 14s ] or [ PVP ]
+        // Time Badge: [ 14s ] or [ PVP ]
         String badgeText = pvpSeconds >= 0 ? (pvpSeconds + "s") : "PVP";
         float badgeW = Fonts.SF_MEDIUM.getWidth(badgeText, 6.5F) + 6.0F;
         float badgeH = 11.0F;
@@ -684,16 +684,6 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
         // PvP Title
         String display = pvpTitle.isEmpty() ? "Режим PvP" : pvpTitle;
         Fonts.drawString(Fonts.SF_MEDIUM, display, curX, textY, 7.5F, ColorUtil.rgba(255, 255, 255, (int) (245 * alpha)));
-
-        // Progress bar at the bottom
-        float barW = width - 16.0F;
-        float barH = 2.0F;
-        float barX = x + 8.0F;
-        float barY = y + height - 3.5F;
-
-        Render2D.drawRoundedRect(barX, barY, barW, barH, 1.0F, ColorUtil.rgba(255, 255, 255, (int) (35 * alpha)));
-        float fillW = Math.max(2.0F, barW * Math.min(1.0F, Math.max(0.0F, pvpProgress)));
-        Render2D.drawRoundedRect(barX, barY, fillW, barH, 1.0F, ColorUtil.rgba(255, 65, 85, (int) (230 * alpha)));
     }
 
     private void drawNotification(float x, float y, float width, float height, int themeAccent, float alpha, long now) {

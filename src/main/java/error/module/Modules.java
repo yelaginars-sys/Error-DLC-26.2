@@ -103,10 +103,19 @@ public class Modules {
     public BowSpammer bowSpammer;
     public NoFriendDamage noFriendDamage;
     public AntiBot antiBot;
+    public error.module.impl.movement.GrimGlide grimGlide;
     public error.module.impl.combat.MaceExploit maceExploit;
     public error.module.impl.combat.Backtrack backtrack;
+    public error.module.impl.misc.AutoDarena autoDarena;
+    public error.module.impl.misc.AutoResell autoResell;
+    public error.module.impl.misc.AutoInvest autoInvest;
+    public error.module.impl.misc.DanjHelper danjHelper;
+    public error.module.impl.misc.AutoMine autoMine;
+    public error.module.impl.misc.Script script;
     public error.module.impl.misc.WardenHelper wardenHelper;
     public error.module.impl.misc.TotemSounds totemSounds;
+    public error.module.impl.player.GodMode godMode;
+    public error.module.impl.player.WindHop windHop;
 
     public void init() {
         this.clickGui = new ClickGui();
@@ -196,8 +205,19 @@ public class Modules {
         this.bowSpammer = new BowSpammer();
         this.noFriendDamage = new NoFriendDamage();
         this.antiBot = new AntiBot();
+        this.grimGlide = new error.module.impl.movement.GrimGlide();
+        this.maceExploit = new error.module.impl.combat.MaceExploit();
+        this.backtrack = new error.module.impl.combat.Backtrack();
+        this.autoDarena = new error.module.impl.misc.AutoDarena();
+        this.autoResell = new error.module.impl.misc.AutoResell();
+        this.autoInvest = new error.module.impl.misc.AutoInvest();
+        this.danjHelper = new error.module.impl.misc.DanjHelper();
+        this.autoMine = new error.module.impl.misc.AutoMine();
+        this.script = new error.module.impl.misc.Script();
         this.wardenHelper = new error.module.impl.misc.WardenHelper();
         this.totemSounds = new error.module.impl.misc.TotemSounds();
+        this.godMode = new error.module.impl.player.GodMode();
+        this.windHop = new error.module.impl.player.WindHop();
 
         register(
                 this.anInterface,
@@ -286,10 +306,19 @@ public class Modules {
                 this.bowSpammer,
                 this.noFriendDamage,
                 this.antiBot,
+                this.grimGlide,
+                this.maceExploit,
+                this.backtrack,
+                this.autoDarena,
+                this.autoResell,
+                this.autoInvest,
+                this.danjHelper,
+                this.autoMine,
+                this.script,
                 this.wardenHelper,
                 this.totemSounds,
-                this.maceExploit,
-                this.backtrack
+                this.godMode,
+                this.windHop
         );
 
         if (this.maceHelper != null) this.maceHelper.setState(true);
