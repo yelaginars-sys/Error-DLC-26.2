@@ -151,29 +151,27 @@ public abstract class AbstractButtonMixin {
                         ColorUtil.withAlpha(themeAccent, (int) (220 * (self.active ? 1.0F : 0.5F))));
             }
 
-            if (!isSpriteIcon) {
+            Component msg = self.getMessage();
+            boolean hasText = msg != null && !msg.getString().trim().isEmpty();
+
+            if (hasText) {
                 // Button label with custom San Francisco font
-                Component msg = self.getMessage();
-                if (msg != null) {
-                    String rawText = msg.getString();
-                    if (rawText != null && !rawText.isEmpty()) {
-                        String text = rawText.replaceAll("(?i)\\u00a7[0-9a-fk-or]", "");
-                        float fontSize = Math.clamp(h * 0.40F, 6.0F, 8.5F);
+                String rawText = msg.getString();
+                String text = rawText.replaceAll("(?i)\\u00a7[0-9a-fk-or]", "");
+                float fontSize = Math.clamp(h * 0.40F, 6.0F, 8.5F);
 
-                        float textWidth = Fonts.SF_MEDIUM.getWidth(text, fontSize);
-                        float maxTextW = w - 10.0F;
-                        if (textWidth > maxTextW && textWidth > 0.0F) {
-                            fontSize = Math.max(5.0F, fontSize * (maxTextW / textWidth));
-                        }
-
-                        float fontY = y + (h - fontSize) / 2.0F - 0.5F;
-                        int textColor = self.active
-                                ? ColorUtil.interpolateColor(0xFFE2E8F0, 0xFFFFFFFF, this.error$hoverAnim)
-                                : 0xFF64748B;
-
-                        Fonts.drawCenteredString(Fonts.SF_MEDIUM, text, x + w / 2.0F, fontY, fontSize, textColor);
-                    }
+                float textWidth = Fonts.SF_MEDIUM.getWidth(text, fontSize);
+                float maxTextW = w - 10.0F;
+                if (textWidth > maxTextW && textWidth > 0.0F) {
+                    fontSize = Math.max(5.0F, fontSize * (maxTextW / textWidth));
                 }
+
+                float fontY = y + (h - fontSize) / 2.0F - 0.5F;
+                int textColor = self.active
+                        ? ColorUtil.interpolateColor(0xFFE2E8F0, 0xFFFFFFFF, this.error$hoverAnim)
+                        : 0xFF64748B;
+
+                Fonts.drawCenteredString(Fonts.SF_MEDIUM, text, x + w / 2.0F, fontY, fontSize, textColor);
             }
 
             Render2DUtil.flush();
@@ -181,7 +179,7 @@ public abstract class AbstractButtonMixin {
             error.util.RenderExtend.exit2D();
         }
 
-        if (isSpriteIcon) {
+        if (isSpriteIcon && (self.getMessage() == null || self.getMessage().getString().trim().isEmpty())) {
             this.extractContents(extractor, mouseX, mouseY, partialTick);
         }
 

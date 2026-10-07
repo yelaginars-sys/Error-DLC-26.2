@@ -30,9 +30,12 @@ public abstract class PauseScreenMixin extends Screen {
         AbstractWidget lanButton = null;
         AbstractWidget quitButton = null;
 
+        java.util.List<AbstractWidget> extraIconButtons = new java.util.ArrayList<>();
+
         for (Object child : this.children()) {
             if (child instanceof AbstractWidget widget) {
                 String text = widget.getMessage() != null ? widget.getMessage().getString().toLowerCase() : "";
+                String className = widget.getClass().getName();
 
                 if (text.equals("меню") || text.equals("menu") || text.contains("друзья") || text.contains("жалобы") || text.contains("friends") || text.contains("reports")) {
                     widget.visible = false; // Hide top title pill & extra overlapping social buttons
@@ -42,9 +45,9 @@ public abstract class PauseScreenMixin extends Screen {
                     advancementsButton = widget;
                 } else if (text.contains("статистика") || text.contains("stats")) {
                     statsButton = widget;
-                } else if (text.contains("отзыв") || text.contains("feedback")) {
+                } else if (text.contains("отзыв") || text.contains("feedback") || text.contains("send_feedback")) {
                     feedbackButton = widget;
-                } else if (text.contains("ошибку") || text.contains("report") || text.contains("bugs")) {
+                } else if (text.contains("ошибку") || text.contains("report") || text.contains("bugs") || text.contains("report_bugs")) {
                     bugsButton = widget;
                 } else if (text.contains("настройки") || text.contains("options")) {
                     optionsButton = widget;
@@ -52,8 +55,24 @@ public abstract class PauseScreenMixin extends Screen {
                     lanButton = widget;
                 } else if (text.contains("сохранить") || text.contains("выйти") || text.contains("отключ") || text.contains("disconnect") || text.contains("quit")) {
                     quitButton = widget;
+                } else if (widget instanceof net.minecraft.client.gui.components.SpriteIconButton || className.contains("Sprite") || widget.getWidth() <= 30) {
+                    extraIconButtons.add(widget);
                 }
             }
+        }
+
+        if (feedbackButton == null && !extraIconButtons.isEmpty()) {
+            feedbackButton = extraIconButtons.get(0);
+        }
+        if (bugsButton == null && extraIconButtons.size() > 1) {
+            bugsButton = extraIconButtons.get(1);
+        }
+
+        if (feedbackButton != null) {
+            feedbackButton.setMessage(Component.literal("Отзыв"));
+        }
+        if (bugsButton != null) {
+            bugsButton.setMessage(Component.literal("Ошибки"));
         }
 
         float wFull = 210.0F;
