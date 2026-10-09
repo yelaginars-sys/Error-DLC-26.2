@@ -72,7 +72,6 @@ public class Modules {
     public AutoEvent autoEvent;
     public AutoSell autoSell;
     public AutoMsg autoMsg;
-    public FunPay funPay;
     public SpecScan specScan;
     public HoldMyItems holdMyItems;
     public CustomModels customModels;
@@ -146,7 +145,6 @@ public class Modules {
         this.autoEvent = new AutoEvent();
         this.autoSell = new AutoSell();
         this.autoMsg = new AutoMsg();
-        this.funPay = new FunPay();
         this.specScan = new SpecScan();
         this.autoAccept = new AutoAccept();
         this.triggerBot = new TriggerBot();
@@ -246,7 +244,6 @@ public class Modules {
                 this.autoEvent,
                 this.autoSell,
                 this.autoMsg,
-                this.funPay,
                 this.specScan,
                 this.autoAccept,
                 this.triggerBot,

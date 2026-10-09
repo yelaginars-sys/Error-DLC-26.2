@@ -73,7 +73,6 @@ public final class Localization {
         RU_DICT.put("AutoEvent", "Авто Ивенты");
         RU_DICT.put("AutoSell", "Авто Продажа");
         RU_DICT.put("AutoMsg", "Авто Сообщения");
-        RU_DICT.put("FunPay", "FunPay Скупка");
         RU_DICT.put("MaceSounds", "Звуки Булавы");
         RU_DICT.put("SpecScan", "Скан Спектаторов");
         RU_DICT.put("AutoAccept", "Авто Приём");
@@ -326,7 +325,6 @@ public final class Localization {
         RU_DICT.put("AutoEvent.desc", "Автоматический парсинг сообщений об ивентах в чате и навигация по GPS");
         RU_DICT.put("AutoSell.desc", "Автоматическая выгрузка и продажа предметов на аукционе за заданную цену");
         RU_DICT.put("AutoMsg.desc", "Автоматическая отправка сообщений и рекламы в чат с обходом спам-фильтра");
-        RU_DICT.put("FunPay.desc", "Автоматический выкуп и скупка дешёвых лотов на аукционе по заданной цене");
         RU_DICT.put("MaceSounds.desc", "Кастомные звуковые эффекты и визуальный всплеск при ударе булавой");
         RU_DICT.put("SpecScan.desc", "Обнаружение наблюдателей, невидимой администрации и игроков в ванише");
         RU_DICT.put("AHHelper.desc", "Помогает находить и покупать выгодные лоты на аукционе");
