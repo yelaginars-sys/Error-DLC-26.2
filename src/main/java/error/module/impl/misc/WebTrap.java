@@ -37,7 +37,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * WebTrap module ported from Energy client.
+ * WebTrap module.
  * Places cobwebs around predicted target position (Solo & Multi modes, RageMode).
  */
 public final class WebTrap extends Module {
@@ -117,7 +117,7 @@ public final class WebTrap extends Module {
             return;
         }
 
-        // Energy uses 7 ticks movement prediction
+        // 7 ticks movement prediction
         BlockPos predictedBase = getPredictedBlockPos(target);
         List<BlockPos> placeQueue = calculateTrapPositions(predictedBase);
         targetPositions.clear();

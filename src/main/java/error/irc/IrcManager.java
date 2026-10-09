@@ -31,7 +31,7 @@ public class IrcManager {
     private void initDefaultUsers() {
         onlineUsers.add(new IrcUser("walfini", "Dev", ColorUtil.rgba(255, 85, 85, 255), true));
         onlineUsers.add(new IrcUser("Vasya", "VIP", ColorUtil.rgba(255, 170, 0, 255), true));
-        onlineUsers.add(new IrcUser("LumenUser", "User", ColorUtil.rgba(85, 255, 255, 255), true));
+        onlineUsers.add(new IrcUser("ErrorUser", "User", ColorUtil.rgba(85, 255, 255, 255), true));
     }
 
     public void updateSelfPresence() {

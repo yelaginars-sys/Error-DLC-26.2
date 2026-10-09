@@ -8,14 +8,14 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * Energy Snap Rotation algorithm port (Util140).
+ * Error Snap Rotation algorithm port (Util140).
  * Instant 1-tick snap on attack, full free view during cooldown.
  */
-public final class EnergySnapRotation implements AuraRotation {
+public final class ErrorSnapRotation implements AuraRotation {
 
     @Override
     public String getName() {
-        return "Snap (En)";
+        return "Snap (Error)";
     }
 
     @Override

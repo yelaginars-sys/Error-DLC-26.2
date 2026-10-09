@@ -21,7 +21,7 @@ public final class ElytraBooster extends Module {
     public final SliderSetting correctionSpeed = slider("Скорость Коррекции", 1.5F, 0.1F, 3.0F, 0.1F);
 
     public ElytraBooster() {
-        super("ElytraBooster", "Ускорение и контроль полета на элитрах (Energy)", Category.MOVEMENT);
+        super("ElytraBooster", "Ускорение и контроль полета на элитрах", Category.MOVEMENT);
         INSTANCE = this;
     }
 

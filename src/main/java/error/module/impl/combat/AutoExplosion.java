@@ -28,7 +28,7 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * AutoExplosion module ported from Energy client.
+ * AutoExplosion module.
  * Automatically places and detonates end crystals / charges respawn anchors,
  * with safety checks: "Не взрывать себя" and "Не взрывать ресурсы".
  */

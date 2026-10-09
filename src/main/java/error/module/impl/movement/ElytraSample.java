@@ -17,7 +17,7 @@ public final class ElytraSample extends Module {
     public final CheckBox showPredict = checkbox("Показывать предикт", true);
 
     public ElytraSample() {
-        super("ElytraSample", "Режим точки предикта цели на элитрах (Energy)", Category.MOVEMENT);
+        super("ElytraSample", "Режим точки предикта цели на элитрах", Category.MOVEMENT);
         INSTANCE = this;
     }
 

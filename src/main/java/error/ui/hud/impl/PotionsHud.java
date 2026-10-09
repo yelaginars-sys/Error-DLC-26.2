@@ -161,12 +161,12 @@ public final class PotionsHud extends HudElement implements error.IMinecraft {
         float curX = this.x;
         float curY = this.y;
 
-        // 1. Header Capsule (Liquid Glass, Energy, or Black depending on active theme)
+        // 1. Header Capsule
         GuiGraphicsExtractor extractor = event.getGuiGraphicsExtractor();
         Render2D.drawHudCard(extractor, curX, curY, this.width, HEADER_H, PILL_R, 1.0F, accent);
 
-        // Energy Glyph "q"
-        Fonts.drawString(Fonts.ENERGY, "q", curX + 5.0F, curY + 2.0F, 8.5F, accent);
+        // Icon "q"
+        Fonts.drawString(Fonts.ERROR_ICONS, "q", curX + 5.0F, curY + 2.0F, 8.5F, accent);
         Fonts.drawString(Fonts.SF_MEDIUM, "Potions", curX + 16.0F, curY + 2.2F, 7.5F, 0xFFFFFFFF);
 
         curY += HEADER_H + GAP_Y;
@@ -186,7 +186,7 @@ public final class PotionsHud extends HudElement implements error.IMinecraft {
             float rightPillW = durTextW + 9.0F;
             float rightPillX = curX + this.width - rightPillW;
 
-            // Draw multi-theme capsules (Liquid Glass / Energy / Black)
+            // Draw theme-aware capsules
             Render2D.drawHudPill(extractor, curX, curY, leftPillW, ROW_H, PILL_R, e.alpha, accent);
             Render2D.drawHudPill(extractor, rightPillX, curY, rightPillW, ROW_H, PILL_R, e.alpha, accent);
 

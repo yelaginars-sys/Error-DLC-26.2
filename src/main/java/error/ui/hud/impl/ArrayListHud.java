@@ -115,7 +115,7 @@ public final class ArrayListHud extends HudElement implements error.IMinecraft {
             return;
         }
 
-        // Sort descending by full width (longest module at top, matching Energy)
+        // Sort descending by full width (longest module at top)
         entries.sort((e1, e2) -> Float.compare(e2.fullWidth, e1.fullWidth));
 
         float maxW = 50.0F;
@@ -148,14 +148,14 @@ public final class ArrayListHud extends HudElement implements error.IMinecraft {
             float slide = (1.0F - a) * 12.0F;
             float rowX = rightSide ? (this.x + (this.width - rowW) + slide) : (this.x - slide);
 
-            // Energy wave gradient color per index
+            // Wave gradient color per index
             int rowColor = Theme.getGradientColor(index * 30);
             int rowColorWithAlpha = ColorUtil.withAlpha(rowColor, (int) (255 * a));
 
             // 1. Background Card (respects active theme)
             Render2D.drawHudCard(extractor, rowX, curY, rowW, ROW_H, CARD_R, a, rowColor);
 
-            // 3. Side accent bar (2px width) on outer edge (matching Energy ArrayList)
+            // 3. Side accent bar (2px width) on outer edge
             float barX = rightSide ? (rowX + rowW - BAR_W) : rowX;
             Render2D.drawRoundedRect(barX, curY, BAR_W, ROW_H, 1.0F, rowColorWithAlpha);
 
@@ -163,7 +163,7 @@ public final class ArrayListHud extends HudElement implements error.IMinecraft {
             float textX = rightSide ? (rowX + 5.0F) : (rowX + 6.0F);
             float textY = curY + 2.5F;
 
-            // Module name in lowercase with Energy flowing gradient color
+            // Module name in lowercase with flowing gradient color
             Fonts.drawString(Fonts.SF_MEDIUM, e.name, textX, textY, 8.5F, rowColorWithAlpha);
 
             // Suffix in pure white

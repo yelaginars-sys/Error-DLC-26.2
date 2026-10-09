@@ -14,17 +14,17 @@ import net.minecraft.world.phys.Vec3;
 public class NoClip extends Module {
     public static NoClip INSTANCE;
 
-    public final ModeSetting mode = mode("Режим", "Energy", "Energy", "Free / Phase");
+    public final ModeSetting mode = mode("Режим", "Error", "Error", "Free / Phase");
 
-    // Energy mode settings
+    // Error mode settings
     public final SliderSetting clipDistance = slider("Дистанция клипа", 1.0F, 0.2F, 3.0F, 0.1F)
-            .visible(() -> mode.is("Energy"));
+            .visible(() -> mode.is("Error"));
     public final SliderSetting checkDist = slider("Дистанция проверки", 0.15F, 0.05F, 0.6F, 0.05F)
-            .visible(() -> mode.is("Energy"));
+            .visible(() -> mode.is("Error"));
     public final CheckBox flyOnly = checkbox("Только в полёте", true)
-            .visible(() -> mode.is("Energy"));
+            .visible(() -> mode.is("Error"));
     public final CheckBox updateClientPos = checkbox("Обновлять позицию", true)
-            .visible(() -> mode.is("Energy"));
+            .visible(() -> mode.is("Error"));
 
     // Phase / Free mode settings
     public final SliderSetting phaseSpeed = slider("Скорость прохождения", 0.4F, 0.1F, 2.0F, 0.05F)
@@ -42,7 +42,7 @@ public class NoClip extends Module {
         if (!inGame() || player() == null || level() == null || !player().isAlive() || player().isPassenger()) return;
         if (event.getPhase() != PlayerTickEvent.Phase.PRE) return;
 
-        if (mode.is("Energy")) {
+        if (mode.is("Error")) {
             if (flyOnly.getValue() && !player().getAbilities().flying) return;
 
             Vec3 lookVec = player().getViewVector(1.0F).normalize();

@@ -8,7 +8,7 @@ import error.module.Module;
 import net.minecraft.world.entity.player.Player;
 
 /**
- * NoFriendDamage module ported from Energy client.
+ * NoFriendDamage module.
  * Prevents attacking friends registered in FriendManager.
  */
 public class NoFriendDamage extends Module {

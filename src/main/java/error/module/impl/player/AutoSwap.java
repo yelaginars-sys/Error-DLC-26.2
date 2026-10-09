@@ -39,7 +39,7 @@ public class AutoSwap extends Module {
     private int pendingSlot = -1;
 
     public AutoSwap() {
-        super("AutoSwap", "Свап предмета в левую руку по бинду (Lumen)", Category.PLAYER);
+        super("AutoSwap", "Свап предмета в левую руку по бинду", Category.PLAYER);
         INSTANCE = this;
     }
 

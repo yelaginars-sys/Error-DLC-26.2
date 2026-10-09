@@ -157,8 +157,8 @@ public final class CooldownHud extends HudElement implements error.IMinecraft {
         GuiGraphicsExtractor extractor = event.getGuiGraphicsExtractor();
         Render2D.drawHudCard(extractor, curX, curY, this.width, HEADER_H, PILL_R, 1.0F, accent);
 
-        // Energy Glyph "s"
-        Fonts.drawString(Fonts.ENERGY, "s", curX + 5.0F, curY + 2.0F, 8.5F, accent);
+        // Icon "s"
+        Fonts.drawString(Fonts.ERROR_ICONS, "s", curX + 5.0F, curY + 2.0F, 8.5F, accent);
         Fonts.drawString(Fonts.SF_MEDIUM, "Cooldowns", curX + 16.0F, curY + 2.2F, 7.5F, 0xFFFFFFFF);
 
         curY += HEADER_H + GAP_Y;

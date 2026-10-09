@@ -20,7 +20,7 @@ public final class Theme {
     private static String glassStyle = "AURORA";
 
     @Getter @Setter
-    private static String uiStyle = "Жидкое стекло"; // "Жидкое стекло", "Energy", "Черный", "Новый Год"
+    private static String uiStyle = "Жидкое стекло"; // "Жидкое стекло", "Error", "Черный", "Новый Год"
 
     public static String getEffectiveUiStyle() {
         error.module.impl.render.Interface iface = error.module.impl.render.Interface.getInstance();
@@ -38,9 +38,13 @@ public final class Theme {
         return "Жидкое стекло".equalsIgnoreCase(s) || "Liquid Glass".equalsIgnoreCase(s);
     }
 
-    public static boolean isEnergy() {
+    public static boolean isErrorTheme() {
         String s = getEffectiveUiStyle();
-        return "Energy".equalsIgnoreCase(s) || "Энерджи".equalsIgnoreCase(s);
+        return "Error".equalsIgnoreCase(s) || "Эррор".equalsIgnoreCase(s) || "Energy".equalsIgnoreCase(s);
+    }
+
+    public static boolean isEnergy() {
+        return isErrorTheme();
     }
 
     public static boolean isBlack() {
@@ -57,8 +61,12 @@ public final class Theme {
         return "Жидкое стекло".equalsIgnoreCase(uiStyle) || "Liquid Glass".equalsIgnoreCase(uiStyle);
     }
 
+    public static boolean isGuiErrorTheme() {
+        return "Error".equalsIgnoreCase(uiStyle) || "Эррор".equalsIgnoreCase(uiStyle) || "Energy".equalsIgnoreCase(uiStyle);
+    }
+
     public static boolean isGuiEnergy() {
-        return "Energy".equalsIgnoreCase(uiStyle) || "Энерджи".equalsIgnoreCase(uiStyle);
+        return isGuiErrorTheme();
     }
 
     public static boolean isGuiBlack() {

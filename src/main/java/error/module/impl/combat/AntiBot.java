@@ -20,7 +20,7 @@ import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * AntiBot module ported from Energy client.
+ * AntiBot module.
  * Detects server bots and fake players, prevents targeting them, with optional removal from world.
  */
 public class AntiBot extends Module {

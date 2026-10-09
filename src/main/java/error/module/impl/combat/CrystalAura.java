@@ -52,7 +52,7 @@ import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * CrystalAura ported from energy client with complete logic:
+ * CrystalAura with complete logic:
  * - Precise explosion damage computation (armor, toughness, EPF, resistance, difficulty, exposure raycasting)
  * - Auto-Obsidian placement
  * - Anti-Weakness weapon swapping
@@ -488,7 +488,7 @@ public final class CrystalAura extends Module {
     }
 
     // =========================================================================
-    // Precise Damage Calculation (Ported from energy Util35)
+    // Precise Damage Calculation
     // =========================================================================
 
     public float calculateCrystalDamage(Vec3 explosionCenter, LivingEntity target, BlockPos placedObsidian, BlockPos ignoredBlock) {

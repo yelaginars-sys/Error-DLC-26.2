@@ -12,7 +12,8 @@ public final class Fonts {
     public static final MsdfFont SF_MEDIUM = MsdfFont.load(Identifier.parse("error:fonts/sfmedium.json"));
     public static final MsdfFont ICONS = MsdfFont.load(Identifier.parse("error:fonts/icons.json"));
     public static final MsdfFont EMOJIS = MsdfFont.load(Identifier.parse("error:fonts/emojis.json"));
-    public static final MsdfFont ENERGY = MsdfFont.load(Identifier.parse("error:fonts/energy.json"));
+    public static final MsdfFont ERROR_ICONS = MsdfFont.load(Identifier.parse("error:fonts/energy.json"));
+    public static final MsdfFont ENERGY = ERROR_ICONS;
     public static final MsdfFont ICONS_NURIK = MsdfFont.load(Identifier.parse("error:fonts/icons_nurik.json"));
     public static final MsdfFont NURIK_MENU = MsdfFont.load(Identifier.parse("error:fonts/nurik_menu.json"));
 

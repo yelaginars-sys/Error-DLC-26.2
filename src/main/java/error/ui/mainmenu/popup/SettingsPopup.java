@@ -17,7 +17,7 @@ import java.util.List;
 public class SettingsPopup {
     private final ModeSetting language = new ModeSetting("Language", "ENG", "ENG", "RU");
     private final ModeSetting bgMode = new ModeSetting("Background", Theme.getBackgroundMode(), "Blur", "None");
-    private final ModeSetting glassStyle = new ModeSetting("Glass Style", Theme.getGlassStyle(), "Liquid Glass", "Lumen Glow", "Solid");
+    private final ModeSetting glassStyle = new ModeSetting("Glass Style", Theme.getGlassStyle(), "Liquid Glass", "Error Glow", "Solid");
     private final ColorSetting accent = new ColorSetting("Accent", Theme.getAccentColor());
 
     private final List<SettingRenderer<?>> renderers = new ArrayList<>();

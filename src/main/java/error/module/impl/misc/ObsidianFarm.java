@@ -36,7 +36,7 @@ public class ObsidianFarm extends Module {
     public final ModeSetting repairMode = mode("Режим починки", "Команда", "Команда", "Опыт");
     public final SliderSetting sellPrice = slider("Цена продажи", 1.0F, 1.0F, 500.0F, 1.0F);
 
-    // Timing constants from Energy
+    // Timing constants
     private static final long SELL_DELAY = 600L;
     private static final long SWAP_DELAY = 500L;
     private static final long FIX_COOLDOWN = 5000L;

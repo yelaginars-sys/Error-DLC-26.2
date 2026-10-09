@@ -30,7 +30,7 @@ public final class ElytraResolver extends Module {
     private boolean sideToggle = false;
 
     public ElytraResolver() {
-        super("ElytraResolver", "Долет и отлет для элитра-ротки (Energy)", Category.MOVEMENT);
+        super("ElytraResolver", "Долет и отлет для элитра-ротки", Category.MOVEMENT);
         INSTANCE = this;
     }
 

@@ -10,14 +10,14 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * Energy AimAssist Rotation algorithm port (Util33).
+ * Error AimAssist Rotation algorithm port (Util33).
  * Soft client assist interpolation with free crosshair movement when aimed.
  */
-public final class EnergyAimAssistRotation implements AuraRotation {
+public final class ErrorAimAssistRotation implements AuraRotation {
 
     @Override
     public String getName() {
-        return "AimAssist (En)";
+        return "AimAssist (Error)";
     }
 
     @Override

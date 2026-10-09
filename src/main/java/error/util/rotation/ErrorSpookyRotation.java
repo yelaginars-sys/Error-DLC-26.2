@@ -11,16 +11,16 @@ import net.minecraft.world.phys.Vec3;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * Energy Spooky Rotation algorithm port (Util119).
+ * Error Spooky Rotation algorithm port (Util119).
  * Features micro-jerk deviations with customizable smoothing and speed.
  */
-public final class EnergySpookyRotation implements AuraRotation {
+public final class ErrorSpookyRotation implements AuraRotation {
 
     private float jerkPhase = 0.0F;
 
     @Override
     public String getName() {
-        return "Spooky (En)";
+        return "Spooky (Error)";
     }
 
     @Override

@@ -9,7 +9,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.Items;
 
 /**
- * BowSpammer module ported from Energy client.
+ * BowSpammer module.
  * Fast bow drawing and releasing cycle.
  */
 public class BowSpammer extends Module {

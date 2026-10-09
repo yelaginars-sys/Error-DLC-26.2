@@ -27,28 +27,28 @@ public class AuraModule extends Module {
     public final SliderSetting aimRange = slider("Дистанция наводки", 3.0f, 0.0f, 6.0f, 0.05f);
     public final SliderSetting fov = slider("FOV", 360.0f, 10.0f, 360.0f, 5.0f);
 
-    public final ModeSetting rotMode = mode("Ротация", "Funtime", "Funtime", "HolyLegit", "HolyWorld", "SpookyTime", "4pookyTime", "Spooky", "ReallyWorld", "HelixWave", "Artygrief", "Sloth", "Legit", "Linear", "Matrix", "Builder", "Lumen", "Grim", "Snap", "Smooth", "Spooky (En)", "ReallyWorld (En)", "FunTime (En)", "AimAssist (En)", "HolyWorld (En)", "ML (En)", "Ares/FT (En)", "Snap (En)", "FunTime (exs)", "SpookyTime (exs)", "SlimeWorld (exs)", "ReallyWorld (exs)", "LonyGrief (exs)", "HvH (exs)", "Shard (exs)", "Sloth (exs)", "Legit (exs)");
+    public final ModeSetting rotMode = mode("Ротация", "Funtime", "Funtime", "HolyLegit", "HolyWorld", "SpookyTime", "4pookyTime", "Spooky", "ReallyWorld", "HelixWave", "Artygrief", "Sloth", "Legit", "Linear", "Matrix", "Builder", "Error", "Grim", "Snap", "Smooth", "Spooky (Error)", "ReallyWorld (Error)", "FunTime (Error)", "AimAssist (Error)", "HolyWorld (Error)", "ML (Error)", "Ares/FT (Error)", "Snap (Error)", "FunTime (exs)", "SpookyTime (exs)", "SlimeWorld (exs)", "ReallyWorld (exs)", "LonyGrief (exs)", "HvH (exs)", "Shard (exs)", "Sloth (exs)", "Legit (exs)");
     public final ModeSetting moveFix = mode("Коррекция", "Свободная", "Нет", "Свободная", "Сфокусированная", "Полная");
     public final ModeSetting sprintReset = mode("Сброс спринта", "Legit", "None", "Legit", "Packet")
-            .visible(() -> !rotMode.getValue().endsWith("(En)") && !rotMode.getValue().endsWith("(exs)"));
+            .visible(() -> !rotMode.getValue().endsWith("(Error)") && !rotMode.getValue().endsWith("(exs)"));
 
-    // Energy Rotations Settings
+    // Error Rotations Settings
     public final SliderSetting enAimAssistPower = slider("Сила AimAssist", 0.5f, 0.05f, 1.0f, 0.05f)
-            .visible(() -> rotMode.is("AimAssist (En)"));
+            .visible(() -> rotMode.is("AimAssist (Error)"));
     public final SliderSetting enJerkSmoothing = slider("Сглаживание джерка", 3.0f, 1.0f, 16.0f, 1.0f)
-            .visible(() -> rotMode.is("Spooky (En)") || rotMode.is("HolyWorld (En)"));
+            .visible(() -> rotMode.is("Spooky (Error)") || rotMode.is("HolyWorld (Error)"));
     public final SliderSetting enJerkSpeed = slider("Скорость джерка", 0.5f, 0.05f, 3.0f, 0.05f)
-            .visible(() -> rotMode.is("Spooky (En)") || rotMode.is("HolyWorld (En)"));
+            .visible(() -> rotMode.is("Spooky (Error)") || rotMode.is("HolyWorld (Error)"));
     public final SliderSetting enDovodka = slider("Доводка", 0.35f, 0.0f, 1.0f, 0.05f)
-            .visible(() -> rotMode.is("ReallyWorld (En)") || rotMode.is("HolyWorld (En)"));
+            .visible(() -> rotMode.is("ReallyWorld (Error)") || rotMode.is("HolyWorld (Error)"));
     public final CheckBox enRwThroughWalls = checkbox("Бить через стены RW", true)
-            .visible(() -> rotMode.is("ReallyWorld (En)"));
+            .visible(() -> rotMode.is("ReallyWorld (Error)"));
     public final CheckBox enOnlyHits = checkbox("Только попадания", true)
-            .visible(() -> rotMode.is("ML (En)"));
-    public final ModeSetting enSprintBypass = mode("Обход спринта (En)", "Legit", "Legit", "Funtime", "None")
-            .visible(() -> rotMode.getValue().endsWith("(En)") && !rotMode.is("Spooky (En)"));
+            .visible(() -> rotMode.is("ML (Error)"));
+    public final ModeSetting enSprintBypass = mode("Обход спринта", "Legit", "Legit", "Funtime", "None")
+            .visible(() -> rotMode.getValue().endsWith("(Error)") && !rotMode.is("Spooky (Error)"));
     public final CheckBox enNoAttackContainer = checkbox("Не бить если открыт контейнер", false)
-            .visible(() -> rotMode.is("Ares/FT (En)"));
+            .visible(() -> rotMode.is("Ares/FT (Error)"));
 
     // Exclusive (exs) Rotations Settings
     public final CheckBox exsSpookyBypass = checkbox("Spooky обход (exs)", true)
@@ -189,7 +189,7 @@ public class AuraModule extends Module {
 
         if (pauseEating.getValue() && isEating()) return;
 
-        if (rotMode.is("Ares/FT (En)") && enNoAttackContainer.getValue() && screen() != null && !(screen() instanceof net.minecraft.client.gui.screens.inventory.InventoryScreen)) return;
+        if (rotMode.is("Ares/FT (Error)") && enNoAttackContainer.getValue() && screen() != null && !(screen() instanceof net.minecraft.client.gui.screens.inventory.InventoryScreen)) return;
 
         if (!AttackHandler.shouldAttack(target, this)) return;
 
@@ -200,7 +200,7 @@ public class AuraModule extends Module {
         boolean isAimed = isIntersecting || RayTraceUtils.isLookingAt(target, attackRange.getValue(), checkYaw, checkPitch);
         if (!isAimed) return;
 
-        boolean canHit = isIntersecting || this.throughWalls.getValue() || (rotMode.is("ReallyWorld (En)") && enRwThroughWalls.getValue()) || isVisible;
+        boolean canHit = isIntersecting || this.throughWalls.getValue() || (rotMode.is("ReallyWorld (Error)") && enRwThroughWalls.getValue()) || isVisible;
         if (!canHit) return;
 
         AttackHandler.attack(target, this, rotation);

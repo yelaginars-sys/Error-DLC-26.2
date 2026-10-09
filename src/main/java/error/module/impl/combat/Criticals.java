@@ -20,7 +20,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.AABB;
 
 /**
- * Criticals module ported from Energy client.
+ * Criticals module.
  * Always deals critical hits with Grim old, Slow/Web bypasses and weapon fast-swap.
  */
 public class Criticals extends Module {
@@ -62,7 +62,7 @@ public class Criticals extends Module {
         Entity target = event.getTarget();
         if (!(target instanceof LivingEntity)) return;
 
-        // Fast weapon swap logic from Energy FastCriticals
+        // Fast weapon swap logic
         if (fastSwap.getValue() && canFastSwap()) {
             int bestSlot = findBestWeaponSlot();
             int currentSlot = player().getInventory().getSelectedSlot();

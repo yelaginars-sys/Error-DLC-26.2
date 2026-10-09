@@ -11,16 +11,16 @@ import net.minecraft.world.phys.Vec3;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * Energy FunTime Rotation algorithm port (Util14).
+ * Error FunTime Rotation algorithm port (Util14).
  * Cooldown-driven figure-eight curve with sub-pixel noise and anticheat desync.
  */
-public final class EnergyFuntimeRotation implements AuraRotation {
+public final class ErrorFuntimeRotation implements AuraRotation {
 
     private float phase = 0.0F;
 
     @Override
     public String getName() {
-        return "FunTime (En)";
+        return "FunTime (Error)";
     }
 
     @Override

@@ -187,8 +187,8 @@ public final class StaffHud extends HudElement implements error.IMinecraft {
         // 1. Header Capsule
         Render2D.drawHudCard(extractor, curX, curY, this.width, HEADER_H, PILL_R, 1.0F, accent);
 
-        // Energy Glyph "r"
-        Fonts.drawString(Fonts.ENERGY, "r", curX + 6.0F, curY + 2.5F, 10.0F, accent);
+        // Icon "r"
+        Fonts.drawString(Fonts.ERROR_ICONS, "r", curX + 6.0F, curY + 2.5F, 10.0F, accent);
         Fonts.drawString(Fonts.SF_MEDIUM, "Staffs", curX + 19.0F, curY + 3.0F, 9.0F, 0xFFFFFFFF);
 
         curY += HEADER_H + GAP_Y;

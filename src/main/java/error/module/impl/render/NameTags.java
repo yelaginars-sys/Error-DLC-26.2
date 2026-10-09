@@ -597,7 +597,7 @@ public final class NameTags extends Module {
         }
     }
 
-    private void drawLumenTag(Render2DEvent event, LivingEntity entity, float tickDelta, float baseUnit) {
+    private void drawErrorTag(Render2DEvent event, LivingEntity entity, float tickDelta, float baseUnit) {
         Minecraft mc = event.getClient();
 
         float targetFactor = 0.0F;
@@ -697,7 +697,7 @@ public final class NameTags extends Module {
             Fonts.drawString(font, " " + hpText, cursor, textY, textSize, hpColor);
         }
 
-        // Equipment in Lumen style
+        // Equipment rendering
         if (!equipment.isEmpty()) {
             float equipY = pillY - 14.0F * unit - 3.0F * unit;
             drawEquipment(event, equipment, anchor.x(), equipY, gap, unit);

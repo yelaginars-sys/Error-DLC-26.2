@@ -1,6 +1,8 @@
 package error.util.rotation;
 
+import error.module.impl.combat.AuraModule;
 import error.util.AuraRotation;
+import error.util.RayTraceUtils;
 import error.util.RotationHandler;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.util.Mth;
@@ -8,19 +10,22 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * Energy Ares/FT Rotation algorithm port (Util151).
- * Distance-adaptive timing with fast attack snapping and organic decay.
+ * Error HolyWorld Rotation algorithm port (Util57).
+ * Step-wise pitch/yaw alignment designed specifically for HolyWorld AC.
  */
-public final class EnergyAresRotation implements AuraRotation {
+public final class ErrorHolyWorldRotation implements AuraRotation {
 
     @Override
     public String getName() {
-        return "Ares/FT (En)";
+        return "HolyWorld (Error)";
     }
 
     @Override
     public void tick(LocalPlayer player, LivingEntity target, Vec3 targetEyePos, boolean attackLikely) {
         if (player == null || target == null) return;
+
+        AuraModule aura = AuraModule.INSTANCE;
+        float dovodka = aura != null ? aura.enDovodka.getValue() : 0.35F;
 
         Vec3 eyePos = player.getEyePosition();
         Vec3 aimPos = target.getBoundingBox().getCenter().add(0.0, 0.15, 0.0);
@@ -35,15 +40,21 @@ public final class EnergyAresRotation implements AuraRotation {
         float deltaYaw = Mth.wrapDegrees(rawYaw - currentYaw);
         float deltaPitch = rawPitch - currentPitch;
 
-        double dist = player.distanceTo(target);
-        float adaptSpeed = (float) Math.max(40.0, 120.0 - dist * 12.0);
-
-        if (attackLikely) {
-            adaptSpeed *= 1.4F;
+        float stepSpeed = 0.07F * (1.0F + dovodka * 1.5F);
+        if (Math.abs(deltaYaw) > 50.0F || player.getBoundingBox().intersects(target.getBoundingBox())) {
+            stepSpeed /= 1.05F;
         }
 
-        float stepYaw = Mth.clamp(deltaYaw * 0.88F, -adaptSpeed, adaptSpeed);
-        float stepPitch = Mth.clamp(deltaPitch * 0.88F, -adaptSpeed, adaptSpeed);
+        boolean isAimed = RayTraceUtils.isLookingAt(target, aura != null ? aura.attackRange.getValue() : 3.0F, currentYaw, currentPitch);
+        if (isAimed) {
+            stepSpeed /= 1.25F;
+        }
+
+        float maxYawStep = Math.max(12.0F, Math.abs(deltaYaw) * stepSpeed * 10.0F);
+        float maxPitchStep = Math.max(8.0F, Math.abs(deltaPitch) * stepSpeed * 8.0F);
+
+        float stepYaw = Mth.clamp(deltaYaw, -maxYawStep, maxYawStep);
+        float stepPitch = Mth.clamp(deltaPitch, -maxPitchStep, maxPitchStep);
 
         RotationHandler.setRotation(currentYaw + stepYaw, Mth.clamp(currentPitch + stepPitch, -89.5F, 89.5F));
     }

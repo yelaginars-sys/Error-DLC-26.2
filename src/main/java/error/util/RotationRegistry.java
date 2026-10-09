@@ -16,20 +16,20 @@ public final class RotationRegistry {
         register(new MatrixRotation());
         register(new FuntimeRotation());
         register(new BuilderRotation());
-        register(new LumenRotation());
+        register(new ErrorRotation());
         register(new GrimRotation());
         register(new SnapRotation());
         register(new SmoothRotation());
 
-        // Energy Rotations
-        register(new EnergySpookyRotation());
-        register(new EnergyReallyWorldRotation());
-        register(new EnergyFuntimeRotation());
-        register(new EnergyAimAssistRotation());
-        register(new EnergyHolyWorldRotation());
-        register(new EnergyMLRotation());
-        register(new EnergyAresRotation());
-        register(new EnergySnapRotation());
+        // Error Rotations
+        register(new ErrorSpookyRotation());
+        register(new ErrorReallyWorldRotation());
+        register(new ErrorFuntimeRotation());
+        register(new ErrorAimAssistRotation());
+        register(new ErrorHolyWorldRotation());
+        register(new ErrorMLRotation());
+        register(new ErrorAresRotation());
+        register(new ErrorSnapRotation());
 
         // Exclusive (exs) Rotations
         register(new FunTimeExsRotation());

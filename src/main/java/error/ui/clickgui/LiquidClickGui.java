@@ -418,7 +418,7 @@ public class LiquidClickGui extends Screen {
         RenderExtend.enter2D(null, extractor, null);
         Render2DUtil.beginFrame();
         try {
-            // Non-liquid theme backgrounds (Energy / Black)
+            // Non-liquid theme backgrounds (Error / Black)
             if (!Theme.isGuiLiquidGlass()) {
                 int winBg = Theme.isGuiBlack()
                         ? ColorUtil.rgba(13, 13, 17, (int) (248 * animVal))
@@ -1083,24 +1083,24 @@ public class LiquidClickGui extends Screen {
             Render2D.drawRoundedOutline(chromaBtnX, row1Y, segW, segH, 3.5F, 0.65F, isChroma ? accentColor : ColorUtil.rgba(255, 255, 255, (int) (24 * alphaVal)));
             Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Chroma", chromaBtnX + segW / 2.0F, row1Y + 2.5F, 5.0F, 0xFFFFFFFF);
 
-            // Row 1.5: UI Style (Жидкое стекло vs Energy vs Черный vs Новый Год)
+            // Row 1.5: UI Style (Жидкое стекло vs Error vs Черный vs Новый Год)
             float styleRowY = modalY + 47.0F;
             Fonts.drawString(Fonts.SF_MEDIUM, "Стиль UI:", modalX + 14.0F, styleRowY + 2.5F, 5.8F, 0xFFD0E0F0);
 
             boolean isGlass = Theme.isGuiLiquidGlass();
-            boolean isEnergy = Theme.isGuiEnergy();
+            boolean isError = Theme.isGuiErrorTheme();
             boolean isBlack = Theme.isGuiBlack();
             boolean isNY = Theme.isGuiNewYear();
 
             float glassBtnW = 74.0F;
-            float energyBtnW = 50.0F;
+            float errorBtnW = 50.0F;
             float blackBtnW = 50.0F;
             float newYearBtnW = 58.0F;
             float gap = 3.0F;
 
-            float glassBtnX = modalX + modalW - 14.0F - (glassBtnW + energyBtnW + blackBtnW + newYearBtnW + gap * 3.0F);
-            float energyBtnX = glassBtnX + glassBtnW + gap;
-            float blackBtnX = energyBtnX + energyBtnW + gap;
+            float glassBtnX = modalX + modalW - 14.0F - (glassBtnW + errorBtnW + blackBtnW + newYearBtnW + gap * 3.0F);
+            float errorBtnX = glassBtnX + glassBtnW + gap;
+            float blackBtnX = errorBtnX + errorBtnW + gap;
             float newYearBtnX = blackBtnX + blackBtnW + gap;
             float styleBtnH = 14.0F;
 
@@ -1111,12 +1111,12 @@ public class LiquidClickGui extends Screen {
             Render2D.drawRoundedOutline(glassBtnX, styleRowY, glassBtnW, styleBtnH, 3.5F, 0.65F, isGlass ? accentColor : ColorUtil.rgba(255, 255, 255, (int) (24 * alphaVal)));
             Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Жидкое стекло", glassBtnX + glassBtnW / 2.0F, styleRowY + 2.5F, 4.8F, 0xFFFFFFFF);
 
-            // 2. Energy
-            boolean eHover = mouseX >= energyBtnX && mouseX <= energyBtnX + energyBtnW && mouseY >= styleRowY && mouseY <= styleRowY + styleBtnH;
-            int eBg = isEnergy ? ColorUtil.withAlpha(accentColor, (int) (190 * alphaVal)) : ColorUtil.rgba(255, 255, 255, (int) ((eHover ? 24 : 14) * alphaVal));
-            Render2D.drawRoundedRect(energyBtnX, styleRowY, energyBtnW, styleBtnH, 3.5F, eBg);
-            Render2D.drawRoundedOutline(energyBtnX, styleRowY, energyBtnW, styleBtnH, 3.5F, 0.65F, isEnergy ? accentColor : ColorUtil.rgba(255, 255, 255, (int) (24 * alphaVal)));
-            Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Energy", energyBtnX + energyBtnW / 2.0F, styleRowY + 2.5F, 4.8F, 0xFFFFFFFF);
+            // 2. Error
+            boolean eHover = mouseX >= errorBtnX && mouseX <= errorBtnX + errorBtnW && mouseY >= styleRowY && mouseY <= styleRowY + styleBtnH;
+            int eBg = isError ? ColorUtil.withAlpha(accentColor, (int) (190 * alphaVal)) : ColorUtil.rgba(255, 255, 255, (int) ((eHover ? 24 : 14) * alphaVal));
+            Render2D.drawRoundedRect(errorBtnX, styleRowY, errorBtnW, styleBtnH, 3.5F, eBg);
+            Render2D.drawRoundedOutline(errorBtnX, styleRowY, errorBtnW, styleBtnH, 3.5F, 0.65F, isError ? accentColor : ColorUtil.rgba(255, 255, 255, (int) (24 * alphaVal)));
+            Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Error", errorBtnX + errorBtnW / 2.0F, styleRowY + 2.5F, 4.8F, 0xFFFFFFFF);
 
             // 3. Черный
             boolean bHover = mouseX >= blackBtnX && mouseX <= blackBtnX + blackBtnW && mouseY >= styleRowY && mouseY <= styleRowY + styleBtnH;
@@ -2270,17 +2270,17 @@ public class LiquidClickGui extends Screen {
                         return true;
                     }
 
-                    // UI Style Buttons: "Жидкое стекло" vs "Energy" vs "Черный" vs "Новый Год"
+                    // UI Style Buttons: "Жидкое стекло" vs "Error" vs "Черный" vs "Новый Год"
                     float styleRowY = modalY + 47.0F;
                     float glassBtnW = 74.0F;
-                    float energyBtnW = 50.0F;
+                    float errorBtnW = 50.0F;
                     float blackBtnW = 50.0F;
                     float newYearBtnW = 58.0F;
                     float gap = 3.0F;
 
-                    float glassBtnX = modalX + modalW - 14.0F - (glassBtnW + energyBtnW + blackBtnW + newYearBtnW + gap * 3.0F);
-                    float energyBtnX = glassBtnX + glassBtnW + gap;
-                    float blackBtnX = energyBtnX + energyBtnW + gap;
+                    float glassBtnX = modalX + modalW - 14.0F - (glassBtnW + errorBtnW + blackBtnW + newYearBtnW + gap * 3.0F);
+                    float errorBtnX = glassBtnX + glassBtnW + gap;
+                    float blackBtnX = errorBtnX + errorBtnW + gap;
                     float newYearBtnX = blackBtnX + blackBtnW + gap;
                     float styleBtnH = 14.0F;
 
@@ -2293,8 +2293,8 @@ public class LiquidClickGui extends Screen {
                         return true;
                     }
 
-                    if (mouseX >= energyBtnX && mouseX <= energyBtnX + energyBtnW && mouseY >= styleRowY && mouseY <= styleRowY + styleBtnH) {
-                        Theme.setUiStyle("Energy");
+                    if (mouseX >= errorBtnX && mouseX <= errorBtnX + errorBtnW && mouseY >= styleRowY && mouseY <= styleRowY + styleBtnH) {
+                        Theme.setUiStyle("Error");
                         error.util.client.ClientSoundPlayer.playGuiClick();
                         if (Client.INSTANCE != null && Client.INSTANCE.configManager != null) {
                             Client.INSTANCE.configManager.autoSave();

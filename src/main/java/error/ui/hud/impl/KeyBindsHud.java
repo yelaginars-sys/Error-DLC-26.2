@@ -143,11 +143,11 @@ public final class KeyBindsHud extends HudElement implements error.IMinecraft {
         float curY = this.y;
         GuiGraphicsExtractor extractor = event.getGuiGraphicsExtractor();
 
-        // 1. Header Capsule (Liquid Glass, Energy, or Black depending on active theme)
+        // 1. Header Capsule
         Render2D.drawHudCard(extractor, curX, curY, this.width, HEADER_H, PILL_R, 1.0F, accent);
 
-        // Header Energy Icon "p" or NURIK_BIND
-        Fonts.drawString(Fonts.ENERGY, "p", curX + 5.0F, curY + 2.0F, 8.5F, accent);
+        // Header Icon "p" or NURIK_BIND
+        Fonts.drawString(Fonts.ERROR_ICONS, "p", curX + 5.0F, curY + 2.0F, 8.5F, accent);
         Fonts.drawString(Fonts.SF_MEDIUM, "Hotkeys", curX + 16.0F, curY + 2.2F, 7.5F, 0xFFFFFFFF);
 
         curY += HEADER_H + GAP_Y;
@@ -166,7 +166,7 @@ public final class KeyBindsHud extends HudElement implements error.IMinecraft {
             float rightPillW = keyW + 9.0F;
             float rightPillX = curX + this.width - rightPillW;
 
-            // Draw multi-theme capsules (Liquid Glass / Energy / Black)
+            // Draw theme-aware capsules
             Render2D.drawHudPill(extractor, curX, curY, leftPillW, ROW_H, PILL_R, e.alpha, accent);
             Render2D.drawHudPill(extractor, rightPillX, curY, rightPillW, ROW_H, PILL_R, e.alpha, accent);
 

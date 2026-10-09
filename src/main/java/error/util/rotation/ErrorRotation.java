@@ -7,10 +7,10 @@ import net.minecraft.world.phys.Vec3;
 import error.util.AuraRotation;
 import error.util.RotationHandler;
 
-public class LumenRotation implements AuraRotation {
+public class ErrorRotation implements AuraRotation {
     @Override
     public String getName() {
-        return "Lumen";
+        return "Error";
     }
 
     @Override
