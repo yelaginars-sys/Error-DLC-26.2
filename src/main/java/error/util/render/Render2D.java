@@ -22,6 +22,9 @@ import error.util.display.outline.Outline;
  */
 public class Render2D {
 
+    public static final Identifier FROST_CORNER_TEX = Identifier.fromNamespaceAndPath("error", "textures/frost/frost_corner.png");
+    public static final Identifier FROST_PATTERN_TEX = Identifier.fromNamespaceAndPath("error", "textures/frost/frost_pattern.png");
+
     public static void pushScissor(float x, float y, float width, float height) {
         Render2DUtil.pushScissor(x, y, width, height);
     }
@@ -472,27 +475,59 @@ public class Render2D {
         if (alpha <= 0.01F || width <= 2.0F || height <= 2.0F) return;
         long time = System.currentTimeMillis();
 
-        // 1. Crystalline icy top edge glint (ice rim light)
-        float rimW = Math.max(2.0F, width - radius);
+        // 1. Crystalline icy top edge glint (ice rim light along upper bezel)
+        float rimW = Math.max(2.0F, width - radius * 1.2F);
         float rimX = x + (width - rimW) / 2.0F;
-        drawRoundedRect(rimX, y + 0.8F, rimW, 1.1F, 0.5F, ColorUtil.rgba(235, 250, 255, (int) (110 * alpha)));
+        drawRoundedRect(rimX, y + 0.6F, rimW, 1.2F, 0.6F, ColorUtil.rgba(240, 252, 255, (int) (165 * alpha)));
 
-        // 2. Dynamic frost glint across the glass (ice reflection wave)
-        float period = 3800.0F;
-        float progress = (float) ((time % (long) period) / period);
-        float glintX = x + (width + 60.0F) * progress - 30.0F;
-        if (glintX >= x && glintX <= x + width) {
-            float glintW = Math.min(22.0F, (x + width) - glintX);
-            float glintAlpha = (float) Math.sin(progress * Math.PI) * 0.22F * alpha;
-            if (glintAlpha > 0.01F) {
-                drawRoundedRect(glintX, y + 1.2F, glintW, height - 2.4F, Math.max(1.0F, radius - 1.0F),
-                        ColorUtil.rgba(220, 245, 255, (int) (255 * glintAlpha)));
+        // 2. Secondary soft crystalline gradient glow under top edge
+        drawRoundedRect(rimX, y + 1.8F, rimW, 2.2F, 1.0F, ColorUtil.rgba(180, 230, 255, (int) (40 * alpha)));
+
+        // 3. Natural frost feather crystals on corners/borders
+        float cornerFrostSize = Math.min(width * 0.45F, Math.min(height * 0.9F, 52.0F));
+        if (cornerFrostSize > 12.0F) {
+            // Top-Left organic frost crystal plume
+            int frostColTL = ColorUtil.rgba(235, 248, 255, (int) (130 * alpha));
+            drawTexture(FROST_CORNER_TEX, x, y, cornerFrostSize, cornerFrostSize, frostColTL);
+
+            // Bottom-Right organic frost crystal plume (flipped UV)
+            if (width > 60.0F && height > 35.0F) {
+                float brSize = cornerFrostSize * 0.85F;
+                int frostColBR = ColorUtil.rgba(215, 242, 255, (int) (100 * alpha));
+                drawTexture(FROST_CORNER_TEX, x + width - brSize, y + height - brSize, brSize, brSize,
+                        1.0F, 1.0F, 0.0F, 0.0F, 0.0F, frostColBR, FilterMode.LINEAR);
             }
         }
 
-        // 3. Delicate frosty corner sparkle
-        float pulse = 0.5F + 0.5F * (float) Math.sin(time * 0.003F);
-        int sparkleColor = ColorUtil.rgba(210, 240, 255, (int) ((50 + 45 * pulse) * alpha));
-        drawCircle(x + Math.min(radius, 6.0F), y + Math.min(radius, 6.0F), 1.2F, sparkleColor);
+        // 4. For large panels (ClickGUI window, modals): diffuse subtle frost pattern across surface
+        if (width >= 160.0F && height >= 100.0F) {
+            float patW = Math.min(width * 0.65F, 180.0F);
+            float patH = Math.min(height * 0.65F, 180.0F);
+            float patX = x + width - patW - 8.0F;
+            float patY = y + 8.0F;
+            int patCol = ColorUtil.rgba(220, 245, 255, (int) (48 * alpha));
+            drawTexture(FROST_PATTERN_TEX, patX, patY, patW, patH, patCol);
+        }
+
+        // 5. Breathing glacial glint across upper glass edge (soft sine shimmer instead of harsh vertical stripe)
+        float shimmerPhase = (float) ((time % 4500L) / 4500.0D);
+        float shimmerAlpha = (float) Math.sin(shimmerPhase * Math.PI) * 0.35F * alpha;
+        if (shimmerAlpha > 0.01F) {
+            float sLen = Math.min(width * 0.5F, 90.0F);
+            float sStartX = x + (width - sLen) * shimmerPhase;
+            drawRoundedRect(sStartX, y + 0.8F, sLen, 1.4F, 0.7F,
+                    ColorUtil.rgba(255, 255, 255, (int) (255 * shimmerAlpha)));
+        }
+
+        // 6. Delicate frosty corner sparkles
+        float pulse1 = 0.5F + 0.5F * (float) Math.sin(time * 0.0028F);
+        int sparkleColor1 = ColorUtil.rgba(225, 248, 255, (int) ((70 + 60 * pulse1) * alpha));
+        drawCircle(x + Math.min(radius, 6.0F) + 1.0F, y + Math.min(radius, 6.0F) + 1.0F, 1.2F, sparkleColor1);
+
+        if (width > 80.0F) {
+            float pulse2 = 0.5F + 0.5F * (float) Math.cos(time * 0.0033F + 1.5D);
+            int sparkleColor2 = ColorUtil.rgba(210, 242, 255, (int) ((50 + 55 * pulse2) * alpha));
+            drawCircle(x + width - Math.min(radius, 6.0F) - 1.5F, y + Math.min(radius, 6.0F) + 1.0F, 1.0F, sparkleColor2);
+        }
     }
 }

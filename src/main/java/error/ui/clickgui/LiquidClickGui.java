@@ -727,18 +727,20 @@ public class LiquidClickGui extends Screen {
 
         if (Theme.isGuiNewYear()) {
             if (module.isEnabled()) {
-                int cardBg = ColorUtil.rgba(14, 32, 56, (int) ((isHovered ? 175 : 135) * alphaVal));
-                int cardOutline = ColorUtil.rgba(180, 235, 255, (int) ((isHovered ? 210 : 160) * alphaVal));
+                int cardBg = ColorUtil.rgba(14, 34, 60, (int) ((isHovered ? 180 : 140) * alphaVal));
+                int cardOutlineTop = ColorUtil.rgba(225, 250, 255, (int) ((isHovered ? 245 : 190) * alphaVal));
+                int cardOutlineBot = ColorUtil.rgba(130, 205, 255, (int) ((isHovered ? 135 : 90) * alphaVal));
                 Render2D.drawRoundedRect(x, y, w, h, 6.0F, cardBg);
-                Render2D.drawRoundedOutline(x, y, w, h, 6.0F, 0.85F, cardOutline);
-                Render2D.drawFrostSheen(x, y, w, h, 6.0F, alphaVal * 0.75F);
+                Render2D.drawGradientRound(x, y, w, h, 6.0F, cardOutlineTop, cardOutlineTop, cardOutlineBot, cardOutlineBot);
+                Render2D.drawRoundedRect(x + 0.85F, y + 0.85F, w - 1.7F, h - 1.7F, 5.2F, cardBg);
+                Render2D.drawFrostSheen(x, y, w, h, 6.0F, alphaVal * 0.85F);
             } else {
-                int cardBg = ColorUtil.rgba(10, 22, 40, (int) ((isHovered ? 130 : 95) * alphaVal));
-                int cardOutline = ColorUtil.rgba(160, 215, 245, (int) ((isHovered ? 65 : 40) * alphaVal));
+                int cardBg = ColorUtil.rgba(10, 22, 40, (int) ((isHovered ? 135 : 95) * alphaVal));
+                int cardOutline = ColorUtil.rgba(165, 220, 250, (int) ((isHovered ? 85 : 45) * alphaVal));
                 Render2D.drawRoundedRect(x, y, w, h, 6.0F, cardBg);
-                Render2D.drawRoundedOutline(x, y, w, h, 6.0F, 0.65F, cardOutline);
+                Render2D.drawRoundedOutline(x, y, w, h, 6.0F, 0.70F, cardOutline);
                 if (isHovered) {
-                    Render2D.drawFrostSheen(x, y, w, h, 6.0F, alphaVal * 0.45F);
+                    Render2D.drawFrostSheen(x, y, w, h, 6.0F, alphaVal * 0.55F);
                 }
             }
         } else if (Theme.isGuiBlack()) {

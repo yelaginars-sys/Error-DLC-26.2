@@ -143,10 +143,10 @@ public abstract class AbstractButtonMixin {
                         : ColorUtil.rgba(255, 255, 255, 8);
             } else if (Theme.isNewYear()) {
                 fillCol = self.active
-                        ? ColorUtil.rgba(12, 28, 48, (int) (165 + 35 * this.error$hoverAnim))
+                        ? ColorUtil.rgba(14, 32, 54, (int) (175 + 35 * this.error$hoverAnim))
                         : ColorUtil.rgba(10, 22, 38, 140);
                 outlineCol = self.active
-                        ? ColorUtil.interpolateColor(ColorUtil.rgba(180, 230, 255, 120), ColorUtil.rgba(225, 250, 255, 220), this.error$hoverAnim)
+                        ? ColorUtil.interpolateColor(ColorUtil.rgba(190, 235, 255, 140), ColorUtil.rgba(235, 252, 255, 240), this.error$hoverAnim)
                         : ColorUtil.rgba(140, 200, 240, 60);
             } else { // Liquid Glass
                 fillCol = self.active
@@ -160,16 +160,22 @@ public abstract class AbstractButtonMixin {
             Render2D.drawRoundedRect(x, y, w, h, radius, fillCol);
 
             if (Theme.isNewYear() && self.active) {
-                Render2D.drawFrostSheen(x, y, w, h, radius, 0.7F + 0.3F * this.error$hoverAnim);
+                // Specular top-to-bottom glacial gradient border for buttons
+                int bTop = ColorUtil.interpolateColor(ColorUtil.rgba(230, 252, 255, 180), ColorUtil.rgba(255, 255, 255, 255), this.error$hoverAnim);
+                int bBot = ColorUtil.interpolateColor(ColorUtil.rgba(130, 205, 255, 70), ColorUtil.rgba(170, 225, 255, 130), this.error$hoverAnim);
+                Render2D.drawGradientRound(x, y, w, h, radius, bTop, bTop, bBot, bBot);
+                Render2D.drawRoundedRect(x + 0.8F, y + 0.8F, w - 1.6F, h - 1.6F, Math.max(0.5F, radius - 0.8F), fillCol);
+
+                Render2D.drawFrostSheen(x, y, w, h, radius, 0.75F + 0.25F * this.error$hoverAnim);
+            } else {
+                Render2D.drawRoundedOutline(x, y, w, h, radius, 0.65F, outlineCol);
             }
 
             // Subtle accent tint on hover
-            if (self.active && this.error$hoverAnim > 0.02F) {
+            if (self.active && this.error$hoverAnim > 0.02F && !Theme.isNewYear()) {
                 Render2D.drawRoundedRect(x, y, w, h, radius,
                         ColorUtil.withAlpha(themeAccent, (int) (18 * this.error$hoverAnim)));
             }
-
-            Render2D.drawRoundedOutline(x, y, w, h, radius, 0.65F, outlineCol);
 
             // Slider progress bar if widget is a slider
             if (self instanceof AbstractSliderButton slider && self instanceof AbstractSliderButtonAccessor accessor) {
