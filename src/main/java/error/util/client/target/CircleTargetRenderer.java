@@ -207,7 +207,10 @@ public final class CircleTargetRenderer {
             int remainingBytes = vertexData.remaining();
             ensureVertexCapacity(remainingBytes);
 
-            try (RenderPass pass = device.createCommandEncoder().createRenderPass(
+            var encoder = device.createCommandEncoder();
+            encoder.writeToBuffer(this.vertexBuffer.slice(0, remainingBytes), vertexData);
+
+            try (RenderPass pass = encoder.createRenderPass(
                     () -> "Error Target Circle Pass",
                     renderTarget.getColorTextureView(),
                     Optional.empty(),

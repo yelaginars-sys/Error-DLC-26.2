@@ -231,7 +231,10 @@ public final class CubesTargetRenderer {
             int remainingBytes = vertexData.remaining();
             ensureVertexCapacity(remainingBytes);
 
-            try (RenderPass pass = device.createCommandEncoder().createRenderPass(
+            var encoder = device.createCommandEncoder();
+            encoder.writeToBuffer(this.vertexBuffer.slice(0, remainingBytes), vertexData);
+
+            try (RenderPass pass = encoder.createRenderPass(
                     () -> "Error Target Cubes Pass",
                     renderTarget.getColorTextureView(),
                     Optional.empty(),

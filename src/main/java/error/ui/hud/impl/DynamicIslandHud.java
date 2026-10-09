@@ -122,6 +122,12 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
     public static final Identifier LOGO_TEX = Identifier.fromNamespaceAndPath("error", "images/logo.png");
     public static final Identifier AVATAR_TEX = Identifier.fromNamespaceAndPath("error", "images/avatar.jpg");
 
+    // Media Control Vector Icons
+    private static final Identifier MEDIA_PLAY_TEX = Identifier.fromNamespaceAndPath("error", "textures/media/play.png");
+    private static final Identifier MEDIA_PAUSE_TEX = Identifier.fromNamespaceAndPath("error", "textures/media/pause.png");
+    private static final Identifier MEDIA_PREV_TEX = Identifier.fromNamespaceAndPath("error", "textures/media/prev.png");
+    private static final Identifier MEDIA_NEXT_TEX = Identifier.fromNamespaceAndPath("error", "textures/media/next.png");
+
     // Metrics Display Settings
     private boolean showSubIsland = true;
     private boolean showAvatar = true;
@@ -131,8 +137,9 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
     private boolean showServer = true;
 
     // Media Control Button Hitboxes
-    private float prevButtonX, playButtonX, nextButtonX;
-    private float musicButtonY, musicButtonSize;
+    private float prevButtonX, prevButtonY, prevButtonSize;
+    private float playButtonX, playButtonY, playButtonSize;
+    private float nextButtonX, nextButtonY, nextButtonSize;
 
     public DynamicIslandHud() {
         super("dynamic_island", "Dynamic Island", 240.0F, 8.0F, 180.0F, NORMAL_HEIGHT + GAP_BETWEEN + INFO_HEIGHT, true);
@@ -327,9 +334,9 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
             case MUSIC -> {
                 float titleW = Fonts.SF_MEDIUM.getWidth(trackTitle, 8.0F);
                 float artistW = Fonts.SF_MEDIUM.getWidth(trackArtist, 6.5F);
-                float baseW = chatOpen ? 215.0F : 175.0F;
-                float maxW = chatOpen ? 270.0F : 250.0F;
-                float pad = chatOpen ? 95.0F : 70.0F;
+                float baseW = chatOpen ? 220.0F : 190.0F;
+                float maxW = chatOpen ? 280.0F : 255.0F;
+                float pad = chatOpen ? 100.0F : 80.0F;
                 yield Math.max(baseW, Math.min(maxW, Math.max(titleW, artistW) + pad));
             }
             case NORMAL -> {
@@ -765,8 +772,10 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
         }
 
         float textX = artX + artSize + 8.0F;
-        float controlsW = 48.0F;
-        float availableTextW = Math.max(40.0F, width - (textX - x) - controlsW - 6.0F);
+        float controlsTotalW = 46.0F;
+        float rightMargin = 12.0F;
+        float controlsStartX = x + width - controlsTotalW - rightMargin;
+        float availableTextW = Math.max(35.0F, (controlsStartX - 6.0F) - textX);
 
         float titleY = y + (height - 18.0F) / 2.0F;
         float artistY = titleY + 10.0F;
@@ -775,10 +784,10 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
         String artist = trackArtist.isBlank() ? (trackPlaying ? "Воспроизведение" : "Пауза") : trackArtist;
         drawMarquee(Fonts.SF_MEDIUM, artist, textX, artistY, availableTextW, 6.5F, ColorUtil.rgba(180, 180, 205, (int) (200 * alpha)), now - contentTransitionStarted + 350L, false);
 
-        drawMusicControls(x + width - 48.0F, y + (height - 12.0F) / 2.0F, alpha);
+        drawMusicControls(controlsStartX, y + (height - 15.0F) / 2.0F, alpha);
     }
 
-    private void drawMusicControls(float x, float y, float alpha) {
+    private void drawMusicControls(float startX, float centerY, float alpha) {
         Minecraft mc = Minecraft.getInstance();
         double mouseX = mc.mouseHandler.xpos() / mc.getWindow().getGuiScale();
         double mouseY = mc.mouseHandler.ypos() / mc.getWindow().getGuiScale();
@@ -786,62 +795,42 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
         float prevSize = 13.0F;
         float playSize = 15.0F;
         float nextSize = 13.0F;
-        float gap = 3.5F;
+        float gap = 4.0F;
 
-        this.prevButtonX = x;
-        this.playButtonX = x + prevSize + gap;
+        // Alignment: Center play button vertically, align prev & next to play button's vertical center
+        this.prevButtonX = startX;
+        this.prevButtonY = centerY + (playSize - prevSize) / 2.0F;
+        this.prevButtonSize = prevSize;
+
+        this.playButtonX = this.prevButtonX + prevSize + gap;
+        this.playButtonY = centerY;
+        this.playButtonSize = playSize;
+
         this.nextButtonX = this.playButtonX + playSize + gap;
-        this.musicButtonY = y - 1.5F;
-        this.musicButtonSize = playSize;
-
-        float prevY = y;
-        float playY = y - 1.5F;
-        float nextY = y;
+        this.nextButtonY = centerY + (playSize - nextSize) / 2.0F;
+        this.nextButtonSize = nextSize;
 
         // 1. Previous Button
-        boolean prevHover = mouseX >= prevButtonX && mouseX <= prevButtonX + prevSize && mouseY >= prevY && mouseY <= prevY + prevSize;
-        drawLiquidGlassButton(prevButtonX, prevY, prevSize, alpha, prevHover);
+        boolean prevHover = isHovered(mouseX, mouseY, prevButtonX, prevButtonY, prevButtonSize, prevButtonSize);
+        drawLiquidGlassButton(prevButtonX, prevButtonY, prevButtonSize, alpha, prevHover);
         int prevIconCol = prevHover ? Theme.getAccentColor() : ColorUtil.rgba(240, 240, 255, (int) (230 * alpha));
-        float px = prevButtonX + 3.2F;
-        float py = prevY + 3.5F;
-        Render2D.drawRoundedRect(px, py, 1.2F, 6.0F, 0.6F, prevIconCol);
-        Render2D.drawRoundedRect(px + 2.0F, py + 2.0F, 1.1F, 2.0F, 0.55F, prevIconCol);
-        Render2D.drawRoundedRect(px + 3.1F, py + 1.0F, 1.1F, 4.0F, 0.55F, prevIconCol);
-        Render2D.drawRoundedRect(px + 4.2F, py, 1.2F, 6.0F, 0.6F, prevIconCol);
+        float pIconPad = 2.5F;
+        Render2D.drawTexture(MEDIA_PREV_TEX, prevButtonX + pIconPad, prevButtonY + pIconPad, prevButtonSize - pIconPad * 2.0F, prevButtonSize - pIconPad * 2.0F, prevIconCol);
 
-        // 2. Play / Pause Button in Center
-        boolean playHover = mouseX >= playButtonX && mouseX <= playButtonX + playSize && mouseY >= playY && mouseY <= playY + playSize;
-        drawLiquidGlassButton(playButtonX, playY, playSize, alpha, playHover);
+        // 2. Play / Pause Button
+        boolean playHover = isHovered(mouseX, mouseY, playButtonX, playButtonY, playButtonSize, playButtonSize);
+        drawLiquidGlassButton(playButtonX, playButtonY, playButtonSize, alpha, playHover);
         int playIconCol = playHover ? Theme.getAccentColor() : ColorUtil.rgba(255, 255, 255, (int) (245 * alpha));
-
-        if (trackPlaying) {
-            // Pause bars
-            float barW = 1.7F;
-            float barH = 6.2F;
-            float barY = playY + (playSize - barH) / 2.0F;
-            float cx = playButtonX + playSize / 2.0F;
-            Render2D.drawRoundedRect(cx - barW - 1.0F, barY, barW, barH, 0.85F, playIconCol);
-            Render2D.drawRoundedRect(cx + 1.0F, barY, barW, barH, 0.85F, playIconCol);
-        } else {
-            // Play triangle
-            float tx = playButtonX + 5.2F;
-            float ty = playY + (playSize - 6.2F) / 2.0F;
-            Render2D.drawRoundedRect(tx, ty, 1.4F, 6.2F, 0.7F, playIconCol);
-            Render2D.drawRoundedRect(tx + 1.4F, ty + 1.0F, 1.3F, 4.2F, 0.65F, playIconCol);
-            Render2D.drawRoundedRect(tx + 2.7F, ty + 2.1F, 1.3F, 2.0F, 0.65F, playIconCol);
-            Render2D.drawRoundedRect(tx + 4.0F, ty + 2.6F, 0.9F, 1.0F, 0.45F, playIconCol);
-        }
+        float plIconPad = 2.8F;
+        Identifier playPauseTex = trackPlaying ? MEDIA_PAUSE_TEX : MEDIA_PLAY_TEX;
+        Render2D.drawTexture(playPauseTex, playButtonX + plIconPad, playButtonY + plIconPad, playButtonSize - plIconPad * 2.0F, playButtonSize - plIconPad * 2.0F, playIconCol);
 
         // 3. Next Button
-        boolean nextHover = mouseX >= nextButtonX && mouseX <= nextButtonX + nextSize && mouseY >= nextY && mouseY <= nextY + nextSize;
-        drawLiquidGlassButton(nextButtonX, nextY, nextSize, alpha, nextHover);
+        boolean nextHover = isHovered(mouseX, mouseY, nextButtonX, nextButtonY, nextButtonSize, nextButtonSize);
+        drawLiquidGlassButton(nextButtonX, nextButtonY, nextButtonSize, alpha, nextHover);
         int nextIconCol = nextHover ? Theme.getAccentColor() : ColorUtil.rgba(240, 240, 255, (int) (230 * alpha));
-        float nx = nextButtonX + 3.8F;
-        float ny = nextY + 3.5F;
-        Render2D.drawRoundedRect(nx, ny, 1.2F, 6.0F, 0.6F, nextIconCol);
-        Render2D.drawRoundedRect(nx + 1.2F, ny + 1.0F, 1.1F, 4.0F, 0.55F, nextIconCol);
-        Render2D.drawRoundedRect(nx + 2.3F, ny + 2.0F, 1.1F, 2.0F, 0.55F, nextIconCol);
-        Render2D.drawRoundedRect(nx + 4.2F, ny, 1.2F, 6.0F, 0.6F, nextIconCol);
+        float nIconPad = 2.5F;
+        Render2D.drawTexture(MEDIA_NEXT_TEX, nextButtonX + nIconPad, nextButtonY + nIconPad, nextButtonSize - nIconPad * 2.0F, nextButtonSize - nIconPad * 2.0F, nextIconCol);
     }
 
     private void drawLiquidGlassButton(float bx, float by, float size, float alpha, boolean hovered) {
@@ -996,19 +985,19 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
         if (button != GLFW.GLFW_MOUSE_BUTTON_LEFT) return false;
         if (this.displayedState != IslandState.MUSIC || this.activeMediaSession == null) return false;
 
-        if (isHovered(mouseX, mouseY, prevButtonX, musicButtonY, musicButtonSize, musicButtonSize)) {
+        if (isHovered(mouseX, mouseY, prevButtonX, prevButtonY, prevButtonSize, prevButtonSize)) {
             CompletableFuture.runAsync(() -> {
                 try { activeMediaSession.previous(); } catch (Throwable ignored) {}
             });
             return true;
         }
-        if (isHovered(mouseX, mouseY, playButtonX, musicButtonY, musicButtonSize, musicButtonSize)) {
+        if (isHovered(mouseX, mouseY, playButtonX, playButtonY, playButtonSize, playButtonSize)) {
             CompletableFuture.runAsync(() -> {
                 try { activeMediaSession.playPause(); } catch (Throwable ignored) {}
             });
             return true;
         }
-        if (isHovered(mouseX, mouseY, nextButtonX, musicButtonY, musicButtonSize, musicButtonSize)) {
+        if (isHovered(mouseX, mouseY, nextButtonX, nextButtonY, nextButtonSize, nextButtonSize)) {
             CompletableFuture.runAsync(() -> {
                 try { activeMediaSession.next(); } catch (Throwable ignored) {}
             });
