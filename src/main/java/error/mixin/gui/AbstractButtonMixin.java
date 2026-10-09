@@ -69,78 +69,104 @@ public abstract class AbstractButtonMixin {
         int themeAccent = Theme.getAccentColor();
         float radius = Math.min(6.5F, h / 2.0F);
 
-        // 1. Exact Liquid Glass Kawase Blur Pass from ClickGUI
-        boolean batcherStartedLocally = false;
-        if (!DisplayBatcher.active()) {
-            DisplayBatcher.begin(extractor);
-            batcherStartedLocally = true;
+        // 1. Kawase Blur & Specular Outline (only in Liquid Glass theme)
+        if (Theme.isLiquidGlass()) {
+            boolean batcherStartedLocally = false;
+            if (!DisplayBatcher.active()) {
+                DisplayBatcher.begin(extractor);
+                batcherStartedLocally = true;
+            }
+
+            Color blurTint = self.active
+                    ? Color.rgba(0, 0, 0, Math.round(65 + this.error$hoverAnim * 15))
+                    : Color.rgba(0, 0, 0, 45);
+
+            Blur.of(x, y, w, h)
+                    .radius(radius)
+                    .type(BlurType.KAWASE)
+                    .strength(4)
+                    .tint(blurTint)
+                    .render(extractor);
+
+            Color topOutline;
+            Color bottomOutline;
+            if (self.active) {
+                Color hoverTop = Color.of(themeAccent).withAlpha(0.65F);
+                Color hoverBottom = Color.of(themeAccent).withAlpha(0.35F);
+                topOutline = Color.rgba(255, 255, 255, 36).lerp(hoverTop, this.error$hoverAnim);
+                bottomOutline = Color.rgba(255, 255, 255, 14).lerp(hoverBottom, this.error$hoverAnim);
+            } else {
+                topOutline = Color.rgba(255, 255, 255, 16);
+                bottomOutline = Color.rgba(255, 255, 255, 6);
+            }
+
+            Outline.of(x, y, w, h)
+                    .radius(radius)
+                    .thickness(0.75F)
+                    .verticalGradient(topOutline, bottomOutline)
+                    .render(extractor);
+
+            DisplayBatcher.flush();
+            if (batcherStartedLocally) {
+                DisplayBatcher.end();
+            }
         }
 
-        Color blurTint = self.active
-                ? Color.rgba(0, 0, 0, Math.round(65 + this.error$hoverAnim * 15))
-                : Color.rgba(0, 0, 0, 45);
-
-        Blur.of(x, y, w, h)
-                .radius(radius)
-                .type(BlurType.KAWASE)
-                .strength(4)
-                .tint(blurTint)
-                .render(extractor);
-
-        // 2. Liquid Glass Outline Pass matching ClickGUI cards (subtle, pure, no harsh white glare)
-        Color topOutline;
-        Color bottomOutline;
-        if (self.active) {
-            Color hoverTop = Color.of(themeAccent).withAlpha(0.65F);
-            Color hoverBottom = Color.of(themeAccent).withAlpha(0.35F);
-            topOutline = Color.rgba(255, 255, 255, 36).lerp(hoverTop, this.error$hoverAnim);
-            bottomOutline = Color.rgba(255, 255, 255, 14).lerp(hoverBottom, this.error$hoverAnim);
-        } else {
-            topOutline = Color.rgba(255, 255, 255, 16);
-            bottomOutline = Color.rgba(255, 255, 255, 6);
-        }
-
-        Outline.of(x, y, w, h)
-                .radius(radius)
-                .thickness(0.75F)
-                .verticalGradient(topOutline, bottomOutline)
-                .render(extractor);
-
-        DisplayBatcher.flush();
-        if (batcherStartedLocally) {
-            DisplayBatcher.end();
-        }
-
-        // 3. 2D Elements Pass: Soft ambient glass shadow, pure translucent glass fill, and crisp typography
+        // 2. 2D Elements Pass: Soft ambient shadow, themed fill, and crisp typography
         error.util.RenderExtend.enter2D(null, extractor, null);
         Render2DUtil.beginFrame();
         try {
-            // Ambient glass shadow
-            Render2D.drawShadow(x, y, w, h, radius, 4.0F,
-                    ColorUtil.rgba(0, 0, 0, (int) (50 * (self.active ? 1.0F : 0.3F))));
+            // Subtle ambient shadow
+            float shadowBlur = Theme.isBlack() ? 2.0F : (Theme.isEnergy() ? 2.5F : 2.8F);
+            int shadowAlpha = (int) ((Theme.isBlack() ? 38 : (Theme.isEnergy() ? 30 : 25)) * (self.active ? 1.0F : 0.3F));
+            Render2D.drawShadow(x, y, w, h, radius, shadowBlur, ColorUtil.rgba(0, 0, 0, shadowAlpha));
 
-            // Dynamic accent glow shadow when hovered
+            // Accent glow shadow when hovered
             if (self.active && this.error$hoverAnim > 0.02F) {
-                Render2D.drawShadow(x, y, w, h, radius + 1.0F, 5.0F,
-                        ColorUtil.withAlpha(themeAccent, (int) (55 * this.error$hoverAnim)));
+                Render2D.drawShadow(x, y, w, h, radius + 0.5F, 3.0F,
+                        ColorUtil.withAlpha(themeAccent, (int) (32 * this.error$hoverAnim)));
             }
 
-            // Pure translucent frosted liquid glass fill (matching ClickGUI cards)
-            int glassFill = self.active
-                    ? ColorUtil.rgba(255, 255, 255, (int) (12 + 12 * this.error$hoverAnim))
-                    : ColorUtil.rgba(255, 255, 255, 6);
-            Render2D.drawRoundedRect(x, y, w, h, radius, glassFill);
+            int fillCol;
+            int outlineCol;
+            if (Theme.isBlack()) {
+                fillCol = self.active
+                        ? ColorUtil.rgba(14, 14, 18, (int) (235 + 20 * this.error$hoverAnim))
+                        : ColorUtil.rgba(12, 12, 15, 200);
+                outlineCol = self.active
+                        ? ColorUtil.interpolateColor(ColorUtil.rgba(255, 255, 255, 15), ColorUtil.withAlpha(themeAccent, 180), this.error$hoverAnim)
+                        : ColorUtil.rgba(255, 255, 255, 8);
+            } else if (Theme.isEnergy()) {
+                fillCol = self.active
+                        ? ColorUtil.rgba(20, 22, 28, (int) (175 + 25 * this.error$hoverAnim))
+                        : ColorUtil.rgba(18, 20, 25, 140);
+                outlineCol = self.active
+                        ? ColorUtil.interpolateColor(ColorUtil.rgba(255, 255, 255, 22), ColorUtil.withAlpha(themeAccent, 190), this.error$hoverAnim)
+                        : ColorUtil.rgba(255, 255, 255, 10);
+            } else if (Theme.isNewYear()) {
+                fillCol = self.active
+                        ? ColorUtil.rgba(16, 20, 28, (int) (185 + 25 * this.error$hoverAnim))
+                        : ColorUtil.rgba(14, 18, 24, 150);
+                outlineCol = self.active
+                        ? ColorUtil.interpolateColor(ColorUtil.rgba(180, 220, 255, 38), ColorUtil.withAlpha(themeAccent, 190), this.error$hoverAnim)
+                        : ColorUtil.rgba(180, 220, 255, 15);
+            } else { // Liquid Glass
+                fillCol = self.active
+                        ? ColorUtil.rgba(255, 255, 255, (int) (12 + 12 * this.error$hoverAnim))
+                        : ColorUtil.rgba(255, 255, 255, 6);
+                outlineCol = self.active
+                        ? ColorUtil.interpolateColor(ColorUtil.rgba(255, 255, 255, 22), ColorUtil.withAlpha(themeAccent, 170), this.error$hoverAnim)
+                        : ColorUtil.rgba(255, 255, 255, 10);
+            }
+
+            Render2D.drawRoundedRect(x, y, w, h, radius, fillCol);
 
             // Subtle accent tint on hover
             if (self.active && this.error$hoverAnim > 0.02F) {
                 Render2D.drawRoundedRect(x, y, w, h, radius,
-                        ColorUtil.withAlpha(themeAccent, (int) (22 * this.error$hoverAnim)));
+                        ColorUtil.withAlpha(themeAccent, (int) (18 * this.error$hoverAnim)));
             }
 
-            // Crisp 2D rounded outline
-            int outlineCol = self.active
-                    ? ColorUtil.interpolateColor(ColorUtil.rgba(255, 255, 255, 22), ColorUtil.withAlpha(themeAccent, 170), this.error$hoverAnim)
-                    : ColorUtil.rgba(255, 255, 255, 10);
             Render2D.drawRoundedOutline(x, y, w, h, radius, 0.65F, outlineCol);
 
             // Slider progress bar if widget is a slider
