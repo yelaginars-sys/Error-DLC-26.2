@@ -334,7 +334,7 @@ public class Render2D {
         if (alpha <= 0.001F || width <= 0.0F || height <= 0.0F) return;
 
         if (Theme.isLiquidGlass()) {
-            Render2D.drawShadow(x, y, width, height, radius, 4.0F, ColorUtil.rgba(0, 0, 0, (int) (50 * alpha)));
+            Render2D.drawShadow(x, y, width, height, radius, 2.2F, ColorUtil.rgba(0, 0, 0, (int) (28 * alpha)));
             GuiGraphicsExtractor ext = extractor != null ? extractor : RenderExtend.currentGuiGraphicsExtractor();
             if (ext != null) {
                 Render2DUtil.flush();
@@ -359,17 +359,17 @@ public class Render2D {
             }
         } else if (Theme.isEnergy()) {
             // Sleek Energy Dark Glass capsule
-            Render2D.drawShadow(x, y, width, height, radius, 4.5F, ColorUtil.rgba(0, 0, 0, (int) (65 * alpha)));
+            Render2D.drawShadow(x, y, width, height, radius, 2.5F, ColorUtil.rgba(0, 0, 0, (int) (32 * alpha)));
             drawRoundedRect(x, y, width, height, radius, ColorUtil.rgba(18, 19, 26, (int) (165 * alpha)));
             drawRoundedOutline(x, y, width, height, radius, 0.65F, ColorUtil.rgba(255, 255, 255, (int) (22 * alpha)));
         } else if (Theme.isBlack()) {
             // Clean Solid Black Minimal capsule
-            Render2D.drawShadow(x, y, width, height, radius, 4.0F, ColorUtil.rgba(0, 0, 0, (int) (95 * alpha)));
+            Render2D.drawShadow(x, y, width, height, radius, 2.0F, ColorUtil.rgba(0, 0, 0, (int) (40 * alpha)));
             drawRoundedRect(x, y, width, height, radius, ColorUtil.rgba(13, 13, 17, (int) (235 * alpha)));
             drawRoundedOutline(x, y, width, height, radius, 0.65F, ColorUtil.rgba(255, 255, 255, (int) (14 * alpha)));
         } else {
             // New Year / Winter
-            Render2D.drawShadow(x, y, width, height, radius, 4.5F, ColorUtil.rgba(0, 0, 0, (int) (60 * alpha)));
+            Render2D.drawShadow(x, y, width, height, radius, 2.2F, ColorUtil.rgba(0, 0, 0, (int) (30 * alpha)));
             drawRoundedRect(x, y, width, height, radius, ColorUtil.rgba(16, 20, 28, (int) (185 * alpha)));
             drawRoundedOutline(x, y, width, height, radius, 0.65F, ColorUtil.rgba(180, 220, 255, (int) (40 * alpha)));
         }
@@ -391,7 +391,7 @@ public class Render2D {
         if (alpha <= 0.001F || width <= 0.0F || height <= 0.0F) return;
 
         if (Theme.isLiquidGlass()) {
-            Render2D.drawShadow(x, y, width, height, radius, 6.0F, ColorUtil.rgba(0, 0, 0, (int) (65 * alpha)));
+            Render2D.drawShadow(x, y, width, height, radius, 3.0F, ColorUtil.rgba(0, 0, 0, (int) (32 * alpha)));
             GuiGraphicsExtractor ext = extractor != null ? extractor : RenderExtend.currentGuiGraphicsExtractor();
             if (ext != null) {
                 Render2DUtil.flush();
@@ -417,17 +417,17 @@ public class Render2D {
             }
         } else if (Theme.isEnergy()) {
             // Sleek Energy Dark Glass card
-            Render2D.drawShadow(x, y, width, height, radius, 6.0F, ColorUtil.rgba(0, 0, 0, (int) (75 * alpha)));
+            Render2D.drawShadow(x, y, width, height, radius, 3.0F, ColorUtil.rgba(0, 0, 0, (int) (36 * alpha)));
             drawRoundedRect(x, y, width, height, radius, ColorUtil.rgba(18, 19, 25, (int) (175 * alpha)));
             drawRoundedOutline(x, y, width, height, radius, 0.70F, ColorUtil.rgba(255, 255, 255, (int) (24 * alpha)));
         } else if (Theme.isBlack()) {
             // Clean Solid Black Minimal card
-            Render2D.drawShadow(x, y, width, height, radius, 5.0F, ColorUtil.rgba(0, 0, 0, (int) (110 * alpha)));
+            Render2D.drawShadow(x, y, width, height, radius, 2.5F, ColorUtil.rgba(0, 0, 0, (int) (48 * alpha)));
             drawRoundedRect(x, y, width, height, radius, ColorUtil.rgba(13, 13, 17, (int) (240 * alpha)));
             drawRoundedOutline(x, y, width, height, radius, 0.70F, ColorUtil.rgba(255, 255, 255, (int) (15 * alpha)));
         } else {
             // New Year / Winter
-            Render2D.drawShadow(x, y, width, height, radius, 6.0F, ColorUtil.rgba(0, 0, 0, (int) (70 * alpha)));
+            Render2D.drawShadow(x, y, width, height, radius, 3.0F, ColorUtil.rgba(0, 0, 0, (int) (35 * alpha)));
             drawRoundedRect(x, y, width, height, radius, ColorUtil.rgba(16, 20, 28, (int) (190 * alpha)));
             drawRoundedOutline(x, y, width, height, radius, 0.70F, ColorUtil.rgba(180, 220, 255, (int) (45 * alpha)));
         }

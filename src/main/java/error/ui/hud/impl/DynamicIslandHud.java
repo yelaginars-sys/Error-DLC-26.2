@@ -553,28 +553,28 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
 
     private void renderIslandShell(float x, float y, float w, float h, int themeAccent, float alpha) {
         float radius = h / 2.0F;
-        float shadowBlur = y < 15.0F ? Math.max(0.0F, Math.min(y - 1.0F, 12.0F)) : 12.0F;
+        float shadowBlur = y < 15.0F ? Math.max(0.0F, Math.min(y - 1.0F, 3.5F)) : 3.5F;
 
         if (this.displayedState == IslandState.PVP) {
-            int pvpGlow = ColorUtil.rgba(255, 45, 65, (int) (125 * alpha));
+            int pvpGlow = ColorUtil.rgba(255, 45, 65, (int) (75 * alpha));
             int pvpFill = ColorUtil.rgba(28, 8, 14, (int) (225 * alpha));
             int pvpBorder = ColorUtil.rgba(255, 75, 95, (int) (180 * alpha));
 
             if (shadowBlur > 1.0F) {
-                Render2D.drawShadow(x, y, w, h, radius, shadowBlur, ColorUtil.rgba(0, 0, 0, (int) (160 * alpha)));
-                Render2D.drawShadow(x, y, w, h, radius, Math.min(shadowBlur, 8.0F), pvpGlow);
+                Render2D.drawShadow(x, y, w, h, radius, shadowBlur, ColorUtil.rgba(0, 0, 0, (int) (60 * alpha)));
+                Render2D.drawShadow(x, y, w, h, radius, Math.min(shadowBlur, 4.0F), pvpGlow);
             }
             Render2D.drawRoundedRect(x, y, w, h, radius, pvpFill);
             Render2D.drawRoundedOutline(x, y, w, h, radius, 1.0F, pvpBorder);
         } else if (Theme.isBlack()) {
             if (shadowBlur > 1.0F) {
-                Render2D.drawShadow(x, y, w, h, radius, shadowBlur, ColorUtil.rgba(0, 0, 0, (int) (140 * alpha)));
+                Render2D.drawShadow(x, y, w, h, radius, shadowBlur, ColorUtil.rgba(0, 0, 0, (int) (45 * alpha)));
             }
             Render2D.drawRoundedRect(x, y, w, h, radius, ColorUtil.rgba(14, 14, 16, (int) (240 * alpha)));
             Render2D.drawRoundedOutline(x, y, w, h, radius, 0.8F, ColorUtil.rgba(255, 255, 255, (int) (18 * alpha)));
         } else if (Theme.isEnergy()) {
             if (shadowBlur > 1.0F) {
-                Render2D.drawShadow(x, y, w, h, radius, shadowBlur, ColorUtil.rgba(0, 0, 0, (int) (110 * alpha)));
+                Render2D.drawShadow(x, y, w, h, radius, shadowBlur, ColorUtil.rgba(0, 0, 0, (int) (38 * alpha)));
             }
             Render2D.drawRoundedRect(x, y, w, h, radius, ColorUtil.rgba(20, 20, 25, (int) (160 * alpha)));
             Render2D.drawRoundedOutline(x, y, w, h, radius, 0.8F, ColorUtil.rgba(255, 255, 255, (int) (22 * alpha)));
@@ -597,11 +597,11 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
         int primaryAccent = getHudAccent();
 
         if (Theme.isBlack()) {
-            Render2D.drawShadow(x, y, w, h, subRadius, 6.0F, ColorUtil.rgba(0, 0, 0, (int) (120 * alpha)));
+            Render2D.drawShadow(x, y, w, h, subRadius, 2.5F, ColorUtil.rgba(0, 0, 0, (int) (42 * alpha)));
             Render2D.drawRoundedRect(x, y, w, h, subRadius, ColorUtil.rgba(14, 14, 16, (int) (240 * alpha)));
             Render2D.drawRoundedOutline(x, y, w, h, subRadius, 0.8F, ColorUtil.rgba(255, 255, 255, (int) (18 * alpha)));
         } else if (Theme.isEnergy()) {
-            Render2D.drawShadow(x, y, w, h, subRadius, 6.0F, ColorUtil.rgba(0, 0, 0, (int) (100 * alpha)));
+            Render2D.drawShadow(x, y, w, h, subRadius, 2.5F, ColorUtil.rgba(0, 0, 0, (int) (35 * alpha)));
             Render2D.drawRoundedRect(x, y, w, h, subRadius, ColorUtil.rgba(20, 20, 25, (int) (160 * alpha)));
             Render2D.drawRoundedOutline(x, y, w, h, subRadius, 0.8F, ColorUtil.rgba(255, 255, 255, (int) (22 * alpha)));
         } else {

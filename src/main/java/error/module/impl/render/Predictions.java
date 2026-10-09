@@ -186,16 +186,14 @@ public final class Predictions extends Module {
         float centerY = pillY + pillHeight / 2.0F;
         float textY = font.centeredTextY(centerY, textSize);
 
-        Render2D.drawShadow(pillX, pillY, width, pillHeight, RADIUS * unit, 6.0F * unit, ColorUtil.rgba(0, 0, 0, 70));
-        Render2D.drawLiquidGlass(pillX, pillY, width, pillHeight, RADIUS * unit, 1.0F, traj.color);
-        Render2D.drawRoundedOutline(pillX, pillY, width, pillHeight, RADIUS * unit, 0.6F * unit, ColorUtil.rgba(255, 255, 255, 30));
+        var extractor = event.getGuiGraphicsExtractor();
+        Render2D.drawHudPill(extractor, pillX, pillY, width, pillHeight, RADIUS * unit, 1.0F, traj.color);
 
         float cursor = pillX + padding;
         boolean hasPrev = false;
 
         if (showIcon) {
             Render2DUtil.flush();
-            var extractor = event.getGuiGraphicsExtractor();
             if (extractor != null) {
                 Matrix3x2fStack pose = extractor.pose();
                 float itemScale = itemSize / 16.0F;

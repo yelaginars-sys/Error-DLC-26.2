@@ -143,12 +143,11 @@ public final class FireworkESP extends Module {
         float textY = font.centeredTextY(centerY, textSize);
 
         int accent = Theme.getAccentColor();
-        Render2D.drawShadow(pillX, pillY, width, pillHeight, 5.0F * unit, 6.0F * unit, ColorUtil.multiplyAlpha(0x90000000, alpha));
-        Render2D.drawLiquidGlass(pillX, pillY, width, pillHeight, RADIUS * unit, alpha, accent);
+        var extractor = event.getGuiGraphicsExtractor();
+        Render2D.drawHudPill(extractor, pillX, pillY, width, pillHeight, RADIUS * unit, alpha, accent);
 
         float cursor = pillX + PADDING * unit;
 
-        var extractor = event.getGuiGraphicsExtractor();
         if (extractor != null) {
             Render2DUtil.flush();
             Matrix3x2fStack pose = extractor.pose();
