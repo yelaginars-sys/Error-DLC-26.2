@@ -280,7 +280,7 @@ public class Render2D {
         if (alpha <= 0.001F || width <= 0.0F || height <= 0.0F) return;
 
         // If non-liquid theme is selected, route to the appropriate theme card
-        if (Theme.isEnergy() || Theme.isBlack() || Theme.isNewYear()) {
+        if (Theme.isBlack() || Theme.isNewYear()) {
             drawHudCard(null, x, y, width, height, radius, alpha, accentColor);
             return;
         }
@@ -333,7 +333,39 @@ public class Render2D {
     public static void drawHudPill(GuiGraphicsExtractor extractor, float x, float y, float width, float height, float radius, float alpha, int accentColor) {
         if (alpha <= 0.001F || width <= 0.0F || height <= 0.0F) return;
 
-        if (Theme.isLiquidGlass()) {
+        if (Theme.isBlack()) {
+            // Clean Solid Black Minimal capsule
+            Render2D.drawShadow(x, y, width, height, radius, 2.0F, ColorUtil.rgba(0, 0, 0, (int) (40 * alpha)));
+            drawRoundedRect(x, y, width, height, radius, ColorUtil.rgba(13, 13, 17, (int) (235 * alpha)));
+            drawRoundedOutline(x, y, width, height, radius, 0.65F, ColorUtil.rgba(255, 255, 255, (int) (14 * alpha)));
+        } else if (Theme.isNewYear()) {
+            // New Year: Liquid Glass with Frost Shader / Ice Crystalline Effect
+            Render2D.drawShadow(x, y, width, height, radius, 2.5F, ColorUtil.rgba(0, 0, 0, (int) (25 * alpha)));
+            GuiGraphicsExtractor ext = extractor != null ? extractor : RenderExtend.currentGuiGraphicsExtractor();
+            if (ext != null) {
+                Render2DUtil.flush();
+                try {
+                    Blur.of(x, y, width, height)
+                            .radius(Math.round(radius))
+                            .type(BlurType.KAWASE)
+                            .strength(3)
+                            .tint(Color.rgba(10, 24, 42, (int) (115 * alpha)))
+                            .alpha(alpha)
+                            .render(ext);
+
+                    Outline.of(x, y, width, height)
+                            .radius(Math.round(radius))
+                            .thickness(0.80F)
+                            .verticalGradient(Color.rgba(220, 248, 255, (int) (165 * alpha)), Color.rgba(130, 205, 255, (int) (50 * alpha)))
+                            .alpha(alpha)
+                            .render(ext);
+
+                    DisplayBatcher.flush();
+                } catch (Throwable ignored) {}
+            }
+            drawFrostSheen(x, y, width, height, radius, alpha);
+        } else {
+            // Liquid Glass (default)
             Render2D.drawShadow(x, y, width, height, radius, 2.2F, ColorUtil.rgba(0, 0, 0, (int) (28 * alpha)));
             GuiGraphicsExtractor ext = extractor != null ? extractor : RenderExtend.currentGuiGraphicsExtractor();
             if (ext != null) {
@@ -357,21 +389,6 @@ public class Render2D {
                     DisplayBatcher.flush();
                 } catch (Throwable ignored) {}
             }
-        } else if (Theme.isEnergy()) {
-            // Sleek Error Glass capsule (lighter glass style)
-            Render2D.drawShadow(x, y, width, height, radius, 2.0F, ColorUtil.rgba(0, 0, 0, (int) (18 * alpha)));
-            drawRoundedRect(x, y, width, height, radius, ColorUtil.rgba(28, 30, 42, (int) (160 * alpha)));
-            drawRoundedOutline(x, y, width, height, radius, 0.65F, ColorUtil.rgba(255, 255, 255, (int) (38 * alpha)));
-        } else if (Theme.isBlack()) {
-            // Clean Solid Black Minimal capsule
-            Render2D.drawShadow(x, y, width, height, radius, 2.0F, ColorUtil.rgba(0, 0, 0, (int) (40 * alpha)));
-            drawRoundedRect(x, y, width, height, radius, ColorUtil.rgba(13, 13, 17, (int) (235 * alpha)));
-            drawRoundedOutline(x, y, width, height, radius, 0.65F, ColorUtil.rgba(255, 255, 255, (int) (14 * alpha)));
-        } else {
-            // New Year / Winter
-            Render2D.drawShadow(x, y, width, height, radius, 2.2F, ColorUtil.rgba(0, 0, 0, (int) (30 * alpha)));
-            drawRoundedRect(x, y, width, height, radius, ColorUtil.rgba(16, 20, 28, (int) (185 * alpha)));
-            drawRoundedOutline(x, y, width, height, radius, 0.65F, ColorUtil.rgba(180, 220, 255, (int) (40 * alpha)));
         }
     }
 
@@ -390,7 +407,40 @@ public class Render2D {
     public static void drawHudCard(GuiGraphicsExtractor extractor, float x, float y, float width, float height, float radius, float alpha, int accentColor) {
         if (alpha <= 0.001F || width <= 0.0F || height <= 0.0F) return;
 
-        if (Theme.isLiquidGlass()) {
+        if (Theme.isBlack()) {
+            // Clean Solid Black Minimal card
+            Render2D.drawShadow(x, y, width, height, radius, 2.5F, ColorUtil.rgba(0, 0, 0, (int) (48 * alpha)));
+            drawRoundedRect(x, y, width, height, radius, ColorUtil.rgba(13, 13, 17, (int) (240 * alpha)));
+            drawRoundedOutline(x, y, width, height, radius, 0.70F, ColorUtil.rgba(255, 255, 255, (int) (15 * alpha)));
+        } else if (Theme.isNewYear()) {
+            // New Year: Liquid Glass with Frost Shader / Ice Crystalline Effect
+            Render2D.drawShadow(x, y, width, height, radius, 3.2F, ColorUtil.rgba(0, 0, 0, (int) (30 * alpha)));
+            GuiGraphicsExtractor ext = extractor != null ? extractor : RenderExtend.currentGuiGraphicsExtractor();
+            if (ext != null) {
+                Render2DUtil.flush();
+                float shellRadius = Math.min(radius, Math.min(width, height) * 0.5F);
+                try {
+                    Blur.of(x, y, width, height)
+                            .radius(shellRadius)
+                            .type(BlurType.KAWASE)
+                            .strength(4)
+                            .tint(Color.rgba(10, 24, 42, (int) (125 * alpha)))
+                            .alpha(alpha)
+                            .render(ext);
+
+                    Outline.of(x, y, width, height)
+                            .radius(shellRadius)
+                            .thickness(0.85F)
+                            .verticalGradient(Color.rgba(225, 248, 255, (int) (185 * alpha)), Color.rgba(135, 205, 255, (int) (55 * alpha)))
+                            .alpha(alpha)
+                            .render(ext);
+
+                    DisplayBatcher.flush();
+                } catch (Throwable ignored) {}
+            }
+            drawFrostSheen(x, y, width, height, radius, alpha);
+        } else {
+            // Liquid Glass (default)
             Render2D.drawShadow(x, y, width, height, radius, 3.0F, ColorUtil.rgba(0, 0, 0, (int) (32 * alpha)));
             GuiGraphicsExtractor ext = extractor != null ? extractor : RenderExtend.currentGuiGraphicsExtractor();
             if (ext != null) {
@@ -415,21 +465,34 @@ public class Render2D {
                     DisplayBatcher.flush();
                 } catch (Throwable ignored) {}
             }
-        } else if (Theme.isEnergy()) {
-            // Sleek Error Glass card (lighter glass style)
-            Render2D.drawShadow(x, y, width, height, radius, 2.5F, ColorUtil.rgba(0, 0, 0, (int) (22 * alpha)));
-            drawRoundedRect(x, y, width, height, radius, ColorUtil.rgba(28, 31, 44, (int) (165 * alpha)));
-            drawRoundedOutline(x, y, width, height, radius, 0.70F, ColorUtil.rgba(255, 255, 255, (int) (40 * alpha)));
-        } else if (Theme.isBlack()) {
-            // Clean Solid Black Minimal card
-            Render2D.drawShadow(x, y, width, height, radius, 2.5F, ColorUtil.rgba(0, 0, 0, (int) (48 * alpha)));
-            drawRoundedRect(x, y, width, height, radius, ColorUtil.rgba(13, 13, 17, (int) (240 * alpha)));
-            drawRoundedOutline(x, y, width, height, radius, 0.70F, ColorUtil.rgba(255, 255, 255, (int) (15 * alpha)));
-        } else {
-            // New Year / Winter
-            Render2D.drawShadow(x, y, width, height, radius, 3.0F, ColorUtil.rgba(0, 0, 0, (int) (35 * alpha)));
-            drawRoundedRect(x, y, width, height, radius, ColorUtil.rgba(16, 20, 28, (int) (190 * alpha)));
-            drawRoundedOutline(x, y, width, height, radius, 0.70F, ColorUtil.rgba(180, 220, 255, (int) (45 * alpha)));
         }
+    }
+
+    public static void drawFrostSheen(float x, float y, float width, float height, float radius, float alpha) {
+        if (alpha <= 0.01F || width <= 2.0F || height <= 2.0F) return;
+        long time = System.currentTimeMillis();
+
+        // 1. Crystalline icy top edge glint (ice rim light)
+        float rimW = Math.max(2.0F, width - radius);
+        float rimX = x + (width - rimW) / 2.0F;
+        drawRoundedRect(rimX, y + 0.8F, rimW, 1.1F, 0.5F, ColorUtil.rgba(235, 250, 255, (int) (110 * alpha)));
+
+        // 2. Dynamic frost glint across the glass (ice reflection wave)
+        float period = 3800.0F;
+        float progress = (float) ((time % (long) period) / period);
+        float glintX = x + (width + 60.0F) * progress - 30.0F;
+        if (glintX >= x && glintX <= x + width) {
+            float glintW = Math.min(22.0F, (x + width) - glintX);
+            float glintAlpha = (float) Math.sin(progress * Math.PI) * 0.22F * alpha;
+            if (glintAlpha > 0.01F) {
+                drawRoundedRect(glintX, y + 1.2F, glintW, height - 2.4F, Math.max(1.0F, radius - 1.0F),
+                        ColorUtil.rgba(220, 245, 255, (int) (255 * glintAlpha)));
+            }
+        }
+
+        // 3. Delicate frosty corner sparkle
+        float pulse = 0.5F + 0.5F * (float) Math.sin(time * 0.003F);
+        int sparkleColor = ColorUtil.rgba(210, 240, 255, (int) ((50 + 45 * pulse) * alpha));
+        drawCircle(x + Math.min(radius, 6.0F), y + Math.min(radius, 6.0F), 1.2F, sparkleColor);
     }
 }

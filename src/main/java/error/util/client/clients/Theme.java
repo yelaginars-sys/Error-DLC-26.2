@@ -20,7 +20,7 @@ public final class Theme {
     private static String glassStyle = "AURORA";
 
     @Getter @Setter
-    private static String uiStyle = "Жидкое стекло"; // "Жидкое стекло", "Error", "Черный", "Новый Год"
+    private static String uiStyle = "Жидкое стекло"; // "Жидкое стекло", "Черный", "Новый Год"
 
     public static String getEffectiveUiStyle() {
         error.module.impl.render.Interface iface = error.module.impl.render.Interface.getInstance();
@@ -38,15 +38,6 @@ public final class Theme {
         return "Жидкое стекло".equalsIgnoreCase(s) || "Liquid Glass".equalsIgnoreCase(s);
     }
 
-    public static boolean isErrorTheme() {
-        String s = getEffectiveUiStyle();
-        return "Error".equalsIgnoreCase(s) || "Эррор".equalsIgnoreCase(s) || "Energy".equalsIgnoreCase(s);
-    }
-
-    public static boolean isEnergy() {
-        return isErrorTheme();
-    }
-
     public static boolean isBlack() {
         String s = getEffectiveUiStyle();
         return "Черный".equalsIgnoreCase(s) || "Black".equalsIgnoreCase(s) || "Тёмный".equalsIgnoreCase(s);
@@ -54,19 +45,15 @@ public final class Theme {
 
     public static boolean isNewYear() {
         String s = getEffectiveUiStyle();
-        return "Новый Год".equalsIgnoreCase(s);
+        return "Новый Год".equalsIgnoreCase(s) || "New Year".equalsIgnoreCase(s) || "Зима".equalsIgnoreCase(s);
+    }
+
+    public static boolean isGlassBased() {
+        return isLiquidGlass() || isNewYear();
     }
 
     public static boolean isGuiLiquidGlass() {
         return "Жидкое стекло".equalsIgnoreCase(uiStyle) || "Liquid Glass".equalsIgnoreCase(uiStyle);
-    }
-
-    public static boolean isGuiErrorTheme() {
-        return "Error".equalsIgnoreCase(uiStyle) || "Эррор".equalsIgnoreCase(uiStyle) || "Energy".equalsIgnoreCase(uiStyle);
-    }
-
-    public static boolean isGuiEnergy() {
-        return isGuiErrorTheme();
     }
 
     public static boolean isGuiBlack() {
@@ -74,7 +61,27 @@ public final class Theme {
     }
 
     public static boolean isGuiNewYear() {
-        return "Новый Год".equalsIgnoreCase(uiStyle);
+        return "Новый Год".equalsIgnoreCase(uiStyle) || "New Year".equalsIgnoreCase(uiStyle) || "Зима".equalsIgnoreCase(uiStyle);
+    }
+
+    public static boolean isGuiGlassBased() {
+        return isGuiLiquidGlass() || isGuiNewYear();
+    }
+
+    public static boolean isErrorTheme() {
+        return false;
+    }
+
+    public static boolean isEnergy() {
+        return false;
+    }
+
+    public static boolean isGuiErrorTheme() {
+        return false;
+    }
+
+    public static boolean isGuiEnergy() {
+        return false;
     }
 
     @Getter @Setter

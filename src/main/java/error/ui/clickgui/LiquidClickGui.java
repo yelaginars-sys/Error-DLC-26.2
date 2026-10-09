@@ -329,8 +329,8 @@ public class LiquidClickGui extends Screen {
                 .color(Color.rgba(0, 0, 0, Math.round(dimmerAlpha * animVal)))
                 .render(extractor);
 
-        // 2. Liquid Glass Window (Frosted Kawase Blur & Outline when in Liquid Glass theme)
-        if (Theme.isGuiLiquidGlass()) {
+        // 2. Liquid Glass / New Year Frosted Window (Kawase Blur & Specular Outline)
+        if (Theme.isGuiGlassBased()) {
             Blur.of(x, y, WINDOW_W, WINDOW_H)
                     .radius(12)
                     .type(BlurType.KAWASE)
@@ -339,16 +339,18 @@ public class LiquidClickGui extends Screen {
                     .alpha(animVal)
                     .render(extractor);
 
+            Color topOutline = Theme.isGuiNewYear() ? Color.rgba(220, 248, 255, Math.round(240 * animVal)) : Color.WHITE;
+            Color botOutline = Theme.isGuiNewYear() ? Color.rgba(130, 205, 255, Math.round(45 * animVal)) : FADE_WHITE;
             Outline.of(x, y, WINDOW_W, WINDOW_H)
                     .radius(12)
                     .thickness(1.0F)
-                    .verticalGradient(Color.WHITE, FADE_WHITE)
+                    .verticalGradient(topOutline, botOutline)
                     .alpha(animVal)
                     .render(extractor);
         }
 
         // 3. Settings Modal Liquid Glass Window
-        if (this.settingsModalOpen && Theme.isGuiLiquidGlass()) {
+        if (this.settingsModalOpen && Theme.isGuiGlassBased()) {
             float modalW = 340.0F;
             float modalH = (this.activeEditingColorSetting != null) ? 175.0F : 226.0F;
             float modalX = (screenW - modalW) / 2.0F;
@@ -362,16 +364,18 @@ public class LiquidClickGui extends Screen {
                     .alpha(animVal)
                     .render(extractor);
 
+            Color mTopOutline = Theme.isGuiNewYear() ? Color.rgba(220, 248, 255, Math.round(240 * animVal)) : Color.WHITE;
+            Color mBotOutline = Theme.isGuiNewYear() ? Color.rgba(130, 205, 255, Math.round(45 * animVal)) : FADE_WHITE;
             Outline.of(modalX, modalY, modalW, modalH)
                     .radius(12)
                     .thickness(1.0F)
-                    .verticalGradient(Color.WHITE, FADE_WHITE)
+                    .verticalGradient(mTopOutline, mBotOutline)
                     .alpha(animVal)
                     .render(extractor);
         }
 
         // 4. Module Middle-Click Bind Modal Liquid Glass Window
-        if (this.moduleModalOpen && this.moduleModalModule != null && Theme.isGuiLiquidGlass()) {
+        if (this.moduleModalOpen && this.moduleModalModule != null && Theme.isGuiGlassBased()) {
             float mModalW = 180.0F;
             float mModalH = 98.0F;
             float mModalX = (screenW - mModalW) / 2.0F;
@@ -385,16 +389,18 @@ public class LiquidClickGui extends Screen {
                     .alpha(animVal)
                     .render(extractor);
 
+            Color bTopOutline = Theme.isGuiNewYear() ? Color.rgba(220, 248, 255, Math.round(240 * animVal)) : Color.WHITE;
+            Color bBotOutline = Theme.isGuiNewYear() ? Color.rgba(130, 205, 255, Math.round(45 * animVal)) : FADE_WHITE;
             Outline.of(mModalX, mModalY, mModalW, mModalH)
                     .radius(10)
                     .thickness(1.0F)
-                    .verticalGradient(Color.WHITE, FADE_WHITE)
+                    .verticalGradient(bTopOutline, bBotOutline)
                     .alpha(animVal)
                     .render(extractor);
         }
 
         // 5. Active Mode Dropdown Liquid Glass Window
-        if ((this.activeDropdownMode != null || this.activeDropdownMultiMode != null) && Theme.isGuiLiquidGlass()) {
+        if ((this.activeDropdownMode != null || this.activeDropdownMultiMode != null) && Theme.isGuiGlassBased()) {
             Blur.of(this.dropdownPopupX, this.dropdownPopupY, this.dropdownPopupW, this.dropdownPopupH)
                     .radius(6)
                     .type(BlurType.KAWASE)
@@ -403,10 +409,12 @@ public class LiquidClickGui extends Screen {
                     .alpha(animVal)
                     .render(extractor);
 
+            Color dTopOutline = Theme.isGuiNewYear() ? Color.rgba(220, 248, 255, Math.round(240 * animVal)) : Color.WHITE;
+            Color dBotOutline = Theme.isGuiNewYear() ? Color.rgba(130, 205, 255, Math.round(45 * animVal)) : FADE_WHITE;
             Outline.of(this.dropdownPopupX, this.dropdownPopupY, this.dropdownPopupW, this.dropdownPopupH)
                     .radius(6)
                     .thickness(1.0F)
-                    .verticalGradient(Color.WHITE, FADE_WHITE)
+                    .verticalGradient(dTopOutline, dBotOutline)
                     .alpha(animVal)
                     .render(extractor);
         }
@@ -418,25 +426,23 @@ public class LiquidClickGui extends Screen {
         RenderExtend.enter2D(null, extractor, null);
         Render2DUtil.beginFrame();
         try {
-            // Non-liquid theme backgrounds (Error / Black)
-            if (!Theme.isGuiLiquidGlass()) {
-                int winBg = Theme.isGuiBlack()
-                        ? ColorUtil.rgba(13, 13, 17, (int) (248 * animVal))
-                        : ColorUtil.rgba(24, 26, 36, (int) (205 * animVal));
-                int winOutline = Theme.isGuiBlack()
-                        ? ColorUtil.rgba(255, 255, 255, (int) (16 * animVal))
-                        : ColorUtil.rgba(255, 255, 255, (int) (35 * animVal));
-                int sidebarBg = Theme.isGuiBlack()
-                        ? ColorUtil.rgba(9, 9, 13, (int) (240 * animVal))
-                        : ColorUtil.rgba(18, 19, 27, (int) (185 * animVal));
+            if (Theme.isGuiBlack()) {
+                int winBg = ColorUtil.rgba(13, 13, 17, (int) (248 * animVal));
+                int winOutline = ColorUtil.rgba(255, 255, 255, (int) (16 * animVal));
+                int sidebarBg = ColorUtil.rgba(9, 9, 13, (int) (240 * animVal));
 
                 // Drop shadow
-                Render2D.drawShadow(x, y, WINDOW_W, WINDOW_H, 12.0F, 12.0F, ColorUtil.rgba(0, 0, 0, (int) ((Theme.isGuiBlack() ? 150 : 120) * animVal)));
+                Render2D.drawShadow(x, y, WINDOW_W, WINDOW_H, 12.0F, 12.0F, ColorUtil.rgba(0, 0, 0, (int) (150 * animVal)));
                 // Main window body
                 Render2D.drawRoundedRect(x, y, WINDOW_W, WINDOW_H, 12.0F, winBg);
                 Render2D.drawRoundedOutline(x, y, WINDOW_W, WINDOW_H, 12.0F, 0.85F, winOutline);
                 // Sidebar background
                 Render2D.drawRoundedRect(x, y, SIDEBAR_W, WINDOW_H, 12.0F, sidebarBg);
+            } else if (Theme.isGuiNewYear()) {
+                // Frosted New Year glass body & ice sheen
+                Render2D.drawRoundedRect(x, y, WINDOW_W, WINDOW_H, 12.0F, ColorUtil.rgba(10, 24, 44, (int) (115 * animVal)));
+                Render2D.drawFrostSheen(x, y, WINDOW_W, WINDOW_H, 12.0F, animVal);
+                Render2D.drawRoundedRect(x, y, SIDEBAR_W, WINDOW_H, 12.0F, ColorUtil.rgba(8, 20, 38, (int) (95 * animVal)));
             }
 
             // Winter snowflakes
@@ -539,18 +545,25 @@ public class LiquidClickGui extends Screen {
 
             if (active) {
                 // Sleek frosted pill with accent indicator
-                int pillBg = Theme.isGuiEnergy() ? ColorUtil.rgba(38, 42, 58, (int) (190 * alphaVal)) :
+                int pillBg = Theme.isGuiNewYear() ? ColorUtil.rgba(14, 38, 66, (int) (185 * alphaVal)) :
                              (Theme.isGuiBlack() ? ColorUtil.rgba(24, 25, 32, (int) (240 * alphaVal)) :
                               ColorUtil.rgba(255, 255, 255, (int) (22 * alphaVal)));
+                int pillOutline = Theme.isGuiNewYear() ? ColorUtil.rgba(180, 230, 255, (int) (160 * alphaVal)) :
+                                  ColorUtil.withAlpha(accentColor, (int) (130 * alphaVal));
                 Render2D.drawRoundedRect(catX, catY, catW, catH, 5.0F, pillBg);
-                Render2D.drawRoundedOutline(catX, catY, catW, catH, 5.0F, 0.7F, ColorUtil.withAlpha(accentColor, (int) (130 * alphaVal)));
+                Render2D.drawRoundedOutline(catX, catY, catW, catH, 5.0F, 0.7F, pillOutline);
                 Render2D.drawRoundedRect(catX + 2.0F, catY + 3.5F, 2.5F, catH - 7.0F, 1.0F, accentColor);
+                if (Theme.isGuiNewYear()) {
+                    Render2D.drawFrostSheen(catX, catY, catW, catH, 5.0F, alphaVal * 0.7F);
+                }
             } else {
-                int pillBg = Theme.isGuiEnergy() ? ColorUtil.rgba(28, 30, 40, (int) ((70 + hVal * 80) * alphaVal)) :
+                int pillBg = Theme.isGuiNewYear() ? ColorUtil.rgba(10, 24, 44, (int) ((65 + hVal * 80) * alphaVal)) :
                              (Theme.isGuiBlack() ? ColorUtil.rgba(16, 16, 21, (int) ((160 + hVal * 50) * alphaVal)) :
                               ColorUtil.rgba(255, 255, 255, (int) ((4 + hVal * 16) * alphaVal)));
+                int pillOutline = Theme.isGuiNewYear() ? ColorUtil.rgba(160, 215, 245, (int) ((22 + hVal * 40) * alphaVal)) :
+                                  ColorUtil.rgba(255, 255, 255, (int) ((14 + hVal * 18) * alphaVal));
                 Render2D.drawRoundedRect(catX, catY, catW, catH, 5.0F, pillBg);
-                Render2D.drawRoundedOutline(catX, catY, catW, catH, 5.0F, 0.6F, ColorUtil.rgba(255, 255, 255, (int) ((14 + hVal * 18) * alphaVal)));
+                Render2D.drawRoundedOutline(catX, catY, catW, catH, 5.0F, 0.6F, pillOutline);
             }
 
             // Category Icon (Guaranteed rendering for all 9 categories)
@@ -712,17 +725,21 @@ public class LiquidClickGui extends Screen {
         toggleAnim.setTarget(module.isEnabled() ? 1.0F : 0.0F);
         toggleAnim.update();
 
-        if (Theme.isGuiEnergy()) {
+        if (Theme.isGuiNewYear()) {
             if (module.isEnabled()) {
-                int cardBg = ColorUtil.rgba(36, 39, 54, (int) ((isHovered ? 195 : 155) * alphaVal));
-                int cardOutline = ColorUtil.withAlpha(accentColor, (int) ((isHovered ? 210 : 160) * alphaVal));
+                int cardBg = ColorUtil.rgba(14, 32, 56, (int) ((isHovered ? 175 : 135) * alphaVal));
+                int cardOutline = ColorUtil.rgba(180, 235, 255, (int) ((isHovered ? 210 : 160) * alphaVal));
                 Render2D.drawRoundedRect(x, y, w, h, 6.0F, cardBg);
                 Render2D.drawRoundedOutline(x, y, w, h, 6.0F, 0.85F, cardOutline);
+                Render2D.drawFrostSheen(x, y, w, h, 6.0F, alphaVal * 0.75F);
             } else {
-                int cardBg = ColorUtil.rgba(28, 30, 42, (int) ((isHovered ? 160 : 120) * alphaVal));
-                int cardOutline = ColorUtil.rgba(255, 255, 255, (int) ((isHovered ? 38 : 22) * alphaVal));
+                int cardBg = ColorUtil.rgba(10, 22, 40, (int) ((isHovered ? 130 : 95) * alphaVal));
+                int cardOutline = ColorUtil.rgba(160, 215, 245, (int) ((isHovered ? 65 : 40) * alphaVal));
                 Render2D.drawRoundedRect(x, y, w, h, 6.0F, cardBg);
                 Render2D.drawRoundedOutline(x, y, w, h, 6.0F, 0.65F, cardOutline);
+                if (isHovered) {
+                    Render2D.drawFrostSheen(x, y, w, h, 6.0F, alphaVal * 0.45F);
+                }
             }
         } else if (Theme.isGuiBlack()) {
             if (module.isEnabled()) {
@@ -999,15 +1016,19 @@ public class LiquidClickGui extends Screen {
         // Modal window body adapted to active theme
         int modalDarken = Theme.isGuiBlack()
                 ? ColorUtil.rgba(12, 12, 16, (int) (250 * alphaVal))
-                : (Theme.isGuiEnergy() ? ColorUtil.rgba(26, 28, 38, (int) (225 * alphaVal)) : ColorUtil.rgba(10, 13, 22, (int) (160 * alphaVal)));
+                : (Theme.isGuiNewYear() ? ColorUtil.rgba(10, 24, 44, (int) (185 * alphaVal)) : ColorUtil.rgba(10, 13, 22, (int) (160 * alphaVal)));
         int modalFrosted = Theme.isGuiBlack()
                 ? ColorUtil.rgba(255, 255, 255, (int) (4 * alphaVal))
-                : (Theme.isGuiEnergy() ? ColorUtil.rgba(255, 255, 255, (int) (12 * alphaVal)) : ColorUtil.rgba(255, 255, 255, (int) (10 * alphaVal)));
+                : (Theme.isGuiNewYear() ? ColorUtil.rgba(200, 235, 255, (int) (16 * alphaVal)) : ColorUtil.rgba(255, 255, 255, (int) (10 * alphaVal)));
         Render2D.drawShadow(modalX, modalY, modalW, modalH, 12.0F, 28.0F, ColorUtil.rgba(0, 0, 0, (int) (160 * alphaVal)));
         Render2D.drawRoundedRect(modalX, modalY, modalW, modalH, 12.0F, modalDarken);
         Render2D.drawRoundedRect(modalX, modalY, modalW, modalH, 12.0F, modalFrosted);
-        Render2D.drawRoundedOutline(modalX, modalY, modalW, modalH, 12.0F, 0.8F, ColorUtil.rgba(255, 255, 255, (int) ((Theme.isGuiBlack() ? 20 : 38) * alphaVal)));
+        int modalBorder = Theme.isGuiNewYear() ? ColorUtil.rgba(180, 230, 255, (int) (120 * alphaVal)) : ColorUtil.rgba(255, 255, 255, (int) ((Theme.isGuiBlack() ? 20 : 38) * alphaVal));
+        Render2D.drawRoundedOutline(modalX, modalY, modalW, modalH, 12.0F, 0.8F, modalBorder);
         Render2D.drawRoundedOutline(modalX, modalY, modalW, modalH, 12.0F, 0.5F, ColorUtil.withAlpha(accentColor, (int) (80 * alphaVal)));
+        if (Theme.isGuiNewYear()) {
+            Render2D.drawFrostSheen(modalX, modalY, modalW, modalH, 12.0F, alphaVal);
+        }
 
         // Header: Settings Icon + Title + Close Button
         float headY = modalY + 8.0F;
@@ -1086,24 +1107,21 @@ public class LiquidClickGui extends Screen {
             Render2D.drawRoundedOutline(chromaBtnX, row1Y, segW, segH, 3.5F, 0.65F, isChroma ? accentColor : ColorUtil.rgba(255, 255, 255, (int) (24 * alphaVal)));
             Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Chroma", chromaBtnX + segW / 2.0F, row1Y + 2.5F, 5.0F, 0xFFFFFFFF);
 
-            // Row 1.5: UI Style (Жидкое стекло vs Error vs Черный vs Новый Год)
+            // Row 1.5: UI Style (Жидкое стекло vs Черный vs Новый Год)
             float styleRowY = modalY + 47.0F;
             Fonts.drawString(Fonts.SF_MEDIUM, "Стиль UI:", modalX + 14.0F, styleRowY + 2.5F, 5.8F, 0xFFD0E0F0);
 
             boolean isGlass = Theme.isGuiLiquidGlass();
-            boolean isError = Theme.isGuiErrorTheme();
             boolean isBlack = Theme.isGuiBlack();
             boolean isNY = Theme.isGuiNewYear();
 
-            float glassBtnW = 74.0F;
-            float errorBtnW = 50.0F;
-            float blackBtnW = 50.0F;
-            float newYearBtnW = 58.0F;
-            float gap = 3.0F;
+            float glassBtnW = 82.0F;
+            float blackBtnW = 58.0F;
+            float newYearBtnW = 72.0F;
+            float gap = 4.0F;
 
-            float glassBtnX = modalX + modalW - 14.0F - (glassBtnW + errorBtnW + blackBtnW + newYearBtnW + gap * 3.0F);
-            float errorBtnX = glassBtnX + glassBtnW + gap;
-            float blackBtnX = errorBtnX + errorBtnW + gap;
+            float glassBtnX = modalX + modalW - 14.0F - (glassBtnW + blackBtnW + newYearBtnW + gap * 2.0F);
+            float blackBtnX = glassBtnX + glassBtnW + gap;
             float newYearBtnX = blackBtnX + blackBtnW + gap;
             float styleBtnH = 14.0F;
 
@@ -1114,26 +1132,22 @@ public class LiquidClickGui extends Screen {
             Render2D.drawRoundedOutline(glassBtnX, styleRowY, glassBtnW, styleBtnH, 3.5F, 0.65F, isGlass ? accentColor : ColorUtil.rgba(255, 255, 255, (int) (24 * alphaVal)));
             Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Жидкое стекло", glassBtnX + glassBtnW / 2.0F, styleRowY + 2.5F, 4.8F, 0xFFFFFFFF);
 
-            // 2. Error
-            boolean eHover = mouseX >= errorBtnX && mouseX <= errorBtnX + errorBtnW && mouseY >= styleRowY && mouseY <= styleRowY + styleBtnH;
-            int eBg = isError ? ColorUtil.withAlpha(accentColor, (int) (190 * alphaVal)) : ColorUtil.rgba(255, 255, 255, (int) ((eHover ? 24 : 14) * alphaVal));
-            Render2D.drawRoundedRect(errorBtnX, styleRowY, errorBtnW, styleBtnH, 3.5F, eBg);
-            Render2D.drawRoundedOutline(errorBtnX, styleRowY, errorBtnW, styleBtnH, 3.5F, 0.65F, isError ? accentColor : ColorUtil.rgba(255, 255, 255, (int) (24 * alphaVal)));
-            Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Error", errorBtnX + errorBtnW / 2.0F, styleRowY + 2.5F, 4.8F, 0xFFFFFFFF);
-
-            // 3. Черный
+            // 2. Черный
             boolean bHover = mouseX >= blackBtnX && mouseX <= blackBtnX + blackBtnW && mouseY >= styleRowY && mouseY <= styleRowY + styleBtnH;
             int bBg = isBlack ? ColorUtil.withAlpha(accentColor, (int) (190 * alphaVal)) : ColorUtil.rgba(255, 255, 255, (int) ((bHover ? 24 : 14) * alphaVal));
             Render2D.drawRoundedRect(blackBtnX, styleRowY, blackBtnW, styleBtnH, 3.5F, bBg);
             Render2D.drawRoundedOutline(blackBtnX, styleRowY, blackBtnW, styleBtnH, 3.5F, 0.65F, isBlack ? accentColor : ColorUtil.rgba(255, 255, 255, (int) (24 * alphaVal)));
             Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Черный", blackBtnX + blackBtnW / 2.0F, styleRowY + 2.5F, 4.8F, 0xFFFFFFFF);
 
-            // 4. Новый Год
+            // 3. Новый Год
             boolean nyHover = mouseX >= newYearBtnX && mouseX <= newYearBtnX + newYearBtnW && mouseY >= styleRowY && mouseY <= styleRowY + styleBtnH;
             int nyBg = isNY ? ColorUtil.withAlpha(accentColor, (int) (190 * alphaVal)) : ColorUtil.rgba(255, 255, 255, (int) ((nyHover ? 24 : 14) * alphaVal));
             Render2D.drawRoundedRect(newYearBtnX, styleRowY, newYearBtnW, styleBtnH, 3.5F, nyBg);
             Render2D.drawRoundedOutline(newYearBtnX, styleRowY, newYearBtnW, styleBtnH, 3.5F, 0.65F, isNY ? accentColor : ColorUtil.rgba(255, 255, 255, (int) (24 * alphaVal)));
             Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Новый Год", newYearBtnX + newYearBtnW / 2.0F, styleRowY + 2.5F, 4.8F, 0xFFFFFFFF);
+            if (isNY) {
+                Render2D.drawFrostSheen(newYearBtnX, styleRowY, newYearBtnW, styleBtnH, 3.5F, alphaVal * 0.7F);
+            }
 
             // Row 2: Target Color Selector Tabs (Primary vs Secondary)
             float row2Y = modalY + 65.0F;
@@ -2273,31 +2287,20 @@ public class LiquidClickGui extends Screen {
                         return true;
                     }
 
-                    // UI Style Buttons: "Жидкое стекло" vs "Error" vs "Черный" vs "Новый Год"
+                    // UI Style Buttons: "Жидкое стекло" vs "Черный" vs "Новый Год"
                     float styleRowY = modalY + 47.0F;
-                    float glassBtnW = 74.0F;
-                    float errorBtnW = 50.0F;
-                    float blackBtnW = 50.0F;
-                    float newYearBtnW = 58.0F;
-                    float gap = 3.0F;
+                    float glassBtnW = 82.0F;
+                    float blackBtnW = 58.0F;
+                    float newYearBtnW = 72.0F;
+                    float gap = 4.0F;
 
-                    float glassBtnX = modalX + modalW - 14.0F - (glassBtnW + errorBtnW + blackBtnW + newYearBtnW + gap * 3.0F);
-                    float errorBtnX = glassBtnX + glassBtnW + gap;
-                    float blackBtnX = errorBtnX + errorBtnW + gap;
+                    float glassBtnX = modalX + modalW - 14.0F - (glassBtnW + blackBtnW + newYearBtnW + gap * 2.0F);
+                    float blackBtnX = glassBtnX + glassBtnW + gap;
                     float newYearBtnX = blackBtnX + blackBtnW + gap;
                     float styleBtnH = 14.0F;
 
                     if (mouseX >= glassBtnX && mouseX <= glassBtnX + glassBtnW && mouseY >= styleRowY && mouseY <= styleRowY + styleBtnH) {
                         Theme.setUiStyle("Жидкое стекло");
-                        error.util.client.ClientSoundPlayer.playGuiClick();
-                        if (Client.INSTANCE != null && Client.INSTANCE.configManager != null) {
-                            Client.INSTANCE.configManager.autoSave();
-                        }
-                        return true;
-                    }
-
-                    if (mouseX >= errorBtnX && mouseX <= errorBtnX + errorBtnW && mouseY >= styleRowY && mouseY <= styleRowY + styleBtnH) {
-                        Theme.setUiStyle("Error");
                         error.util.client.ClientSoundPlayer.playGuiClick();
                         if (Client.INSTANCE != null && Client.INSTANCE.configManager != null) {
                             Client.INSTANCE.configManager.autoSave();

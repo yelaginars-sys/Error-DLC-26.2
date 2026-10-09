@@ -484,7 +484,7 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
         int themeAccent = getHudAccent();
 
         var extractor = event.getGuiGraphicsExtractor();
-        if (extractor != null && Theme.isLiquidGlass()) {
+        if (extractor != null && (Theme.isLiquidGlass() || Theme.isNewYear())) {
             float shellRadius = curIslandH / 2.0F;
             Blur.of(islandX, islandY, curIslandW, curIslandH)
                     .radius(Math.round(shellRadius))
@@ -494,10 +494,12 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
                     .alpha(alpha)
                     .render(extractor);
 
+            Color topOutline = Theme.isNewYear() ? Color.rgba(220, 248, 255, Math.round(240 * alpha)) : Color.WHITE;
+            Color botOutline = Theme.isNewYear() ? Color.rgba(130, 205, 255, Math.round(45 * alpha)) : Color.rgba(255, 255, 255, 32);
             Outline.of(islandX, islandY, curIslandW, curIslandH)
                     .radius(Math.round(shellRadius))
                     .thickness(1.0F)
-                    .verticalGradient(Color.WHITE, Color.rgba(255, 255, 255, 32))
+                    .verticalGradient(topOutline, botOutline)
                     .alpha(alpha)
                     .render(extractor);
 
@@ -514,10 +516,12 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
                         .alpha(subIslandAlpha)
                         .render(extractor);
 
+                Color subTopOutline = Theme.isNewYear() ? Color.rgba(220, 248, 255, Math.round(240 * subIslandAlpha)) : Color.WHITE;
+                Color subBotOutline = Theme.isNewYear() ? Color.rgba(130, 205, 255, Math.round(45 * subIslandAlpha)) : Color.rgba(255, 255, 255, 32);
                 Outline.of(infoX, infoY, animatedInfoW, INFO_HEIGHT)
                         .radius(Math.round(subRadius))
                         .thickness(1.0F)
-                        .verticalGradient(Color.WHITE, Color.rgba(255, 255, 255, 32))
+                        .verticalGradient(subTopOutline, subBotOutline)
                         .alpha(subIslandAlpha)
                         .render(extractor);
             }
@@ -572,12 +576,15 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
             }
             Render2D.drawRoundedRect(x, y, w, h, radius, ColorUtil.rgba(14, 14, 16, (int) (240 * alpha)));
             Render2D.drawRoundedOutline(x, y, w, h, radius, 0.8F, ColorUtil.rgba(255, 255, 255, (int) (18 * alpha)));
-        } else if (Theme.isEnergy()) {
+        } else if (Theme.isNewYear()) {
             if (shadowBlur > 1.0F) {
-                Render2D.drawShadow(x, y, w, h, radius, shadowBlur, ColorUtil.rgba(0, 0, 0, (int) (24 * alpha)));
+                Render2D.drawShadow(x, y, w, h, radius, shadowBlur, ColorUtil.rgba(20, 60, 95, (int) (35 * alpha)));
             }
-            Render2D.drawRoundedRect(x, y, w, h, radius, ColorUtil.rgba(30, 32, 45, (int) (165 * alpha)));
-            Render2D.drawRoundedOutline(x, y, w, h, radius, 0.8F, ColorUtil.rgba(255, 255, 255, (int) (38 * alpha)));
+            int frostTint = ColorUtil.rgba(10, 24, 44, (int) (135 * alpha));
+            int iceBorder = ColorUtil.rgba(180, 230, 255, (int) (125 * alpha));
+            Render2D.drawRoundedRect(x, y, w, h, radius, frostTint);
+            Render2D.drawRoundedOutline(x, y, w, h, radius, 0.9F, iceBorder);
+            Render2D.drawFrostSheen(x, y, w, h, radius, alpha);
         } else {
             int primaryAccent = getHudAccent();
             int lightDarken = ColorUtil.rgba(12, 16, 28, (int) (45 * alpha));
@@ -600,10 +607,13 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
             Render2D.drawShadow(x, y, w, h, subRadius, 2.5F, ColorUtil.rgba(0, 0, 0, (int) (42 * alpha)));
             Render2D.drawRoundedRect(x, y, w, h, subRadius, ColorUtil.rgba(14, 14, 16, (int) (240 * alpha)));
             Render2D.drawRoundedOutline(x, y, w, h, subRadius, 0.8F, ColorUtil.rgba(255, 255, 255, (int) (18 * alpha)));
-        } else if (Theme.isEnergy()) {
-            Render2D.drawShadow(x, y, w, h, subRadius, 2.0F, ColorUtil.rgba(0, 0, 0, (int) (22 * alpha)));
-            Render2D.drawRoundedRect(x, y, w, h, subRadius, ColorUtil.rgba(30, 32, 45, (int) (165 * alpha)));
-            Render2D.drawRoundedOutline(x, y, w, h, subRadius, 0.8F, ColorUtil.rgba(255, 255, 255, (int) (38 * alpha)));
+        } else if (Theme.isNewYear()) {
+            Render2D.drawShadow(x, y, w, h, subRadius, 2.5F, ColorUtil.rgba(20, 60, 95, (int) (30 * alpha)));
+            int frostTint = ColorUtil.rgba(10, 24, 44, (int) (135 * alpha));
+            int iceBorder = ColorUtil.rgba(180, 230, 255, (int) (125 * alpha));
+            Render2D.drawRoundedRect(x, y, w, h, subRadius, frostTint);
+            Render2D.drawRoundedOutline(x, y, w, h, subRadius, 0.9F, iceBorder);
+            Render2D.drawFrostSheen(x, y, w, h, subRadius, alpha);
         } else {
             int lightDarken = ColorUtil.rgba(12, 16, 28, (int) (45 * alpha));
             int frostedTint = ColorUtil.rgba(255, 255, 255, (int) (16 * alpha));

@@ -69,8 +69,8 @@ public abstract class AbstractButtonMixin {
         int themeAccent = Theme.getAccentColor();
         float radius = Math.min(6.5F, h / 2.0F);
 
-        // 1. Kawase Blur & Specular Outline (only in Liquid Glass theme)
-        if (Theme.isLiquidGlass()) {
+        // 1. Kawase Blur & Specular Outline (Liquid Glass & New Year themes)
+        if (Theme.isLiquidGlass() || Theme.isNewYear()) {
             boolean batcherStartedLocally = false;
             if (!DisplayBatcher.active()) {
                 DisplayBatcher.begin(extractor);
@@ -90,7 +90,12 @@ public abstract class AbstractButtonMixin {
 
             Color topOutline;
             Color bottomOutline;
-            if (self.active) {
+            if (Theme.isNewYear()) {
+                Color iceTop = Color.rgba(220, 248, 255, Math.round(180 + this.error$hoverAnim * 60));
+                Color iceBottom = Color.rgba(130, 205, 255, Math.round(45 + this.error$hoverAnim * 40));
+                topOutline = iceTop;
+                bottomOutline = iceBottom;
+            } else if (self.active) {
                 Color hoverTop = Color.of(themeAccent).withAlpha(0.65F);
                 Color hoverBottom = Color.of(themeAccent).withAlpha(0.35F);
                 topOutline = Color.rgba(255, 255, 255, 36).lerp(hoverTop, this.error$hoverAnim);
@@ -117,8 +122,8 @@ public abstract class AbstractButtonMixin {
         Render2DUtil.beginFrame();
         try {
             // Subtle ambient shadow
-            float shadowBlur = Theme.isBlack() ? 2.0F : (Theme.isEnergy() ? 2.5F : 2.8F);
-            int shadowAlpha = (int) ((Theme.isBlack() ? 38 : (Theme.isEnergy() ? 30 : 25)) * (self.active ? 1.0F : 0.3F));
+            float shadowBlur = Theme.isBlack() ? 2.0F : 2.8F;
+            int shadowAlpha = (int) ((Theme.isBlack() ? 38 : 25) * (self.active ? 1.0F : 0.3F));
             Render2D.drawShadow(x, y, w, h, radius, shadowBlur, ColorUtil.rgba(0, 0, 0, shadowAlpha));
 
             // Accent glow shadow when hovered
@@ -136,20 +141,13 @@ public abstract class AbstractButtonMixin {
                 outlineCol = self.active
                         ? ColorUtil.interpolateColor(ColorUtil.rgba(255, 255, 255, 15), ColorUtil.withAlpha(themeAccent, 180), this.error$hoverAnim)
                         : ColorUtil.rgba(255, 255, 255, 8);
-            } else if (Theme.isEnergy()) {
-                fillCol = self.active
-                        ? ColorUtil.rgba(30, 33, 44, (int) (180 + 25 * this.error$hoverAnim))
-                        : ColorUtil.rgba(24, 26, 35, 145);
-                outlineCol = self.active
-                        ? ColorUtil.interpolateColor(ColorUtil.rgba(255, 255, 255, 36), ColorUtil.withAlpha(themeAccent, 200), this.error$hoverAnim)
-                        : ColorUtil.rgba(255, 255, 255, 15);
             } else if (Theme.isNewYear()) {
                 fillCol = self.active
-                        ? ColorUtil.rgba(16, 20, 28, (int) (185 + 25 * this.error$hoverAnim))
-                        : ColorUtil.rgba(14, 18, 24, 150);
+                        ? ColorUtil.rgba(12, 28, 48, (int) (165 + 35 * this.error$hoverAnim))
+                        : ColorUtil.rgba(10, 22, 38, 140);
                 outlineCol = self.active
-                        ? ColorUtil.interpolateColor(ColorUtil.rgba(180, 220, 255, 38), ColorUtil.withAlpha(themeAccent, 190), this.error$hoverAnim)
-                        : ColorUtil.rgba(180, 220, 255, 15);
+                        ? ColorUtil.interpolateColor(ColorUtil.rgba(180, 230, 255, 120), ColorUtil.rgba(225, 250, 255, 220), this.error$hoverAnim)
+                        : ColorUtil.rgba(140, 200, 240, 60);
             } else { // Liquid Glass
                 fillCol = self.active
                         ? ColorUtil.rgba(255, 255, 255, (int) (12 + 12 * this.error$hoverAnim))
@@ -160,6 +158,10 @@ public abstract class AbstractButtonMixin {
             }
 
             Render2D.drawRoundedRect(x, y, w, h, radius, fillCol);
+
+            if (Theme.isNewYear() && self.active) {
+                Render2D.drawFrostSheen(x, y, w, h, radius, 0.7F + 0.3F * this.error$hoverAnim);
+            }
 
             // Subtle accent tint on hover
             if (self.active && this.error$hoverAnim > 0.02F) {

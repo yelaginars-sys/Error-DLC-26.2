@@ -46,8 +46,8 @@ public abstract class AbstractSliderButtonMixin {
         int themeAccent = Theme.getAccentColor();
         float radius = Math.min(6.5F, h / 2.0F);
 
-        // 1. Kawase Blur Pass (only in Liquid Glass theme)
-        if (Theme.isLiquidGlass()) {
+        // 1. Kawase Blur Pass (Liquid Glass & New Year themes)
+        if (Theme.isLiquidGlass() || Theme.isNewYear()) {
             boolean batcherStartedLocally = false;
             if (!DisplayBatcher.active()) {
                 DisplayBatcher.begin(extractor);
@@ -65,10 +65,15 @@ public abstract class AbstractSliderButtonMixin {
                     .tint(blurTint)
                     .render(extractor);
 
-            // 2. Liquid Glass Outline Pass
+            // 2. Liquid Glass / New Year Outline Pass
             Color topOutline;
             Color bottomOutline;
-            if (self.active) {
+            if (Theme.isNewYear()) {
+                Color iceTop = Color.rgba(220, 248, 255, Math.round(180 + this.error$hoverAnim * 60));
+                Color iceBottom = Color.rgba(130, 205, 255, Math.round(45 + this.error$hoverAnim * 40));
+                topOutline = iceTop;
+                bottomOutline = iceBottom;
+            } else if (self.active) {
                 Color hoverTop = Color.of(themeAccent).lerp(Color.WHITE, 0.35F);
                 Color hoverBottom = ERROR$FADE_WHITE.lerp(Color.of(themeAccent).withAlpha(0.40F), this.error$hoverAnim);
                 topOutline = Color.WHITE.lerp(hoverTop, this.error$hoverAnim);
@@ -94,8 +99,8 @@ public abstract class AbstractSliderButtonMixin {
         error.util.RenderExtend.enter2D(null, extractor, null);
         Render2DUtil.beginFrame();
         try {
-            float shadowBlur = Theme.isBlack() ? 2.0F : (Theme.isEnergy() ? 2.5F : 2.8F);
-            int shadowAlpha = (int) ((Theme.isBlack() ? 36 : (Theme.isEnergy() ? 28 : 24)) * (self.active ? 1.0F : 0.4F));
+            float shadowBlur = Theme.isBlack() ? 2.0F : 2.8F;
+            int shadowAlpha = (int) ((Theme.isBlack() ? 36 : 24) * (self.active ? 1.0F : 0.4F));
             Render2D.drawShadow(x, y, w, h, radius, shadowBlur, ColorUtil.rgba(0, 0, 0, shadowAlpha));
 
             int baseFill;
@@ -107,20 +112,13 @@ public abstract class AbstractSliderButtonMixin {
                 outlineCol = self.active
                         ? ColorUtil.interpolateColor(ColorUtil.rgba(255, 255, 255, 15), ColorUtil.withAlpha(themeAccent, 180), this.error$hoverAnim)
                         : ColorUtil.rgba(255, 255, 255, 8);
-            } else if (Theme.isEnergy()) {
-                baseFill = self.active
-                        ? ColorUtil.rgba(30, 33, 44, (int) (180 + 25 * this.error$hoverAnim))
-                        : ColorUtil.rgba(24, 26, 35, 145);
-                outlineCol = self.active
-                        ? ColorUtil.interpolateColor(ColorUtil.rgba(255, 255, 255, 36), ColorUtil.withAlpha(themeAccent, 200), this.error$hoverAnim)
-                        : ColorUtil.rgba(255, 255, 255, 15);
             } else if (Theme.isNewYear()) {
                 baseFill = self.active
-                        ? ColorUtil.rgba(16, 20, 28, (int) (185 + 25 * this.error$hoverAnim))
-                        : ColorUtil.rgba(14, 18, 24, 150);
+                        ? ColorUtil.rgba(12, 28, 48, (int) (165 + 35 * this.error$hoverAnim))
+                        : ColorUtil.rgba(10, 22, 38, 140);
                 outlineCol = self.active
-                        ? ColorUtil.interpolateColor(ColorUtil.rgba(180, 220, 255, 38), ColorUtil.withAlpha(themeAccent, 190), this.error$hoverAnim)
-                        : ColorUtil.rgba(180, 220, 255, 15);
+                        ? ColorUtil.interpolateColor(ColorUtil.rgba(180, 230, 255, 120), ColorUtil.rgba(225, 250, 255, 220), this.error$hoverAnim)
+                        : ColorUtil.rgba(140, 200, 240, 60);
             } else { // Liquid Glass
                 baseFill = ColorUtil.rgba(14, 18, 26, (int) (115 + this.error$hoverAnim * 35));
                 outlineCol = self.active
@@ -129,6 +127,9 @@ public abstract class AbstractSliderButtonMixin {
             }
 
             Render2D.drawRoundedRect(x, y, w, h, radius, baseFill);
+            if (Theme.isNewYear() && self.active) {
+                Render2D.drawFrostSheen(x, y, w, h, radius, 0.7F + 0.3F * this.error$hoverAnim);
+            }
             Render2D.drawRoundedOutline(x, y, w, h, radius, 0.65F, outlineCol);
 
             double val = 0.0;
