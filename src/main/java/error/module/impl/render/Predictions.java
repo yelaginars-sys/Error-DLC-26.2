@@ -1,8 +1,22 @@
 package error.module.impl.render;
 
+import com.mojang.blaze3d.PrimitiveTopology;
 import com.mojang.blaze3d.buffers.GpuBuffer;
+import com.mojang.blaze3d.pipeline.BlendFunction;
+import com.mojang.blaze3d.pipeline.ColorTargetState;
+import com.mojang.blaze3d.pipeline.DepthStencilState;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.blaze3d.platform.CompareOp;
+import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.ByteBufferBuilder;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.MeshData;
+import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.BindGroupLayouts;
+import net.minecraft.core.Direction;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
@@ -19,8 +33,8 @@ import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix3x2fStack;
-import error.util.render.Render3D;
-import error.util.render.Render3DUtil;
+import org.joml.Matrix4f;
+import org.joml.Vector4f;
 import error.event.EventTarget;
 import error.event.list.Render2DEvent;
 import error.event.list.Render3DEvent;
@@ -28,21 +42,25 @@ import error.module.Category;
 import error.module.Module;
 import error.setting.impl.CheckBox;
 import error.setting.impl.MultiModeSetting;
+import error.setting.impl.SliderSetting;
 import error.util.client.clients.ColorUtil;
 import error.util.client.clients.Theme;
 import error.util.render.Render2D;
+import error.util.render.Render2DUtil;
+import error.util.render.Render3DUtil;
 import error.util.render.font.Fonts;
 import error.util.render.font.MsdfFont;
-import error.util.render.Render2DUtil;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalDouble;
 
-import static error.util.client.clients.Theme.BG_COLOR;
 import static error.util.client.clients.Theme.DIVIDER_COLOR;
 
 /**
+ * Predictions: displays projectile trajectories and impact markers without near-plane camera distortion.
  */
 public final class Predictions extends Module {
 
@@ -53,6 +71,18 @@ public final class Predictions extends Module {
     private static final float ITEM_SIZE = 12;
     private static final float DIVIDER_HEIGHT = 10;
     private static final float TEXT_SIZE = 10.5f;
+
+    private static final RenderPipeline TRAJECTORY_PIPELINE = RenderPipeline.builder()
+            .withLocation(Identifier.parse("error:pipeline/predictions/trajectory"))
+            .withVertexShader(Identifier.parse("error:core/lines"))
+            .withFragmentShader(Identifier.parse("error:core/lines"))
+            .withBindGroupLayout(BindGroupLayouts.PROJECTION)
+            .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT))
+            .withDepthStencilState(new DepthStencilState(CompareOp.ALWAYS_PASS, false))
+            .withVertexBinding(0, DefaultVertexFormat.POSITION_COLOR)
+            .withPrimitiveTopology(PrimitiveTopology.TRIANGLES)
+            .withCull(false)
+            .build();
 
     public final MultiModeSetting projectiles = multiMode(
             "Снаряды",
@@ -68,6 +98,8 @@ public final class Predictions extends Module {
 
     public final CheckBox inHand = checkbox("В руке", true);
     public final CheckBox inFlight = checkbox("Летящие", true);
+    public final CheckBox drawLine = checkbox("Линия траектории", true);
+    public final SliderSetting lineWidth = slider("Толщина линии", 1.8f, 0.5f, 4.0f, 0.1f).visible(drawLine::getValue);
     public final CheckBox drawLanding = checkbox("Точка падения", true);
 
     private final List<TrajectoryData> activeTrajectories = new ArrayList<>();
@@ -82,6 +114,7 @@ public final class Predictions extends Module {
     private record TrajectoryData(
             List<Vec3> points,
             Vec3 landingPos,
+            Direction hitDirection,
             ItemStack iconStack,
             String label,
             int ticksToLand,
@@ -104,14 +137,189 @@ public final class Predictions extends Module {
             simulateWorldEntities(mc, tickDelta);
         }
 
+        if (activeTrajectories.isEmpty()) return;
+
+        renderTrajectories(mc);
+    }
+
+    private void renderTrajectories(Minecraft mc) {
+        var target = mc.gameRenderer.mainRenderTarget();
+        if (target == null || target.getColorTextureView() == null || target.getDepthTextureView() == null) return;
+
+        Camera camera = mc.gameRenderer.mainCamera();
+        Vec3 cameraPos = camera.position();
+        Matrix4f viewPose = Render3DUtil.cameraViewPose(camera);
+
+        int totalEstimatedVertices = 0;
         for (TrajectoryData traj : activeTrajectories) {
             if (traj.points != null && traj.points.size() > 1) {
-                Render3D.drawTrajectory(traj.points, traj.color, true);
+                totalEstimatedVertices += (traj.points.size() - 1) * 6;
             }
-            if (traj.landingPos != null && this.drawLanding.getValue()) {
-                Render3D.drawLandingCircle(traj.landingPos, 0.6F, traj.color, true);
+            if (this.drawLanding.getValue() && traj.landingPos != null) {
+                totalEstimatedVertices += 64;
             }
         }
+        if (totalEstimatedVertices == 0) return;
+
+        BufferBuilder builder = new BufferBuilder(
+                new ByteBufferBuilder(Math.max(totalEstimatedVertices * DefaultVertexFormat.POSITION_COLOR.getVertexSize(), 8192)),
+                PrimitiveTopology.TRIANGLES,
+                DefaultVertexFormat.POSITION_COLOR
+        );
+
+        int drawnVertices = 0;
+        float linePx = 0.0016F * this.lineWidth.getValue();
+
+        for (TrajectoryData traj : activeTrajectories) {
+            if (this.drawLine.getValue() && traj.points != null && traj.points.size() > 1) {
+                drawnVertices += addTrajectoryMesh(builder, traj.points, traj.color, linePx, cameraPos, viewPose);
+            }
+            if (this.drawLanding.getValue() && traj.landingPos != null) {
+                drawnVertices += addLandingMarkerMesh(builder, traj.landingPos, traj.hitDirection != null ? traj.hitDirection : Direction.UP, 0.45F, traj.color, cameraPos, viewPose);
+            }
+        }
+
+        if (drawnVertices == 0) return;
+
+        MeshData meshData = builder.buildOrThrow();
+        var device = RenderSystem.getDevice();
+        try {
+            ByteBuffer vertexData = meshData.vertexBuffer();
+            int remainingBytes = vertexData.remaining();
+            ensureVertexCapacity(remainingBytes);
+
+            try (RenderPass pass = device.createCommandEncoder().createRenderPass(
+                    () -> "Error Predictions Trajectory",
+                    target.getColorTextureView(),
+                    Optional.empty(),
+                    target.getDepthTextureView(),
+                    OptionalDouble.empty()
+            )) {
+                pass.setPipeline(TRAJECTORY_PIPELINE);
+                pass.setUniform("Projection", RenderSystem.getProjectionMatrixBuffer());
+                pass.setVertexBuffer(0, this.vertexBuffer.slice(0, remainingBytes));
+                pass.draw(drawnVertices, 1, 0, 0);
+            }
+        } finally {
+            meshData.close();
+        }
+    }
+
+    private int addTrajectoryMesh(BufferBuilder builder, List<Vec3> points, int color, float linePx, Vec3 cameraPos, Matrix4f viewPose) {
+        int vertices = 0;
+        float nearZ = -0.06F;
+
+        for (int i = 0; i < points.size() - 1; i++) {
+            Vec3 p1 = points.get(i);
+            Vec3 p2 = points.get(i + 1);
+
+            Vector4f v1 = Render3DUtil.toViewSpace(p1, cameraPos, viewPose);
+            Vector4f v2 = Render3DUtil.toViewSpace(p2, cameraPos, viewPose);
+
+            if (v1.z > nearZ && v2.z > nearZ) continue;
+
+            Vector4f clipped1 = new Vector4f(v1);
+            Vector4f clipped2 = new Vector4f(v2);
+
+            if (clipped1.z > nearZ) {
+                float t = (nearZ - clipped1.z) / (clipped2.z - clipped1.z);
+                clipped1.x = clipped1.x + t * (clipped2.x - clipped1.x);
+                clipped1.y = clipped1.y + t * (clipped2.y - clipped1.y);
+                clipped1.z = nearZ;
+            } else if (clipped2.z > nearZ) {
+                float t = (nearZ - clipped1.z) / (clipped2.z - clipped1.z);
+                clipped2.x = clipped1.x + t * (clipped2.x - clipped1.x);
+                clipped2.y = clipped1.y + t * (clipped2.y - clipped1.y);
+                clipped2.z = nearZ;
+            }
+
+            float progress = (float) i / (float) points.size();
+            int pointColor = ColorUtil.withAlpha(color, Math.max(0.40F, progress));
+
+            vertices += addScreenSpaceSegment(builder, clipped1, clipped2, linePx, pointColor);
+        }
+        return vertices;
+    }
+
+    private static int addScreenSpaceSegment(BufferBuilder builder, Vector4f v1, Vector4f v2, float thickness, int color) {
+        float dx = v2.x - v1.x;
+        float dy = v2.y - v1.y;
+        float len = (float) Math.hypot(dx, dy);
+        if (len < 0.00001F) return 0;
+
+        float nx = (-dy / len);
+        float ny = (dx / len);
+
+        float w1 = Math.max(0.0001F, -v1.z) * thickness;
+        float w2 = Math.max(0.0001F, -v2.z) * thickness;
+
+        builder.addVertex(v1.x + nx * w1, v1.y + ny * w1, v1.z).setColor(color);
+        builder.addVertex(v1.x - nx * w1, v1.y - ny * w1, v1.z).setColor(color);
+        builder.addVertex(v2.x - nx * w2, v2.y - ny * w2, v2.z).setColor(color);
+
+        builder.addVertex(v1.x + nx * w1, v1.y + ny * w1, v1.z).setColor(color);
+        builder.addVertex(v2.x - nx * w2, v2.y - ny * w2, v2.z).setColor(color);
+        builder.addVertex(v2.x + nx * w2, v2.y + ny * w2, v2.z).setColor(color);
+
+        return 6;
+    }
+
+    private static int addLandingMarkerMesh(BufferBuilder builder, Vec3 pos, Direction dir, float size, int color, Vec3 cameraPos, Matrix4f viewPose) {
+        Vec3 offsetPos = pos.add(
+                dir.getStepX() * 0.015D,
+                dir.getStepY() * 0.015D,
+                dir.getStepZ() * 0.015D
+        );
+
+        float s = size * 0.5F;
+        Vec3 p0, p1, p2, p3;
+
+        switch (dir.getAxis()) {
+            case Y -> {
+                p0 = offsetPos.add(-s, 0, 0);
+                p1 = offsetPos.add(0, 0, s);
+                p2 = offsetPos.add(s, 0, 0);
+                p3 = offsetPos.add(0, 0, -s);
+            }
+            case Z -> {
+                p0 = offsetPos.add(-s, 0, 0);
+                p1 = offsetPos.add(0, s, 0);
+                p2 = offsetPos.add(s, 0, 0);
+                p3 = offsetPos.add(0, -s, 0);
+            }
+            default -> {
+                p0 = offsetPos.add(0, -s, 0);
+                p1 = offsetPos.add(0, 0, s);
+                p2 = offsetPos.add(0, s, 0);
+                p3 = offsetPos.add(0, 0, -s);
+            }
+        }
+
+        Vector4f v0 = Render3DUtil.toViewSpace(p0, cameraPos, viewPose);
+        Vector4f v1 = Render3DUtil.toViewSpace(p1, cameraPos, viewPose);
+        Vector4f v2 = Render3DUtil.toViewSpace(p2, cameraPos, viewPose);
+        Vector4f v3 = Render3DUtil.toViewSpace(p3, cameraPos, viewPose);
+
+        float nearZ = -0.06F;
+        if (v0.z > nearZ || v1.z > nearZ || v2.z > nearZ || v3.z > nearZ) return 0;
+
+        int fillColor = ColorUtil.withAlpha(color, 0.35F);
+        builder.addVertex(v0.x, v0.y, v0.z).setColor(fillColor);
+        builder.addVertex(v1.x, v1.y, v1.z).setColor(fillColor);
+        builder.addVertex(v2.x, v2.y, v2.z).setColor(fillColor);
+
+        builder.addVertex(v0.x, v0.y, v0.z).setColor(fillColor);
+        builder.addVertex(v2.x, v2.y, v2.z).setColor(fillColor);
+        builder.addVertex(v3.x, v3.y, v3.z).setColor(fillColor);
+
+        int vertices = 6;
+        float outlinePx = 0.0014F;
+        int outlineColor = ColorUtil.withAlpha(color, 0.95F);
+        vertices += addScreenSpaceSegment(builder, v0, v1, outlinePx, outlineColor);
+        vertices += addScreenSpaceSegment(builder, v1, v2, outlinePx, outlineColor);
+        vertices += addScreenSpaceSegment(builder, v2, v3, outlinePx, outlineColor);
+        vertices += addScreenSpaceSegment(builder, v3, v0, outlinePx, outlineColor);
+        return vertices;
     }
 
     @EventTarget
@@ -132,7 +340,7 @@ public final class Predictions extends Module {
 
     private void drawLandingTag(Render2DEvent event, Minecraft mc, TrajectoryData traj, float unit) {
         Vec3 hitPos = traj.landingPos;
-        Render3DUtil.ScreenPoint anchor =Render3DUtil.projectToScreen(mc, hitPos);
+        Render3DUtil.ScreenPoint anchor = Render3DUtil.projectToScreen(mc, hitPos);
         if (anchor == null) return;
 
         MsdfFont font = Fonts.SF_MEDIUM;
@@ -246,7 +454,6 @@ public final class Predictions extends Module {
         ProjectileProperties props = getPropertiesForHeldItem(player, held);
         if (props == null) return;
 
-        Vec3 startPos = player.getEyePosition(tickDelta).subtract(0.0D, 0.1D, 0.0D);
         float pitch = player.getXRot();
         float yaw = player.getYRot();
 
@@ -257,7 +464,10 @@ public final class Predictions extends Module {
         double vy = -Mth.sin(pitchRad);
         double vz = Mth.cos(yawRad) * Mth.cos(pitchRad);
 
-        Vec3 motion = new Vec3(vx, vy, vz).normalize().scale(props.velocity);
+        Vec3 viewDir = new Vec3(vx, vy, vz).normalize();
+        Vec3 startPos = player.getEyePosition(tickDelta).add(viewDir.scale(0.35D));
+
+        Vec3 motion = viewDir.scale(props.velocity);
         if (player.isPassenger() && player.getVehicle() != null) {
             motion = motion.add(player.getVehicle().getDeltaMovement());
         } else {
@@ -275,7 +485,7 @@ public final class Predictions extends Module {
             if (id == null) continue;
             String path = id.getPath();
 
-            Vec3 pos =Render3DUtil.interpolatedPosition(entity, tickDelta);
+            Vec3 pos = Render3DUtil.interpolatedPosition(entity, tickDelta);
             Vec3 motion = entity.getDeltaMovement();
             if (motion.lengthSqr() < 0.0001D) continue;
 
@@ -302,6 +512,7 @@ public final class Predictions extends Module {
         List<Vec3> points = new ArrayList<>();
         points.add(new Vec3(posX, posY, posZ));
         Vec3 landingPos = null;
+        Direction hitDirection = Direction.UP;
         int ticks = 0;
 
         for (int i = 0; i < 300; i++) {
@@ -329,12 +540,14 @@ public final class Predictions extends Module {
 
             if (entityHit != null) {
                 landingPos = entityHit.getLocation();
+                hitDirection = Direction.UP;
                 points.add(landingPos);
                 break;
             }
 
             if (blockHit.getType() != HitResult.Type.MISS) {
                 landingPos = blockHit.getLocation();
+                hitDirection = blockHit.getDirection();
                 points.add(landingPos);
                 break;
             }
@@ -343,6 +556,7 @@ public final class Predictions extends Module {
 
             if (posY < mc.level.getMinY() - 10) {
                 landingPos = new Vec3(posX, mc.level.getMinY(), posZ);
+                hitDirection = Direction.UP;
                 points.add(landingPos);
                 break;
             }
@@ -350,9 +564,10 @@ public final class Predictions extends Module {
 
         if (landingPos == null && !points.isEmpty()) {
             landingPos = points.get(points.size() - 1);
+            hitDirection = Direction.UP;
         }
 
-        activeTrajectories.add(new TrajectoryData(points, landingPos, icon, label, ticks, color));
+        activeTrajectories.add(new TrajectoryData(points, landingPos, hitDirection, icon, label, ticks, color));
     }
 
     private EntityHitResult traceEntity(Minecraft mc, Entity shooter, Vec3 start, Vec3 end) {
@@ -392,7 +607,7 @@ public final class Predictions extends Module {
             if (pull <= 0.1F) pull = 1.0F;
             return new ProjectileProperties(0.05D, 0.99D, pull * 3.0D);
         }
-        if (stack.is(Items.CROSSBOW)) {
+        if (stack.is(CrossbowItem.class.isInstance(stack.getItem()) ? stack.getItem() : Items.CROSSBOW)) {
             if (CrossbowItem.isCharged(stack)) {
                 return new ProjectileProperties(0.05D, 0.99D, 3.15D);
             }

@@ -333,9 +333,9 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
                 yield Math.max(baseW, Math.min(maxW, Math.max(titleW, artistW) + pad));
             }
             case NORMAL -> {
-                float logoSize = 10.0F;
+                float logoSize = 13.0F;
                 float brandTextW = Fonts.SF_MEDIUM.getWidth("Error DLC ", 8.0F) + Fonts.SF_MEDIUM.getWidth("26.2", 8.0F);
-                float brandW = logoSize + 4.0F + brandTextW;
+                float brandW = logoSize + 4.5F + brandTextW;
                 float mediaW = hasTrack() ? (COMPACT_ART_SIZE + 20.0F) : 0.0F;
                 yield brandW + mediaW + 18.0F;
             }
@@ -574,10 +574,10 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
             Render2D.drawRoundedOutline(x, y, w, h, radius, 0.8F, ColorUtil.rgba(255, 255, 255, (int) (18 * alpha)));
         } else if (Theme.isEnergy()) {
             if (shadowBlur > 1.0F) {
-                Render2D.drawShadow(x, y, w, h, radius, shadowBlur, ColorUtil.rgba(0, 0, 0, (int) (38 * alpha)));
+                Render2D.drawShadow(x, y, w, h, radius, shadowBlur, ColorUtil.rgba(0, 0, 0, (int) (24 * alpha)));
             }
-            Render2D.drawRoundedRect(x, y, w, h, radius, ColorUtil.rgba(20, 20, 25, (int) (160 * alpha)));
-            Render2D.drawRoundedOutline(x, y, w, h, radius, 0.8F, ColorUtil.rgba(255, 255, 255, (int) (22 * alpha)));
+            Render2D.drawRoundedRect(x, y, w, h, radius, ColorUtil.rgba(30, 32, 45, (int) (165 * alpha)));
+            Render2D.drawRoundedOutline(x, y, w, h, radius, 0.8F, ColorUtil.rgba(255, 255, 255, (int) (38 * alpha)));
         } else {
             int primaryAccent = getHudAccent();
             int lightDarken = ColorUtil.rgba(12, 16, 28, (int) (45 * alpha));
@@ -601,9 +601,9 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
             Render2D.drawRoundedRect(x, y, w, h, subRadius, ColorUtil.rgba(14, 14, 16, (int) (240 * alpha)));
             Render2D.drawRoundedOutline(x, y, w, h, subRadius, 0.8F, ColorUtil.rgba(255, 255, 255, (int) (18 * alpha)));
         } else if (Theme.isEnergy()) {
-            Render2D.drawShadow(x, y, w, h, subRadius, 2.5F, ColorUtil.rgba(0, 0, 0, (int) (35 * alpha)));
-            Render2D.drawRoundedRect(x, y, w, h, subRadius, ColorUtil.rgba(20, 20, 25, (int) (160 * alpha)));
-            Render2D.drawRoundedOutline(x, y, w, h, subRadius, 0.8F, ColorUtil.rgba(255, 255, 255, (int) (22 * alpha)));
+            Render2D.drawShadow(x, y, w, h, subRadius, 2.0F, ColorUtil.rgba(0, 0, 0, (int) (22 * alpha)));
+            Render2D.drawRoundedRect(x, y, w, h, subRadius, ColorUtil.rgba(30, 32, 45, (int) (165 * alpha)));
+            Render2D.drawRoundedOutline(x, y, w, h, subRadius, 0.8F, ColorUtil.rgba(255, 255, 255, (int) (38 * alpha)));
         } else {
             int lightDarken = ColorUtil.rgba(12, 16, 28, (int) (45 * alpha));
             int frostedTint = ColorUtil.rgba(255, 255, 255, (int) (16 * alpha));
@@ -853,10 +853,13 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
         float curX = x + 8.0F;
         float textY = y + (height - 8.0F) / 2.0F;
 
-        // Client PNG Logo & Title
-        float logoSize = 10.0F;
-        Render2D.drawTexture(LOGO_TEX, curX, y + (height - logoSize) / 2.0F, logoSize, logoSize, ColorUtil.multiplyAlpha(themeAccent, alpha));
-        curX += logoSize + 4.0F;
+        // Client PNG Logo & Title (B&W in Black mode, theme accent in Energy/Liquid modes)
+        float logoSize = 13.0F;
+        int logoColor = Theme.isBlack()
+                ? ColorUtil.rgba(255, 255, 255, (int) (245 * alpha))
+                : ColorUtil.multiplyAlpha(themeAccent, alpha);
+        Render2D.drawTexture(LOGO_TEX, curX, y + (height - logoSize) / 2.0F, logoSize, logoSize, logoColor);
+        curX += logoSize + 4.5F;
 
         Fonts.drawString(Fonts.SF_MEDIUM, "Error DLC ", curX, textY, 8.0F, ColorUtil.rgba(255, 255, 255, (int) (245 * alpha)));
         curX += Fonts.SF_MEDIUM.getWidth("Error DLC ", 8.0F);

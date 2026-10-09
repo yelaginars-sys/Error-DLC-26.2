@@ -422,13 +422,13 @@ public class LiquidClickGui extends Screen {
             if (!Theme.isGuiLiquidGlass()) {
                 int winBg = Theme.isGuiBlack()
                         ? ColorUtil.rgba(13, 13, 17, (int) (248 * animVal))
-                        : ColorUtil.rgba(16, 17, 24, (int) (215 * animVal));
+                        : ColorUtil.rgba(24, 26, 36, (int) (205 * animVal));
                 int winOutline = Theme.isGuiBlack()
                         ? ColorUtil.rgba(255, 255, 255, (int) (16 * animVal))
-                        : ColorUtil.rgba(255, 255, 255, (int) (24 * animVal));
+                        : ColorUtil.rgba(255, 255, 255, (int) (35 * animVal));
                 int sidebarBg = Theme.isGuiBlack()
                         ? ColorUtil.rgba(9, 9, 13, (int) (240 * animVal))
-                        : ColorUtil.rgba(12, 13, 18, (int) (185 * animVal));
+                        : ColorUtil.rgba(18, 19, 27, (int) (185 * animVal));
 
                 // Drop shadow
                 Render2D.drawShadow(x, y, WINDOW_W, WINDOW_H, 12.0F, 12.0F, ColorUtil.rgba(0, 0, 0, (int) ((Theme.isGuiBlack() ? 150 : 120) * animVal)));
@@ -508,19 +508,22 @@ public class LiquidClickGui extends Screen {
     }
 
     private void renderSidebar(float x, float y, int mouseX, int mouseY, float alphaVal, int accentColor) {
-        // Authentic high-res Error DLC logo
-        float logoX = x + 9.0F;
-        float logoY = y + 8.5F;
-        float logoSize = 18.0F;
-        Render2D.drawTexture(LOGO_NONFONE, logoX, logoY + 1.0F, logoSize, logoSize, ColorUtil.withAlpha(0xFFFFFFFF, (int) (255 * alphaVal)));
+        // Error DLC logo (Classic warning badge, larger, B&W + theme responsive)
+        float logoX = x + 8.0F;
+        float logoY = y + 7.0F;
+        float logoSize = 25.0F;
+        int logoColor = Theme.isGuiBlack()
+                ? ColorUtil.withAlpha(0xFFFFFFFF, (int) (255 * alphaVal))
+                : ColorUtil.withAlpha(accentColor, (int) (255 * alphaVal));
+        Render2D.drawTexture(LOGO_NONFONE, logoX, logoY, logoSize, logoSize, logoColor);
 
         // Branding next to the logo
-        Fonts.drawString(Fonts.SF_MEDIUM, "Error DLC", logoX + logoSize + 6.0F, y + 9.5F, 8.5F, 0xFFFFFFFF);
-        Fonts.drawString(Fonts.SF_MEDIUM, "Winter 26.2", logoX + logoSize + 6.0F, y + 20.0F, 4.8F, 0xFFA0B0C4);
+        Fonts.drawString(Fonts.SF_MEDIUM, "Error DLC", logoX + logoSize + 6.0F, y + 9.0F, 9.0F, 0xFFFFFFFF);
+        Fonts.drawString(Fonts.SF_MEDIUM, "Winter 26.2", logoX + logoSize + 6.0F, y + 20.5F, 5.0F, 0xFFA0B0C4);
 
         // Category List (Themes tab filtered out as requested)
         Category[] categories = Arrays.stream(Category.values()).filter(c -> c != Category.THEMES).toArray(Category[]::new);
-        float catY = y + 36.0F;
+        float catY = y + 38.0F;
         float catH = 21.0F;
         float catW = SIDEBAR_W - 16.0F;
         float catX = x + 8.0F;
@@ -536,14 +539,14 @@ public class LiquidClickGui extends Screen {
 
             if (active) {
                 // Sleek frosted pill with accent indicator
-                int pillBg = Theme.isGuiEnergy() ? ColorUtil.rgba(28, 30, 40, (int) (180 * alphaVal)) :
+                int pillBg = Theme.isGuiEnergy() ? ColorUtil.rgba(38, 42, 58, (int) (190 * alphaVal)) :
                              (Theme.isGuiBlack() ? ColorUtil.rgba(24, 25, 32, (int) (240 * alphaVal)) :
                               ColorUtil.rgba(255, 255, 255, (int) (22 * alphaVal)));
                 Render2D.drawRoundedRect(catX, catY, catW, catH, 5.0F, pillBg);
                 Render2D.drawRoundedOutline(catX, catY, catW, catH, 5.0F, 0.7F, ColorUtil.withAlpha(accentColor, (int) (130 * alphaVal)));
                 Render2D.drawRoundedRect(catX + 2.0F, catY + 3.5F, 2.5F, catH - 7.0F, 1.0F, accentColor);
             } else {
-                int pillBg = Theme.isGuiEnergy() ? ColorUtil.rgba(20, 21, 28, (int) ((60 + hVal * 70) * alphaVal)) :
+                int pillBg = Theme.isGuiEnergy() ? ColorUtil.rgba(28, 30, 40, (int) ((70 + hVal * 80) * alphaVal)) :
                              (Theme.isGuiBlack() ? ColorUtil.rgba(16, 16, 21, (int) ((160 + hVal * 50) * alphaVal)) :
                               ColorUtil.rgba(255, 255, 255, (int) ((4 + hVal * 16) * alphaVal)));
                 Render2D.drawRoundedRect(catX, catY, catW, catH, 5.0F, pillBg);
@@ -711,13 +714,13 @@ public class LiquidClickGui extends Screen {
 
         if (Theme.isGuiEnergy()) {
             if (module.isEnabled()) {
-                int cardBg = ColorUtil.rgba(26, 28, 38, (int) ((isHovered ? 180 : 140) * alphaVal));
-                int cardOutline = ColorUtil.withAlpha(accentColor, (int) ((isHovered ? 190 : 140) * alphaVal));
+                int cardBg = ColorUtil.rgba(36, 39, 54, (int) ((isHovered ? 195 : 155) * alphaVal));
+                int cardOutline = ColorUtil.withAlpha(accentColor, (int) ((isHovered ? 210 : 160) * alphaVal));
                 Render2D.drawRoundedRect(x, y, w, h, 6.0F, cardBg);
                 Render2D.drawRoundedOutline(x, y, w, h, 6.0F, 0.85F, cardOutline);
             } else {
-                int cardBg = ColorUtil.rgba(20, 21, 28, (int) ((isHovered ? 140 : 100) * alphaVal));
-                int cardOutline = ColorUtil.rgba(255, 255, 255, (int) ((isHovered ? 26 : 16) * alphaVal));
+                int cardBg = ColorUtil.rgba(28, 30, 42, (int) ((isHovered ? 160 : 120) * alphaVal));
+                int cardOutline = ColorUtil.rgba(255, 255, 255, (int) ((isHovered ? 38 : 22) * alphaVal));
                 Render2D.drawRoundedRect(x, y, w, h, 6.0F, cardBg);
                 Render2D.drawRoundedOutline(x, y, w, h, 6.0F, 0.65F, cardOutline);
             }
@@ -996,10 +999,10 @@ public class LiquidClickGui extends Screen {
         // Modal window body adapted to active theme
         int modalDarken = Theme.isGuiBlack()
                 ? ColorUtil.rgba(12, 12, 16, (int) (250 * alphaVal))
-                : (Theme.isGuiEnergy() ? ColorUtil.rgba(18, 19, 26, (int) (235 * alphaVal)) : ColorUtil.rgba(10, 13, 22, (int) (160 * alphaVal)));
+                : (Theme.isGuiEnergy() ? ColorUtil.rgba(26, 28, 38, (int) (225 * alphaVal)) : ColorUtil.rgba(10, 13, 22, (int) (160 * alphaVal)));
         int modalFrosted = Theme.isGuiBlack()
                 ? ColorUtil.rgba(255, 255, 255, (int) (4 * alphaVal))
-                : (Theme.isGuiEnergy() ? ColorUtil.rgba(255, 255, 255, (int) (6 * alphaVal)) : ColorUtil.rgba(255, 255, 255, (int) (10 * alphaVal)));
+                : (Theme.isGuiEnergy() ? ColorUtil.rgba(255, 255, 255, (int) (12 * alphaVal)) : ColorUtil.rgba(255, 255, 255, (int) (10 * alphaVal)));
         Render2D.drawShadow(modalX, modalY, modalW, modalH, 12.0F, 28.0F, ColorUtil.rgba(0, 0, 0, (int) (160 * alphaVal)));
         Render2D.drawRoundedRect(modalX, modalY, modalW, modalH, 12.0F, modalDarken);
         Render2D.drawRoundedRect(modalX, modalY, modalW, modalH, 12.0F, modalFrosted);

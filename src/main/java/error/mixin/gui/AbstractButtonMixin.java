@@ -138,11 +138,11 @@ public abstract class AbstractButtonMixin {
                         : ColorUtil.rgba(255, 255, 255, 8);
             } else if (Theme.isEnergy()) {
                 fillCol = self.active
-                        ? ColorUtil.rgba(20, 22, 28, (int) (175 + 25 * this.error$hoverAnim))
-                        : ColorUtil.rgba(18, 20, 25, 140);
+                        ? ColorUtil.rgba(30, 33, 44, (int) (180 + 25 * this.error$hoverAnim))
+                        : ColorUtil.rgba(24, 26, 35, 145);
                 outlineCol = self.active
-                        ? ColorUtil.interpolateColor(ColorUtil.rgba(255, 255, 255, 22), ColorUtil.withAlpha(themeAccent, 190), this.error$hoverAnim)
-                        : ColorUtil.rgba(255, 255, 255, 10);
+                        ? ColorUtil.interpolateColor(ColorUtil.rgba(255, 255, 255, 36), ColorUtil.withAlpha(themeAccent, 200), this.error$hoverAnim)
+                        : ColorUtil.rgba(255, 255, 255, 15);
             } else if (Theme.isNewYear()) {
                 fillCol = self.active
                         ? ColorUtil.rgba(16, 20, 28, (int) (185 + 25 * this.error$hoverAnim))

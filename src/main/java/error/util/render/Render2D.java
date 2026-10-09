@@ -358,10 +358,10 @@ public class Render2D {
                 } catch (Throwable ignored) {}
             }
         } else if (Theme.isEnergy()) {
-            // Sleek Error Dark Glass capsule
-            Render2D.drawShadow(x, y, width, height, radius, 2.5F, ColorUtil.rgba(0, 0, 0, (int) (32 * alpha)));
-            drawRoundedRect(x, y, width, height, radius, ColorUtil.rgba(18, 19, 26, (int) (165 * alpha)));
-            drawRoundedOutline(x, y, width, height, radius, 0.65F, ColorUtil.rgba(255, 255, 255, (int) (22 * alpha)));
+            // Sleek Error Glass capsule (lighter glass style)
+            Render2D.drawShadow(x, y, width, height, radius, 2.0F, ColorUtil.rgba(0, 0, 0, (int) (18 * alpha)));
+            drawRoundedRect(x, y, width, height, radius, ColorUtil.rgba(28, 30, 42, (int) (160 * alpha)));
+            drawRoundedOutline(x, y, width, height, radius, 0.65F, ColorUtil.rgba(255, 255, 255, (int) (38 * alpha)));
         } else if (Theme.isBlack()) {
             // Clean Solid Black Minimal capsule
             Render2D.drawShadow(x, y, width, height, radius, 2.0F, ColorUtil.rgba(0, 0, 0, (int) (40 * alpha)));
@@ -416,10 +416,10 @@ public class Render2D {
                 } catch (Throwable ignored) {}
             }
         } else if (Theme.isEnergy()) {
-            // Sleek Error Dark Glass card
-            Render2D.drawShadow(x, y, width, height, radius, 3.0F, ColorUtil.rgba(0, 0, 0, (int) (36 * alpha)));
-            drawRoundedRect(x, y, width, height, radius, ColorUtil.rgba(18, 19, 25, (int) (175 * alpha)));
-            drawRoundedOutline(x, y, width, height, radius, 0.70F, ColorUtil.rgba(255, 255, 255, (int) (24 * alpha)));
+            // Sleek Error Glass card (lighter glass style)
+            Render2D.drawShadow(x, y, width, height, radius, 2.5F, ColorUtil.rgba(0, 0, 0, (int) (22 * alpha)));
+            drawRoundedRect(x, y, width, height, radius, ColorUtil.rgba(28, 31, 44, (int) (165 * alpha)));
+            drawRoundedOutline(x, y, width, height, radius, 0.70F, ColorUtil.rgba(255, 255, 255, (int) (40 * alpha)));
         } else if (Theme.isBlack()) {
             // Clean Solid Black Minimal card
             Render2D.drawShadow(x, y, width, height, radius, 2.5F, ColorUtil.rgba(0, 0, 0, (int) (48 * alpha)));
