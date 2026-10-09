@@ -792,10 +792,10 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
         double mouseX = mc.mouseHandler.xpos() / mc.getWindow().getGuiScale();
         double mouseY = mc.mouseHandler.ypos() / mc.getWindow().getGuiScale();
 
-        float prevSize = 13.0F;
-        float playSize = 15.0F;
-        float nextSize = 13.0F;
-        float gap = 4.0F;
+        float prevSize = 14.0F;
+        float playSize = 17.0F;
+        float nextSize = 14.0F;
+        float gap = 5.0F;
 
         // Alignment: Center play button vertically, align prev & next to play button's vertical center
         this.prevButtonX = startX;
@@ -813,39 +813,41 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
         // 1. Previous Button
         boolean prevHover = isHovered(mouseX, mouseY, prevButtonX, prevButtonY, prevButtonSize, prevButtonSize);
         drawLiquidGlassButton(prevButtonX, prevButtonY, prevButtonSize, alpha, prevHover);
-        int prevIconCol = prevHover ? Theme.getAccentColor() : ColorUtil.rgba(240, 240, 255, (int) (230 * alpha));
-        float pIconPad = 2.5F;
-        Render2D.drawTexture(MEDIA_PREV_TEX, prevButtonX + pIconPad, prevButtonY + pIconPad, prevButtonSize - pIconPad * 2.0F, prevButtonSize - pIconPad * 2.0F, prevIconCol);
+        int prevIconCol = prevHover ? Theme.getAccentColor() : ColorUtil.rgba(240, 240, 255, (int) (235 * alpha));
+        float pIconPad = 3.0F;
+        Render2D.drawTexture(MEDIA_PREV_TEX, prevButtonX + pIconPad, prevButtonY + pIconPad, prevButtonSize - pIconPad * 2.0F, prevButtonSize - pIconPad * 2.0F, 0.0F, prevIconCol);
 
         // 2. Play / Pause Button
         boolean playHover = isHovered(mouseX, mouseY, playButtonX, playButtonY, playButtonSize, playButtonSize);
         drawLiquidGlassButton(playButtonX, playButtonY, playButtonSize, alpha, playHover);
-        int playIconCol = playHover ? Theme.getAccentColor() : ColorUtil.rgba(255, 255, 255, (int) (245 * alpha));
-        float plIconPad = 2.8F;
+        int playIconCol = playHover ? Theme.getAccentColor() : ColorUtil.rgba(255, 255, 255, (int) (250 * alpha));
+        float plIconPad = 3.5F;
         Identifier playPauseTex = trackPlaying ? MEDIA_PAUSE_TEX : MEDIA_PLAY_TEX;
-        Render2D.drawTexture(playPauseTex, playButtonX + plIconPad, playButtonY + plIconPad, playButtonSize - plIconPad * 2.0F, playButtonSize - plIconPad * 2.0F, playIconCol);
+        Render2D.drawTexture(playPauseTex, playButtonX + plIconPad, playButtonY + plIconPad, playButtonSize - plIconPad * 2.0F, playButtonSize - plIconPad * 2.0F, 0.0F, playIconCol);
 
         // 3. Next Button
         boolean nextHover = isHovered(mouseX, mouseY, nextButtonX, nextButtonY, nextButtonSize, nextButtonSize);
         drawLiquidGlassButton(nextButtonX, nextButtonY, nextButtonSize, alpha, nextHover);
-        int nextIconCol = nextHover ? Theme.getAccentColor() : ColorUtil.rgba(240, 240, 255, (int) (230 * alpha));
-        float nIconPad = 2.5F;
-        Render2D.drawTexture(MEDIA_NEXT_TEX, nextButtonX + nIconPad, nextButtonY + nIconPad, nextButtonSize - nIconPad * 2.0F, nextButtonSize - nIconPad * 2.0F, nextIconCol);
+        int nextIconCol = nextHover ? Theme.getAccentColor() : ColorUtil.rgba(240, 240, 255, (int) (235 * alpha));
+        float nIconPad = 3.0F;
+        Render2D.drawTexture(MEDIA_NEXT_TEX, nextButtonX + nIconPad, nextButtonY + nIconPad, nextButtonSize - nIconPad * 2.0F, nextButtonSize - nIconPad * 2.0F, 0.0F, nextIconCol);
     }
 
     private void drawLiquidGlassButton(float bx, float by, float size, float alpha, boolean hovered) {
         float r = size / 2.0F;
-        int shadowCol = ColorUtil.rgba(0, 0, 0, (int) (70 * alpha));
+        float cx = bx + r;
+        float cy = by + r;
+        int shadowCol = ColorUtil.rgba(0, 0, 0, (int) (65 * alpha));
         int glassFill = hovered
-                ? ColorUtil.rgba(255, 255, 255, (int) (38 * alpha))
-                : ColorUtil.rgba(255, 255, 255, (int) (14 * alpha));
+                ? ColorUtil.rgba(255, 255, 255, (int) (40 * alpha))
+                : ColorUtil.rgba(255, 255, 255, (int) (16 * alpha));
         int glassBorder = hovered
-                ? ColorUtil.withAlpha(Theme.getAccentColor(), (int) (210 * alpha))
-                : ColorUtil.rgba(255, 255, 255, (int) (38 * alpha));
+                ? ColorUtil.withAlpha(Theme.getAccentColor(), (int) (220 * alpha))
+                : ColorUtil.rgba(255, 255, 255, (int) (40 * alpha));
 
         Render2D.drawShadow(bx, by, size, size, r, 3.5F, shadowCol);
-        Render2D.drawRoundedRect(bx, by, size, size, r, glassFill);
-        Render2D.drawRoundedOutline(bx, by, size, size, r, 0.75F, glassBorder);
+        Render2D.drawCircle(cx, cy, r, glassFill);
+        Render2D.drawCircleOutline(cx, cy, r, 0.8F, glassBorder);
     }
 
     private void drawNormal(float x, float y, float width, float height, int themeAccent, float alpha, long now) {

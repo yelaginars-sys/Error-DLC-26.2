@@ -48,9 +48,10 @@ import java.util.*;
 
 public class LiquidClickGui extends Screen {
 
-    public static final float WINDOW_W = 540.0F;
-    public static final float WINDOW_H = 360.0F;
-    public static final float SIDEBAR_W = 125.0F;
+    public static final float WINDOW_W = 580.0F;
+    public static final float WINDOW_H = 410.0F;
+    public static final float SIDEBAR_W = 138.0F;
+    public static final float CARD_CLOSED_H = 38.0F;
 
     private static final Color FADE_WHITE = Color.rgba(255, 255, 255, 32);
     private static final Identifier LOGO_NONFONE = Identifier.fromNamespaceAndPath("error", "textures/logo_nonfone.png");
@@ -376,13 +377,13 @@ public class LiquidClickGui extends Screen {
 
         // 4. Module Middle-Click Bind Modal Liquid Glass Window
         if (this.moduleModalOpen && this.moduleModalModule != null && Theme.isGuiGlassBased()) {
-            float mModalW = 180.0F;
-            float mModalH = 98.0F;
-            float mModalX = (screenW - mModalW) / 2.0F;
-            float mModalY = (screenH - mModalH) / 2.0F;
+            float mModalW = 140.0F;
+            float mModalH = 88.0F;
+            float mModalX = Math.max(6.0F, Math.min(screenW - mModalW - 6.0F, this.moduleModalX));
+            float mModalY = Math.max(6.0F, Math.min(screenH - mModalH - 6.0F, this.moduleModalY));
 
             Blur.of(mModalX, mModalY, mModalW, mModalH)
-                    .radius(10)
+                    .radius(8)
                     .type(BlurType.KAWASE)
                     .strength(4)
                     .tint(Color.rgba(0, 0, 0, Math.round(75 * animVal)))
@@ -427,12 +428,12 @@ public class LiquidClickGui extends Screen {
         Render2DUtil.beginFrame();
         try {
             if (Theme.isGuiBlack()) {
-                int winBg = ColorUtil.rgba(13, 13, 17, (int) (248 * animVal));
-                int winOutline = ColorUtil.rgba(255, 255, 255, (int) (16 * animVal));
-                int sidebarBg = ColorUtil.rgba(9, 9, 13, (int) (240 * animVal));
+                int winBg = ColorUtil.rgba(11, 12, 16, (int) (252 * animVal));
+                int winOutline = ColorUtil.rgba(255, 255, 255, (int) (18 * animVal));
+                int sidebarBg = ColorUtil.rgba(14, 15, 20, (int) (245 * animVal));
 
                 // Drop shadow
-                Render2D.drawShadow(x, y, WINDOW_W, WINDOW_H, 12.0F, 12.0F, ColorUtil.rgba(0, 0, 0, (int) (150 * animVal)));
+                Render2D.drawShadow(x, y, WINDOW_W, WINDOW_H, 12.0F, 16.0F, ColorUtil.rgba(0, 0, 0, (int) (165 * animVal)));
                 // Main window body
                 Render2D.drawRoundedRect(x, y, WINDOW_W, WINDOW_H, 12.0F, winBg);
                 Render2D.drawRoundedOutline(x, y, WINDOW_W, WINDOW_H, 12.0F, 0.85F, winOutline);
@@ -697,7 +698,7 @@ public class LiquidClickGui extends Screen {
                 expandAnim.update();
                 float eVal = expandAnim.getValue();
 
-                float cardH = 34.0F + (eVal * calculateSettingsHeight(module));
+                float cardH = CARD_CLOSED_H + (eVal * calculateSettingsHeight(module));
 
                 if (currentY + cardH >= y && currentY <= y + h) {
                     renderModuleCard(module, cardX, currentY, cardW, cardH, eVal, mouseX, mouseY, alphaVal, accentColor);
@@ -719,7 +720,7 @@ public class LiquidClickGui extends Screen {
     }
 
     private void renderModuleCard(Module module, float x, float y, float w, float h, float expandVal, int mouseX, int mouseY, float alphaVal, int accentColor) {
-        boolean isHovered = mouseX >= x && mouseX <= x + w && mouseY >= y && mouseY <= y + 34.0F;
+        boolean isHovered = mouseX >= x && mouseX <= x + w && mouseY >= y && mouseY <= y + CARD_CLOSED_H;
 
         Animation toggleAnim = moduleToggleAnims.computeIfAbsent(module, k -> new Animation(module.isEnabled() ? 1.0F : 0.0F, 0.18F));
         toggleAnim.setTarget(module.isEnabled() ? 1.0F : 0.0F);
@@ -730,64 +731,65 @@ public class LiquidClickGui extends Screen {
                 int cardBg = ColorUtil.rgba(14, 34, 60, (int) ((isHovered ? 180 : 140) * alphaVal));
                 int cardOutlineTop = ColorUtil.rgba(225, 250, 255, (int) ((isHovered ? 245 : 190) * alphaVal));
                 int cardOutlineBot = ColorUtil.rgba(130, 205, 255, (int) ((isHovered ? 135 : 90) * alphaVal));
-                Render2D.drawRoundedRect(x, y, w, h, 6.0F, cardBg);
-                Render2D.drawGradientRound(x, y, w, h, 6.0F, cardOutlineTop, cardOutlineTop, cardOutlineBot, cardOutlineBot);
-                Render2D.drawRoundedRect(x + 0.85F, y + 0.85F, w - 1.7F, h - 1.7F, 5.2F, cardBg);
-                Render2D.drawFrostSheen(x, y, w, h, 6.0F, alphaVal * 0.85F);
+                Render2D.drawRoundedRect(x, y, w, h, 8.0F, cardBg);
+                Render2D.drawGradientRound(x, y, w, h, 8.0F, cardOutlineTop, cardOutlineTop, cardOutlineBot, cardOutlineBot);
+                Render2D.drawRoundedRect(x + 0.85F, y + 0.85F, w - 1.7F, h - 1.7F, 7.2F, cardBg);
+                Render2D.drawFrostSheen(x, y, w, h, 8.0F, alphaVal * 0.85F);
             } else {
                 int cardBg = ColorUtil.rgba(10, 22, 40, (int) ((isHovered ? 135 : 95) * alphaVal));
                 int cardOutline = ColorUtil.rgba(165, 220, 250, (int) ((isHovered ? 85 : 45) * alphaVal));
-                Render2D.drawRoundedRect(x, y, w, h, 6.0F, cardBg);
-                Render2D.drawRoundedOutline(x, y, w, h, 6.0F, 0.70F, cardOutline);
+                Render2D.drawRoundedRect(x, y, w, h, 8.0F, cardBg);
+                Render2D.drawRoundedOutline(x, y, w, h, 8.0F, 0.70F, cardOutline);
                 if (isHovered) {
-                    Render2D.drawFrostSheen(x, y, w, h, 6.0F, alphaVal * 0.55F);
+                    Render2D.drawFrostSheen(x, y, w, h, 8.0F, alphaVal * 0.55F);
                 }
             }
         } else if (Theme.isGuiBlack()) {
             if (module.isEnabled()) {
-                int cardBg = ColorUtil.rgba(22, 23, 29, (int) (245 * alphaVal));
-                int cardOutline = ColorUtil.withAlpha(accentColor, (int) ((isHovered ? 210 : 160) * alphaVal));
-                Render2D.drawRoundedRect(x, y, w, h, 6.0F, cardBg);
-                Render2D.drawRoundedOutline(x, y, w, h, 6.0F, 0.85F, cardOutline);
+                int cardBg = ColorUtil.rgba(21, 23, 31, (int) (248 * alphaVal));
+                int cardOutline = ColorUtil.withAlpha(accentColor, (int) ((isHovered ? 210 : 150) * alphaVal));
+                Render2D.drawRoundedRect(x, y, w, h, 8.0F, cardBg);
+                Render2D.drawRoundedOutline(x, y, w, h, 8.0F, 0.85F, cardOutline);
+                Render2D.drawRoundedRect(x + 2.0F, y + 6.0F, 2.5F, CARD_CLOSED_H - 12.0F, 1.0F, accentColor);
             } else {
-                int cardBg = ColorUtil.rgba(18, 18, 23, (int) (230 * alphaVal));
-                int cardOutline = ColorUtil.rgba(255, 255, 255, (int) ((isHovered ? 20 : 12) * alphaVal));
-                Render2D.drawRoundedRect(x, y, w, h, 6.0F, cardBg);
-                Render2D.drawRoundedOutline(x, y, w, h, 6.0F, 0.65F, cardOutline);
+                int cardBg = ColorUtil.rgba(16, 17, 23, (int) ((isHovered ? 245 : 235) * alphaVal));
+                int cardOutline = ColorUtil.rgba(255, 255, 255, (int) ((isHovered ? 26 : 13) * alphaVal));
+                Render2D.drawRoundedRect(x, y, w, h, 8.0F, cardBg);
+                Render2D.drawRoundedOutline(x, y, w, h, 8.0F, 0.70F, cardOutline);
             }
         } else {
             if (module.isEnabled()) {
                 int cardBg = ColorUtil.rgba(255, 255, 255, (int) ((isHovered ? 24 : 14) * alphaVal));
                 int cardOutline = ColorUtil.withAlpha(accentColor, (int) ((isHovered ? 180 : 130) * alphaVal));
 
-                Render2D.drawRoundedRect(x, y, w, h, 6.0F, cardBg);
-                Render2D.drawRoundedOutline(x, y, w, h, 6.0F, 0.85F, cardOutline);
+                Render2D.drawRoundedRect(x, y, w, h, 8.0F, cardBg);
+                Render2D.drawRoundedOutline(x, y, w, h, 8.0F, 0.85F, cardOutline);
             } else {
                 int cardBg = ColorUtil.rgba(255, 255, 255, (int) ((isHovered ? 14 : 7) * alphaVal));
                 int cardOutline = ColorUtil.rgba(255, 255, 255, (int) ((isHovered ? 22 : 12) * alphaVal));
 
-                Render2D.drawRoundedRect(x, y, w, h, 6.0F, cardBg);
-                Render2D.drawRoundedOutline(x, y, w, h, 6.0F, 0.65F, cardOutline);
+                Render2D.drawRoundedRect(x, y, w, h, 8.0F, cardBg);
+                Render2D.drawRoundedOutline(x, y, w, h, 8.0F, 0.65F, cardOutline);
             }
         }
 
         // Module Name
-        int titleCol = module.isEnabled() ? 0xFFFFFFFF : 0xFFB8C8D8;
-        Fonts.drawString(Fonts.SF_MEDIUM, module.getName(), x + 10.0F, y + 8.5F, 6.8F, titleCol);
+        int titleCol = module.isEnabled() ? 0xFFFFFFFF : 0xFFCAD6E2;
+        Fonts.drawString(Fonts.SF_MEDIUM, module.getName(), x + 10.0F, y + 9.5F, 7.0F, titleCol);
 
         // Subtitle / Description
         String desc = module.getDescription();
         if (desc == null || desc.isEmpty()) desc = "Нажмите чтобы включить";
-        if (desc.length() > 28) desc = desc.substring(0, 25) + "...";
-        Fonts.drawString(Fonts.SF_MEDIUM, desc, x + 10.0F, y + 20.0F, 4.6F, 0xFF7A8B9E);
+        if (desc.length() > 32) desc = desc.substring(0, 29) + "...";
+        Fonts.drawString(Fonts.SF_MEDIUM, desc, x + 10.0F, y + 22.5F, 4.8F, 0xFF7A8B9E);
 
         // Switch Toggle Button (Right side)
         float switchW = 24.0F;
         float switchH = 13.0F;
         float switchX = x + w - switchW - 9.0F;
-        float switchY = y + 10.5F;
+        float switchY = y + (CARD_CLOSED_H - switchH) / 2.0F;
 
-        int switchBg = module.isEnabled() ? ColorUtil.withAlpha(accentColor, (int) (220 * alphaVal)) : ColorUtil.rgba(255, 255, 255, (int) (24 * alphaVal));
+        int switchBg = module.isEnabled() ? ColorUtil.withAlpha(accentColor, (int) (225 * alphaVal)) : ColorUtil.rgba(255, 255, 255, (int) (24 * alphaVal));
         Render2D.drawRoundedRect(switchX, switchY, switchW, switchH, 6.5F, switchBg);
         Render2D.drawRoundedOutline(switchX, switchY, switchW, switchH, 6.5F, 0.65F, ColorUtil.rgba(255, 255, 255, (int) (35 * alphaVal)));
 
@@ -810,10 +812,10 @@ public class LiquidClickGui extends Screen {
 
         // Expanded Settings Section
         if (expandVal > 0.01F) {
-            float settingsY = y + 33.0F;
+            float settingsY = y + CARD_CLOSED_H - 1.0F;
             Render2D.drawRoundedRect(x + 6.0F, settingsY, w - 12.0F, 1.0F, 0.5F, ColorUtil.rgba(255, 255, 255, (int) (expandVal * 14 * alphaVal)));
 
-            Render2DUtil.pushScissor(x, settingsY, w, h - 33.0F);
+            Render2DUtil.pushScissor(x, settingsY, w, h - CARD_CLOSED_H + 1.0F);
             try {
                 float curSetY = settingsY + 3.0F;
                 for (Setting<?> setting : module.getSettings()) {
@@ -1256,57 +1258,69 @@ public class LiquidClickGui extends Screen {
     private void renderModuleModal(int screenW, int screenH, int mouseX, int mouseY, float alphaVal, int accentColor) {
         if (moduleModalModule == null) return;
 
-        float modalW = 120.0F;
-        float modalH = 80.0F;
+        float modalW = 140.0F;
+        float modalH = 88.0F;
         float modalX = Math.max(6.0F, Math.min(screenW - modalW - 6.0F, this.moduleModalX));
         float modalY = Math.max(6.0F, Math.min(screenH - modalH - 6.0F, this.moduleModalY));
 
         // Soft drop shadow
-        Render2D.drawShadow(modalX, modalY, modalW, modalH, 8.0F, 20.0F, ColorUtil.rgba(0, 0, 0, (int) (170 * alphaVal)));
+        Render2D.drawShadow(modalX, modalY, modalW, modalH, 8.0F, 24.0F, ColorUtil.rgba(0, 0, 0, (int) (180 * alphaVal)));
 
-        // Translucent liquid glass body
-        int modalDarken = ColorUtil.rgba(12, 16, 26, (int) (235 * alphaVal));
-        int modalFrosted = ColorUtil.rgba(255, 255, 255, (int) (12 * alphaVal));
-        Render2D.drawRoundedRect(modalX, modalY, modalW, modalH, 7.0F, modalDarken);
-        Render2D.drawRoundedRect(modalX, modalY, modalW, modalH, 7.0F, modalFrosted);
-        Render2D.drawRoundedOutline(modalX, modalY, modalW, modalH, 7.0F, 0.75F, ColorUtil.rgba(255, 255, 255, (int) (38 * alphaVal)));
-        Render2D.drawRoundedOutline(modalX, modalY, modalW, modalH, 7.0F, 0.5F, ColorUtil.withAlpha(accentColor, (int) (80 * alphaVal)));
+        // Body styling adapted to theme
+        int modalDarken = Theme.isGuiBlack()
+                ? ColorUtil.rgba(14, 15, 20, (int) (250 * alphaVal))
+                : (Theme.isGuiNewYear() ? ColorUtil.rgba(12, 26, 48, (int) (225 * alphaVal)) : ColorUtil.rgba(14, 18, 30, (int) (220 * alphaVal)));
+        int modalOutline = Theme.isGuiBlack()
+                ? ColorUtil.rgba(255, 255, 255, (int) (24 * alphaVal))
+                : (Theme.isGuiNewYear() ? ColorUtil.rgba(180, 230, 255, (int) (140 * alphaVal)) : ColorUtil.rgba(255, 255, 255, (int) (40 * alphaVal)));
+
+        Render2D.drawRoundedRect(modalX, modalY, modalW, modalH, 8.0F, modalDarken);
+        Render2D.drawRoundedOutline(modalX, modalY, modalW, modalH, 8.0F, 0.75F, modalOutline);
+        if (Theme.isGuiNewYear()) {
+            Render2D.drawFrostSheen(modalX, modalY, modalW, modalH, 8.0F, alphaVal * 0.7F);
+        }
+
+        // Header: Module Name title & small icon
+        float hY = modalY + 8.0F;
+        Render2D.drawRoundedRect(modalX + 10.0F, hY + 1.0F, 2.5F, 9.0F, 1.0F, accentColor);
+        String modName = moduleModalModule.getName();
+        Fonts.drawString(Fonts.SF_MEDIUM, modName, modalX + 16.0F, hY + 1.5F, 6.4F, 0xFFFFFFFF);
+
+        // Header Divider
+        float div1Y = modalY + 22.0F;
+        Render2D.drawRoundedRect(modalX + 8.0F, div1Y, modalW - 16.0F, 0.8F, 0.4F, ColorUtil.rgba(255, 255, 255, (int) (16 * alphaVal)));
 
         // --- Row 1: Keybind ---
-        float r1Y = modalY + 8.0F;
-        Fonts.drawString(Fonts.SF_MEDIUM, "Keybind", modalX + 10.0F, r1Y + 3.0F, 5.8F, 0xFFFFFFFF);
+        float r1Y = modalY + 28.0F;
+        Fonts.drawString(Fonts.SF_MEDIUM, "Назначение", modalX + 10.0F, r1Y + 3.0F, 5.5F, 0xFFC0D0E4);
 
         String bindText;
         if (moduleModalBinding) {
-            bindText = "...";
+            bindText = "[...]";
         } else if (moduleModalModule.getBind() != null && !moduleModalModule.getBind().isEmpty()) {
             bindText = KeyUtil.getKeyName(moduleModalModule.getBind().get(0));
         } else {
-            bindText = "n/a";
+            bindText = "НЕТ";
         }
 
-        float bindTextW = Fonts.SF_MEDIUM.getWidth(bindText, 5.0F);
-        float bindBtnW = Math.max(26.0F, bindTextW + 10.0F);
+        float bindTextW = Fonts.SF_MEDIUM.getWidth(bindText, 5.2F);
+        float bindBtnW = Math.max(34.0F, bindTextW + 12.0F);
         float bindBtnH = 14.0F;
         float bindBtnX = modalX + modalW - 10.0F - bindBtnW;
         boolean bindHover = mouseX >= bindBtnX && mouseX <= bindBtnX + bindBtnW && mouseY >= r1Y && mouseY <= r1Y + bindBtnH;
 
-        int bindBg = moduleModalBinding ? ColorUtil.withAlpha(accentColor, (int) (210 * alphaVal)) : ColorUtil.rgba(255, 255, 255, (int) ((bindHover ? 22 : 14) * alphaVal));
-        Render2D.drawRoundedRect(bindBtnX, r1Y, bindBtnW, bindBtnH, 3.5F, bindBg);
-        Render2D.drawRoundedOutline(bindBtnX, r1Y, bindBtnW, bindBtnH, 3.5F, 0.55F, moduleModalBinding ? accentColor : ColorUtil.rgba(255, 255, 255, (int) (26 * alphaVal)));
-        Fonts.drawCenteredString(Fonts.SF_MEDIUM, bindText, bindBtnX + bindBtnW / 2.0F, r1Y + 3.0F, 5.0F, moduleModalBinding ? 0xFFFFFFFF : 0xFFB0C0D4);
+        int bindBg = moduleModalBinding ? ColorUtil.withAlpha(accentColor, (int) (210 * alphaVal)) : ColorUtil.rgba(255, 255, 255, (int) ((bindHover ? 25 : 14) * alphaVal));
+        Render2D.drawRoundedRect(bindBtnX, r1Y, bindBtnW, bindBtnH, 4.0F, bindBg);
+        Render2D.drawRoundedOutline(bindBtnX, r1Y, bindBtnW, bindBtnH, 4.0F, 0.65F, moduleModalBinding ? accentColor : ColorUtil.rgba(255, 255, 255, (int) (30 * alphaVal)));
+        Fonts.drawCenteredString(Fonts.SF_MEDIUM, bindText, bindBtnX + bindBtnW / 2.0F, r1Y + 3.0F, 5.2F, moduleModalBinding ? 0xFFFFFFFF : 0xFFFFFFFF);
 
-        // Divider 1
-        float div1Y = modalY + 27.0F;
-        Render2D.drawRoundedRect(modalX + 10.0F, div1Y, modalW - 20.0F, 1.0F, 0.5F, ColorUtil.rgba(255, 255, 255, (int) (14 * alphaVal)));
-
-        // --- Row 2: Mode ---
-        float r2Y = modalY + 32.0F;
-        Fonts.drawString(Fonts.SF_MEDIUM, "Mode", modalX + 10.0F, r2Y + 3.0F, 5.8F, 0xFFFFFFFF);
+        // --- Row 2: Mode (Toggle / Hold) ---
+        float r2Y = modalY + 48.0F;
+        Fonts.drawString(Fonts.SF_MEDIUM, "Тип", modalX + 10.0F, r2Y + 3.0F, 5.5F, 0xFFC0D0E4);
 
         boolean isHold = "Hold".equalsIgnoreCase(moduleModalModule.getBindType());
-        float toggleW = 28.0F;
-        float holdW = 24.0F;
+        float toggleW = 34.0F;
+        float holdW = 28.0F;
         float gap = 4.0F;
         float holdX = modalX + modalW - 10.0F - holdW;
         float toggleX = holdX - gap - toggleW;
@@ -1316,32 +1330,32 @@ public class LiquidClickGui extends Screen {
         boolean holdHover = mouseX >= holdX && mouseX <= holdX + holdW && mouseY >= r2Y && mouseY <= r2Y + modeBtnH;
 
         int toggleBg = !isHold ? ColorUtil.withAlpha(accentColor, (int) (210 * alphaVal)) : ColorUtil.rgba(255, 255, 255, (int) ((toggleHover ? 20 : 12) * alphaVal));
-        Render2D.drawRoundedRect(toggleX, r2Y, toggleW, modeBtnH, 3.5F, toggleBg);
-        Render2D.drawRoundedOutline(toggleX, r2Y, toggleW, modeBtnH, 3.5F, 0.5F, !isHold ? accentColor : ColorUtil.rgba(255, 255, 255, (int) (22 * alphaVal)));
-        Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Toggle", toggleX + toggleW / 2.0F, r2Y + 3.0F, 4.8F, !isHold ? 0xFFFFFFFF : 0xFF8090A4);
+        Render2D.drawRoundedRect(toggleX, r2Y, toggleW, modeBtnH, 4.0F, toggleBg);
+        Render2D.drawRoundedOutline(toggleX, r2Y, toggleW, modeBtnH, 4.0F, 0.55F, !isHold ? accentColor : ColorUtil.rgba(255, 255, 255, (int) (22 * alphaVal)));
+        Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Перекл", toggleX + toggleW / 2.0F, r2Y + 3.0F, 5.0F, !isHold ? 0xFFFFFFFF : 0xFF90A0B4);
 
         int holdBg = isHold ? ColorUtil.withAlpha(accentColor, (int) (210 * alphaVal)) : ColorUtil.rgba(255, 255, 255, (int) ((holdHover ? 20 : 12) * alphaVal));
-        Render2D.drawRoundedRect(holdX, r2Y, holdW, modeBtnH, 3.5F, holdBg);
-        Render2D.drawRoundedOutline(holdX, r2Y, holdW, modeBtnH, 3.5F, 0.5F, isHold ? accentColor : ColorUtil.rgba(255, 255, 255, (int) (22 * alphaVal)));
-        Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Hold", holdX + holdW / 2.0F, r2Y + 3.0F, 4.8F, isHold ? 0xFFFFFFFF : 0xFF8090A4);
+        Render2D.drawRoundedRect(holdX, r2Y, holdW, modeBtnH, 4.0F, holdBg);
+        Render2D.drawRoundedOutline(holdX, r2Y, holdW, modeBtnH, 4.0F, 0.55F, isHold ? accentColor : ColorUtil.rgba(255, 255, 255, (int) (22 * alphaVal)));
+        Fonts.drawCenteredString(Fonts.SF_MEDIUM, "Удерж", holdX + holdW / 2.0F, r2Y + 3.0F, 5.0F, isHold ? 0xFFFFFFFF : 0xFF90A0B4);
 
         // Divider 2
-        float div2Y = modalY + 51.0F;
-        Render2D.drawRoundedRect(modalX + 10.0F, div2Y, modalW - 20.0F, 1.0F, 0.5F, ColorUtil.rgba(255, 255, 255, (int) (14 * alphaVal)));
+        float div2Y = modalY + 68.0F;
+        Render2D.drawRoundedRect(modalX + 8.0F, div2Y, modalW - 16.0F, 0.8F, 0.4F, ColorUtil.rgba(255, 255, 255, (int) (14 * alphaVal)));
 
         // --- Row 3: Delete / Reset ---
-        float r3Y = modalY + 56.0F;
-        float delBtnX = modalX + 10.0F;
-        float delBtnW = modalW - 20.0F;
-        float delBtnH = 16.0F;
+        float r3Y = modalY + 71.0F;
+        float delBtnX = modalX + 8.0F;
+        float delBtnW = modalW - 16.0F;
+        float delBtnH = 14.0F;
         boolean delHover = mouseX >= delBtnX && mouseX <= delBtnX + delBtnW && mouseY >= r3Y && mouseY <= r3Y + delBtnH;
 
         if (delHover) {
-            Render2D.drawRoundedRect(delBtnX, r3Y, delBtnW, delBtnH, 3.5F, ColorUtil.rgba(255, 70, 70, (int) (30 * alphaVal)));
-            Render2D.drawRoundedOutline(delBtnX, r3Y, delBtnW, delBtnH, 3.5F, 0.5F, ColorUtil.rgba(255, 70, 70, (int) (80 * alphaVal)));
+            Render2D.drawRoundedRect(delBtnX, r3Y, delBtnW, delBtnH, 3.5F, ColorUtil.rgba(255, 75, 75, (int) (35 * alphaVal)));
+            Render2D.drawRoundedOutline(delBtnX, r3Y, delBtnW, delBtnH, 3.5F, 0.55F, ColorUtil.rgba(255, 75, 75, (int) (90 * alphaVal)));
         }
-        int delColor = delHover ? 0xFFFF7575 : 0xFFFF5353;
-        Fonts.drawString(Fonts.SF_MEDIUM, "✕  Delete", delBtnX + 2.0F, r3Y + 3.5F, 5.5F, delColor);
+        int delColor = delHover ? 0xFFFF7575 : 0xFFE05050;
+        Fonts.drawCenteredString(Fonts.SF_MEDIUM, "✕  Сбросить бинд", delBtnX + delBtnW / 2.0F, r3Y + 2.5F, 5.2F, delColor);
     }
 
     private void renderModeDropdown(int screenW, int screenH, int mouseX, int mouseY, float alphaVal, int accentColor) {
@@ -2139,15 +2153,15 @@ public class LiquidClickGui extends Screen {
 
         // Handle Module Middle-Click Bind Modal Clicks if Open
         if (this.moduleModalOpen && this.moduleModalModule != null) {
-            float mModalW = 120.0F;
-            float mModalH = 80.0F;
+            float mModalW = 140.0F;
+            float mModalH = 88.0F;
             float mModalX = Math.max(6.0F, Math.min(screenW - mModalW - 6.0F, this.moduleModalX));
             float mModalY = Math.max(6.0F, Math.min(screenH - mModalH - 6.0F, this.moduleModalY));
 
-            float r1Y = mModalY + 8.0F;
-            String bText = this.moduleModalBinding ? "..." : ((this.moduleModalModule.getBind() != null && !this.moduleModalModule.getBind().isEmpty()) ? KeyUtil.getKeyName(this.moduleModalModule.getBind().get(0)) : "n/a");
-            float bTextW = Fonts.SF_MEDIUM.getWidth(bText, 5.0F);
-            float bindBtnW = Math.max(26.0F, bTextW + 10.0F);
+            float r1Y = mModalY + 28.0F;
+            String bText = this.moduleModalBinding ? "[...]" : ((this.moduleModalModule.getBind() != null && !this.moduleModalModule.getBind().isEmpty()) ? KeyUtil.getKeyName(this.moduleModalModule.getBind().get(0)) : "НЕТ");
+            float bTextW = Fonts.SF_MEDIUM.getWidth(bText, 5.2F);
+            float bindBtnW = Math.max(34.0F, bTextW + 12.0F);
             float bindBtnH = 14.0F;
             float bindBtnX = mModalX + mModalW - 10.0F - bindBtnW;
 
@@ -2182,9 +2196,9 @@ public class LiquidClickGui extends Screen {
             }
 
             // Row 2: Mode (Toggle / Hold)
-            float r2Y = mModalY + 32.0F;
-            float toggleW = 28.0F;
-            float holdW = 24.0F;
+            float r2Y = mModalY + 48.0F;
+            float toggleW = 34.0F;
+            float holdW = 28.0F;
             float gap = 4.0F;
             float holdX = mModalX + mModalW - 10.0F - holdW;
             float toggleX = holdX - gap - toggleW;
@@ -2208,10 +2222,10 @@ public class LiquidClickGui extends Screen {
             }
 
             // Row 3: Delete / Reset
-            float r3Y = mModalY + 56.0F;
-            float delBtnX = mModalX + 10.0F;
-            float delBtnW = mModalW - 20.0F;
-            float delBtnH = 16.0F;
+            float r3Y = mModalY + 71.0F;
+            float delBtnX = mModalX + 8.0F;
+            float delBtnW = mModalW - 16.0F;
+            float delBtnH = 14.0F;
             if (mouseX >= delBtnX && mouseX <= delBtnX + delBtnW && mouseY >= r3Y && mouseY <= r3Y + delBtnH) {
                 this.moduleModalModule.getBind().clear();
                 if (Client.INSTANCE != null && Client.INSTANCE.configManager != null) {
@@ -2804,12 +2818,13 @@ public class LiquidClickGui extends Screen {
 
                 Animation expandAnim = moduleExpandAnims.computeIfAbsent(module, k -> new Animation(0.0F, 0.20F));
                 float eVal = expandAnim.getValue();
-                float cardH = 34.0F + (eVal * calculateSettingsHeight(module));
+                float cardH = CARD_CLOSED_H + (eVal * calculateSettingsHeight(module));
 
                 // Click bind button to open keybind modal
                 float switchW = 24.0F;
+                float switchH = 13.0F;
                 float switchX = cardX + cardW - switchW - 9.0F;
-                float switchY = currentY + 10.5F;
+                float switchY = currentY + (CARD_CLOSED_H - switchH) / 2.0F;
                 float bindBtnW = 14.0F;
                 float bindBtnH = 13.0F;
                 float bindBtnX = switchX - bindBtnW - 5.0F;
@@ -2825,14 +2840,14 @@ public class LiquidClickGui extends Screen {
                 }
 
                 // Click module card header to toggle
-                if (mouseX >= cardX && mouseX <= cardX + cardW && mouseY >= currentY && mouseY <= currentY + 34.0F) {
+                if (mouseX >= cardX && mouseX <= cardX + cardW && mouseY >= currentY && mouseY <= currentY + CARD_CLOSED_H) {
                     module.toggle();
                     return true;
                 }
 
                 // Click inside settings
-                if (eVal > 0.01F && mouseX >= cardX && mouseX <= cardX + cardW && mouseY >= currentY + 33.0F && mouseY <= currentY + cardH) {
-                    float setY = currentY + 33.0F;
+                if (eVal > 0.01F && mouseX >= cardX && mouseX <= cardX + cardW && mouseY >= currentY + CARD_CLOSED_H - 1.0F && mouseY <= currentY + cardH) {
+                    float setY = currentY + CARD_CLOSED_H - 1.0F;
                     for (Setting<?> setting : module.getSettings()) {
                         if (!setting.isVisible()) continue;
                         float sH = getSettingHeight(setting);
@@ -2939,9 +2954,9 @@ public class LiquidClickGui extends Screen {
 
                 Animation expandAnim = moduleExpandAnims.computeIfAbsent(module, k -> new Animation(0.0F, 0.20F));
                 float eVal = expandAnim.getValue();
-                float cardH = 34.0F + (eVal * calculateSettingsHeight(module));
+                float cardH = CARD_CLOSED_H + (eVal * calculateSettingsHeight(module));
 
-                if (mouseX >= cardX && mouseX <= cardX + cardW && mouseY >= currentY && mouseY <= currentY + 34.0F) {
+                if (mouseX >= cardX && mouseX <= cardX + cardW && mouseY >= currentY && mouseY <= currentY + CARD_CLOSED_H) {
                     this.expandedModule = (this.expandedModule == module) ? null : module;
                     return true;
                 }
@@ -2974,9 +2989,9 @@ public class LiquidClickGui extends Screen {
 
                 Animation expandAnim = moduleExpandAnims.computeIfAbsent(module, k -> new Animation(0.0F, 0.20F));
                 float eVal = expandAnim.getValue();
-                float cardH = 34.0F + (eVal * calculateSettingsHeight(module));
+                float cardH = CARD_CLOSED_H + (eVal * calculateSettingsHeight(module));
 
-                if (mouseX >= cardX && mouseX <= cardX + cardW && mouseY >= currentY && mouseY <= currentY + 34.0F) {
+                if (mouseX >= cardX && mouseX <= cardX + cardW && mouseY >= currentY && mouseY <= currentY + CARD_CLOSED_H) {
                     this.moduleModalModule = module;
                     this.moduleModalOpen = true;
                     this.moduleModalBinding = false;

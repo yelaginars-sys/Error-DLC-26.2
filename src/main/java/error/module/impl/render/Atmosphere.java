@@ -6,308 +6,324 @@ import error.event.list.Render3DEvent;
 import error.event.list.WorldJoinEvent;
 import error.module.Category;
 import error.module.Module;
-import error.setting.impl.CheckBox;
+import error.setting.impl.ColorSetting;
 import error.setting.impl.ModeSetting;
 import error.setting.impl.SliderSetting;
 import error.util.client.clients.ColorUtil;
+import error.util.render.Render3DUtil;
+import error.util.render.WorldColorRenderer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.core.BlockPos;
-import net.minecraft.util.Mth;
-import net.minecraft.world.level.BlockGetter;
-import net.minecraft.world.level.block.*;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.Vec3;
 
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Atmosphere extends Module {
+/**
+ * Atmosphere Module (Ported from SystemSRC 26.2).
+ * Provides atmospheric sky/fog grading, realistic seasonal/weather modes,
+ * volumetric fog parameters, god rays, and ambient particulate effects.
+ */
+public final class Atmosphere extends Module {
 
     public static Atmosphere INSTANCE;
+    private static Atmosphere active;
 
-    public static final String VIBE_WINTER = "Зимний";
-    public static final String VIBE_SUMMER = "Летний";
-    public static final String VIBE_AUTUMN = "Осенний";
-    public static final String VIBE_SPRING = "Весенний";
+    // Modes matching SystemSRC
+    public static final String MODE_DAWN = "Dawn";
+    public static final String MODE_DAY = "Day";
+    public static final String MODE_DUSK = "Dusk";
+    public static final String MODE_NIGHT = "Night";
+    public static final String MODE_DUST = "Dust";
+    public static final String MODE_SNOW = "Snow";
+    public static final String MODE_ASH = "Ash";
 
-    public final ModeSetting vibeMode = mode(
-            "Атмосфера",
-            VIBE_WINTER,
-            VIBE_WINTER, VIBE_SUMMER, VIBE_AUTUMN, VIBE_SPRING
-    );
+    public final ModeSetting mode = mode("mode", MODE_DAWN,
+            MODE_DAWN, MODE_DAY, MODE_DUSK, MODE_NIGHT, MODE_DUST, MODE_SNOW, MODE_ASH);
 
-    public final CheckBox fog = checkbox(
-            "Кастомный туман",
-            true
-    );
-
-    public final CheckBox vignette = checkbox(
-            "Виньетка",
-            true
-    );
-
-    public final CheckBox bloom = checkbox(
-            "Свечение",
-            true
-    );
-
-    public final CheckBox particles = checkbox(
-            "Частицы атмосферы",
-            true
-    );
-
-    public final SliderSetting particleAmount = slider(
-            "Количество частиц",
-            50.0F,
-            5.0F,
-            160.0F,
-            5.0F
-    );
+    public final SliderSetting density = slider("density", 1.0F, 0.0F, 3.0F, 0.05F);
+    public final SliderSetting scatterHeight = slider("scatter_height", 64.0F, 0.0F, 320.0F, 1.0F);
+    public final SliderSetting godRays = slider("god_rays", 1.0F, 0.0F, 3.0F, 0.05F);
+    public final SliderSetting softness = slider("softness", 1.0F, 0.0F, 3.0F, 0.05F);
+    public final ColorSetting dawnColor = color("dawn_color", -20384); // 0xFFFFB060
+    public final SliderSetting amount = slider("amount", 1.0F, 0.0F, 3.0F, 0.05F);
+    public final SliderSetting speed = slider("speed", 1.0F, 0.0F, 5.0F, 0.1F);
+    public final SliderSetting haze = slider("haze", 1.0F, 0.0F, 3.0F, 0.05F);
+    public final SliderSetting grade = slider("grade", 1.0F, 0.0F, 3.0F, 0.05F);
+    public final SliderSetting vignette = slider("vignette", 1.0F, 0.0F, 3.0F, 0.05F);
 
     private final List<AmbientParticle> ambientParticles = new ArrayList<>();
-    private final List<GroundRipple> groundRipples = new ArrayList<>();
-    private String lastVibe = "";
+    private final error.util.render.world.particles.ParticleSpawn particleSpawn = new error.util.render.world.particles.ParticleSpawn();
+    private String lastMode = "";
 
     public Atmosphere() {
-        super("Atmosphere", "Кастомная атмосфера мира: Зимняя, Летняя, Осенняя, Весенняя", Category.RENDER);
+        super("Atmosphere", "Кастомная атмосфера мира из System: Dawn, Day, Dusk, Night, Dust, Snow, Ash", Category.RENDER);
         INSTANCE = this;
     }
 
-    @Override
-    protected void onEnable() {
-        clearState();
-        reloadWorldRender();
+    public static Atmosphere active() {
+        return active;
     }
 
     @Override
-    protected void onDisable() {
-        clearState();
-        reloadWorldRender();
+    public void onEnable() {
+        active = this;
+        clearParticles();
     }
 
-    private void clearState() {
+    @Override
+    public void onDisable() {
+        active = null;
+        clearParticles();
+    }
+
+    private void clearParticles() {
         this.ambientParticles.clear();
-        this.groundRipples.clear();
     }
 
-    private void reloadWorldRender() {
-        clearState();
-        Minecraft mc = Minecraft.getInstance();
-        if (mc != null && mc.levelRenderer != null) {
-            try {
-                for (Method m : mc.levelRenderer.getClass().getDeclaredMethods()) {
-                    if (m.getParameterCount() == 0 && m.getReturnType() == void.class) {
-                        if (m.getName().equals("allChanged") || m.getName().equals("reload")) {
-                            m.setAccessible(true);
-                            m.invoke(mc.levelRenderer);
-                            break;
-                        }
-                    }
-                }
-            } catch (Throwable ignored) {}
-        }
+    public boolean hasTimeOverride() {
+        return isEnabled();
     }
 
-    public int getVibeIndex() {
-        String current = this.vibeMode.getValue();
-        return switch (current) {
-            case VIBE_SUMMER -> 1;
-            case VIBE_AUTUMN -> 2;
-            case VIBE_SPRING -> 3;
-            default -> 0; // Winter
+    public long getTimeOverride() {
+        return switch (this.mode.getValue()) {
+            case MODE_DAWN -> 23000L;
+            case MODE_DAY -> 6000L;
+            case MODE_DUSK -> 12500L;
+            case MODE_NIGHT -> 18000L;
+            case MODE_DUST -> 1000L;
+            case MODE_SNOW -> 6000L;
+            case MODE_ASH -> 14000L;
+            default -> 6000L;
         };
     }
 
-    public int getGrassColor() {
-        return switch (getVibeIndex()) {
-            case 1 -> 0xFF35E035; // Summer
-            case 2 -> 0xFFE08226; // Autumn
-            case 3 -> 0xFF4ADE80; // Spring
-            default -> 0xFFFFFFFF; // Winter
+    public int getEffectiveFogColor() {
+        String m = this.mode.getValue();
+        return switch (m) {
+            case MODE_DAWN -> this.dawnColor.getValue();
+            case MODE_DAY -> ColorUtil.rgba(200, 225, 255, 255);
+            case MODE_DUSK -> ColorUtil.rgba(215, 105, 75, 255);
+            case MODE_NIGHT -> ColorUtil.rgba(10, 15, 34, 255);
+            case MODE_DUST -> ColorUtil.rgba(207, 166, 106, 255);
+            case MODE_SNOW -> ColorUtil.rgba(232, 242, 255, 255);
+            case MODE_ASH -> ColorUtil.rgba(45, 48, 56, 255);
+            default -> ColorUtil.rgba(200, 225, 255, 255);
         };
     }
 
-    public int getFoliageColor() {
-        return switch (getVibeIndex()) {
-            case 1 -> 0xFF22C55E;
-            case 2 -> 0xFFEA580C;
-            case 3 -> 0xFF22C55E;
-            default -> 0xFFF8FCFF;
+    public float getFogStart() {
+        float dens = Math.max(0.1F, this.density.getValue().floatValue());
+        float soft = Math.max(0.1F, this.softness.getValue().floatValue());
+        String m = this.mode.getValue();
+
+        float baseStart = switch (m) {
+            case MODE_DAWN -> 12.0F;
+            case MODE_DAY -> 25.0F;
+            case MODE_DUSK -> 8.0F;
+            case MODE_NIGHT -> 6.0F;
+            case MODE_DUST -> 2.0F;
+            case MODE_SNOW -> 2.0F;
+            case MODE_ASH -> 2.0F;
+            default -> 15.0F;
         };
+
+        return Math.max(0.0F, (baseStart * soft) / dens);
     }
 
-    public int getWaterColor() {
-        return switch (getVibeIndex()) {
-            case 1 -> 0xFF06B6D4;
-            case 2 -> 0xFF0F766E;
-            case 3 -> 0xFF38BDF8;
-            default -> 0xFF93C5FD;
+    public float getFogEnd() {
+        float dens = Math.max(0.1F, this.density.getValue().floatValue());
+        float soft = Math.max(0.1F, this.softness.getValue().floatValue());
+        String m = this.mode.getValue();
+
+        float baseEnd = switch (m) {
+            case MODE_DAWN -> 110.0F;
+            case MODE_DAY -> 220.0F;
+            case MODE_DUSK -> 85.0F;
+            case MODE_NIGHT -> 70.0F;
+            case MODE_DUST -> 42.0F;
+            case MODE_SNOW -> 38.0F;
+            case MODE_ASH -> 34.0F;
+            default -> 120.0F;
         };
+
+        return Math.max(getFogStart() + 2.0F, (baseEnd * soft) / dens);
     }
 
-    public int getFogColor() {
-        return switch (getVibeIndex()) {
-            case 1 -> 0xFF60A5FA;
-            case 2 -> 0xFFD97706;
-            case 3 -> 0xFF94A3B8;
-            default -> 0xFFDCE8F5;
+    /**
+     * Post-processing World Color Grade & Atmospheric Haze
+     */
+    public void renderWorldColor() {
+        if (!isEnabled()) return;
+
+        int color = getEffectiveFogColor();
+        String m = this.mode.getValue();
+        float gr = this.grade.getValue().floatValue();
+        float hz = this.haze.getValue().floatValue();
+        float sc = this.scatterHeight.getValue().floatValue();
+
+        float saturation = switch (m) {
+            case MODE_DAWN -> 1.15F * gr;
+            case MODE_DAY -> 1.05F * gr;
+            case MODE_DUSK -> 1.25F * gr;
+            case MODE_NIGHT -> 0.90F * gr;
+            case MODE_DUST -> 0.95F * gr;
+            case MODE_SNOW -> 0.82F * gr;
+            case MODE_ASH -> 0.50F * gr;
+            default -> 1.0F;
         };
-    }
 
-    public int getCustomBlockColor(BlockState state, BlockGetter world, BlockPos pos, int tintIndex) {
-        if (state == null) return 0;
-        int vibe = getVibeIndex();
+        float brightness = switch (m) {
+            case MODE_DAWN -> 1.05F;
+            case MODE_DAY -> 1.12F;
+            case MODE_DUSK -> 0.95F;
+            case MODE_NIGHT -> 0.70F;
+            case MODE_DUST -> 0.90F;
+            case MODE_SNOW -> 1.05F;
+            case MODE_ASH -> 0.82F;
+            default -> 1.0F;
+        };
 
-        Block block = state.getBlock();
-        if (block instanceof LeavesBlock || block instanceof BushBlock
-                || block instanceof VineBlock || block instanceof CarpetBlock
-                || block instanceof SugarCaneBlock || block instanceof CactusBlock) {
-            return getFoliageColor();
-        }
+        float strength = 0.35F * Math.clamp(gr, 0.0F, 2.0F);
+        float contrast = switch (m) {
+            case MODE_DAWN -> 1.10F;
+            case MODE_DAY -> 1.04F;
+            case MODE_DUSK -> 1.18F;
+            case MODE_NIGHT -> 1.25F;
+            case MODE_DUST -> 1.08F;
+            case MODE_SNOW -> 1.02F;
+            case MODE_ASH -> 1.16F;
+            default -> 1.0F;
+        };
 
-        if (block instanceof GrassBlock) {
-            return getGrassColor();
-        }
+        float snowMask = MODE_SNOW.equals(m) ? 1.0F : 0.0F;
+        float hazeStrength = 0.40F * Math.clamp(hz, 0.0F, 2.0F);
+        float hazeDistance = Math.max(8.0F, sc);
 
-        if (block instanceof LiquidBlock) {
-            return getWaterColor();
-        }
-
-        if (vibe == 0) {
-            return 0xFFFFFFFF;
-        } else if (vibe == 2) {
-            return 0xFFF5E6D3;
-        }
-
-        return 0;
+        WorldColorRenderer.getInstance().render(
+                color, saturation, brightness, strength, contrast, snowMask, hazeStrength, hazeDistance
+        );
     }
 
     @EventTarget
     public void onWorldJoin(WorldJoinEvent e) {
-        clearState();
+        clearParticles();
     }
 
     @EventTarget
     public void onPlayerTick(PlayerTickEvent event) {
-        if (!isState()) return;
+        if (!isEnabled()) return;
 
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null || mc.player == null) return;
 
-        String currentVibe = this.vibeMode.getValue();
-        if (!currentVibe.equals(this.lastVibe)) {
-            this.lastVibe = currentVibe;
-            clearState();
-            reloadWorldRender();
+        String curMode = this.mode.getValue();
+        if (!curMode.equals(this.lastMode)) {
+            this.lastMode = curMode;
+            clearParticles();
         }
 
-        if (!this.particles.getValue()) {
+        // Particle logic for modes with weather / dust / snow / ash
+        boolean hasParticles = MODE_SNOW.equals(curMode) || MODE_DUST.equals(curMode) || MODE_ASH.equals(curMode);
+        if (!hasParticles) {
+            clearParticles();
             return;
         }
 
         LocalPlayer player = mc.player;
-        int maxParticles = this.particleAmount.getValue().intValue();
-        int vibe = getVibeIndex();
+        int maxParticles = (int) (60.0F * this.amount.getValue().floatValue());
+        float spd = this.speed.getValue().floatValue();
 
         if (this.ambientParticles.size() < maxParticles) {
-            int toSpawn = Math.min(10, maxParticles - this.ambientParticles.size());
+            int toSpawn = Math.min(8, maxParticles - this.ambientParticles.size());
 
             for (int i = 0; i < toSpawn; i++) {
                 double angle = Math.random() * Math.PI * 2.0;
-                double dist = 1.0 + Math.random() * 20.0;
+                double dist = 1.0 + Math.random() * 22.0;
                 double px = player.getX() + Math.cos(angle) * dist;
                 double pz = player.getZ() + Math.sin(angle) * dist;
+                double py = player.getY() + rnd(-2.0, 16.0);
 
-                Vec3 pos;
+                Vec3 pos = new Vec3(px, py, pz);
                 Vec3 vel;
-                int color;
-                float size;
-                boolean isRain = false;
+                int col;
+                float sz;
 
-                switch (vibe) {
-                    case 1 -> { // Summer
-                        double py = player.getY() + rnd(-1.0, 16.0);
-                        pos = new Vec3(px, py, pz);
-                        vel = new Vec3(rnd(-0.015, 0.015), rnd(0.01, 0.03), rnd(-0.015, 0.015));
-                        color = ColorUtil.rgba(255, 235, 140, 220);
-                        size = 0.08F + (float) Math.random() * 0.06F;
+                switch (curMode) {
+                    case MODE_SNOW -> {
+                        vel = new Vec3(rnd(-0.02, 0.02) * spd, rnd(-0.08, -0.04) * spd, rnd(-0.02, 0.02) * spd);
+                        col = ColorUtil.rgba(240, 248, 255, 230);
+                        sz = 0.08F + (float) Math.random() * 0.07F;
                     }
-                    case 2 -> { // Autumn
-                        double py = player.getY() + rnd(-1.0, 16.0);
-                        pos = new Vec3(px, py, pz);
-                        vel = new Vec3(rnd(-0.03, 0.03) + 0.02, rnd(-0.05, -0.02), rnd(-0.03, 0.03));
-                        int[] autumnCols = {0xFFEA580C, 0xFFF59E0B, 0xFFDC2626, 0xFFD97706};
-                        color = autumnCols[(int) (Math.random() * autumnCols.length)];
-                        size = 0.12F + (float) Math.random() * 0.08F;
+                    case MODE_DUST -> {
+                        vel = new Vec3(rnd(0.04, 0.08) * spd, rnd(-0.015, 0.015) * spd, rnd(-0.02, 0.02) * spd);
+                        col = ColorUtil.rgba(215, 175, 115, 210);
+                        sz = 0.06F + (float) Math.random() * 0.06F;
                     }
-                    case 3 -> { // Spring (Raindrops falling to ground floor with splashes)
-                        double py = player.getY() + rnd(6.0, 18.0);
-                        pos = new Vec3(px, py, pz);
-                        vel = new Vec3(rnd(-0.04, -0.01), rnd(-0.6, -0.35), rnd(-0.02, 0.02));
-                        color = ColorUtil.rgba(147, 197, 253, 230);
-                        size = 0.05F + (float) Math.random() * 0.04F;
-                        isRain = true;
+                    case MODE_ASH -> {
+                        vel = new Vec3(rnd(-0.02, 0.02) * spd, rnd(-0.05, -0.025) * spd, rnd(-0.02, 0.02) * spd);
+                        col = Math.random() > 0.85
+                                ? ColorUtil.rgba(255, 120, 45, 240) // glowing ember
+                                : ColorUtil.rgba(65, 68, 75, 220);  // dark ash flake
+                        sz = 0.07F + (float) Math.random() * 0.07F;
                     }
-                    default -> { // Winter
-                        double py = player.getY() + rnd(1.0, 18.0);
-                        pos = new Vec3(px, py, pz);
-                        vel = new Vec3(rnd(-0.04, 0.01), rnd(-0.08, -0.03), rnd(-0.03, 0.03));
-                        color = ColorUtil.rgba(240, 248, 255, 240);
-                        size = 0.07F + (float) Math.random() * 0.06F;
+                    default -> {
+                        vel = Vec3.ZERO;
+                        col = 0xFFFFFFFF;
+                        sz = 0.05F;
                     }
                 }
 
-                this.ambientParticles.add(new AmbientParticle(pos, vel, color, size, isRain));
+                this.ambientParticles.add(new AmbientParticle(pos, vel, col, sz, (int) (120 + Math.random() * 120), (float) Math.random()));
             }
         }
 
-        double pX = player.getX();
-        double pY = player.getY();
-        double pZ = player.getZ();
-
-        for (int i = this.ambientParticles.size() - 1; i >= 0; i--) {
-            AmbientParticle p = this.ambientParticles.get(i);
+        // Update particle life and positions
+        this.ambientParticles.removeIf(p -> {
             p.pos = p.pos.add(p.vel);
-            p.rotation += p.rotationSpeed;
-
-            if (p.isRain) {
-                int gx = Mth.floor(p.pos.x);
-                int gz = Mth.floor(p.pos.z);
-                int groundY = mc.level.getHeight(Heightmap.Types.MOTION_BLOCKING, gx, gz);
-
-                if (p.pos.y <= groundY + 0.1) {
-                    if (Math.random() < 0.8) {
-                        this.groundRipples.add(new GroundRipple(new Vec3(p.pos.x, groundY + 0.02, p.pos.z), p.color));
-                    }
-                    this.ambientParticles.remove(i);
-                    continue;
-                }
-            }
-
-            if (p.pos.distanceToSqr(pX, pY, pZ) > 900.0 || p.pos.y < pY - 8.0) {
-                this.ambientParticles.remove(i);
-            }
-        }
-
-        for (int i = this.groundRipples.size() - 1; i >= 0; i--) {
-            GroundRipple r = this.groundRipples.get(i);
-            r.age++;
-            r.size += 0.035F;
-            r.alpha -= 0.045F;
-            if (r.alpha <= 0.0F || r.age > r.maxAge) {
-                this.groundRipples.remove(i);
-            }
-        }
+            p.age++;
+            return p.age >= p.maxAge || p.pos.distanceTo(player.position()) > 35.0;
+        });
     }
 
     @EventTarget
     public void onRender3D(Render3DEvent event) {
-        if (!isState()) return;
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.level == null || mc.player == null) return;
+        if (!isEnabled()) return;
+
+        // Render world color grade
+        renderWorldColor();
+
+        // Render 3D ambient procedural particles
+        if (!this.ambientParticles.isEmpty()) {
+            List<error.util.render.world.particles.ParticleSpawn.Sprite> sprites = new ArrayList<>();
+            String curMode = this.mode.getValue();
+            error.util.render.world.particles.ParticleSpawn.Shape shape = switch (curMode) {
+                case MODE_SNOW -> error.util.render.world.particles.ParticleSpawn.Shape.SNOWFLAKE;
+                case MODE_ASH -> error.util.render.world.particles.ParticleSpawn.Shape.EMBER;
+                default -> error.util.render.world.particles.ParticleSpawn.Shape.GLOW;
+            };
+
+            for (AmbientParticle p : this.ambientParticles) {
+                float lifeFactor = 1.0F - ((float) p.age / (float) p.maxAge);
+                int alpha = (int) (ColorUtil.alpha(p.color) * Math.sin(lifeFactor * Math.PI));
+                int renderColor = ColorUtil.withAlpha(p.color, Math.max(10, alpha));
+
+                sprites.add(new error.util.render.world.particles.ParticleSpawn.Sprite(
+                        p.pos,
+                        p.size,
+                        renderColor,
+                        shape,
+                        p.age * 2.0F,
+                        lifeFactor,
+                        p.seed,
+                        0.0F
+                ));
+            }
+
+            if (!sprites.isEmpty()) {
+                this.particleSpawn.render(sprites, 0.45F, true);
+            }
+        }
     }
 
     private static double rnd(double min, double max) {
@@ -319,32 +335,18 @@ public class Atmosphere extends Module {
         Vec3 vel;
         int color;
         float size;
-        float rotation;
-        float rotationSpeed;
-        boolean isRain;
+        int age;
+        int maxAge;
+        float seed;
 
-        AmbientParticle(Vec3 pos, Vec3 vel, int color, float size, boolean isRain) {
+        AmbientParticle(Vec3 pos, Vec3 vel, int color, float size, int maxAge, float seed) {
             this.pos = pos;
             this.vel = vel;
             this.color = color;
             this.size = size;
-            this.rotation = (float) (Math.random() * 360.0);
-            this.rotationSpeed = (float) (Math.random() * 4.0 - 2.0);
-            this.isRain = isRain;
-        }
-    }
-
-    private static class GroundRipple {
-        Vec3 pos;
-        int color;
-        float size = 0.1F;
-        float alpha = 0.8F;
-        int age = 0;
-        int maxAge = 18;
-
-        GroundRipple(Vec3 pos, int color) {
-            this.pos = pos;
-            this.color = color;
+            this.age = 0;
+            this.maxAge = maxAge;
+            this.seed = seed;
         }
     }
 }

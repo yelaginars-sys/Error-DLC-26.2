@@ -58,6 +58,10 @@ public final class WorldColorRenderer {
         return INSTANCE;
     }
 
+    public static RenderPipeline getPipeline() {
+        return PIPELINE;
+    }
+
     public void render(int color, float saturation, float brightness,
                        float strength, float contrast, float snowMask,
                        float hazeStrength, float hazeDistance) {

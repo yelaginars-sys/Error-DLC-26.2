@@ -90,6 +90,16 @@ public final class MiasmWorlds {
 
         register(AffectedWorlds.lazy(
                 () -> {
+                    error.module.impl.render.Atmosphere atmo = error.module.impl.render.Atmosphere.INSTANCE;
+                    return (atmo != null && atmo.isEnabled()) ? atmo : null;
+                },
+                () -> error.util.render.WorldColorRenderer.getInstance(),
+                (atmo, renderer, context) -> atmo.renderWorldColor(),
+                r -> {}
+        ));
+
+        register(AffectedWorlds.lazy(
+                () -> {
                     error.module.impl.render.TargetEsp esp = error.module.impl.render.TargetEsp.INSTANCE;
                     boolean espActive = esp != null && esp.isEnabled();
                     boolean hasVisuals = TargetMarkers.INSTANCE.hasActive();

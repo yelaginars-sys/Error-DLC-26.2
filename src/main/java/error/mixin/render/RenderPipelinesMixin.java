@@ -52,6 +52,7 @@ public abstract class RenderPipelinesMixin {
         register(PiplinePost.WORLD_SKY_PLASMA);
         register(PiplinePost.WORLD_SATURATION);
         register(PiplinePost.WORLD_PUDDLES);
+        register(error.util.render.WorldColorRenderer.getPipeline());
 
         error.util.display.rounded.RoundedRectPipeline.init();
         error.util.display.outline.OutlinePipeline.init();
