@@ -484,7 +484,7 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
         int themeAccent = getHudAccent();
 
         var extractor = event.getGuiGraphicsExtractor();
-        if (extractor != null) {
+        if (extractor != null && Theme.isLiquidGlass()) {
             float shellRadius = curIslandH / 2.0F;
             Blur.of(islandX, islandY, curIslandW, curIslandH)
                     .radius(Math.round(shellRadius))
@@ -566,6 +566,18 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
             }
             Render2D.drawRoundedRect(x, y, w, h, radius, pvpFill);
             Render2D.drawRoundedOutline(x, y, w, h, radius, 1.0F, pvpBorder);
+        } else if (Theme.isBlack()) {
+            if (shadowBlur > 1.0F) {
+                Render2D.drawShadow(x, y, w, h, radius, shadowBlur, ColorUtil.rgba(0, 0, 0, (int) (140 * alpha)));
+            }
+            Render2D.drawRoundedRect(x, y, w, h, radius, ColorUtil.rgba(14, 14, 16, (int) (240 * alpha)));
+            Render2D.drawRoundedOutline(x, y, w, h, radius, 0.8F, ColorUtil.rgba(255, 255, 255, (int) (18 * alpha)));
+        } else if (Theme.isEnergy()) {
+            if (shadowBlur > 1.0F) {
+                Render2D.drawShadow(x, y, w, h, radius, shadowBlur, ColorUtil.rgba(0, 0, 0, (int) (110 * alpha)));
+            }
+            Render2D.drawRoundedRect(x, y, w, h, radius, ColorUtil.rgba(20, 20, 25, (int) (160 * alpha)));
+            Render2D.drawRoundedOutline(x, y, w, h, radius, 0.8F, ColorUtil.rgba(255, 255, 255, (int) (22 * alpha)));
         } else {
             int primaryAccent = getHudAccent();
             int lightDarken = ColorUtil.rgba(12, 16, 28, (int) (45 * alpha));
@@ -584,13 +596,23 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
         float subRadius = h / 2.0F;
         int primaryAccent = getHudAccent();
 
-        int lightDarken = ColorUtil.rgba(12, 16, 28, (int) (45 * alpha));
-        int frostedTint = ColorUtil.rgba(255, 255, 255, (int) (16 * alpha));
-        int glassBorder = ColorUtil.withAlpha(primaryAccent, (int) (65 * alpha));
+        if (Theme.isBlack()) {
+            Render2D.drawShadow(x, y, w, h, subRadius, 6.0F, ColorUtil.rgba(0, 0, 0, (int) (120 * alpha)));
+            Render2D.drawRoundedRect(x, y, w, h, subRadius, ColorUtil.rgba(14, 14, 16, (int) (240 * alpha)));
+            Render2D.drawRoundedOutline(x, y, w, h, subRadius, 0.8F, ColorUtil.rgba(255, 255, 255, (int) (18 * alpha)));
+        } else if (Theme.isEnergy()) {
+            Render2D.drawShadow(x, y, w, h, subRadius, 6.0F, ColorUtil.rgba(0, 0, 0, (int) (100 * alpha)));
+            Render2D.drawRoundedRect(x, y, w, h, subRadius, ColorUtil.rgba(20, 20, 25, (int) (160 * alpha)));
+            Render2D.drawRoundedOutline(x, y, w, h, subRadius, 0.8F, ColorUtil.rgba(255, 255, 255, (int) (22 * alpha)));
+        } else {
+            int lightDarken = ColorUtil.rgba(12, 16, 28, (int) (45 * alpha));
+            int frostedTint = ColorUtil.rgba(255, 255, 255, (int) (16 * alpha));
+            int glassBorder = ColorUtil.withAlpha(primaryAccent, (int) (65 * alpha));
 
-        Render2D.drawRoundedRect(x, y, w, h, subRadius, lightDarken);
-        Render2D.drawRoundedRect(x, y, w, h, subRadius, frostedTint);
-        Render2D.drawRoundedOutline(x, y, w, h, subRadius, 0.7F, glassBorder);
+            Render2D.drawRoundedRect(x, y, w, h, subRadius, lightDarken);
+            Render2D.drawRoundedRect(x, y, w, h, subRadius, frostedTint);
+            Render2D.drawRoundedOutline(x, y, w, h, subRadius, 0.7F, glassBorder);
+        }
 
         float curX = x + 6.0F;
         float textY = y + (h - 7.0F) / 2.0F;

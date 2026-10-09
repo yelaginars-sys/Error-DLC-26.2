@@ -208,26 +208,9 @@ public final class TargetHud extends HudElement implements error.IMinecraft {
         float curY = this.y;
         int accent = Theme.getAccentColor();
 
-        // 1. Main Background Card in Liquid Glass
-        Render2D.drawShadow(curX, curY, CARD_W, CARD_H, CARD_R, 6.0F, ColorUtil.rgba(0, 0, 0, (int) (70 * a)));
+        // 1. Main Background Card
         GuiGraphicsExtractor extractor = event.getGuiGraphicsExtractor();
-        if (extractor != null) {
-            Render2DUtil.flush();
-            Blur.of(curX, curY, CARD_W, CARD_H)
-                    .radius(Math.round(CARD_R))
-                    .type(BlurType.KAWASE)
-                    .strength(4)
-                    .tint(Color.rgba(14, 16, 22, (int) (120 * a)))
-                    .alpha(a)
-                    .render(extractor);
-
-            Outline.of(curX, curY, CARD_W, CARD_H)
-                    .radius(Math.round(CARD_R))
-                    .thickness(0.8F)
-                    .verticalGradient(Color.WHITE, Color.rgba(255, 255, 255, 30))
-                    .alpha(a)
-                    .render(extractor);
-        }
+        Render2D.drawHudCard(extractor, curX, curY, CARD_W, CARD_H, CARD_R, a, accent);
 
         // 2. Avatar on the left
         Identifier skin = STEVE_SKIN;

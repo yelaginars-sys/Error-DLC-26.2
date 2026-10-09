@@ -20,13 +20,52 @@ public final class Theme {
     private static String glassStyle = "AURORA";
 
     @Getter @Setter
-    private static String uiStyle = "Жидкое стекло"; // "Жидкое стекло", "Новый Год"
+    private static String uiStyle = "Жидкое стекло"; // "Жидкое стекло", "Energy", "Черный", "Новый Год"
+
+    public static String getEffectiveUiStyle() {
+        error.module.impl.render.Interface iface = error.module.impl.render.Interface.getInstance();
+        if (iface != null && iface.hudTheme != null) {
+            String val = iface.hudTheme.getValue();
+            if (val != null && !"По теме GUI".equalsIgnoreCase(val)) {
+                return val;
+            }
+        }
+        return uiStyle != null ? uiStyle : "Жидкое стекло";
+    }
 
     public static boolean isLiquidGlass() {
-        return !"Новый Год".equalsIgnoreCase(uiStyle);
+        String s = getEffectiveUiStyle();
+        return "Жидкое стекло".equalsIgnoreCase(s) || "Liquid Glass".equalsIgnoreCase(s);
+    }
+
+    public static boolean isEnergy() {
+        String s = getEffectiveUiStyle();
+        return "Energy".equalsIgnoreCase(s) || "Энерджи".equalsIgnoreCase(s);
+    }
+
+    public static boolean isBlack() {
+        String s = getEffectiveUiStyle();
+        return "Черный".equalsIgnoreCase(s) || "Black".equalsIgnoreCase(s) || "Тёмный".equalsIgnoreCase(s);
     }
 
     public static boolean isNewYear() {
+        String s = getEffectiveUiStyle();
+        return "Новый Год".equalsIgnoreCase(s);
+    }
+
+    public static boolean isGuiLiquidGlass() {
+        return "Жидкое стекло".equalsIgnoreCase(uiStyle) || "Liquid Glass".equalsIgnoreCase(uiStyle);
+    }
+
+    public static boolean isGuiEnergy() {
+        return "Energy".equalsIgnoreCase(uiStyle) || "Энерджи".equalsIgnoreCase(uiStyle);
+    }
+
+    public static boolean isGuiBlack() {
+        return "Черный".equalsIgnoreCase(uiStyle) || "Black".equalsIgnoreCase(uiStyle) || "Тёмный".equalsIgnoreCase(uiStyle);
+    }
+
+    public static boolean isGuiNewYear() {
         return "Новый Год".equalsIgnoreCase(uiStyle);
     }
 

@@ -184,25 +184,8 @@ public final class StaffHud extends HudElement implements error.IMinecraft {
 
         GuiGraphicsExtractor extractor = event.getGuiGraphicsExtractor();
 
-        // 1. Header Capsule in Liquid Glass
-        Render2D.drawShadow(curX, curY, this.width, HEADER_H, PILL_R, 6.0F, ColorUtil.rgba(0, 0, 0, 75));
-        if (extractor != null) {
-            Render2DUtil.flush();
-            Blur.of(curX, curY, this.width, HEADER_H)
-                    .radius(Math.round(PILL_R))
-                    .type(BlurType.KAWASE)
-                    .strength(4)
-                    .tint(Color.rgba(14, 16, 22, 115))
-                    .alpha(1.0F)
-                    .render(extractor);
-
-            Outline.of(curX, curY, this.width, HEADER_H)
-                    .radius(Math.round(PILL_R))
-                    .thickness(0.85F)
-                    .verticalGradient(Color.WHITE, Color.rgba(255, 255, 255, 32))
-                    .alpha(1.0F)
-                    .render(extractor);
-        }
+        // 1. Header Capsule
+        Render2D.drawHudCard(extractor, curX, curY, this.width, HEADER_H, PILL_R, 1.0F, accent);
 
         // Energy Glyph "r"
         Fonts.drawString(Fonts.ENERGY, "r", curX + 6.0F, curY + 2.5F, 10.0F, accent);
@@ -224,46 +207,9 @@ public final class StaffHud extends HudElement implements error.IMinecraft {
             float rightPillW = statusW + 12.0F;
             float rightPillX = curX + this.width - rightPillW;
 
-            // Shadows
-            Render2D.drawShadow(curX, curY, leftPillW, ROW_H, PILL_R, 4.0F, ColorUtil.rgba(0, 0, 0, (int) (50 * e.alpha)));
-            Render2D.drawShadow(rightPillX, curY, rightPillW, ROW_H, PILL_R, 4.0F, ColorUtil.rgba(0, 0, 0, (int) (50 * e.alpha)));
-
-            // Liquid Glass Kawase Blur & Specular Outlines
-            if (extractor != null) {
-                Render2DUtil.flush();
-
-                // Left Capsule Blur & Outline
-                Blur.of(curX, curY, leftPillW, ROW_H)
-                        .radius(Math.round(PILL_R))
-                        .type(BlurType.KAWASE)
-                        .strength(3)
-                        .tint(Color.rgba(14, 16, 22, (int) (110 * e.alpha)))
-                        .alpha(e.alpha)
-                        .render(extractor);
-
-                Outline.of(curX, curY, leftPillW, ROW_H)
-                        .radius(Math.round(PILL_R))
-                        .thickness(0.7F)
-                        .verticalGradient(Color.rgba(255, 255, 255, (int) (28 * e.alpha)), Color.rgba(255, 255, 255, (int) (6 * e.alpha)))
-                        .alpha(e.alpha)
-                        .render(extractor);
-
-                // Right Capsule Blur & Outline
-                Blur.of(rightPillX, curY, rightPillW, ROW_H)
-                        .radius(Math.round(PILL_R))
-                        .type(BlurType.KAWASE)
-                        .strength(3)
-                        .tint(Color.rgba(14, 16, 22, (int) (110 * e.alpha)))
-                        .alpha(e.alpha)
-                        .render(extractor);
-
-                Outline.of(rightPillX, curY, rightPillW, ROW_H)
-                        .radius(Math.round(PILL_R))
-                        .thickness(0.7F)
-                        .verticalGradient(Color.rgba(255, 255, 255, (int) (28 * e.alpha)), Color.rgba(255, 255, 255, (int) (6 * e.alpha)))
-                        .alpha(e.alpha)
-                        .render(extractor);
-            }
+            // Pills (Left & Right)
+            Render2D.drawHudPill(extractor, curX, curY, leftPillW, ROW_H, PILL_R, e.alpha, accent);
+            Render2D.drawHudPill(extractor, rightPillX, curY, rightPillW, ROW_H, PILL_R, e.alpha, accent);
 
             // Avatar
             float avatarY = curY + (ROW_H - AVATAR_SIZE) * 0.5F;

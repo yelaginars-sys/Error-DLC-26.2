@@ -36,6 +36,7 @@ public final class Interface extends Module {
     public final CheckBox scoreboardRemoveScores = checkbox("Скрывать числа скорборда", true);
     public final CheckBox scoreboardShadow = checkbox("Тень текста Скорборда", true);
     public final SliderSetting scoreboardScale = slider("Размер Скорборда", 1.0F, 0.5F, 2.0F, 0.05F);
+    public final ModeSetting hudTheme      = mode("Стиль темы", "По теме GUI", "По теме GUI", "Жидкое стекло", "Energy", "Черный", "Новый Год");
     public final ModeSetting colorMode     = mode("Цвет HUD", "Тема", "Тема", "Свой");
     public final ColorSetting customColor  = color("Свой цвет", ColorUtil.rgba(0, 180, 255, 255));
 

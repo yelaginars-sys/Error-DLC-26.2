@@ -8,6 +8,9 @@ import error.module.impl.misc.*;
 import error.module.impl.movement.*;
 import error.module.impl.player.*;
 import error.module.impl.render.*;
+import error.module.impl.render.Atmosphere;
+import error.module.impl.render.BaseFinder;
+import error.module.impl.render.Chams;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,7 +22,6 @@ public class Modules {
     public ClickGui clickGui;
     public ClientSounds clientSounds;
     public Sprint sprint;
-    public AuraModule auraModule;
     public NameTags nameTags;
     public Interface anInterface;
     public GuiWalk guiWalk;
@@ -121,6 +123,7 @@ public class Modules {
     public BaseFinder baseFinder;
     public Chams chams;
 
+
     public void init() {
         this.clickGui = new ClickGui();
         this.anInterface = new Interface();
@@ -185,7 +188,6 @@ public class Modules {
         this.fakePlayer = new FakePlayer();
         this.ambience = new Ambience();
         this.nameTags = new NameTags();
-        this.auraModule = new AuraModule();
         this.worldParticles = new WorldParticles();
         this.particles = new Particles();
         this.clientSounds = new ClientSounds();
@@ -286,7 +288,6 @@ public class Modules {
                 this.fakePlayer,
                 this.ambience,
                 this.nameTags,
-                this.auraModule,
                 this.worldParticles,
                 this.particles,
                 this.clientSounds,
@@ -326,7 +327,11 @@ public class Modules {
                 this.wardenHelper,
                 this.totemSounds,
                 this.godMode,
-                this.windHop
+                this.windHop,
+                this.arrows,
+                this.atmosphere,
+                this.baseFinder,
+                this.chams
         );
 
         if (this.maceHelper != null) this.maceHelper.setState(true);
@@ -350,6 +355,10 @@ public class Modules {
             }
         }
         return null;
+    }
+
+    public Module getAuraModule() {
+        return getModule(error.module.impl.combat.AuraModule.class);
     }
 
     public Module getModule(String name) {

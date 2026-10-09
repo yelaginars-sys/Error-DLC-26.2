@@ -152,31 +152,8 @@ public final class ArrayListHud extends HudElement implements error.IMinecraft {
             int rowColor = Theme.getGradientColor(index * 30);
             int rowColorWithAlpha = ColorUtil.withAlpha(rowColor, (int) (255 * a));
 
-            // 1. Drop shadow for depth
-            Render2D.drawShadow(rowX, curY, rowW, ROW_H, CARD_R, 4.0F, ColorUtil.rgba(0, 0, 0, (int) (50 * a)));
-
-            // 2. Liquid Glass: Kawase Blur pass & subtle frosted specular outline
-            if (extractor != null) {
-                Render2DUtil.flush();
-
-                Blur.of(rowX, curY, rowW, ROW_H)
-                        .radius(Math.round(CARD_R))
-                        .type(BlurType.KAWASE)
-                        .strength(3)
-                        .tint(Color.rgba(14, 15, 22, (int) (115 * a)))
-                        .alpha(a)
-                        .render(extractor);
-
-                Outline.of(rowX, curY, rowW, ROW_H)
-                        .radius(Math.round(CARD_R))
-                        .thickness(0.75F)
-                        .verticalGradient(
-                                Color.rgba(255, 255, 255, (int) (32 * a)),
-                                Color.rgba(255, 255, 255, (int) (8 * a))
-                        )
-                        .alpha(a)
-                        .render(extractor);
-            }
+            // 1. Background Card (respects active theme)
+            Render2D.drawHudCard(extractor, rowX, curY, rowW, ROW_H, CARD_R, a, rowColor);
 
             // 3. Side accent bar (2px width) on outer edge (matching Energy ArrayList)
             float barX = rightSide ? (rowX + rowW - BAR_W) : rowX;

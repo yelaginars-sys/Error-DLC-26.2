@@ -58,9 +58,8 @@ public final class CustomHotbarHud extends HudElement {
 
         int accent = Theme.getAccentColor();
 
-        // 1. Draw Liquid Glass Background Capsule with Shadow
-        Render2D.drawShadow(this.x, this.y, BAR_W, BAR_H, 7.0F, 6.0F, ColorUtil.rgba(0, 0, 0, 75));
-        Render2D.drawLiquidGlass(this.x, this.y, BAR_W, BAR_H, 7.0F, 1.0F, accent);
+        // 1. Draw Background Capsule (respects active theme)
+        Render2D.drawHudCard(event.getGuiGraphicsExtractor(), this.x, this.y, BAR_W, BAR_H, 7.0F, 1.0F, accent);
 
         Player player = error.IMinecraft.mc.player;
         int selectedSlot = Math.max(0, Math.min(8, player.getInventory().getSelectedSlot()));
