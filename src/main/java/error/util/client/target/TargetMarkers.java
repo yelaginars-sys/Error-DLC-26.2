@@ -42,10 +42,10 @@ public final class TargetMarkers {
 
         if (isGhosts2 && target != null) {
             float speed = esp.rotSpeed.get();
-            float baseSize = esp.size.get() * 16.0F;
+            float baseSize = esp.size.get() * 0.28F;
             float alpha = esp.opacity.get();
             boolean hit = esp.colorOnHit.getValue();
-            this.orbs.renderSouls(target, alpha, tickDelta, 4, baseSize, 0.85F * esp.size.get(), speed, false, hit, 0xFFFF3333, "Кастом", color);
+            this.orbs.renderSouls(target, alpha, tickDelta, 3, baseSize, 0.35F * esp.size.get(), speed, false, hit, 0xFFFF3333, "Кастом", color);
         } else {
             this.orbs.reset();
         }

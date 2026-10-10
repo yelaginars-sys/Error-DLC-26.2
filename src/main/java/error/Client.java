@@ -46,6 +46,10 @@ public class Client implements ModInitializer {
         this.eventManager.register(HudManager.getInstance());
         this.eventManager.register(Tps.INSTANCE);
         error.event.ServerEventManager.getInstance();
+        dev.syntrix.clienttest.client.gui.ClickGuiController.initialize();
+        dev.syntrix.clienttest.client.combat.CrystalAuraModule.initialize();
+        dev.syntrix.clienttest.client.visual.VisualFriends.initialize();
+        dev.syntrix.clienttest.client.visual.VisualWorldRenderer.initialize();
         } finally {
             error.config.ConfigManager.isLoadingConfig = false;
         }

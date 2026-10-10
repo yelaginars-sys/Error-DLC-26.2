@@ -276,21 +276,29 @@ public class Render2D {
     // ===================== LIQUID GLASS & HUD CARDS =====================
 
     public static void drawLiquidGlass(float x, float y, float width, float height, float radius, float alpha) {
-        drawLiquidGlass(x, y, width, height, radius, alpha, Theme.getAccentColor());
+        drawLiquidGlass(null, x, y, width, height, radius, alpha, Theme.getAccentColor());
     }
 
     public static void drawLiquidGlass(float x, float y, float width, float height, float radius, float alpha, int accentColor) {
+        drawLiquidGlass(null, x, y, width, height, radius, alpha, accentColor);
+    }
+
+    public static void drawLiquidGlass(GuiGraphicsExtractor extractor, float x, float y, float width, float height, float radius, float alpha) {
+        drawLiquidGlass(extractor, x, y, width, height, radius, alpha, Theme.getAccentColor());
+    }
+
+    public static void drawLiquidGlass(GuiGraphicsExtractor extractor, float x, float y, float width, float height, float radius, float alpha, int accentColor) {
         if (alpha <= 0.001F || width <= 0.0F || height <= 0.0F) return;
 
         // If non-liquid theme is selected, route to the appropriate theme card
         if (Theme.isBlack() || Theme.isNewYear()) {
-            drawHudCard(null, x, y, width, height, radius, alpha, accentColor);
+            drawHudCard(extractor, x, y, width, height, radius, alpha, accentColor);
             return;
         }
 
         // 1. Exact frosted Kawase Blur & Specular Outline from LiquidClickGui
-        GuiGraphicsExtractor extractor = RenderExtend.currentGuiGraphicsExtractor();
-        if (extractor != null) {
+        GuiGraphicsExtractor ext = extractor != null ? extractor : RenderExtend.currentGuiGraphicsExtractor();
+        if (ext != null) {
             Render2DUtil.flush();
             float shellRadius = Math.min(radius, Math.min(width, height) * 0.5F);
             try {
@@ -300,14 +308,14 @@ public class Render2D {
                         .strength(4)
                         .tint(Color.rgba(0, 0, 0, Math.round(75 * alpha)))
                         .alpha(alpha)
-                        .render(extractor);
+                        .render(ext);
 
                 Outline.of(x, y, width, height)
                         .radius(shellRadius)
                         .thickness(1.0F)
                         .verticalGradient(Color.WHITE, Color.rgba(255, 255, 255, 32))
                         .alpha(alpha)
-                        .render(extractor);
+                        .render(ext);
 
                 DisplayBatcher.flush();
             } catch (Throwable ignored) {}
@@ -352,20 +360,24 @@ public class Render2D {
                             .radius(Math.round(radius))
                             .type(BlurType.KAWASE)
                             .strength(3)
-                            .tint(Color.rgba(10, 24, 42, (int) (115 * alpha)))
+                            .tint(Color.rgba(10, 24, 46, (int) (100 * alpha)))
                             .alpha(alpha)
                             .render(ext);
 
                     Outline.of(x, y, width, height)
                             .radius(Math.round(radius))
                             .thickness(0.80F)
-                            .verticalGradient(Color.rgba(220, 248, 255, (int) (165 * alpha)), Color.rgba(130, 205, 255, (int) (50 * alpha)))
+                            .verticalGradient(Color.rgba(160, 230, 255, (int) (130 * alpha)), Color.rgba(100, 200, 255, (int) (80 * alpha)))
                             .alpha(alpha)
                             .render(ext);
 
                     DisplayBatcher.flush();
                 } catch (Throwable ignored) {}
             }
+            int pillFill = ColorUtil.rgba(10, 24, 46, (int) (185 * alpha));
+            int pillOutline = ColorUtil.rgba(110, 215, 255, (int) (160 * alpha));
+            drawRoundedRect(x, y, width, height, radius, pillFill);
+            drawRoundedOutline(x, y, width, height, radius, 0.75F, pillOutline);
             drawFrostSheen(x, y, width, height, radius, alpha);
         } else {
             // Liquid Glass (default)
@@ -427,20 +439,24 @@ public class Render2D {
                             .radius(shellRadius)
                             .type(BlurType.KAWASE)
                             .strength(4)
-                            .tint(Color.rgba(10, 24, 42, (int) (125 * alpha)))
+                            .tint(Color.rgba(10, 24, 46, (int) (110 * alpha)))
                             .alpha(alpha)
                             .render(ext);
 
                     Outline.of(x, y, width, height)
                             .radius(shellRadius)
                             .thickness(0.85F)
-                            .verticalGradient(Color.rgba(225, 248, 255, (int) (185 * alpha)), Color.rgba(135, 205, 255, (int) (55 * alpha)))
+                            .verticalGradient(Color.rgba(160, 230, 255, (int) (140 * alpha)), Color.rgba(110, 205, 255, (int) (90 * alpha)))
                             .alpha(alpha)
                             .render(ext);
 
                     DisplayBatcher.flush();
                 } catch (Throwable ignored) {}
             }
+            int cardFill = ColorUtil.rgba(10, 24, 46, (int) (185 * alpha));
+            int cardOutline = ColorUtil.rgba(110, 215, 255, (int) (160 * alpha));
+            drawRoundedRect(x, y, width, height, radius, cardFill);
+            drawRoundedOutline(x, y, width, height, radius, 0.80F, cardOutline);
             drawFrostSheen(x, y, width, height, radius, alpha);
         } else {
             // Liquid Glass (default)
@@ -473,61 +489,27 @@ public class Render2D {
 
     public static void drawFrostSheen(float x, float y, float width, float height, float radius, float alpha) {
         if (alpha <= 0.01F || width <= 2.0F || height <= 2.0F) return;
-        long time = System.currentTimeMillis();
 
-        // 1. Crystalline icy top edge glint (ice rim light along upper bezel)
-        float rimW = Math.max(2.0F, width - radius * 1.2F);
-        float rimX = x + (width - rimW) / 2.0F;
-        drawRoundedRect(rimX, y + 0.6F, rimW, 1.2F, 0.6F, ColorUtil.rgba(240, 252, 255, (int) (165 * alpha)));
+        // 1. Full-surface organic frost pattern across the ENTIRE button / card / panel
+        int patCol = ColorUtil.rgba(200, 240, 255, (int) (44 * alpha));
+        drawTexture(FROST_PATTERN_TEX, x, y, width, height, radius, patCol);
 
-        // 2. Secondary soft crystalline gradient glow under top edge
-        drawRoundedRect(rimX, y + 1.8F, rimW, 2.2F, 1.0F, ColorUtil.rgba(180, 230, 255, (int) (40 * alpha)));
+        // 2. Translucent frosty ice specular reflection across top half
+        int sheenTop = ColorUtil.rgba(220, 248, 255, (int) (26 * alpha));
+        drawGradientRound(x, y, width, height * 0.65F, radius, sheenTop, sheenTop, 0, 0);
 
-        // 3. Natural frost feather crystals on corners/borders
-        float cornerFrostSize = Math.min(width * 0.45F, Math.min(height * 0.9F, 52.0F));
-        if (cornerFrostSize > 12.0F) {
-            // Top-Left organic frost crystal plume
-            int frostColTL = ColorUtil.rgba(235, 248, 255, (int) (130 * alpha));
-            drawTexture(FROST_CORNER_TEX, x, y, cornerFrostSize, cornerFrostSize, frostColTL);
+        // 3. For larger panels (ClickGUI window, modals, large cards): add organic frost crystal plumes
+        float cornerFrostSize = Math.min(width * 0.35F, Math.min(height * 0.65F, 48.0F));
+        if (cornerFrostSize > 14.0F && width >= 70.0F && height >= 30.0F) {
+            int frostColTL = ColorUtil.rgba(215, 245, 255, (int) (48 * alpha));
+            drawTexture(FROST_CORNER_TEX, x, y, cornerFrostSize, cornerFrostSize, radius, frostColTL);
 
-            // Bottom-Right organic frost crystal plume (flipped UV)
-            if (width > 60.0F && height > 35.0F) {
+            if (width > 90.0F && height > 40.0F) {
                 float brSize = cornerFrostSize * 0.85F;
-                int frostColBR = ColorUtil.rgba(215, 242, 255, (int) (100 * alpha));
+                int frostColBR = ColorUtil.rgba(195, 235, 255, (int) (38 * alpha));
                 drawTexture(FROST_CORNER_TEX, x + width - brSize, y + height - brSize, brSize, brSize,
-                        1.0F, 1.0F, 0.0F, 0.0F, 0.0F, frostColBR, FilterMode.LINEAR);
+                        1.0F, 1.0F, 0.0F, 0.0F, radius, frostColBR, FilterMode.LINEAR);
             }
-        }
-
-        // 4. For large panels (ClickGUI window, modals): diffuse subtle frost pattern across surface
-        if (width >= 160.0F && height >= 100.0F) {
-            float patW = Math.min(width * 0.65F, 180.0F);
-            float patH = Math.min(height * 0.65F, 180.0F);
-            float patX = x + width - patW - 8.0F;
-            float patY = y + 8.0F;
-            int patCol = ColorUtil.rgba(220, 245, 255, (int) (48 * alpha));
-            drawTexture(FROST_PATTERN_TEX, patX, patY, patW, patH, patCol);
-        }
-
-        // 5. Breathing glacial glint across upper glass edge (soft sine shimmer instead of harsh vertical stripe)
-        float shimmerPhase = (float) ((time % 4500L) / 4500.0D);
-        float shimmerAlpha = (float) Math.sin(shimmerPhase * Math.PI) * 0.35F * alpha;
-        if (shimmerAlpha > 0.01F) {
-            float sLen = Math.min(width * 0.5F, 90.0F);
-            float sStartX = x + (width - sLen) * shimmerPhase;
-            drawRoundedRect(sStartX, y + 0.8F, sLen, 1.4F, 0.7F,
-                    ColorUtil.rgba(255, 255, 255, (int) (255 * shimmerAlpha)));
-        }
-
-        // 6. Delicate frosty corner sparkles
-        float pulse1 = 0.5F + 0.5F * (float) Math.sin(time * 0.0028F);
-        int sparkleColor1 = ColorUtil.rgba(225, 248, 255, (int) ((70 + 60 * pulse1) * alpha));
-        drawCircle(x + Math.min(radius, 6.0F) + 1.0F, y + Math.min(radius, 6.0F) + 1.0F, 1.2F, sparkleColor1);
-
-        if (width > 80.0F) {
-            float pulse2 = 0.5F + 0.5F * (float) Math.cos(time * 0.0033F + 1.5D);
-            int sparkleColor2 = ColorUtil.rgba(210, 242, 255, (int) ((50 + 55 * pulse2) * alpha));
-            drawCircle(x + width - Math.min(radius, 6.0F) - 1.5F, y + Math.min(radius, 6.0F) + 1.0F, 1.0F, sparkleColor2);
         }
     }
 }

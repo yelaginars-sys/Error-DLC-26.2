@@ -1,0 +1,17 @@
+{
+  "required": true,
+  "package": "dev.syntrix.clienttest.client.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "client": [
+    "CrystalConnectionMixin",
+    "CrystalInputMixin",
+    "CrystalInteractionManagerAccessor",
+    "CrystalPlayerTickMixin",
+    "CrystalServerMotionMixin",
+    "CrystalServerPacketMixin",
+    "CrystalVerifiedBlockMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

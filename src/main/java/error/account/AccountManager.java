@@ -77,6 +77,21 @@ public class AccountManager {
         }
     }
 
+    public void removeAll() {
+        accounts.clear();
+        favorites.clear();
+        activeAccount = "";
+        save();
+        ChatUtil.info("Все аккаунты успешно удалены!");
+    }
+
+    public void randomAccount() {
+        String[] prefixes = {"User", "Player", "Shadow", "Night", "Frost", "Ghost", "Storm", "Viper", "Echo", "Blade"};
+        String rnd = prefixes[new Random().nextInt(prefixes.length)] + "_" + (1000 + new Random().nextInt(9000));
+        addAccount(rnd);
+        selectAccount(rnd);
+    }
+
     public void toggleFavorite(String name) {
         if (name == null || name.trim().isEmpty()) return;
         final String targetName = name.trim();
@@ -178,8 +193,13 @@ public class AccountManager {
             }
             root.add("favorites", favArray);
 
-            prefs.put("accounts_json", gson.toJson(root));
-            prefs.flush();
+            String json = gson.toJson(root);
+            autoSaveExecutor.submit(() -> {
+                try {
+                    prefs.put("accounts_json", json);
+                    prefs.flush();
+                } catch (Exception ignored) {}
+            });
         } catch (Exception e) {
             e.printStackTrace();
         }

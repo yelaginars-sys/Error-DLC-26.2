@@ -88,15 +88,7 @@ public final class MiasmWorlds {
                 AmbienceRenderer::release
         ));
 
-        register(AffectedWorlds.lazy(
-                () -> {
-                    error.module.impl.render.Atmosphere atmo = error.module.impl.render.Atmosphere.INSTANCE;
-                    return (atmo != null && atmo.isEnabled()) ? atmo : null;
-                },
-                () -> error.util.render.WorldColorRenderer.getInstance(),
-                (atmo, renderer, context) -> atmo.renderWorldColor(),
-                r -> {}
-        ));
+
 
         register(AffectedWorlds.lazy(
                 () -> {

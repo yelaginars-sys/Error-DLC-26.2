@@ -15,7 +15,14 @@
     ]
   },
   "mixins": [
-    "error.mixins.json"
+    "error.mixins.json",
+    "crystalaura.client.mixins.json",
+    "zakoopt.mixins.json",
+    "zakoopt-1.21.8+.mixins.json",
+    "zakoopt-1.21.9+.mixins.json",
+    "zakoopt-1.21.11+.mixins.json",
+    "zakoopt-26.x.mixins.json",
+    "zakoopt-26.2.mixins.json"
   ],
   "depends": {
     "fabricloader": ">=${loader_version}",

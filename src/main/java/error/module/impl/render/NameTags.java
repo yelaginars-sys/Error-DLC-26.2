@@ -60,21 +60,21 @@ import static error.util.client.clients.Theme.*;
 public final class NameTags extends Module {
 
     private static final float SCALE = 1;
-    private static final float PILL_HEIGHT = 20;
-    private static final float RADIUS = 6;
-    private static final float PADDING = 5;
-    private static final float GAP = 4;
+    private static final float PILL_HEIGHT = 15.0f;
+    private static final float RADIUS = 4.5f;
+    private static final float PADDING = 4.0f;
+    private static final float GAP = 3.5f;
 
-    private static final float BASE_HEAD_SIZE = 12;
-    private static final float BIG_HEAD_SIZE = 15;
+    private static final float BASE_HEAD_SIZE = 9.5f;
+    private static final float BIG_HEAD_SIZE = 12.0f;
 
-    private static final float ITEM_SIZE = 14;
+    private static final float ITEM_SIZE = 12.0f;
 
-    private static final float EQUIP_ITEM_SIZE = 16;
-    private static final float EQUIP_VALUABLE_SIZE = 20;
+    private static final float EQUIP_ITEM_SIZE = 16.0f;
+    private static final float EQUIP_VALUABLE_SIZE = 19.0f;
 
-    private static final float DIVIDER_HEIGHT = 10;
-    private static final float TEXT_SIZE = 9.5f;
+    private static final float DIVIDER_HEIGHT = 7.5f;
+    private static final float TEXT_SIZE = 7.8f;
     private static final float HEAD_OFFSET = 0.28f;
 
     private static final EquipmentSlot[] EQUIPMENT_ORDER = {
@@ -260,28 +260,33 @@ public final class NameTags extends Module {
 
         if (this.logOut.getValue()) {
             Iterator<Map.Entry<UUID, CachedPlayer>> cacheIt = playerCache.entrySet().iterator();
+            var connection = mc.getConnection();
             while (cacheIt.hasNext()) {
                 Map.Entry<UUID, CachedPlayer> entry = cacheIt.next();
                 UUID uuid = entry.getKey();
                 CachedPlayer cached = entry.getValue();
 
                 if (!currentFramePlayers.contains(uuid)) {
-                    if (cached.isAlive && !loggedOutPlayers.containsKey(uuid)) {
-                        loggedOutPlayers.put(uuid, new LoggedOutPlayer(
-                                cached.uuid,
-                                cached.name,
-                                cached.skin,
-                                cached.position,
-                                cached.height,
-                                System.currentTimeMillis(),
-                                cached.equipment,
-                                cached.donates,
-                                cached.health,
-                                cached.maxHealth,
-                                cached.isFriend
-                        ));
+                    // Only create a LogOut marker if the player is truly gone from tablist / server
+                    boolean stillOnline = connection != null && connection.getPlayerInfo(uuid) != null;
+                    if (!stillOnline) {
+                        if (cached.isAlive && !loggedOutPlayers.containsKey(uuid)) {
+                            loggedOutPlayers.put(uuid, new LoggedOutPlayer(
+                                    cached.uuid,
+                                    cached.name,
+                                    cached.skin,
+                                    cached.position,
+                                    cached.height,
+                                    System.currentTimeMillis(),
+                                    cached.equipment,
+                                    cached.donates,
+                                    cached.health,
+                                    cached.maxHealth,
+                                    cached.isFriend
+                            ));
+                        }
+                        cacheIt.remove();
                     }
-                    cacheIt.remove();
                 }
             }
 
@@ -355,14 +360,14 @@ public final class NameTags extends Module {
         if (healthText != null) width += gap + dividerWidth + gap + hpWidth;
         width += gap + dividerWidth + gap + timerWidth;
 
-        float pillHeight = (highlightValuables.getValue() ? (PILL_HEIGHT + 4.0F) : PILL_HEIGHT) * unit;
+        float pillHeight = (highlightValuables.getValue() ? (PILL_HEIGHT + 2.0F) : PILL_HEIGHT) * unit;
         float pillX = anchor.x() - width / 2.0F;
         float pillY = anchor.y() - pillHeight;
         float centerY = pillY + pillHeight / 2.0F;
         float textY = font.centeredTextY(centerY, textSize);
 
         int tagAccent = logged.isFriend ? ColorUtil.rgba(85, 255, 85, 255) : ColorUtil.rgba(255, 75, 75, 255);
-        Render2D.drawLiquidGlass(pillX, pillY, width, pillHeight, RADIUS * unit, alpha, tagAccent);
+        Render2D.drawLiquidGlass(event.getGuiGraphicsExtractor(), pillX, pillY, width, pillHeight, RADIUS * unit, alpha, tagAccent);
 
         float cursor = pillX + PADDING * unit;
 
@@ -543,7 +548,7 @@ public final class NameTags extends Module {
         width += nameWidth;
         if (healthText != null) width += gap + dividerWidth + gap + hpWidth;
 
-        float pillHeight = (hasHead && highlightValuables.getValue() ? (PILL_HEIGHT + 4.0F) : PILL_HEIGHT) * unit;
+        float pillHeight = (hasHead && highlightValuables.getValue() ? (PILL_HEIGHT + 2.0F) : PILL_HEIGHT) * unit;
         float pillX = anchor.x() - width / 2.0F;
         float pillY = anchor.y() - pillHeight;
         float centerY = pillY + pillHeight / 2.0F;
@@ -551,7 +556,7 @@ public final class NameTags extends Module {
 
         int tagAccent = isFriend ? ColorUtil.rgba(85, 255, 85, 255) :
                 (targetFactor > 0.05F ? ColorUtil.rgba(255, 75, 75, 255) : Theme.getAccentColor());
-        Render2D.drawLiquidGlass(pillX, pillY, width, pillHeight, RADIUS * unit, 1.0F, tagAccent);
+        Render2D.drawLiquidGlass(event.getGuiGraphicsExtractor(), pillX, pillY, width, pillHeight, RADIUS * unit, 1.0F, tagAccent);
 
         float cursor = pillX + PADDING * unit;
 
@@ -832,7 +837,7 @@ public final class NameTags extends Module {
         float pillX = anchor.x() - pillWidth / 2.0F;
         float pillY = anchor.y() - totalHeight;
 
-        Render2D.drawLiquidGlass(pillX, pillY, pillWidth, totalHeight, RADIUS * unit, 1.0F, Theme.getAccentColor());
+        Render2D.drawLiquidGlass(event.getGuiGraphicsExtractor(), pillX, pillY, pillWidth, totalHeight, RADIUS * unit, 1.0F, Theme.getAccentColor());
 
         float cursorY = pillY + PADDING * unit;
 
@@ -892,7 +897,7 @@ public final class NameTags extends Module {
         float centerY = pillY + pillHeight / 2.0F;
         float textY = font.centeredTextY(centerY, style.textSize());
 
-        Render2D.drawLiquidGlass(pillX, pillY, width, pillHeight, RADIUS * unit, 1.0F, Theme.getAccentColor());
+        Render2D.drawLiquidGlass(event.getGuiGraphicsExtractor(), pillX, pillY, width, pillHeight, RADIUS * unit, 1.0F, Theme.getAccentColor());
 
         var extractor = event.getGuiGraphicsExtractor();
         if (extractor != null) {
@@ -938,7 +943,7 @@ public final class NameTags extends Module {
         float centerY = pillY + pillHeight / 2.0F;
         float textY = font.centeredTextY(centerY, textSize);
 
-        Render2D.drawLiquidGlass(pillX, pillY, width, pillHeight, RADIUS * unit, 1.0F, Theme.getAccentColor());
+        Render2D.drawLiquidGlass(event.getGuiGraphicsExtractor(), pillX, pillY, width, pillHeight, RADIUS * unit, 1.0F, Theme.getAccentColor());
 
         float cursor = pillX + PADDING * unit;
 

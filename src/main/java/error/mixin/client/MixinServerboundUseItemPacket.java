@@ -25,6 +25,9 @@ public abstract class MixinServerboundUseItemPacket {
         if (error.module.impl.misc.ServerHelper.isThrowingWindCharge) {
             return 90.0F;
         }
+        if (error.module.impl.combat.ExpThrow.isThrowingExp) {
+            return 90.0F;
+        }
         if (RotationHandler.isActive()) {
             return RotationHandler.getServerPitch();
         }

@@ -62,14 +62,14 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
 
     private static final long CONTENT_TRANSITION_DURATION = 260L;
     private static final long MUSIC_EXPANDED_HOLD = 3500L;
-    private static final long MEDIA_REFRESH_INTERVAL = 600L;
+    private static final long MEDIA_REFRESH_INTERVAL = 2500L;
 
     // Animations
     private final Animation widthAnimation = new Animation(98.0F, 0.28F);
     private final Animation heightAnimation = new Animation(NORMAL_HEIGHT, 0.28F);
     private final Animation infoWidthAnimation = new Animation(0.0F, 0.25F);
     private final Animation subIslandAlphaAnim = new Animation(0.0F, 0.25F);
-    private final Animation yAnimation = new Animation(8.0F, 0.28F);
+    private final Animation yAnimation = new Animation(4.0F, 0.28F);
     private boolean layoutInitialized = false;
     private boolean positionCentered = false;
 
@@ -119,7 +119,7 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
     private IslandState previousState = IslandState.NORMAL;
     private long contentTransitionStarted = 0L;
 
-    public static final Identifier LOGO_TEX = Identifier.fromNamespaceAndPath("error", "images/logo.png");
+    public static final Identifier LOGO_TEX = Identifier.fromNamespaceAndPath("error", "textures/logo_nonfone.png");
     public static final Identifier AVATAR_TEX = Identifier.fromNamespaceAndPath("error", "images/avatar.jpg");
 
     // Media Control Vector Icons
@@ -142,7 +142,7 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
     private float nextButtonX, nextButtonY, nextButtonSize;
 
     public DynamicIslandHud() {
-        super("dynamic_island", "Dynamic Island", 240.0F, 8.0F, 180.0F, NORMAL_HEIGHT + GAP_BETWEEN + INFO_HEIGHT, true);
+        super("dynamic_island", "Dynamic Island", 240.0F, 4.0F, 180.0F, NORMAL_HEIGHT + GAP_BETWEEN + INFO_HEIGHT, true);
     }
 
     public static void postNotification(String text, boolean positive) {
@@ -204,7 +204,7 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
             activePvPEvent = null;
         }
 
-        activeBossBarCount = nonPvpCount;
+        activeBossBarCount = interceptedPvP ? 0 : nonPvpCount;
         return interceptedPvP;
     }
 
@@ -369,24 +369,19 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
             activeItems++;
         }
         if (showFps) {
-            float fpsW = Fonts.getIconWidth(IconUse.FPS, 7.0F) + Fonts.SF_MEDIUM.getWidth(" " + mc.getFps() + "fps", 7.0F);
-            totalW += fpsW;
+            totalW += Fonts.SF_MEDIUM.getWidth(mc.getFps() + " fps", 7.0F);
             activeItems++;
         }
         if (showPing) {
-            float pingW = Fonts.getIconWidth(IconUse.PING, 7.0F) + Fonts.SF_MEDIUM.getWidth(" " + getPingText() + "ms", 7.0F);
-            totalW += pingW;
+            totalW += Fonts.SF_MEDIUM.getWidth(getPingText() + " ms", 7.0F);
             activeItems++;
         }
         if (showTps) {
-            float tpsW = Fonts.getIconWidth(IconUse.TPS, 7.0F) + Fonts.SF_MEDIUM.getWidth(" 20tps", 7.0F);
-            totalW += tpsW;
+            totalW += Fonts.SF_MEDIUM.getWidth("20.0 tps", 7.0F);
             activeItems++;
         }
         if (showServer) {
-            String server = getServerAddress();
-            float srvW = Fonts.getIconWidth(IconUse.GLOBE, 7.0F) + Fonts.SF_MEDIUM.getWidth(" " + server, 7.0F);
-            totalW += srvW;
+            totalW += Fonts.SF_MEDIUM.getWidth(getServerAddress(), 7.0F);
             activeItems++;
         }
 
@@ -459,8 +454,8 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
             layoutInitialized = true;
         }
 
-        float defaultY = 8.0F;
-        float targetY = (activeBossBarCount > 0 && !dragging) ? (8.0F + (activeBossBarCount * 12.0F)) : defaultY;
+        float defaultY = 4.0F;
+        float targetY = (activeBossBarCount > 0 && !dragging) ? (4.0F + (activeBossBarCount * 14.0F)) : defaultY;
         yAnimation.setTarget(targetY);
         yAnimation.update();
 
@@ -501,8 +496,19 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
                     .alpha(alpha)
                     .render(extractor);
 
-            Color topOutline = Theme.isNewYear() ? Color.rgba(220, 248, 255, Math.round(240 * alpha)) : Color.WHITE;
-            Color botOutline = Theme.isNewYear() ? Color.rgba(130, 205, 255, Math.round(45 * alpha)) : Color.rgba(255, 255, 255, 32);
+            Color topOutline;
+            Color botOutline;
+            if (this.displayedState == IslandState.PVP) {
+                topOutline = Color.rgba(255, 95, 115, Math.round(180 * alpha));
+                botOutline = Color.rgba(215, 35, 55, Math.round(120 * alpha));
+            } else if (Theme.isNewYear()) {
+                topOutline = Color.rgba(160, 230, 255, Math.round(160 * alpha));
+                botOutline = Color.rgba(110, 205, 255, Math.round(110 * alpha));
+            } else {
+                topOutline = Color.WHITE;
+                botOutline = Color.rgba(255, 255, 255, 32);
+            }
+
             Outline.of(islandX, islandY, curIslandW, curIslandH)
                     .radius(Math.round(shellRadius))
                     .thickness(1.0F)
@@ -523,14 +529,14 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
                         .alpha(subIslandAlpha)
                         .render(extractor);
 
-                Color subTopOutline = Theme.isNewYear() ? Color.rgba(220, 248, 255, Math.round(240 * subIslandAlpha)) : Color.WHITE;
-                Color subBotOutline = Theme.isNewYear() ? Color.rgba(130, 205, 255, Math.round(45 * subIslandAlpha)) : Color.rgba(255, 255, 255, 32);
+                Color subTopOutline = Theme.isNewYear() ? Color.rgba(160, 230, 255, Math.round(160 * subIslandAlpha)) : Color.WHITE;
+                Color subBotOutline = Theme.isNewYear() ? Color.rgba(110, 205, 255, Math.round(110 * subIslandAlpha)) : Color.rgba(255, 255, 255, 32);
                 Outline.of(infoX, infoY, animatedInfoW, INFO_HEIGHT)
-                        .radius(Math.round(subRadius))
-                        .thickness(1.0F)
-                        .verticalGradient(subTopOutline, subBotOutline)
-                        .alpha(subIslandAlpha)
-                        .render(extractor);
+                    .radius(Math.round(subRadius))
+                    .thickness(1.0F)
+                    .verticalGradient(subTopOutline, subBotOutline)
+                    .alpha(subIslandAlpha)
+                    .render(extractor);
             }
 
             DisplayBatcher.flush();
@@ -567,16 +573,18 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
         float shadowBlur = y < 15.0F ? Math.max(0.0F, Math.min(y - 1.0F, 3.5F)) : 3.5F;
 
         if (this.displayedState == IslandState.PVP) {
-            int pvpGlow = ColorUtil.rgba(255, 45, 65, (int) (75 * alpha));
-            int pvpFill = ColorUtil.rgba(28, 8, 14, (int) (225 * alpha));
+            int pvpGlow = ColorUtil.rgba(255, 35, 55, (int) (60 * alpha));
+            int pvpFill = ColorUtil.rgba(24, 7, 12, (int) (235 * alpha));
             int pvpBorder = ColorUtil.rgba(255, 75, 95, (int) (180 * alpha));
 
             if (shadowBlur > 1.0F) {
                 Render2D.drawShadow(x, y, w, h, radius, shadowBlur, ColorUtil.rgba(0, 0, 0, (int) (60 * alpha)));
-                Render2D.drawShadow(x, y, w, h, radius, Math.min(shadowBlur, 4.0F), pvpGlow);
+                Render2D.drawShadow(x, y, w, h, radius, 3.0F, pvpGlow);
             }
             Render2D.drawRoundedRect(x, y, w, h, radius, pvpFill);
-            Render2D.drawRoundedOutline(x, y, w, h, radius, 1.0F, pvpBorder);
+            if (!Theme.isLiquidGlass() && !Theme.isNewYear()) {
+                Render2D.drawRoundedOutline(x, y, w, h, radius, 1.0F, pvpBorder);
+            }
         } else if (Theme.isBlack()) {
             if (shadowBlur > 1.0F) {
                 Render2D.drawShadow(x, y, w, h, radius, shadowBlur, ColorUtil.rgba(0, 0, 0, (int) (45 * alpha)));
@@ -632,11 +640,11 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
         }
 
         float curX = x + 6.0F;
-        float textY = y + (h - 7.0F) / 2.0F;
-        float dotY = y + (h - 2.4F) / 2.0F;
+        float textY = y + Fonts.SF_MEDIUM.centeredTextY(h / 2.0F, 7.0F);
+        float dotY = y + (h - 2.0F) / 2.0F;
         boolean drawnAny = false;
 
-        // Custom Profile Avatar (D:\Без названия (2).jpg or fallback player head)
+        // Custom Profile Avatar
         if (showAvatar) {
             float avatarY = y + (h - HEAD_SIZE) / 2.0F;
             Render2D.drawCustomAvatar(curX, avatarY, HEAD_SIZE, HEAD_SIZE / 2.0F, alpha);
@@ -647,10 +655,8 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
         // FPS Metric
         if (showFps) {
             if (drawnAny) curX = drawDot(curX, dotY, themeAccent, alpha);
-            Fonts.drawIcon(IconUse.FPS, curX, textY - 0.5F, 7.0F, themeAccent);
-            curX += Fonts.getIconWidth(IconUse.FPS, 7.0F);
-            String fps = " " + mc.getFps() + "fps";
-            Fonts.drawString(Fonts.SF_MEDIUM, fps, curX, textY, 7.0F, ColorUtil.rgba(215, 215, 230, (int) (210 * alpha)));
+            String fps = mc.getFps() + " fps";
+            Fonts.drawString(Fonts.SF_MEDIUM, fps, curX, textY, 7.0F, ColorUtil.rgba(225, 230, 245, (int) (220 * alpha)));
             curX += Fonts.SF_MEDIUM.getWidth(fps, 7.0F);
             drawnAny = true;
         }
@@ -658,10 +664,8 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
         // Ping Metric
         if (showPing) {
             if (drawnAny) curX = drawDot(curX, dotY, themeAccent, alpha);
-            Fonts.drawIcon(IconUse.PING, curX, textY - 0.5F, 7.0F, themeAccent);
-            curX += Fonts.getIconWidth(IconUse.PING, 7.0F);
-            String ping = " " + getPingText() + "ms";
-            Fonts.drawString(Fonts.SF_MEDIUM, ping, curX, textY, 7.0F, ColorUtil.rgba(215, 215, 230, (int) (210 * alpha)));
+            String ping = getPingText() + " ms";
+            Fonts.drawString(Fonts.SF_MEDIUM, ping, curX, textY, 7.0F, ColorUtil.rgba(225, 230, 245, (int) (220 * alpha)));
             curX += Fonts.SF_MEDIUM.getWidth(ping, 7.0F);
             drawnAny = true;
         }
@@ -669,10 +673,8 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
         // Server / TPS Metric
         if (showTps) {
             if (drawnAny) curX = drawDot(curX, dotY, themeAccent, alpha);
-            Fonts.drawIcon(IconUse.TPS, curX, textY - 0.5F, 7.0F, themeAccent);
-            curX += Fonts.getIconWidth(IconUse.TPS, 7.0F);
-            String tps = " 20tps";
-            Fonts.drawString(Fonts.SF_MEDIUM, tps, curX, textY, 7.0F, ColorUtil.rgba(215, 215, 230, (int) (210 * alpha)));
+            String tps = "20.0 tps";
+            Fonts.drawString(Fonts.SF_MEDIUM, tps, curX, textY, 7.0F, ColorUtil.rgba(225, 230, 245, (int) (220 * alpha)));
             curX += Fonts.SF_MEDIUM.getWidth(tps, 7.0F);
             drawnAny = true;
         }
@@ -680,10 +682,8 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
         // Server IP Metric
         if (showServer) {
             if (drawnAny) curX = drawDot(curX, dotY, themeAccent, alpha);
-            Fonts.drawIcon(IconUse.GLOBE, curX, textY - 0.5F, 7.0F, themeAccent);
-            curX += Fonts.getIconWidth(IconUse.GLOBE, 7.0F);
-            String srv = " " + getServerAddress();
-            Fonts.drawString(Fonts.SF_MEDIUM, srv, curX, textY, 7.0F, ColorUtil.rgba(215, 215, 230, (int) (210 * alpha)));
+            String srv = getServerAddress();
+            Fonts.drawString(Fonts.SF_MEDIUM, srv, curX, textY, 7.0F, ColorUtil.rgba(225, 230, 245, (int) (220 * alpha)));
             curX += Fonts.SF_MEDIUM.getWidth(srv, 7.0F);
             drawnAny = true;
         }
@@ -699,30 +699,36 @@ public final class DynamicIslandHud extends HudElement implements IMinecraft {
     }
 
     private void drawPvP(float x, float y, float width, float height, float alpha, long now) {
-        float textY = y + (height - 8.0F) / 2.0F - 1.0F;
+        float centerY = y + height / 2.0F;
 
         // Pulsating Combat Icon
         float pulse = 0.85F + 0.15F * (float) Math.sin(now / 110.0D);
         int swordCol = ColorUtil.rgba(255, (int) (80 * pulse), (int) (90 * pulse), (int) (245 * alpha));
-        Fonts.drawIcon(IconUse.FIGHT, x + 8.0F, textY + 0.5F, 9.0F, swordCol);
+        float iconSize = 9.0F;
+        float iconY = centerY - iconSize / 2.0F;
+        Fonts.drawIcon(IconUse.FIGHT, x + 8.0F, iconY, iconSize, swordCol);
 
         float curX = x + 21.0F;
 
         // Time Badge: [ 14s ] or [ PVP ]
         String badgeText = pvpSeconds >= 0 ? (pvpSeconds + "s") : "PVP";
-        float badgeW = Fonts.SF_MEDIUM.getWidth(badgeText, 6.5F) + 6.0F;
-        float badgeH = 11.0F;
-        float badgeY = y + (height - badgeH) / 2.0F - 1.0F;
+        float badgeFontSize = 6.5F;
+        float badgeW = Fonts.SF_MEDIUM.getWidth(badgeText, badgeFontSize) + 8.0F;
+        float badgeH = 12.0F;
+        float badgeY = centerY - badgeH / 2.0F;
 
-        Render2D.drawRoundedRect(curX, badgeY, badgeW, badgeH, 3.0F, ColorUtil.rgba(215, 35, 55, (int) (220 * alpha)));
-        Render2D.drawRoundedOutline(curX, badgeY, badgeW, badgeH, 3.0F, 1.0F, ColorUtil.rgba(255, 120, 140, (int) (180 * alpha)));
-        Fonts.drawString(Fonts.SF_MEDIUM, badgeText, curX + 3.0F, badgeY + 2.0F, 6.5F, ColorUtil.rgba(255, 255, 255, (int) (255 * alpha)));
+        Render2D.drawRoundedRect(curX, badgeY, badgeW, badgeH, 3.5F, ColorUtil.rgba(215, 35, 55, (int) (225 * alpha)));
+        Render2D.drawRoundedOutline(curX, badgeY, badgeW, badgeH, 3.5F, 0.8F, ColorUtil.rgba(255, 120, 140, (int) (180 * alpha)));
+        float badgeTextY = Fonts.SF_MEDIUM.centeredTextY(centerY, badgeFontSize);
+        Fonts.drawCenteredString(Fonts.SF_MEDIUM, badgeText, curX + badgeW / 2.0F, badgeTextY, badgeFontSize, ColorUtil.rgba(255, 255, 255, (int) (255 * alpha)));
 
-        curX += badgeW + 5.0F;
+        curX += badgeW + 6.0F;
 
         // Compact PvP Title
         String display = "Режим PvP";
-        Fonts.drawString(Fonts.SF_MEDIUM, display, curX, textY, 7.5F, ColorUtil.rgba(255, 255, 255, (int) (245 * alpha)));
+        float titleFontSize = 7.5F;
+        float titleTextY = Fonts.SF_MEDIUM.centeredTextY(centerY, titleFontSize);
+        Fonts.drawString(Fonts.SF_MEDIUM, display, curX, titleTextY, titleFontSize, ColorUtil.rgba(255, 255, 255, (int) (245 * alpha)));
     }
 
     private void drawNotification(float x, float y, float width, float height, int themeAccent, float alpha, long now) {

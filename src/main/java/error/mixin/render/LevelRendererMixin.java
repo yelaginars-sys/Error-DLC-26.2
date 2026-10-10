@@ -38,6 +38,14 @@ public abstract class LevelRendererMixin {
     @Inject(method = "render", at = @At("TAIL"))
     private void renderWorldEffects(GraphicsResourceAllocator graphicsResourceAllocator, DeltaTracker deltaTracker, boolean renderBlockOutline, CameraRenderState cameraRenderState, Matrix4fc projectionMatrix, GpuBufferSlice fogParameters, Vector4f skyColor, boolean hasCapturedFrustum, CallbackInfo ci) {
         MiasmWorlds.render(new RendererWorldProvider(this.levelRenderState, cameraRenderState, deltaTracker.getGameTimeDeltaPartialTick(false)));
+        error.module.impl.render.Atmosphere atmosphere = error.module.impl.render.Atmosphere.getInstance();
+        if (atmosphere != null && atmosphere.isEnabled()) {
+            net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+            net.minecraft.client.Camera camera = mc.gameRenderer.mainCamera();
+            org.joml.Matrix4f viewMatrix = camera.getViewRotationMatrix(new org.joml.Matrix4f());
+            org.joml.Matrix4f projMatrix = new org.joml.Matrix4f(projectionMatrix);
+            atmosphere.render(camera, viewMatrix, projMatrix);
+        }
     }
 
     @Inject(method = "addWeatherPass", at = @At("HEAD"), cancellable = true)

@@ -121,6 +121,7 @@ public class Modules {
     public Atmosphere atmosphere;
     public BaseFinder baseFinder;
     public Chams chams;
+    public Optimization optimization;
 
 
     public void init() {
@@ -226,8 +227,10 @@ public class Modules {
         this.totemSounds = new error.module.impl.misc.TotemSounds();
         this.godMode = new error.module.impl.player.GodMode();
         this.windHop = new error.module.impl.player.WindHop();
+        this.optimization = new Optimization();
 
         register(
+                this.optimization,
                 this.anInterface,
                 this.customModels,
                 this.holdMyItems,
@@ -334,6 +337,7 @@ public class Modules {
         if (this.maceHelper != null) this.maceHelper.setState(true);
         if (this.autoSwap != null) this.autoSwap.setState(true);
         if (this.criticals != null) this.criticals.setState(true);
+        if (this.optimization != null) this.optimization.setState(true);
     }
 
     public void register(Module... mods) {

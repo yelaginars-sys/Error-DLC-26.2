@@ -18,29 +18,6 @@ public class FogRendererMixin {
 
     @Inject(method = "setupFog", at = @At("RETURN"))
     private void onSetupFog(Camera camera, int renderDistanceInChunks, DeltaTracker deltaTracker, float darkenWorldAmount, ClientLevel level, CallbackInfoReturnable<FogData> cir) {
-        if (error.module.impl.render.Atmosphere.INSTANCE != null && error.module.impl.render.Atmosphere.INSTANCE.isEnabled()) {
-            FogData fog = cir.getReturnValue();
-            error.module.impl.render.Atmosphere atmo = error.module.impl.render.Atmosphere.INSTANCE;
-
-            float start = atmo.getFogStart();
-            float end = Math.max(start + 1.0F, atmo.getFogEnd());
-
-            fog.environmentalStart = start;
-            fog.environmentalEnd = end;
-            fog.renderDistanceStart = start;
-            fog.renderDistanceEnd = end;
-
-            int color = atmo.getEffectiveFogColor();
-            float r = ((color >> 16) & 0xFF) / 255.0F;
-            float g = ((color >> 8) & 0xFF) / 255.0F;
-            float b = (color & 0xFF) / 255.0F;
-            float a = ((color >> 24) & 0xFF) / 255.0F;
-            if (a == 0.0F) a = 1.0F;
-
-            fog.color.set(r, g, b, a);
-            return;
-        }
-
         if (Ambience.INSTANCE != null && Ambience.INSTANCE.isCustomFogEnabled()) {
             FogData fog = cir.getReturnValue();
 

@@ -6,9 +6,10 @@ import error.event.list.PlayerTickEvent;
 import error.module.Category;
 import error.module.Module;
 import error.setting.impl.BindSetting;
+import error.setting.impl.CheckBox;
 import error.setting.impl.SliderSetting;
 import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
-import net.minecraft.util.Mth;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.item.ItemStack;
@@ -21,22 +22,79 @@ public final class ExpThrow extends Module {
 
     public final BindSetting triggerKey = bind("Кнопка", GLFW.GLFW_KEY_UNKNOWN);
     public final SliderSetting pitch = slider("Угол броска", 90.0F, -90.0F, 90.0F, 5.0F);
-    public final SliderSetting turnSpeed = slider("Скорость поворота", 30.0F, 1.0F, 90.0F, 5.0F);
+    public final CheckBox visualSword = checkbox("Визуально меч в руке", true);
+
+    public static boolean isThrowingExp = false;
 
     private int previousSlot = -1;
     private int swappedInvSlot = -1;
     private int swappedHotbarSlot = -1;
     private boolean isThrowing = false;
     private int throwDelay = 0;
+    private ItemStack savedSwordStack = null;
 
     public ExpThrow() {
         super("ExpThrow", "Быстрый бросок пузырьков опыта под себя из Debuda", Category.COMBAT);
         INSTANCE = this;
     }
 
+    public static boolean isVisualSwordActive() {
+        return INSTANCE != null && INSTANCE.isEnabled() && INSTANCE.isThrowing && INSTANCE.visualSword.getValue();
+    }
+
+    public static ItemStack getVisualSword() {
+        if (INSTANCE == null) return ItemStack.EMPTY;
+        return INSTANCE.getSwordToDisplay();
+    }
+
+    public ItemStack getSwordToDisplay() {
+        if (savedSwordStack != null && !savedSwordStack.isEmpty()) {
+            return savedSwordStack;
+        }
+        return findBestSword();
+    }
+
+    private ItemStack findBestSword() {
+        if (mc.player == null) return new ItemStack(Items.NETHERITE_SWORD);
+
+        // 1. If previousSlot is valid and has a sword
+        if (previousSlot >= 0 && previousSlot < 9) {
+            ItemStack stack = mc.player.getInventory().getItem(previousSlot);
+            if (stack != null && stack.is(ItemTags.SWORDS)) {
+                return stack.copy();
+            }
+        }
+
+        // 2. Check current main hand item
+        ItemStack main = mc.player.getMainHandItem();
+        if (main != null && main.is(ItemTags.SWORDS)) {
+            return main.copy();
+        }
+
+        // 3. Search hotbar for any sword
+        for (int i = 0; i < 9; i++) {
+            ItemStack stack = mc.player.getInventory().getItem(i);
+            if (stack != null && stack.is(ItemTags.SWORDS)) {
+                return stack.copy();
+            }
+        }
+
+        // 4. Search entire inventory for any sword
+        for (int i = 9; i < 36; i++) {
+            ItemStack stack = mc.player.getInventory().getItem(i);
+            if (stack != null && stack.is(ItemTags.SWORDS)) {
+                return stack.copy();
+            }
+        }
+
+        // 5. Fallback if player doesn't have a sword
+        return new ItemStack(Items.NETHERITE_SWORD);
+    }
+
     @Override
     public void onDisable() {
         finishThrow();
+        super.onDisable();
     }
 
     @EventTarget
@@ -92,25 +150,28 @@ public final class ExpThrow extends Module {
 
         if (mc.player.getOffhandItem().is(Items.EXPERIENCE_BOTTLE)) {
             hand = InteractionHand.OFF_HAND;
+            if (previousSlot == -1) {
+                previousSlot = mc.player.getInventory().getSelectedSlot();
+                savedSwordStack = findBestSword();
+            }
         } else {
             expSlot = findExpSlot();
             if (expSlot == -1) {
                 return;
             }
 
+            if (previousSlot == -1) {
+                previousSlot = mc.player.getInventory().getSelectedSlot();
+                savedSwordStack = findBestSword();
+            }
+
             if (expSlot < 9) {
-                if (previousSlot == -1) {
-                    previousSlot = mc.player.getInventory().getSelectedSlot();
-                }
                 mc.player.getInventory().setSelectedSlot(expSlot);
                 hand = InteractionHand.MAIN_HAND;
             } else {
-                // In inventory: swap to hotbar slot 8
-                if (previousSlot == -1) {
-                    previousSlot = mc.player.getInventory().getSelectedSlot();
-                }
+                // In inventory: swap to an available hotbar slot
                 swappedInvSlot = expSlot;
-                swappedHotbarSlot = 8;
+                swappedHotbarSlot = (previousSlot == 8) ? 7 : 8;
                 swapInventorySlot(expSlot, swappedHotbarSlot);
                 mc.player.getInventory().setSelectedSlot(swappedHotbarSlot);
                 hand = InteractionHand.MAIN_HAND;
@@ -118,23 +179,27 @@ public final class ExpThrow extends Module {
         }
 
         if (hand != null) {
-            float targetPitch = pitch.getValue();
+            float targetPitch = pitch.getValue(); // Defaults to 90.0F (straight down)
 
-            // Send look packet with target pitch directly without moving player camera
-            if (mc.getConnection() != null) {
-                mc.getConnection().send(new ServerboundMovePlayerPacket.Rot(
-                        mc.player.getYRot(), targetPitch, mc.player.onGround(), false
-                ));
-            }
+            isThrowingExp = true;
+            try {
+                // Send look packet with 90.0F pitch directly to server
+                if (mc.getConnection() != null) {
+                    mc.getConnection().send(new ServerboundMovePlayerPacket.Rot(
+                            mc.player.getYRot(), targetPitch, mc.player.onGround(), false
+                    ));
+                }
 
-            mc.gameMode.useItem(mc.player, hand);
-            mc.player.swing(hand);
-
-            // Restore server rotation back to player's current view angle
-            if (mc.getConnection() != null) {
-                mc.getConnection().send(new ServerboundMovePlayerPacket.Rot(
-                        mc.player.getYRot(), mc.player.getXRot(), mc.player.onGround(), false
-                ));
+                mc.gameMode.useItem(mc.player, hand);
+                mc.player.swing(hand);
+            } finally {
+                isThrowingExp = false;
+                // Restore server rotation back to player's current view angle
+                if (mc.getConnection() != null) {
+                    mc.getConnection().send(new ServerboundMovePlayerPacket.Rot(
+                            mc.player.getYRot(), mc.player.getXRot(), mc.player.onGround(), false
+                    ));
+                }
             }
 
             throwDelay = 1;
@@ -153,6 +218,7 @@ public final class ExpThrow extends Module {
             previousSlot = -1;
         }
 
+        savedSwordStack = null;
         isThrowing = false;
         throwDelay = 0;
     }
@@ -178,12 +244,12 @@ public final class ExpThrow extends Module {
         // Check hotbar first
         for (int i = 0; i < 9; i++) {
             ItemStack stack = mc.player.getInventory().getItem(i);
-            if (stack.is(Items.EXPERIENCE_BOTTLE)) return i;
+            if (stack != null && stack.is(Items.EXPERIENCE_BOTTLE)) return i;
         }
         // Then inventory
         for (int i = 9; i < 36; i++) {
             ItemStack stack = mc.player.getInventory().getItem(i);
-            if (stack.is(Items.EXPERIENCE_BOTTLE)) return i;
+            if (stack != null && stack.is(Items.EXPERIENCE_BOTTLE)) return i;
         }
         return -1;
     }

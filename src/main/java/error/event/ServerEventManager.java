@@ -129,8 +129,7 @@ public final class ServerEventManager {
     private ServerEventManager() {
         EventManager.register(this);
         initMockData();
-        pollEvents();
-        executor.scheduleWithFixedDelay(this::pollEvents, 2000L, 8000L, TimeUnit.MILLISECONDS);
+        executor.scheduleWithFixedDelay(this::pollEvents, 5000L, 20000L, TimeUnit.MILLISECONDS);
     }
 
     public ServerType detectCurrentServer() {
@@ -153,6 +152,11 @@ public final class ServerEventManager {
     }
 
     public void pollEvents() {
+        Minecraft mc = Minecraft.getInstance();
+        boolean guiEventsOpen = error.ui.clickgui.LiquidClickGui.isOpen;
+        if (mc.getCurrentServer() == null && !guiEventsOpen) {
+            return;
+        }
         fetchSpookyEvents();
         fetchFunTimeEvents();
     }
@@ -162,8 +166,8 @@ public final class ServerEventManager {
             URL url = new URI("http://87.120.107.98/party-api/events").toURL();
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("GET");
-            conn.setConnectTimeout(3000);
-            conn.setReadTimeout(3000);
+            conn.setConnectTimeout(1500);
+            conn.setReadTimeout(1500);
             conn.setRequestProperty("User-Agent", "Isle-Events/1.0");
             conn.setRequestProperty("Connection", "close");
 
@@ -206,8 +210,8 @@ public final class ServerEventManager {
             URL url = new URI("https://funtime.me/api/backend/api/v1/events?event-type=all&server-type=").toURL();
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("GET");
-            conn.setConnectTimeout(4000);
-            conn.setReadTimeout(4000);
+            conn.setConnectTimeout(1500);
+            conn.setReadTimeout(1500);
             conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
             conn.setRequestProperty("Accept", "application/json");
             conn.setRequestProperty("Connection", "close");

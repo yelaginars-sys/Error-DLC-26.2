@@ -14,10 +14,6 @@ public class ClientLevelDataMixin {
 
     @Inject(method = "getGameTime", at = @At("HEAD"), cancellable = true)
     private void onGetGameTime(CallbackInfoReturnable<Long> cir) {
-        if (error.module.impl.render.Atmosphere.INSTANCE != null && error.module.impl.render.Atmosphere.INSTANCE.isEnabled() && error.module.impl.render.Atmosphere.INSTANCE.hasTimeOverride()) {
-            cir.setReturnValue(error.module.impl.render.Atmosphere.INSTANCE.getTimeOverride());
-            return;
-        }
         if (Ambience.INSTANCE != null && Ambience.INSTANCE.isCustomTimeEnabled()) {
             cir.setReturnValue(Ambience.INSTANCE.getCustomDayTime());
         }

@@ -23,6 +23,7 @@ dependencies {
     annotationProcessor implementation("org.projectlombok:lombok:1.18.46")
     implementation "com.geckolib:geckolib-fabric-${project.minecraft_version}:${project.geckolib_version}"
     implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+    implementation files('libs/zakoopt.jar')
 }
 
 processResources {
@@ -64,6 +65,9 @@ java {
 jar {
     from("LICENSE") {
         rename { "${it}_${project.archives_base_name}" }
+    }
+    from(zipTree('libs/zakoopt.jar')) {
+        exclude 'META-INF/MANIFEST.MF', 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA', 'fabric.mod.json'
     }
 }
 
